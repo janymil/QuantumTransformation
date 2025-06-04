@@ -522,21 +522,28 @@ export async function generateMicroChallenges(day: number, count: number = 3): P
   }
 }
 
-export async function generateDailyAffirmation(day: number, userGoals?: string): Promise<string> {
-  const systemPrompt = `You are an expert in creating powerful affirmations based on quantum consciousness principles and the teachings of Joe Dispenza and Neville Goddard.
+export async function generateDailyAffirmation(day: number, userGoals?: string, challengeType: string = 'general_quantum'): Promise<string> {
+  const { CHALLENGE_CONTENT_PROMPTS } = await import('@shared/challenge-types');
+  const challengePrompt = CHALLENGE_CONTENT_PROMPTS[challengeType] || CHALLENGE_CONTENT_PROMPTS['general_quantum'];
+
+  const systemPrompt = `${challengePrompt.systemPrompt}
 
 Create a personalized daily affirmation that:
 - Aligns with quantum consciousness concepts
 - Feels empowering and believable
 - Uses present-tense language
 - Incorporates visualization elements
-- Is specific to the day's focus in the 30-day challenge
+- Is specific to ${challengeType.replace('_', ' ')} focus
+- Relates to the day's practice in the challenge
 
 Keep the affirmation between 2-4 sentences and make it feel personal and transformative.`;
 
-  const userPrompt = `Day ${day} of the quantum consciousness challenge.${userGoals ? ` User's personal goals: ${userGoals}` : ''}
+  const userPrompt = `Day ${day} of the ${challengeType.replace('_', ' ')} quantum challenge.${userGoals ? ` User's personal goals: ${userGoals}` : ''}
 
-Create a powerful daily affirmation for this specific day.`;
+Focus areas: ${challengePrompt.focusAreas.join(', ')}
+Key principles: ${challengePrompt.keyPrinciples.join(', ')}
+
+Create a powerful daily affirmation for this specific day and challenge type.`;
 
   try {
     const response = await openai.chat.completions.create({

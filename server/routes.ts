@@ -620,6 +620,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Challenge selection endpoints
+  app.get('/api/challenges/types', async (req, res) => {
+    try {
+      const { getAllChallengeTypes } = await import('@shared/challenge-types');
+      const challengeTypes = getAllChallengeTypes();
+      res.json(challengeTypes);
+    } catch (error) {
+      console.error("Error fetching challenge types:", error);
+      res.status(500).json({ message: "Failed to fetch challenge types" });
+    }
+  });
+
+  app.post('/api/challenges/select', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType } = req.body;
+
+      if (!challengeType) {
+        return res.status(400).json({ message: "Challenge type is required" });
+      }
+
+      // Create new progress for the selected challenge
+      const progress = await storage.createUserProgress({
+        userId,
+        challengeType,
+        currentDay: 1,
+        completedDays: [],
+        streakCount: 0,
+      });
+
+      res.json({ 
+        success: true, 
+        progress,
+        message: `Started ${challengeType.replace('_', ' ')} challenge!`
+      });
+    } catch (error) {
+      console.error("Error selecting challenge:", error);
+      res.status(500).json({ message: "Failed to select challenge" });
+    }
+  });
+
+  app.get('/api/challenges/user-challenges', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userChallenges = await storage.getUserChallenges(userId);
+      res.json(userChallenges);
+    } catch (error) {
+      console.error("Error fetching user challenges:", error);
+      res.status(500).json({ message: "Failed to fetch user challenges" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

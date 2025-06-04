@@ -65,6 +65,9 @@ export interface IStorage {
   // Settings operations
   getUserSettings(userId: string): Promise<UserSettings | undefined>;
   upsertUserSettings(userId: string, settings: Partial<InsertUserSettings>): Promise<UserSettings>;
+  
+  // Multi-challenge operations
+  getUserChallenges(userId: string): Promise<UserProgress[]>;
 }
 
 export class DatabaseStorage implements IStorage {
