@@ -720,6 +720,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/challenges/quit', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType } = req.body;
+
+      if (!challengeType) {
+        return res.status(400).json({ message: "Challenge type is required" });
+      }
+
+      // Delete all data related to this challenge for the user
+      await storage.quitChallenge(userId, challengeType);
+      
+      res.json({ 
+        success: true,
+        message: `Successfully quit ${challengeType.replace('_', ' ')} challenge and deleted all related data.`
+      });
+    } catch (error) {
+      console.error("Error quitting challenge:", error);
+      res.status(500).json({ message: "Failed to quit challenge" });
+    }
+  });
+
   // Get available challenge types
   app.get('/api/challenges/types', async (req, res) => {
     try {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -12,19 +12,64 @@ import {
   Target, 
   Flame,
   Trophy,
-  Clock
+  Clock,
+  X,
+  AlertTriangle
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { CHALLENGE_TYPES } from "@shared/challenge-types";
 import { Link } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface MultiChallengeDashboardProps {}
 
 export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps) {
   const [expandedChallenges, setExpandedChallenges] = useState<string[]>([]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: progressData, isLoading } = useQuery({
     queryKey: ["/api/progress/all"],
+  });
+
+  // Quit challenge mutation
+  const quitChallengeMutation = useMutation({
+    mutationFn: async (challengeType: string) => {
+      return await apiRequest(`/api/challenges/quit`, {
+        method: 'DELETE',
+        body: JSON.stringify({ challengeType }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: (data: any, challengeType: string) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/progress/all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/challenges/user-challenges'] });
+      
+      const challengeTypeName = CHALLENGE_TYPES[challengeType]?.title || challengeType;
+      toast({
+        title: "Challenge Quit",
+        description: `You have left the ${challengeTypeName} challenge. All progress has been deleted.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to quit challenge. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   const toggleChallenge = (challengeId: string) => {
@@ -201,6 +246,39 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
                               View Journal
                             </Button>
                           </Link>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm" className="w-full">
+                                <X className="w-4 h-4 mr-2" />
+                                Quit Challenge
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center">
+                                  <AlertTriangle className="w-5 h-5 mr-2 text-red-500" />
+                                  Quit Challenge
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to quit the {challengeType.title} challenge? 
+                                  <br /><br />
+                                  <strong>This action cannot be undone.</strong> All your progress, journal entries, 
+                                  completed days, and achievements for this challenge will be permanently deleted.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => quitChallengeMutation.mutate(progress.challengeType)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                  disabled={quitChallengeMutation.isPending}
+                                >
+                                  {quitChallengeMutation.isPending ? 'Quitting...' : 'Yes, Quit Challenge'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     </div>
