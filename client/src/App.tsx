@@ -15,7 +15,11 @@ import Navbar from "@/components/navbar";
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Critical debugging
+  console.log("Router - isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
+
   if (isLoading) {
+    console.log("Router - Showing loading state");
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-4">
@@ -26,21 +30,28 @@ function Router() {
     );
   }
 
-  return (
-    <Switch>
-      {!isAuthenticated ? (
+  if (!isAuthenticated) {
+    console.log("Router - User not authenticated, showing Landing");
+    return (
+      <Switch>
         <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Navbar />
-          <Route path="/" component={Dashboard} />
-          <Route path="/challenge/:day" component={ChallengeDay} />
-          <Route path="/journal" component={Journal} />
-          <Route path="/progress" component={Progress} />
-        </>
-      )}
-      <Route component={NotFound} />
-    </Switch>
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  console.log("Router - User authenticated, showing Dashboard and other routes");
+  return (
+    <>
+      <Navbar />
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/challenge/:day" component={ChallengeDay} />
+        <Route path="/journal" component={Journal} />
+        <Route path="/progress" component={Progress} />
+        <Route component={NotFound} />
+      </Switch>
+    </>
   );
 }
 
