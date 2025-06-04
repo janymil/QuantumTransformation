@@ -35,8 +35,11 @@ export interface IStorage {
   
   // Progress operations
   getUserProgress(userId: string): Promise<UserProgress | undefined>;
+  getUserProgressForChallenge(userId: string, challengeType: string): Promise<UserProgress | undefined>;
+  getAllUserProgress(userId: string): Promise<UserProgress[]>;
   createUserProgress(progress: InsertUserProgress): Promise<UserProgress>;
   updateUserProgress(userId: string, updates: Partial<InsertUserProgress>): Promise<UserProgress>;
+  updateChallengeProgress(userId: string, challengeType: string, updates: Partial<InsertUserProgress>): Promise<UserProgress>;
   
   // Challenge completion operations
   createChallengeCompletion(completion: InsertChallengeCompletion): Promise<ChallengeCompletion>;
@@ -94,11 +97,30 @@ export class DatabaseStorage implements IStorage {
 
   // Progress operations
   async getUserProgress(userId: string): Promise<UserProgress | undefined> {
+    // For backwards compatibility, return the most recent progress record
     const [progress] = await db
       .select()
       .from(userProgress)
-      .where(eq(userProgress.userId, userId));
+      .where(eq(userProgress.userId, userId))
+      .orderBy(desc(userProgress.updatedAt))
+      .limit(1);
     return progress;
+  }
+
+  async getUserProgressForChallenge(userId: string, challengeType: string): Promise<UserProgress | undefined> {
+    const [progress] = await db
+      .select()
+      .from(userProgress)
+      .where(and(eq(userProgress.userId, userId), eq(userProgress.challengeType, challengeType)));
+    return progress;
+  }
+
+  async getAllUserProgress(userId: string): Promise<UserProgress[]> {
+    return await db
+      .select()
+      .from(userProgress)
+      .where(eq(userProgress.userId, userId))
+      .orderBy(desc(userProgress.updatedAt));
   }
 
   async createUserProgress(progress: InsertUserProgress): Promise<UserProgress> {
