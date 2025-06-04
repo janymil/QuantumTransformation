@@ -47,7 +47,11 @@ export default function ChallengeDay() {
       general_quantum: {
         day,
         title: `Day ${day}: Quantum Consciousness Foundation`,
+        subtitle: "Master the fundamentals of quantum reality and consciousness elevation",
         description: "Master the fundamentals of quantum reality and consciousness elevation",
+        duration: "15-20 minutes",
+        topic: "Quantum Consciousness",
+        science: "Neuroscience research shows that elevated emotional states create new neural pathways and increase brain coherence, supporting the quantum field theory of consciousness.",
         practice: {
           name: "Quantum Meditation",
           description: "A guided meditation to elevate your consciousness and align with quantum possibilities",
@@ -59,17 +63,35 @@ export default function ChallengeDay() {
             "Feel the emotions of having already achieved your goals",
             "Connect with the quantum field of infinite possibilities",
             "Set your intention for the day with elevated energy"
+          ],
+          tips: [
+            "Practice at the same time each day to build consistency",
+            "Start with 10-15 minutes and gradually increase duration",
+            "Focus on feeling the emotions, not just visualizing",
+            "Keep a journal nearby to capture insights"
           ]
         },
         keyPrinciples: ["Consciousness Elevation", "Quantum Field Access", "Reality Creation", "Mind-Matter Interface"],
         techniques: ["Heart Coherence Breathing", "Elevated Emotion Cultivation", "Future Self Visualization", "Quantum Field Connection"],
+        insights: [
+          "Your thoughts and emotions directly influence your reality",
+          "Elevated states create new neural pathways for transformation",
+          "The quantum field responds to coherent heart-brain states"
+        ],
         affirmation: "I am the creator of my reality, aligned with infinite possibilities and elevated consciousness.",
-        quote: "The moment you change your energy, you change your life."
+        quote: {
+          text: "The moment you change your energy, you change your life.",
+          author: "Dr. Joe Dispenza"
+        }
       },
       money_blocks_clearing: {
         day,
         title: `Day ${day}: Money Blocks Clearing`,
+        subtitle: "Identify and dissolve limiting beliefs and subconscious blocks around money and abundance",
         description: "Identify and dissolve limiting beliefs and subconscious blocks around money and abundance",
+        duration: "20-25 minutes",
+        topic: "Money Blocks Clearing",
+        science: "Neuroscience shows that limiting beliefs create neural pathways that can be rewired through conscious awareness and emotional healing practices.",
         practice: {
           name: "Block Clearing Meditation",
           description: "A powerful session to uncover and release deep-rooted money blocks and limiting beliefs",
@@ -82,17 +104,35 @@ export default function ChallengeDay() {
             "Send love and compassion to these wounded parts of yourself",
             "Visualize golden light dissolving these blocks and limitations",
             "Affirm your natural worthiness and right to abundance"
+          ],
+          tips: [
+            "Go gently with yourself - deep healing takes time",
+            "Write down any limiting beliefs that surface during practice",
+            "If emotions arise, allow them to flow without resistance",
+            "Practice daily for 21 days to create lasting change"
           ]
         },
         keyPrinciples: ["Block Identification", "Belief Archaeology", "Trauma Healing", "Subconscious Reprogramming"],
         techniques: ["Shadow Work Exploration", "Belief Identification", "Energy Clearing", "Subconscious Reprogramming"],
+        insights: [
+          "Money blocks often stem from childhood experiences and family beliefs",
+          "Clearing blocks requires both awareness and emotional healing",
+          "Your worthiness is not determined by your financial status"
+        ],
         affirmation: "I release all limiting beliefs about money and embrace my natural abundance and worth.",
-        quote: "Your relationship with money is a reflection of your relationship with yourself."
+        quote: {
+          text: "Your relationship with money is a reflection of your relationship with yourself.",
+          author: "Louise Hay"
+        }
       },
       money_manifestation: {
         day,
         title: `Day ${day}: Abundance Manifestation`,
+        subtitle: "Cultivate wealth consciousness and attract financial abundance through elevated states",
         description: "Cultivate wealth consciousness and attract financial abundance through elevated states",
+        duration: "15-20 minutes",
+        topic: "Abundance Manifestation",
+        science: "Studies show that visualization combined with elevated emotions activates the same neural networks as actual experiences, programming the subconscious for abundance.",
         practice: {
           name: "Abundance Meditation",
           description: "A manifestation practice to align with abundance and attract financial prosperity",
@@ -104,17 +144,35 @@ export default function ChallengeDay() {
             "See money flowing to you easily and effortlessly",
             "Embody the energy of someone who is naturally abundant",
             "Set intentions for specific financial goals with elevated emotion"
+          ],
+          tips: [
+            "Feel the emotions as if your abundance is already here",
+            "Visualize specific amounts and sources of income",
+            "Practice gratitude for money before it arrives",
+            "Maintain elevated emotions throughout the day"
           ]
         },
         keyPrinciples: ["Abundance Mindset", "Wealth Consciousness", "Financial Alignment", "Prosperity Vibration"],
         techniques: ["Abundance Visualization", "Gratitude Amplification", "Wealth Frequency Attunement", "Prosperity Anchoring"],
+        insights: [
+          "Abundance is a state of being, not something you acquire",
+          "Your emotional frequency attracts corresponding financial experiences",
+          "Gratitude amplifies your magnetic field for prosperity"
+        ],
         affirmation: "I am a powerful money magnet, attracting abundance with ease and grace.",
-        quote: "Abundance is not something we acquire, it is something we tune into."
+        quote: {
+          text: "Abundance is not something we acquire, it is something we tune into.",
+          author: "Wayne Dyer"
+        }
       },
       quantum_health: {
         day,
         title: `Day ${day}: Quantum Health Transformation`,
+        subtitle: "Harness the power of consciousness to heal and transform your physical body",
         description: "Harness the power of consciousness to heal and transform your physical body",
+        duration: "20-25 minutes",
+        topic: "Quantum Health",
+        science: "Epigenetic research demonstrates that consciousness and emotional states can directly influence gene expression and cellular regeneration processes.",
         practice: {
           name: "Healing Meditation",
           description: "A transformational practice to activate your body's natural healing intelligence",
@@ -126,17 +184,35 @@ export default function ChallengeDay() {
             "See yourself in perfect health and vitality",
             "Feel gratitude for your body's natural healing abilities",
             "Program new instructions for optimal health and wellness"
+          ],
+          tips: [
+            "Trust your body's innate wisdom to heal itself",
+            "Speak to your cells with love and appreciation",
+            "Visualize healing light in colors that feel right to you",
+            "Practice consistently for 21 days to see results"
           ]
         },
         keyPrinciples: ["Self-Healing", "Biological Transformation", "Mind-Body Unity", "Cellular Regeneration"],
         techniques: ["Body Scan Healing", "Cellular Communication", "Energy Medicine", "Biological Reprogramming"],
+        insights: [
+          "Your body is constantly regenerating and can heal itself",
+          "Consciousness directly influences cellular behavior and gene expression",
+          "Love and appreciation are powerful healing frequencies"
+        ],
         affirmation: "My body knows how to heal, and I trust its infinite wisdom and regenerative power.",
-        quote: "The body is the servant of the mind. It obeys the operations of the mind."
+        quote: {
+          text: "The body is the servant of the mind. It obeys the operations of the mind.",
+          author: "James Allen"
+        }
       },
       quantum_relationships: {
         day,
         title: `Day ${day}: Heart-Centered Connection`,
+        subtitle: "Develop authentic, conscious relationships through heart coherence and love",
         description: "Develop authentic, conscious relationships through heart coherence and love",
+        duration: "15-20 minutes",
+        topic: "Quantum Relationships",
+        science: "HeartMath research shows that heart coherence creates a measurable electromagnetic field that influences others, promoting deeper connection and empathy.",
         practice: {
           name: "Heart Coherence Practice",
           description: "A heart-opening practice to cultivate love, compassion, and authentic connection",
@@ -148,12 +224,26 @@ export default function ChallengeDay() {
             "Expand this love to include your relationships",
             "Visualize harmonious connections with all people",
             "Set intentions for authentic, loving communication"
+          ],
+          tips: [
+            "Start by loving yourself first before extending to others",
+            "Practice heart coherence breathing: 5 seconds in, 5 seconds out",
+            "Send loving thoughts to difficult people in your life",
+            "Notice how your energy shifts when you focus on love"
           ]
         },
         keyPrinciples: ["Heart Intelligence", "Authentic Love", "Conscious Communication", "Energetic Resonance"],
         techniques: ["Heart Coherence Breathing", "Love Field Activation", "Compassion Cultivation", "Authentic Expression"],
+        insights: [
+          "Your heart generates a powerful electromagnetic field that affects others",
+          "Love is the highest frequency and most transformative force",
+          "Authentic relationships begin with a loving relationship with yourself"
+        ],
         affirmation: "I am love, I give love, and I attract loving, authentic relationships into my life.",
-        quote: "Love is the bridge between two hearts."
+        quote: {
+          text: "Love is the bridge between two hearts.",
+          author: "Rumi"
+        }
       }
     };
 
