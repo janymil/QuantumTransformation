@@ -58,13 +58,18 @@ export default function JournalModal({
 
   const saveMutation = useMutation({
     mutationFn: async (data: { experience: string; insights: string; intention: string }) => {
-      return await apiRequest("POST", "/api/journal", {
+      console.log("Journal Modal - Saving entry for day:", day, "with data:", data);
+      const result = await apiRequest("POST", "/api/journal", {
         day,
         ...data,
       });
+      console.log("Journal Modal - Save result:", result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal", day] });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal/analyze"] });
       toast({
         title: "Journal Saved",
         description: "Your journal entry has been saved successfully.",
