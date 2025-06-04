@@ -364,6 +364,164 @@ Create a personalized affirmation that speaks directly to their current state an
   }
 }
 
+// Wellness tip generation interfaces and functions
+export interface WellnessTipRequest {
+  category: string;
+  day: number;
+  preferences?: {
+    focusAreas: string[];
+    availableTime: number;
+    difficultyLevel: 'beginner' | 'intermediate' | 'advanced';
+  };
+}
+
+export interface WellnessTip {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  scientificBasis: string;
+  practicalSteps: string[];
+  timeRequired: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  tags: string[];
+}
+
+export async function generateWellnessTip(request: WellnessTipRequest): Promise<WellnessTip> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are an AI wellness coach specializing in evidence-based mental health practices, mindfulness, and quantum consciousness principles. Generate personalized wellness tips with scientific backing.`
+        },
+        {
+          role: "user",
+          content: `Generate a wellness tip for day ${request.day} focusing on ${request.category}. 
+          ${request.preferences ? `User preferences: ${JSON.stringify(request.preferences)}` : ''}
+          
+          Respond in JSON format with:
+          - title (concise, engaging)
+          - description (brief overview)
+          - scientificBasis (research-backed explanation)
+          - practicalSteps (array of 3-5 actionable steps)
+          - timeRequired (minutes)
+          - difficulty (easy/medium/hard)
+          - tags (array of relevant keywords)`
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 800,
+      temperature: 0.7,
+    });
+
+    const tipData = JSON.parse(response.choices[0].message.content || '{}');
+    
+    return {
+      id: `tip_${Date.now()}`,
+      category: request.category,
+      title: tipData.title || "Mindful Awareness Practice",
+      description: tipData.description || "A simple practice to enhance awareness",
+      scientificBasis: tipData.scientificBasis || "Research shows mindfulness practices improve cognitive function",
+      practicalSteps: tipData.practicalSteps || ["Focus on your breath", "Notice your thoughts", "Return to awareness"],
+      timeRequired: tipData.timeRequired || 5,
+      difficulty: tipData.difficulty || 'easy',
+      tags: tipData.tags || ['mindfulness', 'awareness']
+    };
+  } catch (error) {
+    console.error("Error generating wellness tip:", error);
+    return {
+      id: `tip_${Date.now()}`,
+      category: request.category,
+      title: "Mindful Breathing",
+      description: "Practice conscious breathing to center yourself",
+      scientificBasis: "Deep breathing activates the parasympathetic nervous system, reducing stress and improving focus",
+      practicalSteps: [
+        "Find a comfortable seated position",
+        "Close your eyes and breathe naturally",
+        "Count each breath from 1 to 10",
+        "Notice the sensation of air entering and leaving",
+        "Return to counting when your mind wanders"
+      ],
+      timeRequired: 5,
+      difficulty: 'easy' as const,
+      tags: ['breathing', 'mindfulness', 'stress-relief']
+    };
+  }
+}
+
+// Micro-challenge generation
+export interface MicroChallengeGenerated {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string[];
+  duration: number;
+  category: string;
+  points: number;
+}
+
+export async function generateMicroChallenges(day: number, count: number = 3): Promise<MicroChallengeGenerated[]> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are a wellness coach creating micro-challenges for personal development. Each challenge should be quick, actionable, and beneficial for mental/physical wellbeing.`
+        },
+        {
+          role: "user",
+          content: `Generate ${count} micro-challenges for day ${day} of a wellness journey. 
+          
+          Respond in JSON format with an array called "challenges", each containing:
+          - title (engaging, action-oriented)
+          - description (what and why)
+          - instructions (array of simple steps)
+          - duration (minutes, keep under 15)
+          - category (mindfulness/energy/focus/emotional-wellness/productivity/stress-relief)
+          - points (10-50 based on difficulty)`
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 1000,
+      temperature: 0.8,
+    });
+
+    const data = JSON.parse(response.choices[0].message.content || '{"challenges": []}');
+    const challenges = data.challenges || [];
+    
+    return challenges.map((challenge: any, index: number) => ({
+      id: `challenge_${day}_${index}`,
+      title: challenge.title || "Mindful Moment",
+      description: challenge.description || "Take a moment for awareness",
+      instructions: challenge.instructions || ["Pause", "Breathe", "Observe"],
+      duration: challenge.duration || 5,
+      category: challenge.category || "mindfulness",
+      points: challenge.points || 10
+    }));
+  } catch (error) {
+    console.error("Error generating micro-challenges:", error);
+    return [
+      {
+        id: `challenge_${day}_0`,
+        title: "3-Minute Mindful Breathing",
+        description: "Practice focused breathing to reset your mental state",
+        instructions: [
+          "Sit comfortably with your back straight",
+          "Close your eyes or soften your gaze",
+          "Breathe naturally and count each exhale",
+          "When you reach 10, start over at 1"
+        ],
+        duration: 3,
+        category: "mindfulness",
+        points: 15
+      }
+    ];
+  }
+}
+
 export async function generateDailyAffirmation(day: number, userGoals?: string): Promise<string> {
   const systemPrompt = `You are an expert in creating powerful affirmations based on quantum consciousness principles and the teachings of Joe Dispenza and Neville Goddard.
 

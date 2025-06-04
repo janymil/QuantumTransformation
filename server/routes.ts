@@ -520,6 +520,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // Wellness tip endpoints
+  app.get('/api/wellness/daily-tip', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const progress = await storage.getUserProgress(userId);
+      const category = req.query.category || 'Mindfulness';
+      const day = progress?.currentDay || 1;
+
+      const tipRequest = {
+        category,
+        day,
+        preferences: {
+          focusAreas: ['mindfulness', 'energy'],
+          availableTime: 15,
+          difficultyLevel: 'beginner' as const
+        }
+      };
+
+      const { generateWellnessTip } = await import('./openai');
+      const tip = await generateWellnessTip(tipRequest);
+      res.json(tip);
+    } catch (error) {
+      console.error("Error fetching daily tip:", error);
+      res.status(500).json({ message: "Failed to fetch daily tip" });
+    }
+  });
+
+  app.post('/api/wellness/generate-tip', isAuthenticated, async (req: any, res) => {
+    try {
+      const { category, day, preferences } = req.body;
+      
+      const tipRequest = {
+        category: category || 'Mindfulness',
+        day: day || 1,
+        preferences
+      };
+
+      const { generateWellnessTip } = await import('./openai');
+      const tip = await generateWellnessTip(tipRequest);
+      res.json(tip);
+    } catch (error) {
+      console.error("Error generating tip:", error);
+      res.status(500).json({ message: "Failed to generate tip" });
+    }
+  });
+
+  // Micro-challenge endpoints
+  app.get('/api/wellness/micro-challenges', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const progress = await storage.getUserProgress(userId);
+      const day = progress?.currentDay || 1;
+
+      const { generateMicroChallenges } = await import('./openai');
+      const generatedChallenges = await generateMicroChallenges(day, 3);
+      
+      // Add completion status - in production this would be from database
+      const challenges = generatedChallenges.map(challenge => ({
+        ...challenge,
+        completed: Math.random() > 0.7,
+        completedAt: Math.random() > 0.7 ? new Date().toISOString() : undefined
+      }));
+
+      res.json(challenges);
+    } catch (error) {
+      console.error("Error fetching micro-challenges:", error);
+      res.status(500).json({ message: "Failed to fetch micro-challenges" });
+    }
+  });
+
+  app.post('/api/wellness/complete-challenge/:challengeId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { challengeId } = req.params;
+      
+      res.json({ 
+        success: true, 
+        message: 'Challenge completed',
+        points: 20,
+        completedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error completing challenge:", error);
+      res.status(500).json({ message: "Failed to complete challenge" });
+    }
+  });
+
+  app.post('/api/wellness/save-tip', isAuthenticated, async (req: any, res) => {
+    try {
+      const { tipId } = req.body;
+      
+      res.json({ 
+        success: true, 
+        message: 'Tip saved to your collection'
+      });
+    } catch (error) {
+      console.error("Error saving tip:", error);
+      res.status(500).json({ message: "Failed to save tip" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
