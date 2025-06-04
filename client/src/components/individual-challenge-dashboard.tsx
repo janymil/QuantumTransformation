@@ -14,7 +14,10 @@ import {
   BookOpen,
   TrendingUp,
   CheckCircle2,
-  Circle
+  Circle,
+  Lock,
+  Eye,
+  Star
 } from "lucide-react";
 import { CHALLENGE_TYPES } from "@shared/challenge-types";
 import { Link } from "wouter";
@@ -66,30 +69,46 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
   const streakCount = progress.streakCount || 0;
   const progressPercentage = (completedDays.length / 30) * 100;
 
-  // Calculate weekly progress
+  // Generate day content based on challenge type
+  const generateDayContent = (day: number) => {
+    return {
+      title: `Day ${day}: Quantum Consciousness Foundation`,
+      subtitle: "Master the fundamentals of quantum reality",
+      description: "Elevate your consciousness and align with quantum possibilities",
+      duration: "15-20 minutes",
+      topic: "Quantum Consciousness",
+      practice: "Quantum Meditation"
+    };
+  };
+
+  // Calculate weekly progress - 5 weeks with 7 days each (30 days total, last week has 2 days)
   const weeks = Array.from({ length: 5 }, (_, weekIndex) => {
     const weekNumber = weekIndex + 1;
-    const weekDays = Array.from({ length: 6 }, (_, dayIndex) => {
-      const dayNumber = weekIndex * 6 + dayIndex + 1;
+    const daysInWeek = weekNumber === 5 ? 2 : 7; // Last week has only 2 days (29, 30)
+    const weekDays = Array.from({ length: daysInWeek }, (_, dayIndex) => {
+      const dayNumber = weekIndex * 7 + dayIndex + 1;
       if (dayNumber > 30) return null;
       
       const isCompleted = completedDays.includes(dayNumber);
       const isCurrent = dayNumber === currentDay;
       const isUpcoming = dayNumber > currentDay;
+      const dayContent = generateDayContent(dayNumber);
       
       return {
         day: dayNumber,
         isCompleted,
         isCurrent,
         isUpcoming,
-        completion: completions.find((c: any) => c.day === dayNumber)
+        completion: completions.find((c: any) => c.day === dayNumber),
+        content: dayContent
       };
     }).filter(Boolean);
     
     return {
       week: weekNumber,
       days: weekDays,
-      completedCount: weekDays.filter(d => d?.isCompleted).length
+      completedCount: weekDays.filter(d => d?.isCompleted).length,
+      totalDays: daysInWeek
     };
   });
 
@@ -182,7 +201,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                 >
                   Week {week.week}
                   <Badge variant="secondary" className="ml-2">
-                    {week.completedCount}/6
+                    {week.completedCount}/{week.totalDays}
                   </Badge>
                 </Button>
               ))}
