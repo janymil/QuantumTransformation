@@ -22,6 +22,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint without auth to verify server is working
+  app.get('/api/test', async (req: any, res) => {
+    res.json({ message: "Server is working", timestamp: new Date().toISOString() });
+  });
+
   // User progress routes
   app.get('/api/progress', isAuthenticated, async (req: any, res) => {
     try {

@@ -18,8 +18,7 @@ export default function Dashboard() {
 
   const { data: progressData, isLoading, error } = useQuery({
     queryKey: ["/api/progress"],
-    retry: false,
-    staleTime: 0,
+    retry: 1,
     enabled: true,
   });
 
@@ -72,13 +71,14 @@ export default function Dashboard() {
     lastActivityDate: null
   };
 
-  // Handle the case where progressData is null (unauthorized) or empty
-  const progress = progressData?.progress || defaultProgress;
-  const completions = progressData?.completions || [];
-  const achievements = progressData?.achievements || [];
-  const currentDay = progress?.currentDay || 1;
-  const completedDays = (progress?.completedDays as number[]) || [];
-  const streakCount = progress?.streakCount || 0;
+  // Always show dashboard content with meaningful defaults
+  const progress = (progressData as any)?.progress || defaultProgress;
+  const completions = (progressData as any)?.completions || [];
+  const achievements = (progressData as any)?.achievements || [];
+  
+  const currentDay = (progress as any)?.currentDay || 1;
+  const completedDays = ((progress as any)?.completedDays as number[]) || [];
+  const streakCount = (progress as any)?.streakCount || 0;
   const currentContent = challengeContent.find(c => c.day === currentDay) || challengeContent[0];
 
   const completionPercentage = Math.round((completedDays.length / 30) * 100);
