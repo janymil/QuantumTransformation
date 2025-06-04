@@ -28,6 +28,7 @@ import { challengeContent } from "@/data/challenge-content";
 interface JournalEntry {
   id: number;
   day: number;
+  challengeType: string;
   experience: string;
   insights: string;
   intention: string;
@@ -46,11 +47,12 @@ export default function Journal() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedChallengeType, setSelectedChallengeType] = useState<string | null>(null);
   const [experience, setExperience] = useState("");
   const [insights, setInsights] = useState("");
   const [intention, setIntention] = useState("");
   const [filterDay, setFilterDay] = useState<string>("all");
-
+  const [filterChallengeType, setFilterChallengeType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Add debugging for journal data

@@ -691,6 +691,7 @@ export default function ChallengeDay() {
         onClose={() => setShowJournal(false)}
         day={currentDay}
         title={content.title}
+        challengeType={challengeType}
       />
 
       <AIAssistant

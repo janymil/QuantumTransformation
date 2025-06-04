@@ -20,6 +20,7 @@ interface JournalModalProps {
   onClose: () => void;
   day: number;
   title?: string;
+  challengeType?: string;
 }
 
 interface JournalEntry {
@@ -36,7 +37,8 @@ export default function JournalModal({
   isOpen, 
   onClose, 
   day, 
-  title 
+  title,
+  challengeType = "general_quantum"
 }: JournalModalProps) {
   const { toast } = useToast();
   const [experience, setExperience] = useState("");
@@ -61,6 +63,7 @@ export default function JournalModal({
       console.log("Journal Modal - Saving entry for day:", day, "with data:", data);
       const result = await apiRequest("POST", "/api/journal", {
         day,
+        challengeType,
         ...data,
       });
       console.log("Journal Modal - Save result:", result);
