@@ -39,6 +39,9 @@ export default function ChallengeDay() {
   const [showAI, setShowAI] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [celebrationType, setCelebrationType] = useState<'day_completed' | 'streak_milestone' | 'week_completed' | 'challenge_started' | 'level_up'>('day_completed');
 
   // Get challenge type from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -279,11 +282,24 @@ export default function ChallengeDay() {
         rating: data.rating,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/progress"] });
       setIsCompleted(true);
+      
+      // Trigger celebration animation
+      setCelebrationType('day_completed');
+      setShowCelebration(true);
+      
+      // Check for milestone celebrations
+      if (currentDay % 7 === 0) {
+        setTimeout(() => {
+          setCelebrationType('week_completed');
+          setShowCelebration(true);
+        }, 2000);
+      }
+      
       toast({
-        title: "Challenge Complete! 🎉",
+        title: "Challenge Complete!",
         description: `Great job on completing Day ${currentDay}. You're building powerful momentum!`,
       });
     },
@@ -661,6 +677,14 @@ export default function ChallengeDay() {
         </Card>
       </div>
 
+        {/* Video Meditation Guide */}
+        <div className="mt-8">
+          <VideoMeditationGuide 
+            challengeType={challengeType}
+            day={currentDay}
+          />
+        </div>
+
       {/* Modals */}
       <JournalModal 
         isOpen={showJournal}
@@ -675,6 +699,26 @@ export default function ChallengeDay() {
         day={currentDay}
         topic={content.topic}
         context={content.title}
+      />
+
+      {/* Progress Celebration */}
+      <ProgressCelebration
+        isVisible={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        achievementType={celebrationType}
+        details={{
+          day: currentDay,
+          week: Math.ceil(currentDay / 7),
+          challengeName: challengeType.replace('_', ' ').toUpperCase()
+        }}
+      />
+
+      {/* Contextual Tutorial */}
+      <ContextualTutorial
+        isVisible={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        tutorialType="challenge_start"
+        onComplete={() => setShowTutorial(false)}
       />
     </div>
   );
