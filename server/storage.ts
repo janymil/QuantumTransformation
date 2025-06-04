@@ -54,6 +54,9 @@ export interface IStorage {
   updateJournalEntry(userId: string, day: number, updates: Partial<InsertJournalEntry>): Promise<JournalEntry>;
   getJournalEntry(userId: string, day: number): Promise<JournalEntry | undefined>;
   getUserJournalEntries(userId: string): Promise<JournalEntry[]>;
+  getJournalEntriesByChallenge(userId: string, challengeType: string): Promise<JournalEntry[]>;
+  getJournalEntriesForActiveChallenges(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]>;
+  getArchivedJournalEntries(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]>;
   
   // Saved phrases operations
   createSavedPhrase(phrase: InsertSavedPhrase): Promise<SavedPhrase>;
@@ -221,6 +224,67 @@ export class DatabaseStorage implements IStorage {
       .from(journalEntries)
       .where(eq(journalEntries.userId, userId))
       .orderBy(desc(journalEntries.day));
+  }
+
+  async getJournalEntriesByChallenge(userId: string, challengeType: string): Promise<JournalEntry[]> {
+    return await db
+      .select()
+      .from(journalEntries)
+      .where(and(
+        eq(journalEntries.userId, userId),
+        eq(journalEntries.challengeType, challengeType)
+      ))
+      .orderBy(desc(journalEntries.day));
+  }
+
+  async getJournalEntriesForActiveChallenges(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]> {
+    // Get active challenges
+    const activeChallenges = await db
+      .select()
+      .from(userProgress)
+      .where(eq(userProgress.userId, userId));
+    
+    const result = [];
+    for (const progress of activeChallenges) {
+      const entries = await this.getJournalEntriesByChallenge(userId, progress.challengeType);
+      if (entries.length > 0) {
+        result.push({
+          challengeType: progress.challengeType,
+          entries
+        });
+      }
+    }
+    return result;
+  }
+
+  async getArchivedJournalEntries(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]> {
+    // Get all journal entries
+    const allEntries = await this.getUserJournalEntries(userId);
+    
+    // Get active challenge types
+    const activeChallenges = await db
+      .select()
+      .from(userProgress)
+      .where(eq(userProgress.userId, userId));
+    
+    const activeChallengeTypes = new Set(activeChallenges.map(p => p.challengeType));
+    
+    // Group archived entries by challenge type
+    const archivedByType = new Map<string, JournalEntry[]>();
+    
+    for (const entry of allEntries) {
+      if (!activeChallengeTypes.has(entry.challengeType)) {
+        if (!archivedByType.has(entry.challengeType)) {
+          archivedByType.set(entry.challengeType, []);
+        }
+        archivedByType.get(entry.challengeType)!.push(entry);
+      }
+    }
+    
+    return Array.from(archivedByType.entries()).map(([challengeType, entries]) => ({
+      challengeType,
+      entries
+    }));
   }
 
   // Saved phrases operations

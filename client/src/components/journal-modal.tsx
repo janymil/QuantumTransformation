@@ -46,9 +46,9 @@ export default function JournalModal({
   const [intention, setIntention] = useState("");
 
   const { data: existingEntry, isLoading } = useQuery<JournalEntry>({
-    queryKey: ["/api/journal", day],
+    queryKey: ["/api/journal", day, challengeType],
     queryFn: async () => {
-      const response = await fetch(`/api/journal?day=${day}`, {
+      const response = await fetch(`/api/journal?day=${day}&challengeType=${challengeType}`, {
         credentials: "include",
       });
       if (response.status === 404) return null;

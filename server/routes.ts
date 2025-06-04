@@ -231,6 +231,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get journal entries for active challenges (only challenges with entries)
+  app.get('/api/journal/active', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const activeChallengeEntries = await storage.getJournalEntriesForActiveChallenges(userId);
+      res.json(activeChallengeEntries);
+    } catch (error) {
+      console.error("Error fetching active challenge journal entries:", error);
+      res.status(500).json({ message: "Failed to fetch active challenge journal entries" });
+    }
+  });
+
+  // Get archived journal entries (from quit challenges)
+  app.get('/api/journal/archived', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const archivedEntries = await storage.getArchivedJournalEntries(userId);
+      res.json(archivedEntries);
+    } catch (error) {
+      console.error("Error fetching archived journal entries:", error);
+      res.status(500).json({ message: "Failed to fetch archived journal entries" });
+    }
+  });
+
+  // Get journal entries by specific challenge type
+  app.get('/api/journal/challenge/:challengeType', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType } = req.params;
+      const entries = await storage.getJournalEntriesByChallenge(userId, challengeType);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching journal entries by challenge:", error);
+      res.status(500).json({ message: "Failed to fetch journal entries by challenge" });
+    }
+  });
+
   app.post('/api/journal/analyze', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
