@@ -672,6 +672,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get available challenge types
+  app.get('/api/challenges/types', async (req, res) => {
+    try {
+      const { getAllChallengeTypes } = await import("@shared/challenge-types");
+      const challengeTypes = getAllChallengeTypes();
+      res.json(challengeTypes);
+    } catch (error) {
+      console.error("Error fetching challenge types:", error);
+      res.status(500).json({ message: "Failed to fetch challenge types" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
