@@ -15,8 +15,21 @@ import {
   Trophy,
   Target,
   BookOpen,
-  Brain
+  Brain,
+  X,
+  AlertTriangle
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ChallengesPage() {
   const { user, isAuthenticated } = useAuth();
@@ -63,6 +76,33 @@ export default function ChallengesPage() {
       toast({
         title: "Error",
         description: "Failed to start challenge. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Quit challenge mutation
+  const quitChallengeMutation = useMutation({
+    mutationFn: async (challengeType: string) => {
+      return await apiRequest(`/api/challenges/quit`, {
+        method: 'DELETE',
+        body: JSON.stringify({ challengeType }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: (data: any, challengeType: string) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/progress/all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/challenges/user-challenges'] });
+      
+      toast({
+        title: "Challenge Quit",
+        description: `You have left the challenge. All progress has been deleted.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to quit challenge. Please try again.",
         variant: "destructive",
       });
     }
