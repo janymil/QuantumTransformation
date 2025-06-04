@@ -22,17 +22,34 @@ export default function Dashboard() {
     enabled: true,
   });
 
+  // Add detailed logging for debugging
   useEffect(() => {
-    if (error && isUnauthorizedError(error as Error)) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
+    console.log("Dashboard - Progress Data:", progressData);
+    console.log("Dashboard - Is Loading:", isLoading);
+    console.log("Dashboard - Error:", error);
+  }, [progressData, isLoading, error]);
+
+  useEffect(() => {
+    if (error) {
+      console.error("Dashboard error:", error);
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      } else {
+        // Show other errors to user
+        toast({
+          title: "Error loading data",
+          description: `Failed to load progress: ${(error as Error).message}`,
+          variant: "destructive",
+        });
+      }
     }
   }, [error, toast]);
 

@@ -48,11 +48,20 @@ export default function Journal() {
   const [insights, setInsights] = useState("");
   const [intention, setIntention] = useState("");
   const [filterDay, setFilterDay] = useState<string>("all");
+
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: entries, isLoading: entriesLoading } = useQuery<JournalEntry[]>({
+  // Add debugging for journal data
+  const { data: entries, isLoading: entriesLoading, error: entriesError } = useQuery<JournalEntry[]>({
     queryKey: ["/api/journal"],
+    retry: 1,
   });
+
+  useEffect(() => {
+    console.log("Journal - Entries Data:", entries);
+    console.log("Journal - Is Loading:", entriesLoading);
+    console.log("Journal - Error:", entriesError);
+  }, [entries, entriesLoading, entriesError]);
 
   const { data: analysis, isLoading: analysisLoading } = useQuery<JournalAnalysis>({
     queryKey: ["/api/journal/analyze"],
