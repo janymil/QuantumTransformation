@@ -45,49 +45,115 @@ export default function ChallengeDay() {
   const generateChallengeContent = (day: number, type: string) => {
     const contentMap: Record<string, any> = {
       general_quantum: {
+        day,
         title: `Day ${day}: Quantum Consciousness Foundation`,
         description: "Master the fundamentals of quantum reality and consciousness elevation",
-        practiceTitle: "Quantum Meditation",
-        practiceDescription: "A guided meditation to elevate your consciousness and align with quantum possibilities",
+        practice: {
+          name: "Quantum Meditation",
+          description: "A guided meditation to elevate your consciousness and align with quantum possibilities",
+          steps: [
+            "Find a quiet space and sit comfortably with your spine straight",
+            "Begin with heart coherence breathing - 5 seconds in, 5 seconds out",
+            "Cultivate elevated emotions of gratitude, love, and joy",
+            "Visualize your future self living your desired reality",
+            "Feel the emotions of having already achieved your goals",
+            "Connect with the quantum field of infinite possibilities",
+            "Set your intention for the day with elevated energy"
+          ]
+        },
         keyPrinciples: ["Consciousness Elevation", "Quantum Field Access", "Reality Creation", "Mind-Matter Interface"],
         techniques: ["Heart Coherence Breathing", "Elevated Emotion Cultivation", "Future Self Visualization", "Quantum Field Connection"],
-        affirmation: "I am the creator of my reality, aligned with infinite possibilities and elevated consciousness."
+        affirmation: "I am the creator of my reality, aligned with infinite possibilities and elevated consciousness.",
+        quote: "The moment you change your energy, you change your life."
       },
       money_blocks_clearing: {
+        day,
         title: `Day ${day}: Money Blocks Clearing`,
         description: "Identify and dissolve limiting beliefs and subconscious blocks around money and abundance",
-        practiceTitle: "Block Clearing Meditation",
-        practiceDescription: "A powerful session to uncover and release deep-rooted money blocks and limiting beliefs",
+        practice: {
+          name: "Block Clearing Meditation",
+          description: "A powerful session to uncover and release deep-rooted money blocks and limiting beliefs",
+          steps: [
+            "Create a safe, sacred space for deep inner work",
+            "Begin with grounding breaths to center yourself",
+            "Scan your body for tension or resistance around money topics",
+            "Bring to mind your earliest money memories and observe without judgment",
+            "Notice what limiting beliefs arise about money and worthiness",
+            "Send love and compassion to these wounded parts of yourself",
+            "Visualize golden light dissolving these blocks and limitations",
+            "Affirm your natural worthiness and right to abundance"
+          ]
+        },
         keyPrinciples: ["Block Identification", "Belief Archaeology", "Trauma Healing", "Subconscious Reprogramming"],
         techniques: ["Shadow Work Exploration", "Belief Identification", "Energy Clearing", "Subconscious Reprogramming"],
-        affirmation: "I release all limiting beliefs about money and embrace my natural abundance and worth."
+        affirmation: "I release all limiting beliefs about money and embrace my natural abundance and worth.",
+        quote: "Your relationship with money is a reflection of your relationship with yourself."
       },
       money_manifestation: {
+        day,
         title: `Day ${day}: Abundance Manifestation`,
         description: "Cultivate wealth consciousness and attract financial abundance through elevated states",
-        practiceTitle: "Abundance Meditation",
-        practiceDescription: "A manifestation practice to align with abundance and attract financial prosperity",
+        practice: {
+          name: "Abundance Meditation",
+          description: "A manifestation practice to align with abundance and attract financial prosperity",
+          steps: [
+            "Sit in meditation posture and connect with your heart center",
+            "Breathe deeply and feel gratitude for all current abundance",
+            "Visualize yourself living in complete financial freedom",
+            "Feel the emotions of having unlimited resources",
+            "See money flowing to you easily and effortlessly",
+            "Embody the energy of someone who is naturally abundant",
+            "Set intentions for specific financial goals with elevated emotion"
+          ]
+        },
         keyPrinciples: ["Abundance Mindset", "Wealth Consciousness", "Financial Alignment", "Prosperity Vibration"],
         techniques: ["Abundance Visualization", "Gratitude Amplification", "Wealth Frequency Attunement", "Prosperity Anchoring"],
-        affirmation: "I am a powerful money magnet, attracting abundance with ease and grace."
+        affirmation: "I am a powerful money magnet, attracting abundance with ease and grace.",
+        quote: "Abundance is not something we acquire, it is something we tune into."
       },
       quantum_health: {
+        day,
         title: `Day ${day}: Quantum Health Transformation`,
         description: "Harness the power of consciousness to heal and transform your physical body",
-        practiceTitle: "Healing Meditation",
-        practiceDescription: "A transformational practice to activate your body's natural healing intelligence",
+        practice: {
+          name: "Healing Meditation",
+          description: "A transformational practice to activate your body's natural healing intelligence",
+          steps: [
+            "Lie down comfortably and scan your entire body",
+            "Send breath and awareness to any areas needing healing",
+            "Visualize healing light flowing through every cell",
+            "Communicate with your body's innate intelligence",
+            "See yourself in perfect health and vitality",
+            "Feel gratitude for your body's natural healing abilities",
+            "Program new instructions for optimal health and wellness"
+          ]
+        },
         keyPrinciples: ["Self-Healing", "Biological Transformation", "Mind-Body Unity", "Cellular Regeneration"],
         techniques: ["Body Scan Healing", "Cellular Communication", "Energy Medicine", "Biological Reprogramming"],
-        affirmation: "My body knows how to heal, and I trust its infinite wisdom and regenerative power."
+        affirmation: "My body knows how to heal, and I trust its infinite wisdom and regenerative power.",
+        quote: "The body is the servant of the mind. It obeys the operations of the mind."
       },
       quantum_relationships: {
+        day,
         title: `Day ${day}: Heart-Centered Connection`,
         description: "Develop authentic, conscious relationships through heart coherence and love",
-        practiceTitle: "Heart Coherence Practice",
-        practiceDescription: "A heart-opening practice to cultivate love, compassion, and authentic connection",
+        practice: {
+          name: "Heart Coherence Practice",
+          description: "A heart-opening practice to cultivate love, compassion, and authentic connection",
+          steps: [
+            "Place your hand on your heart and breathe deeply",
+            "Focus your attention on your heart center",
+            "Cultivate feelings of appreciation and gratitude",
+            "Send love to yourself unconditionally",
+            "Expand this love to include your relationships",
+            "Visualize harmonious connections with all people",
+            "Set intentions for authentic, loving communication"
+          ]
+        },
         keyPrinciples: ["Heart Intelligence", "Authentic Love", "Conscious Communication", "Energetic Resonance"],
         techniques: ["Heart Coherence Breathing", "Love Field Activation", "Compassion Cultivation", "Authentic Expression"],
-        affirmation: "I am love, I give love, and I attract loving, authentic relationships into my life."
+        affirmation: "I am love, I give love, and I attract loving, authentic relationships into my life.",
+        quote: "Love is the bridge between two hearts."
       }
     };
 
