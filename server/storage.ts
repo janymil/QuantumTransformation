@@ -7,6 +7,9 @@ import {
   userAchievements,
   aiChatSessions,
   userSettings,
+  spacedRepetitionConcepts,
+  spacedRepetitionReviews,
+  spacedRepetitionSchedule,
   type User,
   type UpsertUser,
   type UserProgress,
@@ -71,6 +74,9 @@ export interface IStorage {
   
   // Multi-challenge operations
   getUserChallenges(userId: string): Promise<UserProgress[]>;
+  
+  // Quit challenge operations
+  quitChallenge(userId: string, challengeType: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -314,6 +320,46 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userProgress.userId, userId))
       .orderBy(userProgress.createdAt);
     return challenges;
+  }
+
+  async quitChallenge(userId: string, challengeType: string): Promise<void> {
+    // Delete all data related to this specific challenge for the user
+    await db.transaction(async (tx) => {
+      // Delete user progress for this challenge
+      await tx.delete(userProgress)
+        .where(and(
+          eq(userProgress.userId, userId),
+          eq(userProgress.challengeType, challengeType)
+        ));
+
+      // Delete challenge completions for this challenge
+      await tx.delete(challengeCompletions)
+        .where(and(
+          eq(challengeCompletions.userId, userId),
+          eq(challengeCompletions.challengeType, challengeType)
+        ));
+
+      // Delete journal entries for this challenge
+      await tx.delete(journalEntries)
+        .where(and(
+          eq(journalEntries.userId, userId),
+          eq(journalEntries.challengeType, challengeType)
+        ));
+
+      // Delete spaced repetition schedule for this challenge
+      await tx.delete(spacedRepetitionSchedule)
+        .where(and(
+          eq(spacedRepetitionSchedule.userId, userId),
+          eq(spacedRepetitionSchedule.challengeType, challengeType)
+        ));
+
+      // Delete spaced repetition concepts for this challenge
+      await tx.delete(spacedRepetitionConcepts)
+        .where(and(
+          eq(spacedRepetitionConcepts.userId, userId),
+          eq(spacedRepetitionConcepts.challengeType, challengeType)
+        ));
+    });
   }
 }
 
