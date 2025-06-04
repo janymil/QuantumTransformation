@@ -274,6 +274,16 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return settings;
   }
+
+  // Multi-challenge operations
+  async getUserChallenges(userId: string): Promise<UserProgress[]> {
+    const challenges = await db
+      .select()
+      .from(userProgress)
+      .where(eq(userProgress.userId, userId))
+      .orderBy(userProgress.createdAt);
+    return challenges;
+  }
 }
 
 export const storage = new DatabaseStorage();
