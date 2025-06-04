@@ -83,11 +83,13 @@ const achievementDefinitions = {
 
 export default function Progress() {
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [timeRange, setTimeRange] = useState<"week" | "month" | "all">("month");
 
   const { data: progressData, isLoading } = useQuery({
     queryKey: ["/api/progress"],
     retry: false,
+    enabled: isAuthenticated && !!user,
   });
 
   const { data: completions } = useQuery({
@@ -99,6 +101,7 @@ export default function Progress() {
       if (!response.ok) throw new Error("Failed to fetch completions");
       return response.json();
     },
+    enabled: isAuthenticated && !!user,
   });
 
   useEffect(() => {
@@ -115,7 +118,7 @@ export default function Progress() {
     }
   }, [progressData, isLoading, toast]);
 
-  if (isLoading) {
+  if (authLoading || (isAuthenticated && isLoading)) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
