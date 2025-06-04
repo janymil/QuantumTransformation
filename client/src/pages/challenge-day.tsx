@@ -26,6 +26,9 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { challengeContent } from "@/data/challenge-content";
+import VideoMeditationGuide from "@/components/video-meditation-guide";
+import ProgressCelebration from "@/components/progress-celebration";
+import ContextualTutorial from "@/components/contextual-tutorial";
 
 export default function ChallengeDay() {
   const { day } = useParams<{ day: string }>();

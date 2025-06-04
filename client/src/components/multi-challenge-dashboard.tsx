@@ -14,7 +14,8 @@ import {
   Trophy,
   Clock,
   X,
-  AlertTriangle
+  AlertTriangle,
+  BookOpen
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -241,8 +242,15 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
                               Continue Day {currentDay}
                             </Button>
                           </Link>
+                          <Link href={`/challenge-progress?type=${progress.challengeType}`}>
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Target className="w-4 h-4 mr-2" />
+                              View Progress
+                            </Button>
+                          </Link>
                           <Link href={`/journal?challenge=${progress.challengeType}`}>
                             <Button variant="outline" size="sm" className="w-full">
+                              <BookOpen className="w-4 h-4 mr-2" />
                               View Journal
                             </Button>
                           </Link>
