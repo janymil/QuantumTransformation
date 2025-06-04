@@ -194,10 +194,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/journal', isAuthenticated, async (req: any, res) => {
+    console.log("=== JOURNAL POST REQUEST RECEIVED ===");
+    console.log("Method:", req.method);
+    console.log("URL:", req.url);
+    console.log("Headers:", req.headers);
+    
     try {
       const userId = req.user.claims.sub;
       console.log("Journal POST - UserId:", userId);
       console.log("Journal POST - Request body:", req.body);
+      console.log("Journal POST - Body keys:", Object.keys(req.body || {}));
       
       const entryData = insertJournalEntrySchema.parse({
         ...req.body,
