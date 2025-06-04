@@ -77,7 +77,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
       </div>
 
       <div className="space-y-4">
-        {allProgress.map((progress: any) => {
+        {allProgress.map((progress: any, index: number) => {
           const challengeType = CHALLENGE_TYPES[progress.challengeType];
           const isExpanded = expandedChallenges.includes(progress.challengeType);
           const challengeCompletions = completions.filter(
@@ -87,7 +87,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
           const currentDay = progress.currentDay || 1;
 
           return (
-            <Card key={progress.challengeType} className="overflow-hidden">
+            <Card key={`${progress.challengeType}-${progress.id || index}`} className="overflow-hidden">
               <Collapsible open={isExpanded} onOpenChange={() => toggleChallenge(progress.challengeType)}>
                 <CollapsibleTrigger asChild>
                   <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">

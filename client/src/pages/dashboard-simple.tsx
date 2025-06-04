@@ -30,7 +30,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Welcome back, {user?.firstName || "Transformer"}!
+                Welcome back, {(user as any)?.firstName || "Transformer"}!
               </h1>
               <p className="text-muted-foreground mt-1">
                 Manage your active quantum consciousness challenges

@@ -48,15 +48,15 @@ export default function ChallengesPage() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/challenges/user-challenges'] });
       queryClient.invalidateQueries({ queryKey: ['/api/progress'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/progress/all'] });
       toast({
         title: "Challenge Started!",
-        description: "Redirecting you to day 1...",
+        description: "You can now access this challenge from your dashboard.",
       });
       
-      // Automatically navigate to day 1 of the selected challenge
+      // Navigate back to dashboard to show the new challenge
       setTimeout(() => {
-        const challengeType = data.progress?.challengeType || selectedChallenge;
-        setLocation(`/challenge/1?type=${challengeType}`);
+        setLocation('/');
       }, 1500);
     },
     onError: () => {
