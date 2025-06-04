@@ -45,9 +45,9 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
     );
   }
 
-  const allProgress = progressData?.allProgress || [];
-  const completions = progressData?.completions || [];
-  const achievements = progressData?.achievements || [];
+  const allProgress = (progressData as any)?.allProgress || [];
+  const completions = (progressData as any)?.completions || [];
+  const achievements = (progressData as any)?.achievements || [];
 
   if (allProgress.length === 0) {
     return (
@@ -77,11 +77,11 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
       </div>
 
       <div className="space-y-4">
-        {allProgress.map((progress) => {
+        {allProgress.map((progress: any) => {
           const challengeType = CHALLENGE_TYPES[progress.challengeType];
           const isExpanded = expandedChallenges.includes(progress.challengeType);
           const challengeCompletions = completions.filter(
-            (c) => c.challengeType === progress.challengeType
+            (c: any) => c.challengeType === progress.challengeType
           );
           const progressPercentage = (challengeCompletions.length / 30) * 100;
           const currentDay = progress.currentDay || 1;
@@ -201,7 +201,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
                         <div className="grid grid-cols-7 gap-1">
                           {Array.from({ length: 30 }, (_, i) => {
                             const day = i + 1;
-                            const isCompleted = challengeCompletions.some(c => c.day === day);
+                            const isCompleted = challengeCompletions.some((c: any) => c.day === day);
                             const isCurrent = day === currentDay;
                             
                             return (
@@ -242,7 +242,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {achievements.slice(0, 5).map((achievement) => (
+              {achievements.slice(0, 5).map((achievement: any) => (
                 <Badge key={achievement.id} variant="secondary" className="px-3 py-1">
                   🏆 {achievement.achievementId.replace(/_/g, ' ').toUpperCase()}
                 </Badge>
