@@ -684,6 +684,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Spaced Repetition API Endpoints
+  
+  // Get concepts due for review today
+  app.get('/api/spaced-repetition/due-reviews', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const challengeType = req.query.challengeType as string;
+      
+      const { getConceptsDueForReview } = await import("./spaced-repetition");
+      const dueReviews = await getConceptsDueForReview(userId, challengeType);
+      
+      res.json(dueReviews);
+    } catch (error) {
+      console.error("Error fetching due reviews:", error);
+      res.status(500).json({ message: "Failed to fetch due reviews" });
+    }
+  });
+
+  // Record a spaced repetition review
+  app.post('/api/spaced-repetition/record-review', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { conceptId, quality, responseTime, wasSuccessful } = req.body;
+
+      if (!conceptId || quality === undefined) {
+        return res.status(400).json({ message: "Concept ID and quality are required" });
+      }
+
+      const { recordReview, markReviewCompleted } = await import("./spaced-repetition");
+      
+      await recordReview(userId, conceptId, {
+        quality: Math.max(0, Math.min(5, quality)),
+        responseTime: responseTime || 0,
+        wasSuccessful: wasSuccessful !== false
+      });
+
+      await markReviewCompleted(userId, conceptId);
+
+      res.json({ message: "Review recorded successfully" });
+    } catch (error) {
+      console.error("Error recording review:", error);
+      res.status(500).json({ message: "Failed to record review" });
+    }
+  });
+
+  // Get mastery statistics
+  app.get('/api/spaced-repetition/mastery-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const challengeType = req.query.challengeType as string;
+
+      const { getMasteryStats } = await import("./spaced-repetition");
+      const stats = await getMasteryStats(userId, challengeType);
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching mastery stats:", error);
+      res.status(500).json({ message: "Failed to fetch mastery statistics" });
+    }
+  });
+
+  // Auto-create concepts from daily content (triggered when completing a challenge day)
+  app.post('/api/spaced-repetition/create-from-day', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType, day, dayContent } = req.body;
+
+      if (!challengeType || !day || !dayContent) {
+        return res.status(400).json({ message: "Challenge type, day, and content are required" });
+      }
+
+      const { autoCreateConceptsFromDay } = await import("./spaced-repetition");
+      const concepts = await autoCreateConceptsFromDay(userId, challengeType, day, dayContent);
+
+      res.json({ 
+        message: `Created ${concepts.length} concepts for spaced repetition`,
+        concepts: concepts.map(c => ({ id: c.id, title: c.conceptTitle }))
+      });
+    } catch (error) {
+      console.error("Error creating concepts from day:", error);
+      res.status(500).json({ message: "Failed to create concepts for spaced repetition" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

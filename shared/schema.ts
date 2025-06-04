@@ -9,6 +9,7 @@ import {
   integer,
   boolean,
   date,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -122,6 +123,48 @@ export const userSettings = pgTable("user_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Spaced Repetition System Tables
+export const spacedRepetitionConcepts = pgTable("spaced_repetition_concepts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  challengeType: varchar("challenge_type").notNull(),
+  conceptKey: varchar("concept_key").notNull(), // e.g., "day_1_meditation", "visualization_technique_1"
+  conceptTitle: varchar("concept_title").notNull(),
+  conceptContent: text("concept_content").notNull(),
+  difficultyLevel: integer("difficulty_level").default(1), // 1-5 scale
+  sourceDay: integer("source_day").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const spacedRepetitionReviews = pgTable("spaced_repetition_reviews", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  conceptId: integer("concept_id").notNull().references(() => spacedRepetitionConcepts.id),
+  reviewDate: timestamp("review_date").notNull(),
+  nextReviewDate: timestamp("next_review_date").notNull(),
+  interval: integer("interval").notNull(), // Days until next review
+  easinessFactor: real("easiness_factor").default(2.5), // SM-2 algorithm factor
+  repetitionNumber: integer("repetition_number").default(0),
+  quality: integer("quality"), // 0-5 scale (user's recall quality)
+  responseTime: integer("response_time"), // Seconds taken to recall
+  wasSuccessful: boolean("was_successful"),
+  reviewType: varchar("review_type").default("scheduled"), // scheduled, manual, triggered
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const spacedRepetitionSchedule = pgTable("spaced_repetition_schedule", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  conceptId: integer("concept_id").notNull().references(() => spacedRepetitionConcepts.id),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  isCompleted: boolean("is_completed").default(false),
+  priority: integer("priority").default(1), // 1-5 scale
+  challengeType: varchar("challenge_type").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
 // Schema types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -146,6 +189,15 @@ export type AiChatSession = typeof aiChatSessions.$inferSelect;
 
 export type InsertUserSettings = typeof userSettings.$inferInsert;
 export type UserSettings = typeof userSettings.$inferSelect;
+
+export type InsertSpacedRepetitionConcept = typeof spacedRepetitionConcepts.$inferInsert;
+export type SpacedRepetitionConcept = typeof spacedRepetitionConcepts.$inferSelect;
+
+export type InsertSpacedRepetitionReview = typeof spacedRepetitionReviews.$inferInsert;
+export type SpacedRepetitionReview = typeof spacedRepetitionReviews.$inferSelect;
+
+export type InsertSpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferInsert;
+export type SpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferSelect;
 
 // Insert schemas
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true });
