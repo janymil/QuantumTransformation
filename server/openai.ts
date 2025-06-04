@@ -314,14 +314,28 @@ Required JSON structure:
   }
 }
 
-export async function generateDailyAffirmation(day: number, userGoals?: string): Promise<string> {
-  const systemPrompt = `Generate a powerful, personalized daily affirmation based on quantum consciousness principles and the teachings of Joe Dispenza and Neville Goddard. The affirmation should be:
-- Present tense and positive
-- Emotionally resonant
-- Aligned with quantum field principles
-- Inspiring and empowering`;
+export async function generatePersonalizedAffirmation(request: PersonalizedAffirmationRequest): Promise<string> {
+  const { day, userGoals, currentChallenges, recentInsights, mood, progressLevel } = request;
 
-  const userPrompt = `Create a daily affirmation for Day ${day} of the quantum challenge.${userGoals ? ` The user's goals: ${userGoals}` : ''}`;
+  const systemPrompt = `You are an expert in creating personalized affirmations based on quantum consciousness principles. Create affirmations that:
+- Address the user's specific current state and challenges
+- Align with their goals and recent insights
+- Use present-tense, empowering language
+- Incorporate quantum consciousness concepts
+- Feel authentic and believable to the user
+- Support their current mood and energy level
+
+The affirmation should be 2-3 sentences and feel deeply personal to their journey.`;
+
+  const userPrompt = `
+Day ${day} Context:
+- User Goals: ${userGoals || 'consciousness expansion'}
+- Current Challenges: ${currentChallenges?.join(', ') || 'none specified'}
+- Recent Insights: ${recentInsights?.join(', ') || 'developing awareness'}
+- Mood Level: ${mood || 'balanced'}/10
+- Progress Level: ${progressLevel || 'beginning'}
+
+Create a personalized affirmation that speaks directly to their current state and supports their quantum consciousness journey.`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -330,13 +344,47 @@ export async function generateDailyAffirmation(day: number, userGoals?: string):
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.8,
       max_tokens: 150,
+      temperature: 0.8,
     });
 
-    return response.choices[0].message.content || "I am the conscious creator of my reality, and I choose thoughts that serve my highest good.";
+    return response.choices[0].message.content || "I am the conscious creator of my reality, transforming my life with each mindful choice I make.";
+  } catch (error) {
+    console.error("Error generating personalized affirmation:", error);
+    return "I am the conscious creator of my reality, transforming my life with each mindful choice I make.";
+  }
+}
+
+export async function generateDailyAffirmation(day: number, userGoals?: string): Promise<string> {
+  const systemPrompt = `You are an expert in creating powerful affirmations based on quantum consciousness principles and the teachings of Joe Dispenza and Neville Goddard.
+
+Create a personalized daily affirmation that:
+- Aligns with quantum consciousness concepts
+- Feels empowering and believable
+- Uses present-tense language
+- Incorporates visualization elements
+- Is specific to the day's focus in the 30-day challenge
+
+Keep the affirmation between 2-4 sentences and make it feel personal and transformative.`;
+
+  const userPrompt = `Day ${day} of the quantum consciousness challenge.${userGoals ? ` User's personal goals: ${userGoals}` : ''}
+
+Create a powerful daily affirmation for this specific day.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_tokens: 200,
+      temperature: 0.7,
+    });
+
+    return response.choices[0].message.content || "I am the conscious creator of my reality, and I choose to manifest my highest potential with every thought and action.";
   } catch (error) {
     console.error("Error generating affirmation:", error);
-    return "I am the conscious creator of my reality, and I choose thoughts that serve my highest good.";
+    return "I am the conscious creator of my reality, and I choose to manifest my highest potential with every thought and action.";
   }
 }

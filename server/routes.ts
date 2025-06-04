@@ -2,7 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { generateAIExplanation, analyzeJournalEntries, generateDailyAffirmation } from "./openai";
+import { 
+  generateAIExplanation, 
+  analyzeJournalEntries, 
+  generateDailyAffirmation,
+  generatePersonalizedCoaching,
+  generateMicroLearningContent,
+  generatePersonalizedAffirmation
+} from "./openai";
 import { insertUserProgressSchema, insertChallengeCompletionSchema, insertJournalEntrySchema, insertSavedPhraseSchema, insertAiChatSessionSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -253,6 +260,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting phrase:", error);
       res.status(500).json({ message: "Failed to delete phrase" });
+    }
+  });
+
+  // Personalized coaching routes
+  app.post('/api/ai/coaching', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const progress = await storage.getUserProgress(userId);
+      const recentEntries = await storage.getUserJournalEntries(userId);
+      const settings = await storage.getUserSettings(userId);
+      
+      if (!progress) {
+        return res.status(404).json({ message: "User progress not found" });
+      }
+
+      const coaching = await generatePersonalizedCoaching({
+        userId,
+        currentDay: progress.currentDay,
+        completedDays: progress.completedDays,
+        streakCount: progress.streakCount,
+        recentJournalEntries: recentEntries.slice(-5).map(entry => ({
+          day: entry.day,
+          experience: entry.experience,
+          insights: entry.insights,
+          intention: entry.intention,
+          mood: entry.mood,
+          challenges: entry.challenges
+        })),
+        userGoals: settings?.userGoals,
+        preferredPracticeTime: settings?.preferredPracticeTime,
+        difficultyLevel: settings?.difficultyLevel
+      });
+      
+      res.json(coaching);
+    } catch (error) {
+      console.error("Error generating coaching:", error);
+      res.status(500).json({ message: "Failed to generate coaching" });
+    }
+  });
+
+  // Micro-learning routes
+  app.get('/api/micro-learning/:day/:topic/:userLevel?', isAuthenticated, async (req: any, res) => {
+    try {
+      const { day, topic, userLevel } = req.params;
+      
+      const content = await generateMicroLearningContent(
+        Number(day), 
+        decodeURIComponent(topic), 
+        userLevel || 'beginner'
+      );
+      
+      res.json(content);
+    } catch (error) {
+      console.error("Error generating micro-learning:", error);
+      res.status(500).json({ message: "Failed to generate micro-learning content" });
+    }
+  });
+
+  app.post('/api/micro-learning/complete', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { day, topic, timeSpent, completed } = req.body;
+      
+      // Update user progress or create completion record
+      const progress = await storage.getUserProgress(userId);
+      if (progress && completed) {
+        await storage.updateUserProgress(userId, {
+          lastActiveDate: new Date()
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error completing micro-learning:", error);
+      res.status(500).json({ message: "Failed to complete micro-learning" });
+    }
+  });
+
+  // Personalized affirmation routes
+  app.post('/api/ai/affirmation', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { day, currentChallenges, recentInsights, mood } = req.body;
+      
+      const settings = await storage.getUserSettings(userId);
+      const progress = await storage.getUserProgress(userId);
+      
+      const affirmation = await generatePersonalizedAffirmation({
+        day: day || progress?.currentDay || 1,
+        userGoals: settings?.userGoals,
+        currentChallenges,
+        recentInsights,
+        mood,
+        progressLevel: progress?.completedDays?.length > 10 ? 'intermediate' : 'beginner'
+      });
+      
+      res.json({ affirmation });
+    } catch (error) {
+      console.error("Error generating affirmation:", error);
+      res.status(500).json({ message: "Failed to generate affirmation" });
+    }
+  });
+
+  // Mood tracking routes
+  app.post('/api/mood-tracking', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { mood, energy, note } = req.body;
+      
+      // Store mood data in journal or separate tracking
+      const today = new Date();
+      const currentDay = Math.floor((today.getTime() - new Date('2024-01-01').getTime()) / (1000 * 60 * 60 * 24)) % 30 + 1;
+      
+      const existingEntry = await storage.getJournalEntry(userId, currentDay);
+      
+      if (existingEntry) {
+        await storage.updateJournalEntry(userId, currentDay, {
+          mood: mood,
+          energy: energy,
+          challenges: note
+        });
+      } else {
+        await storage.createJournalEntry({
+          userId,
+          day: currentDay,
+          experience: '',
+          insights: '',
+          intention: '',
+          mood: mood,
+          energy: energy,
+          challenges: note
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking mood:", error);
+      res.status(500).json({ message: "Failed to track mood" });
     }
   });
 

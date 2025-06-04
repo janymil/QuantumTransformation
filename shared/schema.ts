@@ -67,6 +67,9 @@ export const journalEntries = pgTable("journal_entries", {
   experience: text("experience"),
   insights: text("insights"),
   intention: text("intention"),
+  mood: integer("mood"), // 1-10 scale
+  energy: integer("energy"), // 1-10 scale
+  challenges: text("challenges"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -108,6 +111,10 @@ export const userSettings = pgTable("user_settings", {
   emailNotifications: boolean("email_notifications").default(true),
   soundEnabled: boolean("sound_enabled").default(true),
   theme: varchar("theme").default("light"),
+  preferredPracticeTime: varchar("preferred_practice_time").default("morning"),
+  difficultyLevel: varchar("difficulty_level").default("beginner"),
+  reminderEnabled: boolean("reminder_enabled").default(true),
+  userGoals: text("user_goals"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
