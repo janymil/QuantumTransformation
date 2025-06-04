@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import ChallengeDay from "@/pages/challenge-day";
 import Journal from "@/pages/journal";
 import Progress from "@/pages/progress";
+import Challenges from "@/pages/challenges";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
 
@@ -46,6 +47,7 @@ function Router() {
       <Navbar />
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/challenges" component={Challenges} />
         <Route path="/challenge/:day" component={ChallengeDay} />
         <Route path="/journal" component={Journal} />
         <Route path="/progress" component={Progress} />
