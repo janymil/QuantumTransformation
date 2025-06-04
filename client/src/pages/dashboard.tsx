@@ -1,23 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import Sidebar from "@/components/sidebar";
-import ChallengeTimeline from "@/components/challenge-timeline";
-import ProgressCircle from "@/components/progress-circle";
-import AchievementBadge from "@/components/achievement-badge";
 import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
 import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
-import { Play, BookOpen, Brain, Calendar, Target, Zap } from "lucide-react";
+import { Play, BookOpen, Brain, Target, Zap } from "lucide-react";
 import { Link } from "wouter";
-import { challengeContent } from "@/data/challenge-content";
 
 export default function Dashboard() {
-  const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const { data: progressData, isLoading, error } = useQuery({
@@ -138,20 +127,65 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="space-y-8">
           
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Sidebar 
-              progress={progress}
-              completedDays={completedDays}
-              streakCount={streakCount}
-              achievements={achievements}
-              completionPercentage={completionPercentage}
-            />
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Welcome back, {user?.firstName || "Transformer"}!
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Manage your active quantum consciousness challenges
+              </p>
+            </div>
+            <Link href="/challenges">
+              <Button>
+                <Play className="w-4 h-4 mr-2" />
+                Start New Challenge
+              </Button>
+            </Link>
           </div>
 
-          {/* Main Content */}
+          {/* Multi-Challenge Dashboard */}
+          <MultiChallengeDashboard />
+
+          {/* Additional Learning Tools */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Spaced Repetition Learning */}
+            <SpacedRepetitionWidget />
+            
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Zap className="w-5 h-5 mr-2" />
+                  Learning Tools
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link href="/journal">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Journal Insights
+                  </Button>
+                </Link>
+                <Link href="/progress">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Target className="w-4 h-4 mr-2" />
+                    Progress Analytics
+                  </Button>
+                </Link>
+                <Link href="/challenges">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Brain className="w-4 h-4 mr-2" />
+                    Explore More Challenges
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="lg:col-span-3 space-y-8">
             
             {/* Hero Section */}
