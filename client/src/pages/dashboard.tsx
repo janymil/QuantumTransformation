@@ -19,6 +19,8 @@ export default function Dashboard() {
   const { data: progressData, isLoading, error } = useQuery({
     queryKey: ["/api/progress"],
     retry: false,
+    staleTime: 0,
+    enabled: true,
   });
 
   useEffect(() => {
@@ -70,10 +72,10 @@ export default function Dashboard() {
     lastActivityDate: null
   };
 
-  // Show dashboard with default values even if API call fails
-  const progress = (progressData && 'progress' in progressData) ? progressData.progress : defaultProgress;
-  const completions = (progressData && 'completions' in progressData) ? progressData.completions : [];
-  const achievements = (progressData && 'achievements' in progressData) ? progressData.achievements : [];
+  // Handle the case where progressData is null (unauthorized) or empty
+  const progress = progressData?.progress || defaultProgress;
+  const completions = progressData?.completions || [];
+  const achievements = progressData?.achievements || [];
   const currentDay = progress?.currentDay || 1;
   const completedDays = (progress?.completedDays as number[]) || [];
   const streakCount = progress?.streakCount || 0;

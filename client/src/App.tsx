@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
-import Dashboard from "@/pages/dashboard-simple";
+import Dashboard from "@/pages/dashboard";
 import ChallengeDay from "@/pages/challenge-day";
 import Journal from "@/pages/journal";
 import Progress from "@/pages/progress";
