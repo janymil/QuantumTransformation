@@ -140,6 +140,15 @@ export class DatabaseStorage implements IStorage {
     return updatedProgress;
   }
 
+  async updateChallengeProgress(userId: string, challengeType: string, updates: Partial<InsertUserProgress>): Promise<UserProgress> {
+    const [updatedProgress] = await db
+      .update(userProgress)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(userProgress.userId, userId), eq(userProgress.challengeType, challengeType)))
+      .returning();
+    return updatedProgress;
+  }
+
   // Challenge completion operations
   async createChallengeCompletion(completion: InsertChallengeCompletion): Promise<ChallengeCompletion> {
     const [newCompletion] = await db

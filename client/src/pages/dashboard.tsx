@@ -11,6 +11,7 @@ import ChallengeTimeline from "@/components/challenge-timeline";
 import ProgressCircle from "@/components/progress-circle";
 import AchievementBadge from "@/components/achievement-badge";
 import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
+import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
 import { Play, BookOpen, Brain, Calendar, Target, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { challengeContent } from "@/data/challenge-content";

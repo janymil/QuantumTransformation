@@ -97,6 +97,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all user progress for multiple challenges
+  app.get('/api/progress/all', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const allProgress = await storage.getAllUserProgress(userId);
+      const completions = await storage.getUserCompletions(userId);
+      const achievements = await storage.getUserAchievements(userId);
+      
+      res.json({
+        allProgress,
+        completions,
+        achievements,
+      });
+    } catch (error) {
+      console.error("Error fetching all progress:", error);
+      res.status(500).json({ message: "Failed to fetch all progress" });
+    }
+  });
+
   app.patch('/api/progress', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
