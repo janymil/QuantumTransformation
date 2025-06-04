@@ -314,6 +314,15 @@ Required JSON structure:
   }
 }
 
+export interface PersonalizedAffirmationRequest {
+  day: number;
+  userGoals?: string;
+  currentChallenges?: string[];
+  recentInsights?: string[];
+  mood?: number;
+  progressLevel?: string;
+}
+
 export async function generatePersonalizedAffirmation(request: PersonalizedAffirmationRequest): Promise<string> {
   const { day, userGoals, currentChallenges, recentInsights, mood, progressLevel } = request;
 
