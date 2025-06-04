@@ -195,14 +195,48 @@ export default function ChallengesPage() {
                           <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
                           <span>{challenge.completedDays?.length || 0} completed</span>
                         </div>
-                        <Button 
-                          size="sm" 
-                          onClick={() => setLocation(`/challenge/${challenge.currentDay}?type=${challenge.challengeType}`)}
-                          className="flex items-center space-x-1"
-                        >
-                          <span>Continue</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => setLocation(`/challenge-day?type=${challenge.challengeType}&day=${challenge.currentDay}`)}
+                            className="flex items-center space-x-1"
+                          >
+                            <span>Continue</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center">
+                                  <AlertTriangle className="w-5 h-5 mr-2 text-red-500" />
+                                  Quit Challenge
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to quit the {challengeType.title} challenge? 
+                                  <br /><br />
+                                  <strong>This action cannot be undone.</strong> All your progress, journal entries, 
+                                  completed days, and achievements for this challenge will be permanently deleted.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => quitChallengeMutation.mutate(challenge.challengeType)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                  disabled={quitChallengeMutation.isPending}
+                                >
+                                  {quitChallengeMutation.isPending ? 'Quitting...' : 'Yes, Quit Challenge'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
