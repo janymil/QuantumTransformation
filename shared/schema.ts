@@ -41,6 +41,7 @@ export const users = pgTable("users", {
 export const userProgress = pgTable("user_progress", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
+  challengeType: varchar("challenge_type").default("general_quantum").notNull(),
   currentDay: integer("current_day").default(1),
   completedDays: jsonb("completed_days").default([]),
   streakCount: integer("streak_count").default(0),
@@ -53,6 +54,7 @@ export const userProgress = pgTable("user_progress", {
 export const challengeCompletions = pgTable("challenge_completions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
+  challengeType: varchar("challenge_type").default("general_quantum").notNull(),
   day: integer("day").notNull(),
   completedAt: timestamp("completed_at").defaultNow(),
   timeSpent: integer("time_spent"), // in minutes
@@ -63,6 +65,7 @@ export const challengeCompletions = pgTable("challenge_completions", {
 export const journalEntries = pgTable("journal_entries", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
+  challengeType: varchar("challenge_type").default("general_quantum").notNull(),
   day: integer("day").notNull(),
   experience: text("experience"),
   insights: text("insights"),
