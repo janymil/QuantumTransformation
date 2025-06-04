@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,12 @@ import { challengeContent } from "@/data/challenge-content";
 
 export default function Dashboard() {
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const { data: progressData, isLoading, error } = useQuery({
     queryKey: ["/api/progress"],
     retry: 1,
-    enabled: true,
+    enabled: isAuthenticated && !!user,
   });
 
   // Add detailed logging for debugging
@@ -53,7 +55,8 @@ export default function Dashboard() {
     }
   }, [error, toast]);
 
-  if (isLoading) {
+  // Show loading state if auth or data is loading
+  if (authLoading || (isAuthenticated && isLoading)) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

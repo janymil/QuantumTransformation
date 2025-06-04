@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,7 @@ interface JournalAnalysis {
 
 export default function Journal() {
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [experience, setExperience] = useState("");
   const [insights, setInsights] = useState("");
@@ -55,6 +57,7 @@ export default function Journal() {
   const { data: entries, isLoading: entriesLoading, error: entriesError } = useQuery<JournalEntry[]>({
     queryKey: ["/api/journal"],
     retry: 1,
+    enabled: isAuthenticated && !!user,
   });
 
   useEffect(() => {
