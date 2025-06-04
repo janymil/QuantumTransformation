@@ -16,13 +16,24 @@ import { challengeContent } from "@/data/challenge-content";
 export default function Dashboard() {
   const { toast } = useToast();
 
-  const { data: progressData, isLoading } = useQuery({
+  const { data: progressData, isLoading, error } = useQuery({
     queryKey: ["/api/progress"],
     retry: false,
+    queryFn: async () => {
+      console.log("Fetching progress data...");
+      const response = await fetch("/api/progress", { credentials: "include" });
+      console.log("Progress response status:", response.status);
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log("Progress data:", data);
+      return data;
+    }
   });
 
   useEffect(() => {
-    if (!isLoading && progressData === null) {
+    if (error && isUnauthorizedError(error as Error)) {
       toast({
         title: "Unauthorized",
         description: "You are logged out. Logging in again...",
@@ -33,7 +44,7 @@ export default function Dashboard() {
       }, 500);
       return;
     }
-  }, [progressData, isLoading, toast]);
+  }, [error, toast]);
 
   if (isLoading) {
     return (
@@ -63,10 +74,18 @@ export default function Dashboard() {
   }
 
   if (!progressData) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <p className="text-muted-foreground">Loading your quantum journey...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const { progress, completions, achievements } = progressData;
+  const { progress, completions, achievements } = progressData || { progress: null, completions: [], achievements: [] };
   const currentDay = progress?.currentDay || 1;
   const completedDays = (progress?.completedDays as number[]) || [];
   const streakCount = progress?.streakCount || 0;
