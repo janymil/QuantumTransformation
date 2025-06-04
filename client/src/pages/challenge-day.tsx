@@ -37,7 +37,64 @@ export default function ChallengeDay() {
   const [timeSpent, setTimeSpent] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  const content = challengeContent.find(c => c.day === currentDay);
+  // Get challenge type from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const challengeType = urlParams.get('type') || 'general_quantum';
+
+  // Generate dynamic content based on challenge type
+  const generateChallengeContent = (day: number, type: string) => {
+    const contentMap: Record<string, any> = {
+      general_quantum: {
+        title: `Day ${day}: Quantum Consciousness Foundation`,
+        description: "Master the fundamentals of quantum reality and consciousness elevation",
+        practiceTitle: "Quantum Meditation",
+        practiceDescription: "A guided meditation to elevate your consciousness and align with quantum possibilities",
+        keyPrinciples: ["Consciousness Elevation", "Quantum Field Access", "Reality Creation", "Mind-Matter Interface"],
+        techniques: ["Heart Coherence Breathing", "Elevated Emotion Cultivation", "Future Self Visualization", "Quantum Field Connection"],
+        affirmation: "I am the creator of my reality, aligned with infinite possibilities and elevated consciousness."
+      },
+      money_blocks_clearing: {
+        title: `Day ${day}: Money Blocks Clearing`,
+        description: "Identify and dissolve limiting beliefs and subconscious blocks around money and abundance",
+        practiceTitle: "Block Clearing Meditation",
+        practiceDescription: "A powerful session to uncover and release deep-rooted money blocks and limiting beliefs",
+        keyPrinciples: ["Block Identification", "Belief Archaeology", "Trauma Healing", "Subconscious Reprogramming"],
+        techniques: ["Shadow Work Exploration", "Belief Identification", "Energy Clearing", "Subconscious Reprogramming"],
+        affirmation: "I release all limiting beliefs about money and embrace my natural abundance and worth."
+      },
+      money_manifestation: {
+        title: `Day ${day}: Abundance Manifestation`,
+        description: "Cultivate wealth consciousness and attract financial abundance through elevated states",
+        practiceTitle: "Abundance Meditation",
+        practiceDescription: "A manifestation practice to align with abundance and attract financial prosperity",
+        keyPrinciples: ["Abundance Mindset", "Wealth Consciousness", "Financial Alignment", "Prosperity Vibration"],
+        techniques: ["Abundance Visualization", "Gratitude Amplification", "Wealth Frequency Attunement", "Prosperity Anchoring"],
+        affirmation: "I am a powerful money magnet, attracting abundance with ease and grace."
+      },
+      quantum_health: {
+        title: `Day ${day}: Quantum Health Transformation`,
+        description: "Harness the power of consciousness to heal and transform your physical body",
+        practiceTitle: "Healing Meditation",
+        practiceDescription: "A transformational practice to activate your body's natural healing intelligence",
+        keyPrinciples: ["Self-Healing", "Biological Transformation", "Mind-Body Unity", "Cellular Regeneration"],
+        techniques: ["Body Scan Healing", "Cellular Communication", "Energy Medicine", "Biological Reprogramming"],
+        affirmation: "My body knows how to heal, and I trust its infinite wisdom and regenerative power."
+      },
+      quantum_relationships: {
+        title: `Day ${day}: Heart-Centered Connection`,
+        description: "Develop authentic, conscious relationships through heart coherence and love",
+        practiceTitle: "Heart Coherence Practice",
+        practiceDescription: "A heart-opening practice to cultivate love, compassion, and authentic connection",
+        keyPrinciples: ["Heart Intelligence", "Authentic Love", "Conscious Communication", "Energetic Resonance"],
+        techniques: ["Heart Coherence Breathing", "Love Field Activation", "Compassion Cultivation", "Authentic Expression"],
+        affirmation: "I am love, I give love, and I attract loving, authentic relationships into my life."
+      }
+    };
+
+    return contentMap[type] || contentMap.general_quantum;
+  };
+
+  const content = generateChallengeContent(currentDay, challengeType);
 
   const { data: progressData, isLoading: progressLoading } = useQuery({
     queryKey: ["/api/progress"],
