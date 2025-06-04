@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import ChallengeSelection from "@/components/challenge-selection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export default function ChallengesPage() {
   const [selectedChallenge, setSelectedChallenge] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // Fetch user's challenges
   const { data: userChallenges, isLoading: challengesLoading } = useQuery({
@@ -48,8 +50,13 @@ export default function ChallengesPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/progress'] });
       toast({
         title: "Challenge Started!",
-        description: data.message,
+        description: "Redirecting you to day 1...",
       });
+      
+      // Automatically navigate to day 1 of the challenge
+      setTimeout(() => {
+        setLocation('/challenge/1');
+      }, 1500);
     },
     onError: () => {
       toast({
