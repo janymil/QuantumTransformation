@@ -26,10 +26,16 @@ export default function Dashboard() {
 
   // Add detailed logging for debugging
   useEffect(() => {
+    console.log("Dashboard - Auth Loading:", authLoading);
+    console.log("Dashboard - Is Authenticated:", isAuthenticated);
+    console.log("Dashboard - User:", user);
     console.log("Dashboard - Progress Data:", progressData);
     console.log("Dashboard - Is Loading:", isLoading);
     console.log("Dashboard - Error:", error);
-  }, [progressData, isLoading, error]);
+  }, [authLoading, isAuthenticated, user, progressData, isLoading, error]);
+
+  // Force render confirmation
+  console.log("Dashboard component rendered - Auth:", isAuthenticated, "Loading:", authLoading, isLoading);
 
   useEffect(() => {
     if (error) {
