@@ -219,36 +219,72 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-7 gap-2 md:gap-4">
                     {week.days.map((day: any) => (
                       <Card 
                         key={day.day} 
                         className={`
-                          relative cursor-pointer transition-all duration-200 hover:shadow-md
+                          relative cursor-pointer transition-all duration-200 hover:shadow-md min-h-[120px]
                           ${day.isCompleted 
                             ? 'bg-green-50 border-green-200 hover:bg-green-100' 
                             : day.isCurrent 
                               ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' 
                               : day.isUpcoming 
-                                ? 'bg-gray-50 border-gray-200 hover:bg-gray-100' 
+                                ? 'bg-gray-50 border-gray-200 hover:bg-gray-100 opacity-60' 
                                 : 'hover:bg-gray-50'
                           }
                         `}
                       >
-                        <CardContent className="p-4 text-center">
-                          <div className="flex flex-col items-center space-y-2">
+                        <CardContent className="p-2 md:p-3">
+                          <div className="flex flex-col items-center space-y-1 md:space-y-2">
                             <div className="flex items-center justify-center w-8 h-8 rounded-full">
                               {day.isCompleted ? (
-                                <CheckCircle2 className="w-6 h-6 text-green-600" />
+                                <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                               ) : day.isCurrent ? (
-                                <Circle className="w-6 h-6 text-blue-600 fill-current" />
+                                <Play className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+                              ) : day.isUpcoming ? (
+                                <Lock className="w-5 h-5 md:w-6 md:h-6 text-gray-400" />
                               ) : (
-                                <Circle className="w-6 h-6 text-gray-400" />
+                                <Circle className="w-5 h-5 md:w-6 md:h-6 text-gray-400" />
                               )}
                             </div>
-                            <div className="text-sm font-medium">Day {day.day}</div>
+                            
+                            <div className="text-xs md:text-sm font-medium text-center">
+                              Day {day.day}
+                            </div>
+                            
+                            {/* Challenge content preview */}
+                            <div className="text-xs text-center text-gray-600 hidden md:block">
+                              {day.content.practice}
+                            </div>
+                            
+                            {/* Duration */}
+                            <div className="text-xs text-gray-500 hidden md:block">
+                              {day.content.duration}
+                            </div>
+                            
+                            {/* Action button */}
+                            {day.isCompleted && (
+                              <Link href={`/challenge-day?type=${challengeType}&day=${day.day}`}>
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs">
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  Review
+                                </Button>
+                              </Link>
+                            )}
+                            
+                            {day.isCurrent && (
+                              <Link href={`/challenge-day?type=${challengeType}&day=${day.day}`}>
+                                <Button size="sm" className="h-6 px-2 text-xs">
+                                  <Play className="w-3 h-3 mr-1" />
+                                  Start
+                                </Button>
+                              </Link>
+                            )}
+                            
                             {day.isCompleted && day.completion && (
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 hidden md:block">
+                                <Star className="w-3 h-3 inline mr-1" />
                                 {new Date(day.completion.completedAt).toLocaleDateString()}
                               </div>
                             )}
