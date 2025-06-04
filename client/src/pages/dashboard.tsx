@@ -10,6 +10,7 @@ import Sidebar from "@/components/sidebar";
 import ChallengeTimeline from "@/components/challenge-timeline";
 import ProgressCircle from "@/components/progress-circle";
 import AchievementBadge from "@/components/achievement-badge";
+import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
 import { Play, BookOpen, Brain, Calendar, Target, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { challengeContent } from "@/data/challenge-content";
@@ -297,6 +298,17 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Spaced Repetition Widget */}
+            <SpacedRepetitionWidget 
+              challengeType={progress?.challengeType || 'general_quantum'}
+              onReviewComplete={() => {
+                toast({
+                  title: "Reviews Complete!",
+                  description: "Your spaced repetition session is finished for today.",
+                });
+              }}
+            />
           </div>
         </div>
       </div>
