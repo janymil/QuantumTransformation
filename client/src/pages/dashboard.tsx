@@ -19,17 +19,6 @@ export default function Dashboard() {
   const { data: progressData, isLoading, error } = useQuery({
     queryKey: ["/api/progress"],
     retry: false,
-    queryFn: async () => {
-      console.log("Fetching progress data...");
-      const response = await fetch("/api/progress", { credentials: "include" });
-      console.log("Progress response status:", response.status);
-      if (!response.ok) {
-        throw new Error(`${response.status}: ${response.statusText}`);
-      }
-      const data = await response.json();
-      console.log("Progress data:", data);
-      return data;
-    }
   });
 
   useEffect(() => {
@@ -73,23 +62,22 @@ export default function Dashboard() {
     );
   }
 
-  if (!progressData) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <p className="text-muted-foreground">Loading your quantum journey...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Provide default data structure for new users
+  const defaultProgress = {
+    currentDay: 1,
+    completedDays: [],
+    streakCount: 0,
+    lastActivityDate: null
+  };
 
-  const { progress, completions, achievements } = progressData || { progress: null, completions: [], achievements: [] };
+  // Show dashboard with default values even if API call fails
+  const progress = (progressData && 'progress' in progressData) ? progressData.progress : defaultProgress;
+  const completions = (progressData && 'completions' in progressData) ? progressData.completions : [];
+  const achievements = (progressData && 'achievements' in progressData) ? progressData.achievements : [];
   const currentDay = progress?.currentDay || 1;
   const completedDays = (progress?.completedDays as number[]) || [];
   const streakCount = progress?.streakCount || 0;
-  const currentContent = challengeContent.find(c => c.day === currentDay);
+  const currentContent = challengeContent.find(c => c.day === currentDay) || challengeContent[0];
 
   const completionPercentage = Math.round((completedDays.length / 30) * 100);
 
