@@ -196,23 +196,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/journal', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      console.log("Journal POST - UserId:", userId);
+      console.log("Journal POST - Request body:", req.body);
+      
       const entryData = insertJournalEntrySchema.parse({
         ...req.body,
         userId,
       });
       
+      console.log("Journal POST - Parsed entry data:", entryData);
+      
       // Check if entry exists, update if so
       const existing = await storage.getJournalEntry(userId, entryData.day);
+      console.log("Journal POST - Existing entry:", existing);
+      
       if (existing) {
+        console.log("Journal POST - Updating existing entry");
         const updated = await storage.updateJournalEntry(userId, entryData.day, entryData);
+        console.log("Journal POST - Updated entry:", updated);
         res.json(updated);
       } else {
+        console.log("Journal POST - Creating new entry");
         const entry = await storage.createJournalEntry(entryData);
+        console.log("Journal POST - Created entry:", entry);
         res.json(entry);
       }
     } catch (error) {
       console.error("Error saving journal entry:", error);
-      res.status(500).json({ message: "Failed to save journal entry" });
+      console.error("Error details:", error.message);
+      if (error.name === 'ZodError') {
+        console.error("Validation errors:", error.errors);
+      }
+      res.status(500).json({ message: "Failed to save journal entry", error: error.message });
     }
   });
 
