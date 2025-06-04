@@ -53,9 +53,10 @@ export default function ChallengesPage() {
         description: "Redirecting you to day 1...",
       });
       
-      // Automatically navigate to day 1 of the challenge
+      // Automatically navigate to day 1 of the selected challenge
       setTimeout(() => {
-        setLocation('/challenge/1');
+        const challengeType = data.progress?.challengeType || selectedChallenge;
+        setLocation(`/challenge/1?type=${challengeType}`);
       }, 1500);
     },
     onError: () => {
@@ -156,7 +157,7 @@ export default function ChallengesPage() {
                         </div>
                         <Button 
                           size="sm" 
-                          onClick={() => window.location.href = '/'}
+                          onClick={() => setLocation(`/challenge/${challenge.currentDay}?type=${challenge.challengeType}`)}
                           className="flex items-center space-x-1"
                         >
                           <span>Continue</span>

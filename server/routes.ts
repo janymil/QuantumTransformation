@@ -641,6 +641,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Challenge type is required" });
       }
 
+      // Check if user already has a progress record for this challenge type
+      const existingProgress = await storage.getUserProgress(userId);
+      
+      if (existingProgress && existingProgress.challengeType === challengeType) {
+        return res.json({ 
+          success: true, 
+          progress: existingProgress,
+          message: `Continuing ${challengeType.replace('_', ' ')} challenge!`,
+          isExisting: true
+        });
+      }
+
       // Create new progress for the selected challenge
       const progress = await storage.createUserProgress({
         userId,
@@ -653,7 +665,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         progress,
-        message: `Started ${challengeType.replace('_', ' ')} challenge!`
+        message: `Started ${challengeType.replace('_', ' ')} challenge!`,
+        isExisting: false
       });
     } catch (error) {
       console.error("Error selecting challenge:", error);
@@ -665,7 +678,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const userChallenges = await storage.getUserChallenges(userId);
-      res.json(userChallenges);
+      
+      // Remove duplicates and keep only the latest progress for each challenge type
+      const uniqueChallenges = userChallenges.reduce((acc: any[], challenge: any) => {
+        const existing = acc.find(c => c.challengeType === challenge.challengeType);
+        if (!existing) {
+          acc.push(challenge);
+        } else {
+          // Keep the one with the latest activity
+          if (new Date(challenge.updatedAt) > new Date(existing.updatedAt)) {
+            const index = acc.findIndex(c => c.challengeType === challenge.challengeType);
+            acc[index] = challenge;
+          }
+        }
+        return acc;
+      }, []);
+      
+      res.json(uniqueChallenges);
     } catch (error) {
       console.error("Error fetching user challenges:", error);
       res.status(500).json({ message: "Failed to fetch user challenges" });
