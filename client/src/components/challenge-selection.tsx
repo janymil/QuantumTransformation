@@ -17,14 +17,21 @@ import {
 interface ChallengeSelectionProps {
   onSelectChallenge: (challengeId: string) => void;
   selectedChallenge?: string;
+  activeChallengeTypes?: string[];
 }
 
 export default function ChallengeSelection({ 
   onSelectChallenge, 
-  selectedChallenge 
+  selectedChallenge,
+  activeChallengeTypes = []
 }: ChallengeSelectionProps) {
   const [selectedForPreview, setSelectedForPreview] = useState<ChallengeType | null>(null);
-  const challenges = getAllChallengeTypes();
+  const allChallenges = getAllChallengeTypes();
+  
+  // Filter out already active challenges
+  const challenges = allChallenges.filter(challenge => 
+    !activeChallengeTypes.includes(challenge.id)
+  );
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -50,17 +57,26 @@ export default function ChallengeSelection({
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {challenges.map((challenge) => (
-          <Card 
-            key={challenge.id}
-            className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer ${
-              selectedChallenge === challenge.id 
-                ? 'ring-2 ring-blue-500 shadow-lg' 
-                : 'hover:shadow-lg'
-            }`}
-            onClick={() => onSelectChallenge(challenge.id)}
-          >
+      {challenges.length === 0 ? (
+        <div className="text-center py-8 space-y-4">
+          <div className="text-6xl">🎉</div>
+          <h3 className="text-xl font-semibold text-gray-800">All Challenges Active!</h3>
+          <p className="text-gray-600 max-w-md mx-auto">
+            You've started all available challenges. Continue your journey from your dashboard or check back for new challenges.
+          </p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {challenges.map((challenge) => (
+              <Card 
+                key={challenge.id}
+                className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer ${
+                  selectedChallenge === challenge.id 
+                    ? 'ring-2 ring-blue-500 shadow-lg' 
+                    : 'hover:shadow-lg'
+                }`}
+                onClick={() => onSelectChallenge(challenge.id)}
+              >
             {/* Gradient Header */}
             <div className={`h-20 ${getGradientClass(challenge.gradient)} relative`}>
               <div className="absolute inset-0 bg-black/10"></div>
@@ -212,8 +228,9 @@ export default function ChallengeSelection({
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {selectedChallenge && (
         <div className="text-center">
