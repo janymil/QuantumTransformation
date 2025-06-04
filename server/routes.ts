@@ -85,11 +85,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const progress = await storage.getUserProgress(userId);
       if (progress) {
         const completedDays = [...(progress.completedDays as number[] || []), completionData.day];
-        const newCurrentDay = Math.max(completionData.day + 1, progress.currentDay);
+        const newCurrentDay = Math.max(completionData.day + 1, progress.currentDay ?? 0);
         
         // Calculate streak
         const today = new Date().toISOString().split('T')[0];
-        const streakCount = progress.lastActivityDate === today ? progress.streakCount : progress.streakCount + 1;
+        const streakCount = progress.lastActivityDate === today ? (progress.streakCount ?? 0) : (progress.streakCount ?? 0) + 1;
         
         await storage.updateUserProgress(userId, {
           completedDays,

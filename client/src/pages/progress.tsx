@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Progress as ProgressBar } from "@/components/ui/progress";
 import ProgressCircle from "@/components/progress-circle";
 import AchievementBadge from "@/components/achievement-badge";
 import { 
@@ -252,7 +252,7 @@ export default function Progress() {
                 </div>
                 {stat.total && (
                   <div className="mt-4">
-                    <Progress 
+                    <ProgressBar 
                       value={(stat.value / stat.total) * 100} 
                       className="h-2"
                     />
