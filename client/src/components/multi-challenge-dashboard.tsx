@@ -45,9 +45,19 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
     );
   }
 
-  const allProgress = (progressData as any)?.allProgress || [];
+  const rawProgress = (progressData as any)?.allProgress || [];
   const completions = (progressData as any)?.completions || [];
   const achievements = (progressData as any)?.achievements || [];
+
+  // Deduplicate challenges by keeping only the latest entry for each challenge type
+  const uniqueProgressMap = new Map();
+  rawProgress.forEach((progress: any) => {
+    const existing = uniqueProgressMap.get(progress.challengeType);
+    if (!existing || new Date(progress.updatedAt) > new Date(existing.updatedAt)) {
+      uniqueProgressMap.set(progress.challengeType, progress);
+    }
+  });
+  const allProgress = Array.from(uniqueProgressMap.values());
 
   if (allProgress.length === 0) {
     return (

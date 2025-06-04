@@ -100,7 +100,7 @@ export default function ChallengesPage() {
       </div>
 
       {/* User's Active Challenges */}
-      {userChallenges && userChallenges.length > 0 && (
+      {(userChallenges as any[])?.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -110,8 +110,8 @@ export default function ChallengesPage() {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {userChallenges.map((challenge: any) => {
-                const challengeType = challengeTypes?.find((type: any) => type.id === challenge.challengeType);
+              {(userChallenges as any[])?.map((challenge: any) => {
+                const challengeType = (challengeTypes as any[])?.find((type: any) => type.id === challenge.challengeType);
                 if (!challengeType) return null;
 
                 const progress = ((challenge.completedDays?.length || 0) / 30) * 100;
@@ -176,7 +176,7 @@ export default function ChallengesPage() {
       {/* Challenge Selection */}
       <div>
         <h2 className="text-2xl font-bold mb-6 text-center">
-          {userChallenges && userChallenges.length > 0 ? 'Start Another Challenge' : 'Choose Your First Challenge'}
+          {(userChallenges as any[])?.length > 0 ? 'Start Another Challenge' : 'Choose Your First Challenge'}
         </h2>
         
         {typesLoading ? (
@@ -196,6 +196,7 @@ export default function ChallengesPage() {
           <ChallengeSelection 
             onSelectChallenge={handleSelectChallenge}
             selectedChallenge={selectedChallenge}
+            activeChallengeTypes={(userChallenges as any[])?.map((c: any) => c.challengeType) || []}
           />
         ) : (
           <div className="text-center py-8">
