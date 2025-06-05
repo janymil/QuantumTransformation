@@ -14,31 +14,11 @@ import ChallengeProgress from "@/pages/challenge-progress";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
 
-// Challenge-specific components
-import QuantumDashboard from "@/pages/challenges/quantum-consciousness/dashboard";
-import QuantumJournal from "@/pages/challenges/quantum-consciousness/journal";
-import QuantumProgress from "@/pages/challenges/quantum-consciousness/progress";
-import QuantumDay from "@/pages/challenges/quantum-consciousness/day";
-
-import MoneyDashboard from "@/pages/challenges/money-blocks/dashboard";
-import MoneyJournal from "@/pages/challenges/money-blocks/journal";
-import MoneyProgress from "@/pages/challenges/money-blocks/progress";
-import MoneyDay from "@/pages/challenges/money-blocks/day";
-
-import RelationshipsDashboard from "@/pages/challenges/relationships/dashboard";
-import RelationshipsJournal from "@/pages/challenges/relationships/journal";
-import RelationshipsProgress from "@/pages/challenges/relationships/progress";
-import RelationshipsDay from "@/pages/challenges/relationships/day";
-
-import HealthDashboard from "@/pages/challenges/health-transformation/dashboard";
-import HealthJournal from "@/pages/challenges/health-transformation/journal";
-import HealthProgress from "@/pages/challenges/health-transformation/progress";
-import HealthDay from "@/pages/challenges/health-transformation/day";
-
-import CreativityDashboard from "@/pages/challenges/creativity-flow/dashboard";
-import CreativityJournal from "@/pages/challenges/creativity-flow/journal";
-import CreativityProgress from "@/pages/challenges/creativity-flow/progress";
-import CreativityDay from "@/pages/challenges/creativity-flow/day";
+// Challenge-specific components - will be dynamically imported
+// import QuantumDashboard from "@/pages/challenges/quantum-consciousness/dashboard";
+// import QuantumJournal from "@/pages/challenges/quantum-consciousness/journal";
+// import QuantumProgress from "@/pages/challenges/quantum-consciousness/progress";
+// import QuantumDay from "@/pages/challenges/quantum-consciousness/day";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();

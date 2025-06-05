@@ -28,6 +28,10 @@ import { Link } from "wouter";
 import { challengeContent } from "@/data/challenge-content";
 import VideoMeditationGuide from "@/components/video-meditation-guide";
 import ProgressCelebration from "@/components/progress-celebration";
+
+interface ChallengeDayProps {
+  challengeType?: string;
+}
 import ContextualTutorial from "@/components/contextual-tutorial";
 
 export default function ChallengeDay() {
