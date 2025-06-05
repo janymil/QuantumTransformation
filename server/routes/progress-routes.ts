@@ -9,6 +9,18 @@ const insertUserProgressSchema = createInsertSchema(userProgress);
 type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
 
 export function registerProgressRoutes(app: Express) {
+  // Get default progress (for backwards compatibility)
+  app.get('/api/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const progress = await storage.getUserProgress(userId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching user progress:", error);
+      res.status(500).json({ message: "Failed to fetch progress" });
+    }
+  });
+
   // Get all user progress for all challenges
   app.get('/api/progress/all', isAuthenticated, async (req: any, res) => {
     try {
