@@ -178,9 +178,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/journal', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { day } = req.query;
+      const { day, challengeType } = req.query;
       
-      if (day) {
+      console.log(`GET /api/journal - userId: ${userId}, day: ${day}, challengeType: ${challengeType}`);
+      
+      if (day && challengeType) {
+        const entry = await storage.getJournalEntry(userId, parseInt(day as string), challengeType as string);
+        console.log(`GET /api/journal - Found entry:`, entry);
+        res.json(entry);
+      } else if (day) {
+        // Fallback for requests without challengeType (legacy)
         const entry = await storage.getJournalEntry(userId, parseInt(day as string));
         res.json(entry);
       } else {
