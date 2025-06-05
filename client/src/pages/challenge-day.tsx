@@ -256,16 +256,26 @@ export default function ChallengeDay() {
     return contentMap[type] || contentMap.general_quantum;
   };
 
-  const content = generateChallengeContent(currentDay, challengeType);
-
   const { data: progressData, isLoading: progressLoading } = useQuery({
-    queryKey: ["/api/progress"],
+    queryKey: ["/api/progress/all"],
   });
 
+  // Find the progress for this specific challenge
+  const allProgress = (progressData as any)?.allProgress || [];
+  const challengeProgress = allProgress.find((p: any) => p.challengeType === challengeType);
+  const completedDays = (challengeProgress?.completedDays as number[]) || [];
+  const actualCurrentDay = challengeProgress?.currentDay || 1;
+  
+  // Use the actual current day from progress, not URL
+  const effectiveDay = actualCurrentDay;
+  const canAccess = effectiveDay >= 1;
+
+  const content = generateChallengeContent(effectiveDay, challengeType);
+
   const { data: completion, isLoading: completionLoading } = useQuery({
-    queryKey: ["/api/challenges/completion", currentDay],
+    queryKey: ["/api/challenges/completion", effectiveDay, challengeType],
     queryFn: async () => {
-      const response = await fetch(`/api/challenges/completion?day=${currentDay}`, {
+      const response = await fetch(`/api/challenges/completion?day=${effectiveDay}&challengeType=${challengeType}`, {
         credentials: "include",
       });
       if (response.status === 404) return null;
@@ -382,10 +392,6 @@ export default function ChallengeDay() {
       </div>
     );
   }
-
-  const progress = progressData?.progress;
-  const completedDays = (progress?.completedDays as number[]) || [];
-  const canAccess = currentDay <= (progress?.currentDay || 1) || completedDays.includes(currentDay);
 
   if (!canAccess) {
     return (
