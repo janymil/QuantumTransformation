@@ -213,12 +213,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Journal POST - Parsed entry data:", entryData);
       
       // Check if entry exists, update if so
-      const existing = await storage.getJournalEntry(userId, entryData.day);
+      const existing = await storage.getJournalEntry(userId, entryData.day, entryData.challengeType);
       console.log("Journal POST - Existing entry:", existing);
       
       if (existing) {
         console.log("Journal POST - Updating existing entry");
-        const updated = await storage.updateJournalEntry(userId, entryData.day, entryData);
+        const updated = await storage.updateJournalEntry(userId, entryData.day, entryData, entryData.challengeType);
         console.log("Journal POST - Updated entry:", updated);
         res.json(updated);
       } else {

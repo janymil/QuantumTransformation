@@ -195,26 +195,38 @@ export class DatabaseStorage implements IStorage {
     return newEntry;
   }
 
-  async updateJournalEntry(userId: string, day: number, updates: Partial<InsertJournalEntry>): Promise<JournalEntry> {
+  async updateJournalEntry(userId: string, day: number, updates: Partial<InsertJournalEntry>, challengeType?: string): Promise<JournalEntry> {
+    const conditions = [
+      eq(journalEntries.userId, userId),
+      eq(journalEntries.day, day)
+    ];
+    
+    if (challengeType) {
+      conditions.push(eq(journalEntries.challengeType, challengeType));
+    }
+    
     const [updatedEntry] = await db
       .update(journalEntries)
       .set({ ...updates, updatedAt: new Date() })
-      .where(and(
-        eq(journalEntries.userId, userId),
-        eq(journalEntries.day, day)
-      ))
+      .where(and(...conditions))
       .returning();
     return updatedEntry;
   }
 
-  async getJournalEntry(userId: string, day: number): Promise<JournalEntry | undefined> {
+  async getJournalEntry(userId: string, day: number, challengeType?: string): Promise<JournalEntry | undefined> {
+    const conditions = [
+      eq(journalEntries.userId, userId),
+      eq(journalEntries.day, day)
+    ];
+    
+    if (challengeType) {
+      conditions.push(eq(journalEntries.challengeType, challengeType));
+    }
+    
     const [entry] = await db
       .select()
       .from(journalEntries)
-      .where(and(
-        eq(journalEntries.userId, userId),
-        eq(journalEntries.day, day)
-      ));
+      .where(and(...conditions));
     return entry;
   }
 
