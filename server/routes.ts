@@ -8,7 +8,15 @@ import { registerAuthRoutes } from "./routes/auth-routes";
 import { registerChallengeRoutes } from "./routes/challenge-routes";
 import { registerProgressRoutes } from "./routes/progress-routes";
 import { registerJournalRoutes } from "./routes/journal-routes";
-import { registerAIRoutes } from "./routes/ai-routes";
+import { 
+  validateAIRequest, 
+  getCachedResponse, 
+  cacheResponse, 
+  trackUsage,
+  createInputHash,
+  getUserAIStats 
+} from "./ai-cost-control";
+import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
 import { registerGamificationRoutes } from "./routes/gamification-routes";
 import { generatePersonalizedAffirmation } from "./openai";
 import { initializeUserGamification } from "./gamification";
@@ -82,8 +90,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerChallengeRoutes(app);
   registerProgressRoutes(app);
   registerJournalRoutes(app);
-  registerAIRoutes(app);
   registerGamificationRoutes(app);
+
+  // AI Routes with Global Caching System
+  app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { topic, day, userQuestion, challengeType, userTier = 'basic' } = req.body;
+
+      const inputHash = createInputHash(userQuestion || topic, 'explanation', challengeType, day);
+
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'explanation',
+        input: userQuestion || topic,
+        challengeType,
+        day,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests 
+        });
+      }
+
+      // Check global cache first
+      const cachedResponse = await getCachedResponse(inputHash);
+      if (cachedResponse) {
+        await trackUsage(userId, 'explanation', inputHash, 0, 0);
+        return res.json({
+          ...cachedResponse,
+          fromCache: true,
+          remainingRequests: validation.remainingRequests
+        });
+      }
+
+      // Generate new AI response
+      const aiResponse = await generateAIExplanation({
+        topic: topic || challengeType,
+        day,
+        userQuestion,
+        context: `Challenge: ${challengeType}, Day: ${day}`
+      });
+
+      const tokensUsed = Math.ceil((userQuestion?.length || 0) / 4) + Math.ceil(JSON.stringify(aiResponse).length / 4);
+      const cost = Math.ceil(tokensUsed * 0.00002 * 100);
+
+      await cacheResponse(inputHash, 'explanation', aiResponse, userId, challengeType, day, tokensUsed);
+      await trackUsage(userId, 'explanation', inputHash, tokensUsed, cost);
+
+      res.json({
+        ...aiResponse,
+        fromCache: false,
+        tokensUsed,
+        remainingRequests: validation.remainingRequests
+      });
+
+    } catch (error) {
+      console.error("AI explanation error:", error);
+      res.status(500).json({ error: "Failed to generate AI explanation" });
+    }
+  });
+
+  // AI Usage Statistics endpoint
+  app.get("/api/ai/usage-stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const stats = await getUserAIStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Usage stats error:", error);
+      res.status(500).json({ error: "Failed to get usage statistics" });
+    }
+  });
 
   // Test endpoint without auth to verify server is working
   app.get('/api/test', async (req: any, res) => {
