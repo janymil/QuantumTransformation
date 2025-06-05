@@ -99,7 +99,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
   const completionMutation = useMutation({
     mutationFn: async (completionData: any) => {
-      return apiRequest("/api/challenges/complete", "POST", completionData);
+      return apiRequest("/api/challenge/complete", "POST", completionData);
     },
     onSuccess: () => {
       setIsCompleted(true);
