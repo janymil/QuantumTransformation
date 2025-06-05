@@ -28,6 +28,7 @@ import VideoMeditationGuide from "@/components/video-meditation-guide";
 import ProgressCelebration from "@/components/progress-celebration";
 import ChallengeHeader from "@/components/challenge-day/challenge-header";
 import { generateChallengeContent } from "@/components/challenge-day/challenge-content-generator";
+import MicroLearningWidget, { useGamification } from "@/components/gamification/micro-learning-widget";
 import ChallengeContent from "@/components/challenge-day/challenge-content";
 import PracticeToolsHub from "@/components/practice-tools/practice-tools-hub";
 import ActionButtons from "@/components/challenge-day/action-buttons";
@@ -65,6 +66,9 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   };
   
   const challengeType = propChallengeType || challengeTypeMapping[urlChallengeType] || 'general_quantum';
+  
+  // Gamification hooks
+  const gamification = useGamification(challengeType);
   
   const effectiveDay = currentDay;
 

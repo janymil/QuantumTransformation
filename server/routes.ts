@@ -9,7 +9,9 @@ import { registerChallengeRoutes } from "./routes/challenge-routes";
 import { registerProgressRoutes } from "./routes/progress-routes";
 import { registerJournalRoutes } from "./routes/journal-routes";
 import { registerAIRoutes } from "./routes/ai-routes";
+import { registerGamificationRoutes } from "./routes/gamification-routes";
 import { generatePersonalizedAffirmation } from "./openai";
+import { initializeUserGamification } from "./gamification";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -39,6 +41,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reminderEnabled: true,
           theme: 'light'
         });
+        
+        // Initialize gamification for the default challenge
+        await initializeUserGamification(userId, "general_quantum");
         
         console.log(`Initialized data for new user: ${userId}`);
       }
@@ -78,6 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerProgressRoutes(app);
   registerJournalRoutes(app);
   registerAIRoutes(app);
+  registerGamificationRoutes(app);
 
   // Test endpoint without auth to verify server is working
   app.get('/api/test', async (req: any, res) => {
