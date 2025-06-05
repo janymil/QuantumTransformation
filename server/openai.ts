@@ -198,23 +198,23 @@ Respond in JSON format with detailed, personalized guidance for each aspect of t
   const userPrompt = `
 Current Progress Analysis:
 - Day: ${currentDay}/30
-- Days Completed: ${completedDays.length}
+- Days Completed: ${completedDays?.length || 0}
 - Current Streak: ${streakCount} days
-- Completion Rate: ${Math.round((completedDays.length / currentDay) * 100)}%
+- Completion Rate: ${Math.round(((completedDays?.length || 0) / currentDay) * 100)}%
 - Difficulty Level: ${difficultyLevel || 'beginner'}
 - Preferred Practice Time: ${preferredPracticeTime || 'not specified'}
 
 User Goals: ${userGoals || 'General consciousness expansion'}
 
 Recent Journal Insights:
-${recentJournalEntries.map(entry => `
+${recentJournalEntries?.length ? recentJournalEntries.map(entry => `
 Day ${entry.day}:
 - Experience: ${entry.experience}
 - Insights: ${entry.insights}
 - Intention: ${entry.intention}
 - Mood: ${entry.mood || 'not specified'}
 - Challenges: ${entry.challenges || 'none mentioned'}
-`).join('\n')}
+`).join('\n') : 'No recent journal entries available'}
 
 Please provide comprehensive personalized coaching with specific recommendations for their quantum consciousness journey.
 

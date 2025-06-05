@@ -62,6 +62,31 @@ export default function AICoachingHub({
     }
   }, [prefilledQuestion]);
 
+  // Handle focus actions for quick action buttons
+  useEffect(() => {
+    if (shouldFocusGoals) {
+      // Focus on goals textarea when quick action is triggered
+      setTimeout(() => {
+        const goalsTextarea = document.querySelector('textarea[placeholder*="goals"]') as HTMLTextAreaElement;
+        if (goalsTextarea) {
+          goalsTextarea.focus();
+        }
+      }, 100);
+    }
+  }, [shouldFocusGoals]);
+
+  useEffect(() => {
+    if (shouldFocusChallenges) {
+      // Focus on challenges textarea when quick action is triggered
+      setTimeout(() => {
+        const challengesTextarea = document.querySelector('textarea[placeholder*="obstacles"]') as HTMLTextAreaElement;
+        if (challengesTextarea) {
+          challengesTextarea.focus();
+        }
+      }, 100);
+    }
+  }, [shouldFocusChallenges]);
+
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (onTabChange) {
