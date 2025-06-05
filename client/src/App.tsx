@@ -64,35 +64,7 @@ function Router() {
         <Route path="/challenge-day" component={ChallengeDay} />
         <Route path="/challenge-progress" component={ChallengeProgress} />
         
-        {/* Quantum Consciousness Challenge */}
-        <Route path="/quantum-consciousness" component={QuantumDashboard} />
-        <Route path="/quantum-consciousness/journal" component={QuantumJournal} />
-        <Route path="/quantum-consciousness/progress" component={QuantumProgress} />
-        <Route path="/quantum-consciousness/day/:day" component={QuantumDay} />
-        
-        {/* Money Blocks Challenge */}
-        <Route path="/money-blocks" component={MoneyDashboard} />
-        <Route path="/money-blocks/journal" component={MoneyJournal} />
-        <Route path="/money-blocks/progress" component={MoneyProgress} />
-        <Route path="/money-blocks/day/:day" component={MoneyDay} />
-        
-        {/* Relationships Challenge */}
-        <Route path="/relationships" component={RelationshipsDashboard} />
-        <Route path="/relationships/journal" component={RelationshipsJournal} />
-        <Route path="/relationships/progress" component={RelationshipsProgress} />
-        <Route path="/relationships/day/:day" component={RelationshipsDay} />
-        
-        {/* Health Transformation Challenge */}
-        <Route path="/health-transformation" component={HealthDashboard} />
-        <Route path="/health-transformation/journal" component={HealthJournal} />
-        <Route path="/health-transformation/progress" component={HealthProgress} />
-        <Route path="/health-transformation/day/:day" component={HealthDay} />
-        
-        {/* Creativity Flow Challenge */}
-        <Route path="/creativity-flow" component={CreativityDashboard} />
-        <Route path="/creativity-flow/journal" component={CreativityJournal} />
-        <Route path="/creativity-flow/progress" component={CreativityProgress} />
-        <Route path="/creativity-flow/day/:day" component={CreativityDay} />
+        {/* Challenge-specific routes will be added after fixing component issues */}
         
         <Route component={NotFound} />
       </Switch>
