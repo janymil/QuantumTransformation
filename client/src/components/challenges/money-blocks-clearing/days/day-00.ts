@@ -39,36 +39,52 @@ Each section is based on proven methods of neuroplasticity, quantum entrainment,
 This is not a generic program. This is precise, strategically layered mental engineering for real inner change.
   `,
 
-  morningActivation: {
-    title: "Quantum Field Preparation",
-    duration: "5 minutes",
-    steps: [
-      "Take 3 deep breaths to center yourself in the present moment",
-      "Set your intention for this 30-day transformation journey",
-      "Visualize yourself as already financially free and abundant",
-      "Feel the excitement of beginning this powerful change process"
-    ]
-  },
+  practice: {
+    morning: {
+      title: "Quantum Field Preparation",
+      duration: "5 minutes",
+      steps: [
+        "Take 3 deep breaths to center yourself in the present moment",
+        "Set your intention for this 30-day transformation journey",
+        "Visualize yourself as already financially free and abundant",
+        "Feel the excitement of beginning this powerful change process"
+      ]
+    },
 
-  daytimeAction: {
-    title: "Program Overview",
-    duration: "5 minutes", 
-    steps: [
-      "Review the complete 30-day structure outlined above",
-      "Understand the scientific basis behind each technique",
-      "Commit to following through with consistency",
-      "Set your daily practice time preferences"
-    ]
-  },
+    daytime: {
+      title: "Program Overview",
+      duration: "5 minutes", 
+      steps: [
+        "Review the complete 30-day structure outlined above",
+        "Understand the scientific basis behind each technique",
+        "Commit to following through with consistency",
+        "Set your daily practice time preferences"
+      ]
+    },
 
-  eveningIntegration: {
-    title: "Commitment Anchoring",
-    duration: "5 minutes",
-    steps: [
-      "Reflect on your readiness for transformation",
-      "Anchor your commitment to complete all 30 days",
-      "Visualize your future abundant self thanking your present self",
-      "Fall asleep with gratitude for beginning this journey"
+    evening: {
+      title: "Commitment Anchoring",
+      duration: "5 minutes",
+      steps: [
+        "Reflect on your readiness for transformation",
+        "Anchor your commitment to complete all 30 days",
+        "Visualize your future abundant self thanking your present self",
+        "Fall asleep with gratitude for beginning this journey"
+      ]
+    },
+
+    tips: [
+      "Set a consistent daily time for your practice",
+      "Create a dedicated space for your quantum work",
+      "Keep a journal to track your progress",
+      "Approach each day with beginner's mind and curiosity"
+    ],
+
+    insights: [
+      "Daily practice compounds into significant transformation",
+      "Each cleared block opens space for greater abundance",
+      "Your commitment to growth inspires positive change",
+      "Small daily shifts create profound long-term results"
     ]
   },
 
@@ -89,12 +105,7 @@ This is not a generic program. This is precise, strategically layered mental eng
     "Foundation set for subconscious reprogramming"
   ],
 
-  practicalTips: [
-    "Set a consistent daily time for your practice",
-    "Create a dedicated space for your quantum work",
-    "Keep a journal to track your progress",
-    "Approach each day with beginner's mind and curiosity"
-  ],
+
 
   quote: "The feeling of the wish fulfilled is the secret of all successful prayer. - Neville Goddard",
 
