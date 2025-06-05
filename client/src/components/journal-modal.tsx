@@ -45,31 +45,55 @@ export default function JournalModal({
   const [insights, setInsights] = useState("");
   const [intention, setIntention] = useState("");
 
-  const { data: existingEntry, isLoading } = useQuery<JournalEntry>({
-    queryKey: ["/api/journal", day, challengeType],
+  // Force fresh data fetch on every modal open - bypass cache completely
+  const { data: existingEntry, isLoading, refetch } = useQuery<JournalEntry>({
+    queryKey: ["/api/journal", day, challengeType, Date.now()], // Add timestamp to force fresh fetch
     queryFn: async () => {
-      const response = await fetch(`/api/journal?day=${day}&challengeType=${challengeType}`, {
+      console.log(`Fetching journal entry for challenge: ${challengeType}, day: ${day}`);
+      const response = await fetch(`/api/journal?day=${day}&challengeType=${challengeType}&_t=${Date.now()}`, {
         credentials: "include",
+        cache: "no-cache", // Force bypass browser cache too
       });
-      if (response.status === 404) return null;
+      if (response.status === 404) {
+        console.log(`No existing entry found for ${challengeType} day ${day}`);
+        return null;
+      }
       if (!response.ok) throw new Error("Failed to fetch journal entry");
-      return response.json();
+      const data = await response.json();
+      console.log(`Loaded existing entry for ${challengeType} day ${day}:`, data);
+      return data;
     },
     enabled: isOpen,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache at all
   });
 
-  // Reset form when challenge type or day changes, or populate with existing data
+  // Clear form immediately when challenge/day changes, then populate with fresh data
   useEffect(() => {
-    if (existingEntry) {
+    console.log(`Modal opened for challenge: ${challengeType}, day: ${day}`);
+    // Immediately clear form
+    setExperience("");
+    setInsights("");
+    setIntention("");
+    
+    // Force refetch when modal opens with different challenge/day
+    if (isOpen) {
+      refetch();
+    }
+  }, [challengeType, day, isOpen, refetch]);
+
+  // Populate form only with fresh data
+  useEffect(() => {
+    if (existingEntry && isOpen) {
+      console.log(`Populating form with entry:`, existingEntry);
       setExperience(existingEntry.experience || "");
       setInsights(existingEntry.insights || "");
       setIntention(existingEntry.intention || "");
-    } else {
-      setExperience("");
-      setInsights("");
-      setIntention("");
+    } else if (isOpen && !isLoading) {
+      console.log(`No existing entry - keeping form empty for ${challengeType} day ${day}`);
+      // Keep form empty for new entries
     }
-  }, [existingEntry, challengeType, day]);
+  }, [existingEntry, isOpen, isLoading, challengeType, day]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: { experience: string; insights: string; intention: string }) => {
