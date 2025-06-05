@@ -136,9 +136,10 @@ Please provide a comprehensive analysis of their progress and development.`;
 export interface PersonalizedCoachingRequest {
   userId: string;
   currentDay: number;
-  completedDays: number[];
-  streakCount: number;
-  recentJournalEntries: {
+  challengeType?: string;
+  completedDays?: number[];
+  streakCount?: number;
+  recentJournalEntries?: {
     day: number;
     experience: string;
     insights: string;
@@ -211,16 +212,21 @@ Current Progress Analysis:
 User Goals: ${userGoals || 'General consciousness expansion'}
 Challenge Type: ${request.challengeType || 'general_quantum'}
 
-IMPORTANT: Regardless of the user's stated goals, all coaching must stay within these domains:
+IMPORTANT: All coaching must stay within these consciousness and personal development domains:
 - Quantum consciousness and field theory applications
 - Joe Dispenza's meditation and neuroplasticity techniques  
 - Neville Goddard's assumption and visualization methods
 - Subconscious reprogramming and limiting belief clearing
 - Energy alignment and elevated emotional states
 - Mind-body healing and consciousness expansion
-- Spiritual growth and personal development practices
+- Spiritual growth and metaphysical practices
+- Manifestation and law of attraction principles
+- Chakra work and energy healing
+- Mindfulness and present moment awareness
+- Shadow work and inner child healing
+- Breathwork and somatic practices
 
-Transform ANY topic (relationships, career, health, finances, etc.) through this quantum consciousness lens. Never provide advice outside these spiritual/consciousness domains.
+Transform ANY topic through this consciousness expansion lens. Never provide practical advice outside these spiritual/personal development domains.
 
 Recent Journal Insights:
 ${recentJournalEntries?.length ? recentJournalEntries.map(entry => `
