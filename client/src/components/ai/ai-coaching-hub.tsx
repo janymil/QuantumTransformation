@@ -46,6 +46,8 @@ export default function AICoachingHub({
   const [goals, setGoals] = useState("");
   const [challenges, setChallenges] = useState("");
   const [mood, setMood] = useState(5);
+  const [coachingResponse, setCoachingResponse] = useState<any>(null);
+  const [explanationResponse, setExplanationResponse] = useState<any>(null);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -73,6 +75,7 @@ export default function AICoachingHub({
       });
     },
     onSuccess: (data) => {
+      setCoachingResponse(data);
       queryClient.invalidateQueries({ queryKey: ["/api/ai/usage-stats"] });
       toast({
         title: "Coaching Generated",
@@ -98,9 +101,14 @@ export default function AICoachingHub({
         context: challengeType
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setExplanationResponse(data);
       setQuestion("");
       queryClient.invalidateQueries({ queryKey: ["/api/ai/usage-stats"] });
+      toast({
+        title: "Answer Generated",
+        description: "Your question has been answered!",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -220,7 +228,7 @@ export default function AICoachingHub({
               </Button>
             </div>
 
-            {coachingMutation.data && (
+            {(coachingMutation.data || coachingResponse) && (
               <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-700">
                 <CardContent className="p-4">
                   <div className="space-y-3">
