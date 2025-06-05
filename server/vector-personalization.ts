@@ -275,39 +275,7 @@ Use this context to provide highly personalized guidance that references specifi
 
 
 
-  /**
-   * Create optimized personalized prompt with semantic context
-   */
-  private createPersonalizedPrompt(
-    challengeContent: string[],
-    userHistory: string[],
-    challengeType: string,
-    query: string
-  ): string {
-    return `
-ADVANCED PERSONALIZED QUANTUM CONSCIOUSNESS COACHING
 
-CHALLENGE FOCUS: ${challengeType.replace('_', ' ').toUpperCase()}
-
-RELEVANT CHALLENGE CONTENT:
-${challengeContent.slice(0, 2).join('\n\n')}
-
-USER PERSONALIZATION DATA:
-${userHistory.slice(0, 3).join('\n')}
-
-USER QUERY: ${query}
-
-PERSONALIZATION INSTRUCTIONS:
-- Reference specific challenge techniques and practices from the content above
-- Build upon user's documented experiences and insights
-- Adapt Joe Dispenza and Neville Goddard methods to this specific challenge and user context
-- Address user's current progress level and specific challenges mentioned
-- Provide practical, actionable guidance that connects to their personal journey
-- Maintain quantum consciousness framework while being personally relevant
-
-Provide a highly personalized, contextually aware response that demonstrates deep understanding of both the challenge content and the user's individual journey.
-`;
-  }
 
   /**
    * Generate personalized AI response using vector context
