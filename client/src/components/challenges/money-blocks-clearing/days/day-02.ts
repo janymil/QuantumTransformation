@@ -72,9 +72,16 @@ export const day02Content = {
   },
 
   videoLinks: [
-    // Note: Video links to be added when provided
-    "Joe Dispenza – How to Change Your Mind",
-    "Joe Dispenza – Forgiveness Meditation"
+    {
+      title: "Dr. Joe Dispenza - Breaking the Habit of Being Yourself",
+      description: "Understanding how to break old patterns and create new neural pathways for transformation",
+      url: "https://www.youtube.com/watch?v=Q3taCus6qsM"
+    },
+    {
+      title: "Dr. Joe Dispenza - Forgiveness Meditation",
+      description: "Guided meditation for releasing emotional blocks and past conditioning",
+      url: "https://www.youtube.com/watch?v=oxuiXuCZhOo"
+    }
   ],
 
   expectedResults: [
