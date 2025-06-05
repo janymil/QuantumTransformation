@@ -35,7 +35,7 @@ export function registerChallengeRoutes(app: Express) {
       // Update user progress
       const userProgress = await storage.getUserProgressForChallenge(userId, challengeType);
       if (userProgress) {
-        const completedDays = [...(userProgress.completedDays || [])];
+        const completedDays = [...((userProgress.completedDays as number[]) || [])];
         if (!completedDays.includes(day)) {
           completedDays.push(day);
         }
@@ -46,9 +46,8 @@ export function registerChallengeRoutes(app: Express) {
         await storage.updateChallengeProgress(userId, challengeType, {
           currentDay: Math.max(lastCompletedDay, userProgress.currentDay || 1),
           completedDays,
-          currentStreak,
-          totalDaysCompleted: completedDays.length,
-          lastActivityDate: new Date()
+          streakCount: currentStreak,
+          lastActivityDate: new Date().toISOString()
         });
       }
 

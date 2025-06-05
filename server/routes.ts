@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           challengeType: "general_quantum",
           currentDay: 1,
           completedDays: [],
-          currentStreak: 0,
+          streakCount: 0,
           totalDaysCompleted: 0,
           startDate: new Date(),
           lastActivityDate: new Date().toISOString(),

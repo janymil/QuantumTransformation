@@ -14,8 +14,7 @@ export function registerAuthRoutes(app: Express) {
           challengeType: "general_quantum",
           currentDay: 1,
           completedDays: [],
-          currentStreak: 0,
-          totalDaysCompleted: 0,
+          streakCount: 0,
           startDate: new Date(),
           lastActivityDate: new Date().toISOString(),
           isActive: true
