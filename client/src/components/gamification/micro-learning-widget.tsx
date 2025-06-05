@@ -279,13 +279,13 @@ export default function MicroLearningWidget({ challengeType, day, onActivityComp
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="space-y-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePracticeCompleted('morning', 900)} // 15 minutes
               disabled={trackActivityMutation.isPending}
-              className="flex items-center gap-2"
+              className="w-full flex items-center gap-2"
             >
               <CheckCircle2 className="h-4 w-4" />
               Morning (+25pts)
@@ -296,7 +296,7 @@ export default function MicroLearningWidget({ challengeType, day, onActivityComp
               size="sm"
               onClick={() => handlePracticeCompleted('daytime', 0)}
               disabled={trackActivityMutation.isPending}
-              className="flex items-center gap-2"
+              className="w-full flex items-center gap-2"
             >
               <CheckCircle2 className="h-4 w-4" />
               Daytime (+15pts)
@@ -307,7 +307,7 @@ export default function MicroLearningWidget({ challengeType, day, onActivityComp
               size="sm"
               onClick={() => handlePracticeCompleted('evening', 600)} // 10 minutes
               disabled={trackActivityMutation.isPending}
-              className="flex items-center gap-2"
+              className="w-full flex items-center gap-2"
             >
               <CheckCircle2 className="h-4 w-4" />
               Evening (+20pts)

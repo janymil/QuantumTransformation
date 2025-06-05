@@ -28,7 +28,7 @@ import VideoMeditationGuide from "@/components/video-meditation-guide";
 import ProgressCelebration from "@/components/progress-celebration";
 import ChallengeHeader from "@/components/challenge-day/challenge-header";
 import { generateChallengeContent } from "@/components/challenge-day/challenge-content-generator";
-import MicroLearningWidget, { useGamification } from "@/components/gamification/micro-learning-widget";
+import VerifiedProgressTracker from "@/components/smart-gamification/verified-progress-tracker";
 import ChallengeContent from "@/components/challenge-day/challenge-content";
 import PracticeToolsHub from "@/components/practice-tools/practice-tools-hub";
 import ActionButtons from "@/components/challenge-day/action-buttons";
@@ -66,9 +66,6 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   };
   
   const challengeType = propChallengeType || challengeTypeMapping[urlChallengeType] || 'general_quantum';
-  
-  // Gamification hooks (initialized after challengeType is determined)
-  const gamification = useGamification(challengeType);
   
   const effectiveDay = currentDay;
 
@@ -381,16 +378,6 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Micro-Learning Gamification Widget */}
-          <MicroLearningWidget 
-            challengeType={challengeType}
-            day={effectiveDay}
-            onActivityComplete={(points, levelUp) => {
-              if (levelUp) {
-                setShowCelebration(true);
-              }
-            }}
-          />
           
           <Card>
             <CardHeader>

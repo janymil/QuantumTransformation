@@ -6,6 +6,9 @@ import {
   getUserGamificationStats,
   generateDailyMicroLearning 
 } from "../gamification";
+import { db } from "../db";
+import { microLearningActivities } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 export function registerGamificationRoutes(app: Express) {
   
@@ -161,6 +164,111 @@ export function registerGamificationRoutes(app: Express) {
     } catch (error) {
       console.error("Error tracking day completion:", error);
       res.status(500).json({ message: "Failed to track day completion" });
+    }
+  });
+
+  // Track verified activity with real validation
+  app.post('/api/gamification/track-verified-activity', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType, day, type, verificationData } = req.body;
+      
+      if (!challengeType || day === undefined || !type || !verificationData) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Validate based on activity type
+      let isValid = false;
+      let pointsEarned = 0;
+      let unlocked = [];
+
+      switch (type) {
+        case 'morning_meditation':
+          const currentHour = new Date().getHours();
+          isValid = verificationData.duration >= 600 && (currentHour >= 5 && currentHour <= 11);
+          pointsEarned = isValid ? 30 : 0;
+          unlocked = isValid ? ['morning_insights', 'energy_boost'] : [];
+          break;
+
+        case 'video_learning':
+          isValid = verificationData.completionPercentage >= 80;
+          pointsEarned = isValid ? 20 : 0;
+          unlocked = isValid ? ['advanced_techniques', 'bonus_content'] : [];
+          break;
+
+        case 'journal_reflection':
+          isValid = verificationData.wordCount >= 20 && verificationData.characterCount >= 100;
+          pointsEarned = isValid ? 25 : 0;
+          unlocked = isValid ? ['personal_insights', 'pattern_recognition'] : [];
+          break;
+
+        case 'evening_integration':
+          const eveningHour = new Date().getHours();
+          isValid = verificationData.wordCount >= 15 && (eveningHour >= 18 && eveningHour <= 23);
+          pointsEarned = isValid ? 35 : 0;
+          unlocked = isValid ? ['next_day_preview', 'advanced_practices'] : [];
+          break;
+
+        default:
+          return res.status(400).json({ message: "Invalid activity type" });
+      }
+
+      if (!isValid) {
+        return res.status(400).json({ message: "Activity verification failed" });
+      }
+
+      const result = await trackActivity(userId, challengeType, day, type, verificationData);
+      
+      res.json({
+        ...result,
+        unlocked,
+        verificationPassed: true
+      });
+
+    } catch (error) {
+      console.error("Error tracking verified activity:", error);
+      res.status(500).json({ message: "Failed to track verified activity" });
+    }
+  });
+
+  // Get verified progress for a specific day
+  app.get('/api/gamification/verified-progress/:challengeType/:day', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType, day } = req.params;
+      const dayNumber = parseInt(day);
+      
+      if (isNaN(dayNumber)) {
+        return res.status(400).json({ message: "Invalid day number" });
+      }
+
+      // Get activities for this specific day
+      const activities = await db
+        .select()
+        .from(microLearningActivities)
+        .where(and(
+          eq(microLearningActivities.userId, userId),
+          eq(microLearningActivities.challengeType, challengeType),
+          eq(microLearningActivities.day, dayNumber)
+        ));
+
+      // Get user's current stats
+      const stats = await getUserGamificationStats(userId, challengeType);
+
+      res.json({
+        activities,
+        stats,
+        verifiedProgress: {
+          morning_meditation: activities.some(a => a.activityType === 'morning_meditation'),
+          video_learning: activities.some(a => a.activityType === 'video_learning'),
+          journal_reflection: activities.some(a => a.activityType === 'journal_reflection'),
+          evening_integration: activities.some(a => a.activityType === 'evening_integration')
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching verified progress:", error);
+      res.status(500).json({ message: "Failed to fetch verified progress" });
     }
   });
 }
