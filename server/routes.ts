@@ -30,6 +30,8 @@ import { registerGamificationRoutes } from "./routes/gamification-routes";
 import { generatePersonalizedAffirmation } from "./openai";
 import { vectorPersonalization } from "./vector-personalization";
 import { emotionalIntelligence } from "./emotional-intelligence";
+import { advancedMemory } from "./advanced-memory";
+import { predictiveIntelligence } from "./predictive-intelligence";
 import { initializeUserGamification } from "./gamification";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -465,6 +467,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Emotional evolution tracking error:", error);
       res.status(500).json({ error: "Failed to track emotional evolution" });
+    }
+  });
+
+  // Advanced Memory System endpoints
+  app.get("/api/ai/memory-profile/:challengeType", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType } = req.params;
+
+      const longTermMemory = await advancedMemory.buildLongTermMemory(userId);
+      const memoryMaintenance = await advancedMemory.performMemoryMaintenance(userId);
+
+      res.json({
+        longTermProfile: longTermMemory,
+        memoryMaintenance,
+        analysisDate: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Memory profile error:", error);
+      res.status(500).json({ error: "Failed to build memory profile" });
+    }
+  });
+
+  // Predictive Intelligence endpoints
+  app.get("/api/ai/predictive-insights/:challengeType", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType } = req.params;
+
+      const behaviorPatterns = await predictiveIntelligence.analyzeBehaviorPatterns(userId, challengeType);
+      const completionForecast = await predictiveIntelligence.predictCompletionLikelihood(userId, challengeType);
+      const insights = await predictiveIntelligence.generatePredictiveInsights(userId, challengeType);
+      const optimalTiming = await predictiveIntelligence.determineOptimalTiming(userId, challengeType);
+
+      res.json({
+        behaviorPatterns,
+        completionForecast,
+        insights,
+        optimalTiming,
+        analysisDate: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Predictive insights error:", error);
+      res.status(500).json({ error: "Failed to generate predictive insights" });
+    }
+  });
+
+  // Proactive Coaching Message endpoint
+  app.post("/api/ai/proactive-message", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType = 'general_quantum' } = req.body;
+
+      const proactiveMessage = await predictiveIntelligence.generateProactiveMessage(userId, challengeType);
+
+      res.json({
+        message: proactiveMessage,
+        generatedAt: new Date().toISOString(),
+        challengeType
+      });
+
+    } catch (error) {
+      console.error("Proactive message error:", error);
+      res.status(500).json({ error: "Failed to generate proactive message" });
+    }
+  });
+
+  // Supreme AI Coaching endpoint - combines all systems
+  app.post("/api/ai/supreme-coaching", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { query, challengeType = 'general_quantum', userTier = 'basic' } = req.body;
+
+      if (!query) {
+        return res.status(400).json({ error: "Query is required" });
+      }
+
+      // Validate AI request
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'supreme_coaching',
+        input: query,
+        challengeType,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests
+        });
+      }
+
+      // Initialize all systems
+      try {
+        await vectorPersonalization.initialize();
+        await vectorPersonalization.indexChallengeContent();
+        await vectorPersonalization.indexUserData(userId);
+      } catch (initError) {
+        console.log("Systems already initialized");
+      }
+
+      // Generate base response using vector personalization
+      const baseResponse = await vectorPersonalization.generatePersonalizedResponse(
+        userId,
+        query,
+        challengeType
+      );
+
+      // Enhance with emotional intelligence
+      const emotionallyAdaptedResponse = await emotionalIntelligence.generateEmotionallyAdaptedResponse(
+        userId,
+        query,
+        challengeType,
+        baseResponse
+      );
+
+      // Enhance with advanced memory
+      const memoryEnhancedResponse = await advancedMemory.generateMemoryEnhancedResponse(
+        userId,
+        query,
+        challengeType,
+        emotionallyAdaptedResponse
+      );
+
+      // Get comprehensive insights
+      const emotionalInsights = await emotionalIntelligence.identifyEmotionalInsights(userId, challengeType);
+      const predictiveInsights = await predictiveIntelligence.generatePredictiveInsights(userId, challengeType);
+      const completionForecast = await predictiveIntelligence.predictCompletionLikelihood(userId, challengeType);
+
+      // Track usage
+      await trackUsage(userId, 'supreme_coaching', query, memoryEnhancedResponse, challengeType);
+
+      res.json({
+        response: memoryEnhancedResponse,
+        emotionalInsights,
+        predictiveInsights,
+        completionForecast,
+        personalizationMethod: 'vector_emotional_memory_predictive_intelligence',
+        challengeType,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Supreme coaching error:", error);
+      res.status(500).json({ error: "Failed to generate supreme coaching response" });
     }
   });
 
