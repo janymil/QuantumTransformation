@@ -27,18 +27,17 @@ import {
   Sun,
   Moon
 } from "lucide-react";
-import { challengeContent } from "@/data/challenge-content";
 import VideoMeditationGuide from "@/components/video-meditation-guide";
 import ProgressCelebration from "@/components/progress-celebration";
 import ChallengeHeader from "@/components/challenge-day/challenge-header";
 import { generateChallengeContent } from "@/components/challenge-day/challenge-content-generator";
 import ChallengeContent from "@/components/challenge-day/challenge-content";
 import ActionButtons from "@/components/challenge-day/action-buttons";
+import ContextualTutorial from "@/components/contextual-tutorial";
 
 interface ChallengeDayProps {
   challengeType?: string;
 }
-import ContextualTutorial from "@/components/contextual-tutorial";
 
 export default function ChallengeDay({ challengeType: propChallengeType }: ChallengeDayProps = {}) {
   const { day } = useParams<{ day: string }>();
@@ -87,11 +86,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
   const completeMutation = useMutation({
     mutationFn: async ({ day, challengeType, timeSpent }: { day: number; challengeType: string; timeSpent: number }) => {
-      const response = await apiRequest(`/api/challenge/complete/${day}`, {
-        method: "POST",
-        body: { challengeType, timeSpent },
-      });
-      return response;
+      return await apiRequest(`/api/challenge/complete/${day}`, "POST", { challengeType, timeSpent });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/challenge/completion", effectiveDay, challengeType] });
@@ -189,13 +184,16 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
   return (
     <div className="container mx-auto p-6 max-w-6xl space-y-6">
-      <ChallengeHeader 
-        currentDay={effectiveDay}
-        challengeType={challengeType}
-        content={content}
-        completedDays={completedDays}
-        onBack={() => window.history.back()}
-      />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">{content.title}</h1>
+          <p className="text-muted-foreground">Day {effectiveDay} • {challengeType}</p>
+        </div>
+        <Button variant="outline" onClick={() => window.history.back()}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -361,7 +359,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                     <div className="space-y-4">
                       <h4 className="font-semibold text-foreground">Step-by-Step Guide:</h4>
                       <ol className="space-y-3">
-                        {content.practice.steps.map((step: string, index: number) => (
+                        {content.practice.steps?.map((step: string, index: number) => (
                           <li key={index} className="flex items-start space-x-3">
                             <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                               <span className="text-white text-sm font-medium">{index + 1}</span>
@@ -380,7 +378,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                         Practice Tips
                       </h4>
                       <ul className="space-y-2">
-                        {content.practice.tips.map((tip: string, index: number) => (
+                        {content.practice.tips?.map((tip: string, index: number) => (
                           <li key={index} className="text-muted-foreground flex items-start">
                             <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2 mr-3"></span>
                             {tip}
@@ -403,7 +401,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {content.practice.insights.map((insight: string, index: number) => (
+                    {content.practice.insights?.map((insight: string, index: number) => (
                       <div key={index} className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg">
                         <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
                           <Lightbulb className="w-4 h-4 text-white" />
@@ -448,19 +446,46 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
         </div>
 
         <div className="space-y-6">
-          <ActionButtons
-            isCompleted={isCompleted}
-            completionLoading={completionLoading}
-            onComplete={handleComplete}
-            onJournal={() => setShowJournal(true)}
-            onAI={() => setShowAI(true)}
-            timeSpent={formatTime(timeSpent)}
-          />
-
-          <VideoMeditationGuide 
-            day={effectiveDay}
-            challengeType={challengeType}
-          />
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Progress</h3>
+                <Badge variant="secondary">Time: {formatTime(timeSpent)}</Badge>
+              </div>
+              <div className="space-y-2">
+                <Button 
+                  onClick={handleComplete}
+                  disabled={isCompleted || completionLoading}
+                  className="w-full"
+                >
+                  {isCompleted ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Completed
+                    </>
+                  ) : (
+                    "Mark as Complete"
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowJournal(true)}
+                  className="w-full"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Journal
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAI(true)}
+                  className="w-full"
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  AI Assistant
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
