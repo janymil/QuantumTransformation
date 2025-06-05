@@ -28,6 +28,7 @@ import {
 } from "./enhanced-caching";
 import { registerGamificationRoutes } from "./routes/gamification-routes";
 import { generatePersonalizedAffirmation } from "./openai";
+import { vectorPersonalization } from "./vector-personalization";
 import { initializeUserGamification } from "./gamification";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -251,6 +252,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Cache statistics error:", error);
       res.status(500).json({ error: "Failed to get cache statistics" });
+    }
+  });
+
+  // Advanced Vector-Based AI Personalization endpoint
+  app.post("/api/ai/vector-coaching", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { query, challengeType = 'general_quantum', userTier = 'basic' } = req.body;
+
+      if (!query) {
+        return res.status(400).json({ error: "Query is required" });
+      }
+
+      // Validate AI request
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'vector_coaching',
+        input: query,
+        challengeType,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests,
+          nextAvailableAt: validation.nextAvailableAt
+        });
+      }
+
+      // Initialize vector personalization if needed
+      try {
+        await vectorPersonalization.initialize();
+        await vectorPersonalization.indexChallengeContent();
+        await vectorPersonalization.indexUserData(userId);
+      } catch (initError) {
+        console.log("Vector personalization init (may already be initialized):", initError);
+      }
+
+      // Generate highly personalized response using semantic search
+      const personalizedResponse = await vectorPersonalization.generatePersonalizedResponse(
+        userId,
+        query,
+        challengeType
+      );
+
+      // Track usage
+      await trackUsage(userId, 'vector_coaching', query, personalizedResponse, challengeType);
+
+      // Store in response history
+      await db.insert(aiResponseHistory).values({
+        userId,
+        sessionType: 'vector_coaching',
+        userInput: query,
+        aiResponse: personalizedResponse,
+        challengeType,
+        metadata: { 
+          personalizationMethod: 'vector_semantic_search',
+          vectorSearchUsed: true
+        }
+      });
+
+      res.json({
+        response: personalizedResponse,
+        personalizationMethod: 'vector_semantic_search',
+        challengeType,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Vector coaching error:", error);
+      res.status(500).json({ error: "Failed to generate personalized response" });
+    }
+  });
+
+  // Initialize Vector Personalization System endpoint
+  app.post("/api/ai/initialize-vector-system", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+
+      await vectorPersonalization.initialize();
+      await vectorPersonalization.indexChallengeContent();
+      await vectorPersonalization.indexUserData(userId);
+
+      res.json({
+        message: "Vector personalization system initialized successfully",
+        features: [
+          "Semantic search for relevant content",
+          "User behavior and progress indexing",
+          "Challenge-specific content embeddings",
+          "Intelligent context selection"
+        ],
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Vector system initialization error:", error);
+      res.status(500).json({ error: "Failed to initialize vector personalization system" });
     }
   });
 
