@@ -57,6 +57,7 @@ export interface IStorage {
   getJournalEntriesByChallenge(userId: string, challengeType: string): Promise<JournalEntry[]>;
   getJournalEntriesForActiveChallenges(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]>;
   getArchivedJournalEntries(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]>;
+  deleteJournalEntry(userId: string, entryId: number): Promise<void>;
   
   // Saved phrases operations
   createSavedPhrase(phrase: InsertSavedPhrase): Promise<SavedPhrase>;
@@ -310,6 +311,15 @@ export class DatabaseStorage implements IStorage {
       challengeType,
       entries
     }));
+  }
+
+  async deleteJournalEntry(userId: string, entryId: number): Promise<void> {
+    await db
+      .delete(journalEntries)
+      .where(and(
+        eq(journalEntries.userId, userId),
+        eq(journalEntries.id, entryId)
+      ));
   }
 
   // Saved phrases operations

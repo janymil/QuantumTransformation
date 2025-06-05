@@ -105,4 +105,22 @@ export function registerJournalRoutes(app: Express) {
       res.status(500).json({ message: "Failed to fetch archived journal entries" });
     }
   });
+
+  // Delete journal entry
+  app.delete('/api/journal/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const entryId = parseInt(req.params.id);
+      
+      if (!entryId) {
+        return res.status(400).json({ message: "Entry ID is required" });
+      }
+
+      await storage.deleteJournalEntry(userId, entryId);
+      res.json({ message: "Journal entry deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting journal entry:", error);
+      res.status(500).json({ message: "Failed to delete journal entry" });
+    }
+  });
 }
