@@ -200,6 +200,92 @@ export type SpacedRepetitionReview = typeof spacedRepetitionReviews.$inferSelect
 export type InsertSpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferInsert;
 export type SpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferSelect;
 
+// Gamification and Micro-Learning System
+export const userLevels = pgTable("user_levels", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  challengeType: varchar("challenge_type").notNull(),
+  level: integer("level").default(1),
+  totalPoints: integer("total_points").default(0),
+  currentLevelPoints: integer("current_level_points").default(0),
+  pointsToNextLevel: integer("points_to_next_level").default(100),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("user_challenge_level_idx").on(table.userId, table.challengeType)
+]);
+
+export const microLearningActivities = pgTable("micro_learning_activities", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  challengeType: varchar("challenge_type").notNull(),
+  day: integer("day").notNull(),
+  activityType: varchar("activity_type").notNull(), // 'morning_practice', 'daytime_practice', 'evening_practice', 'journal_entry', 'video_watched', 'affirmation_saved', 'insight_mastered', 'quiz_completed'
+  activityData: jsonb("activity_data"), // Store specific activity details
+  pointsEarned: integer("points_earned").default(0),
+  timeSpent: integer("time_spent"), // in seconds
+  completedAt: timestamp("completed_at").defaultNow(),
+});
+
+export const learningBadges = pgTable("learning_badges", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  challengeType: varchar("challenge_type").notNull(),
+  badgeType: varchar("badge_type").notNull(), // 'streak_master', 'early_bird', 'night_owl', 'knowledge_seeker', 'practice_master', 'insight_collector'
+  badgeName: varchar("badge_name").notNull(),
+  description: text("description"),
+  iconUrl: varchar("icon_url"),
+  earnedAt: timestamp("earned_at").defaultNow(),
+});
+
+export const dailyStreaks = pgTable("daily_streaks", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  challengeType: varchar("challenge_type").notNull(),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  lastActivityDate: date("last_activity_date"),
+  streakMultiplier: real("streak_multiplier").default(1.0), // Points multiplier based on streak
+}, (table) => [
+  uniqueIndex("user_challenge_streak_idx").on(table.userId, table.challengeType)
+]);
+
+export const knowledgeQuizzes = pgTable("knowledge_quizzes", {
+  id: serial("id").primaryKey(),
+  challengeType: varchar("challenge_type").notNull(),
+  day: integer("day").notNull(),
+  question: text("question").notNull(),
+  options: jsonb("options").notNull(), // Array of answer options
+  correctAnswer: integer("correct_answer").notNull(), // Index of correct option
+  explanation: text("explanation"),
+  points: integer("points").default(10),
+  difficulty: varchar("difficulty").default("medium"), // easy, medium, hard
+});
+
+export const userQuizResults = pgTable("user_quiz_results", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  quizId: integer("quiz_id").notNull().references(() => knowledgeQuizzes.id),
+  selectedAnswer: integer("selected_answer").notNull(),
+  isCorrect: boolean("is_correct").notNull(),
+  pointsEarned: integer("points_earned").default(0),
+  timeSpent: integer("time_spent"), // in seconds
+  completedAt: timestamp("completed_at").defaultNow(),
+});
+
+export type InsertUserLevel = typeof userLevels.$inferInsert;
+export type UserLevel = typeof userLevels.$inferSelect;
+export type InsertMicroLearningActivity = typeof microLearningActivities.$inferInsert;
+export type MicroLearningActivity = typeof microLearningActivities.$inferSelect;
+export type InsertLearningBadge = typeof learningBadges.$inferInsert;
+export type LearningBadge = typeof learningBadges.$inferSelect;
+export type InsertDailyStreak = typeof dailyStreaks.$inferInsert;
+export type DailyStreak = typeof dailyStreaks.$inferSelect;
+export type InsertKnowledgeQuiz = typeof knowledgeQuizzes.$inferInsert;
+export type KnowledgeQuiz = typeof knowledgeQuizzes.$inferSelect;
+export type InsertUserQuizResult = typeof userQuizResults.$inferInsert;
+export type UserQuizResult = typeof userQuizResults.$inferSelect;
+
 // Insert schemas
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true });
 export const insertChallengeCompletionSchema = createInsertSchema(challengeCompletions).omit({ id: true });
