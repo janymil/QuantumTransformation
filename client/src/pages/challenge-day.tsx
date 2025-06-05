@@ -490,35 +490,49 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       </div>
 
       {showJournal && (
-        <JournalModal
-          day={effectiveDay}
-          challengeType={challengeType}
-          onClose={() => setShowJournal(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl">
+            <CardHeader>
+              <CardTitle>Journal - Day {effectiveDay}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>Journal functionality will be restored soon.</p>
+              <Button onClick={() => setShowJournal(false)} className="mt-4">
+                Close
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {showAI && (
-        <AIAssistant
-          day={effectiveDay}
-          challengeType={challengeType}
-          content={content}
-          onClose={() => setShowAI(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl">
+            <CardHeader>
+              <CardTitle>AI Assistant - Day {effectiveDay}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>AI Assistant functionality will be restored soon.</p>
+              <Button onClick={() => setShowAI(false)} className="mt-4">
+                Close
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {showCelebration && (
-        <ProgressCelebration
-          type={celebrationType}
-          day={effectiveDay}
-          onClose={() => setShowCelebration(false)}
-        />
-      )}
-
-      {showTutorial && (
-        <ContextualTutorial
-          step="challenge_day"
-          onClose={() => setShowTutorial(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md text-center">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold mb-4">Congratulations!</h2>
+              <p>You completed Day {effectiveDay}!</p>
+              <Button onClick={() => setShowCelebration(false)} className="mt-4">
+                Continue
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
