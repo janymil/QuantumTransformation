@@ -131,7 +131,7 @@ export const CHALLENGE_URL_MAPPING: Record<string, string> = {
   'money_manifestation': 'money-blocks',
   'quantum_health': 'health-transformation',
   'quantum_relationships': 'relationships',
-  'money_blocks_clearing': 'creativity-flow'
+  'money_blocks_clearing': 'money-blocks-clearing'
 };
 
 export function getChallengeUrl(challengeTypeId: string): string {

@@ -22,13 +22,13 @@ export default function CreativityFlowDashboard() {
   }
 
   const allProgress = (progressData as any)?.allProgress || [];
-  const challengeProgress = allProgress.find((p: any) => p.challengeType === 'creativity_flow');
+  const challengeProgress = allProgress.find((p: any) => p.challengeType === 'money_blocks_clearing');
 
   if (!challengeProgress) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Creativity Flow Challenge</h1>
+          <h1 className="text-2xl font-bold mb-4">Money Blocks Clearing Challenge</h1>
           <p className="text-muted-foreground mb-6">You haven't started this challenge yet.</p>
           <a href="/challenges" className="text-primary hover:underline">Go to Challenges</a>
         </div>
@@ -36,5 +36,5 @@ export default function CreativityFlowDashboard() {
     );
   }
 
-  return <IndividualChallengeDashboard challengeType="creativity_flow" />;
+  return <IndividualChallengeDashboard challengeType="money_blocks_clearing" />;
 }

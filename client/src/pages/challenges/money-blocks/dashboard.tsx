@@ -23,7 +23,7 @@ export default function MoneyBlocksDashboard() {
 
   // Find the progress for money blocks challenge
   const allProgress = (progressData as any)?.allProgress || [];
-  const challengeProgress = allProgress.find((p: any) => p.challengeType === 'money_blocks');
+  const challengeProgress = allProgress.find((p: any) => p.challengeType === 'money_manifestation');
 
   if (!challengeProgress) {
     return (
@@ -39,7 +39,7 @@ export default function MoneyBlocksDashboard() {
 
   return (
     <IndividualChallengeDashboard 
-      challengeType="money_blocks"
+      challengeType="money_manifestation"
     />
   );
 }

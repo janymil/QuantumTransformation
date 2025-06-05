@@ -22,7 +22,7 @@ export default function HealthTransformationDashboard() {
   }
 
   const allProgress = (progressData as any)?.allProgress || [];
-  const challengeProgress = allProgress.find((p: any) => p.challengeType === 'health_transformation');
+  const challengeProgress = allProgress.find((p: any) => p.challengeType === 'quantum_health');
 
   if (!challengeProgress) {
     return (
@@ -36,5 +36,5 @@ export default function HealthTransformationDashboard() {
     );
   }
 
-  return <IndividualChallengeDashboard challengeType="health_transformation" />;
+  return <IndividualChallengeDashboard challengeType="quantum_health" />;
 }

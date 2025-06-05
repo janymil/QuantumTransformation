@@ -108,11 +108,11 @@ function Router() {
         <Route path="/health-transformation/progress" component={HealthProgress} />
         <Route path="/health-transformation/day/:day" component={HealthDay} />
         
-        {/* Creativity Flow Challenge */}
-        <Route path="/creativity-flow" component={CreativityDashboard} />
-        <Route path="/creativity-flow/journal" component={CreativityJournal} />
-        <Route path="/creativity-flow/progress" component={CreativityProgress} />
-        <Route path="/creativity-flow/day/:day" component={CreativityDay} />
+        {/* Money Blocks Clearing Challenge */}
+        <Route path="/money-blocks-clearing" component={CreativityDashboard} />
+        <Route path="/money-blocks-clearing/journal" component={CreativityJournal} />
+        <Route path="/money-blocks-clearing/progress" component={CreativityProgress} />
+        <Route path="/money-blocks-clearing/day/:day" component={CreativityDay} />
         
         <Route component={NotFound} />
       </Switch>
