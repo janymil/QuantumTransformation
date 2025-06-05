@@ -18,7 +18,7 @@ import {
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-import { CHALLENGE_TYPES, getChallengeType } from "@shared/challenge-types";
+import { CHALLENGE_TYPES, getChallengeType, getChallengeUrl } from "@shared/challenge-types";
 import type { UserProgress, ChallengeCompletion } from "@shared/schema";
 
 export interface IndividualChallengeDashboardProps {
@@ -183,7 +183,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <Link href={`/${challengeType}/journal`}>
+            <Link href={`/${getChallengeUrl(challengeType)}/journal`}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -206,7 +206,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <Link href={`/${challengeType}/progress`}>
+            <Link href={`/${getChallengeUrl(challengeType)}/progress`}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
