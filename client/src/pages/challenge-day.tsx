@@ -49,6 +49,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   const [showJournal, setShowJournal] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
+  const [sessionStartTime] = useState(Date.now());
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -89,14 +90,15 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
     }
   }, [completionData]);
 
-  // Timer for tracking time spent
+  // Timer for tracking time spent (in seconds)
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimeSpent(prev => prev + 1);
+      const currentTime = Math.floor((Date.now() - sessionStartTime) / 1000);
+      setTimeSpent(currentTime);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [sessionStartTime]);
 
   const completionMutation = useMutation({
     mutationFn: async (completionData: any) => {
@@ -149,10 +151,13 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   const handleComplete = () => {
     if (isCompleted) return;
 
+    // Calculate actual time spent in minutes
+    const timeSpentMinutes = Math.max(1, Math.floor(timeSpent / 60));
+
     const completionData = {
       day: effectiveDay,
       challengeType,
-      timeSpent,
+      timeSpent: timeSpentMinutes,
       rating: 5,
       notes: "",
     };
@@ -195,7 +200,13 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">{content.title}</h1>
-          <p className="text-muted-foreground">Day {effectiveDay} • {challengeType}</p>
+          <div className="flex items-center gap-4">
+            <p className="text-muted-foreground">Day {effectiveDay} • {challengeType}</p>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Session: {formatTime(timeSpent)}
+            </Badge>
+          </div>
         </div>
         <Link href={`/${getChallengeUrl(challengeType)}`}>
           <Button variant="outline">

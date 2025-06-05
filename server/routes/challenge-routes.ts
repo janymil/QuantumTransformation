@@ -99,7 +99,7 @@ export function registerChallengeRoutes(app: Express) {
   app.post('/api/challenge/complete', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { day, challengeType } = req.body;
+      const { day, challengeType, timeSpent, rating, notes } = req.body;
       
       if (day === undefined || day === null || !challengeType) {
         return res.status(400).json({ message: "Day and challenge type are required" });
@@ -115,6 +115,9 @@ export function registerChallengeRoutes(app: Express) {
         userId,
         day,
         challengeType,
+        timeSpent: timeSpent || 0,
+        rating: rating || 5,
+        notes: notes || "",
         completedAt: new Date()
       });
 
