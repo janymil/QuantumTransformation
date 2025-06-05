@@ -18,6 +18,12 @@ import {
 } from "./ai-cost-control";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
 import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
+import { 
+  determineCacheStrategy, 
+  getEnhancedCachedResponse, 
+  getCacheAnalytics,
+  initializeEnhancedCaching 
+} from "./enhanced-caching";
 import { registerGamificationRoutes } from "./routes/gamification-routes";
 import { generatePersonalizedAffirmation } from "./openai";
 import { initializeUserGamification } from "./gamification";
@@ -93,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerJournalRoutes(app);
   registerGamificationRoutes(app);
 
-  // AI Routes with Global Caching System
+  // Enhanced AI Routes with Smart Caching System
   app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -117,15 +123,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Check global cache first
-      const cachedResponse = await getCachedResponse(inputHash);
+      // Determine smart caching strategy
+      const cacheStrategy = determineCacheStrategy(userQuestion || topic, challengeType, day, userTier);
+      
+      // Try enhanced cache lookup
+      const cachedResponse = await getEnhancedCachedResponse(inputHash, cacheStrategy);
       if (cachedResponse) {
         await trackUsage(userId, 'explanation', inputHash, 0, 0);
         return res.json({
           ...cachedResponse,
-          fromCache: true,
+          cacheStrategy: cacheStrategy.reason,
           remainingRequests: validation.remainingRequests
         });
+      }
+
+      // Generate fresh AI response only if strategy allows
+      if (!cacheStrategy.generateFresh) {
+        // Fallback to basic cached response
+        const basicCached = await getCachedResponse(inputHash);
+        if (basicCached) {
+          await trackUsage(userId, 'explanation', inputHash, 0, 0);
+          return res.json({
+            ...basicCached,
+            fromCache: true,
+            cacheStrategy: 'fallback_global',
+            remainingRequests: validation.remainingRequests
+          });
+        }
       }
 
       // Generate new AI response
@@ -145,6 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         ...aiResponse,
         fromCache: false,
+        cacheStrategy: 'fresh_generated',
         tokensUsed,
         remainingRequests: validation.remainingRequests
       });
@@ -164,6 +189,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Usage stats error:", error);
       res.status(500).json({ error: "Failed to get usage statistics" });
+    }
+  });
+
+  // Enhanced Cache Analytics endpoint
+  app.get("/api/ai/cache-analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const analytics = await getCacheAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Cache analytics error:", error);
+      res.status(500).json({ error: "Failed to get cache analytics" });
+    }
+  });
+
+  // Initialize Enhanced Caching endpoint (admin only)
+  app.post("/api/ai/initialize-cache", isAuthenticated, async (req: any, res) => {
+    try {
+      await initializeEnhancedCaching();
+      res.json({ 
+        message: "Enhanced caching system initialized successfully",
+        timestamp: new Date().toISOString() 
+      });
+    } catch (error) {
+      console.error("Cache initialization error:", error);
+      res.status(500).json({ error: "Failed to initialize caching system" });
     }
   });
 
