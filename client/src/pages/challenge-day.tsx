@@ -52,7 +52,18 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
   // Determine challenge type from URL or prop
   const urlParts = window.location.pathname.split('/');
-  const challengeType = propChallengeType || urlParts[1] || 'general_quantum';
+  const urlChallengeType = urlParts[1];
+  
+  // Map URL paths to challenge types
+  const challengeTypeMapping: Record<string, string> = {
+    'quantum-consciousness': 'general_quantum',
+    'money-manifestation': 'money_manifestation', 
+    'health-transformation': 'quantum_health',
+    'relationships': 'quantum_relationships',
+    'money-blocks-clearing': 'money_blocks_clearing'
+  };
+  
+  const challengeType = propChallengeType || challengeTypeMapping[urlChallengeType] || 'general_quantum';
   
   const effectiveDay = currentDay;
 
