@@ -61,7 +61,8 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
   const currentDay = progress?.currentDay || 1;
   const completedDays = challengeCompletions.length;
   const streakCount = progress?.streakCount || 0;
-  const progressPercent = (completedDays / 30) * 100;
+  const totalDays = challengeData?.durationDays || 30;
+  const progressPercent = (completedDays / totalDays) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950">
@@ -118,7 +119,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Completed</span>
               </div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                {completedDays}/30
+                {completedDays}/{totalDays}
               </p>
             </CardContent>
           </Card>
@@ -151,12 +152,12 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
         {/* Progress Bar */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>30-Day Challenge Progress</CardTitle>
+            <CardTitle>{totalDays}-Day Challenge Progress</CardTitle>
           </CardHeader>
           <CardContent>
             <Progress value={progressPercent} className="h-3" />
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {completedDays} of 30 days completed ({Math.round(progressPercent)}%)
+              {completedDays} of {totalDays} days completed ({Math.round(progressPercent)}%)
             </p>
           </CardContent>
         </Card>
@@ -202,7 +203,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
             >
-              {Array.from({ length: 30 }, (_, i) => {
+              {Array.from({ length: totalDays }, (_, i) => {
                 const day = i + 1;
                 const isCompleted = challengeCompletions.some((c: any) => c.day === day);
                 const isCurrent = day === currentDay;
