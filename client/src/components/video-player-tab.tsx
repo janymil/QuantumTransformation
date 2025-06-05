@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Play, ExternalLink } from "lucide-react";
+import YouTubeEmbed from "./youtube-embed";
 
 interface VideoLink {
   title: string;
@@ -57,30 +58,12 @@ export default function VideoPlayerTab({ videoLinks }: VideoPlayerTabProps) {
           </CardHeader>
           <CardContent>
             {video.url ? (
-              <div className="space-y-4">
-                <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                  <iframe
-                    src={getEmbedUrl(video.url)}
-                    title={video.title}
-                    className="absolute top-0 left-0 w-full h-full rounded-lg"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Watch this video to deepen your understanding</span>
-                  <a 
-                    href={video.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center hover:text-primary transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-1" />
-                    Open in new tab
-                  </a>
-                </div>
-              </div>
+              <YouTubeEmbed 
+                videoUrl={video.url} 
+                title=""
+                description=""
+                showFullscreen={true}
+              />
             ) : (
               <div className="bg-muted/30 rounded-lg p-6 text-center">
                 <Play className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
