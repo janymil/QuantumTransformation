@@ -101,7 +101,7 @@ export function registerChallengeRoutes(app: Express) {
       const userId = req.user.claims.sub;
       const { day, challengeType } = req.body;
       
-      if (!day || !challengeType) {
+      if (day === undefined || day === null || !challengeType) {
         return res.status(400).json({ message: "Day and challenge type are required" });
       }
 
