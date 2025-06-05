@@ -33,15 +33,9 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
   const challengeData = getChallengeType(challengeType);
   const [scrollPosition, setScrollPosition] = useState(0);
 
-  // Fetch user progress for this specific challenge
-  const { data: progress, isLoading: progressLoading } = useQuery({
-    queryKey: ["/api/progress", challengeType],
-    enabled: !!user,
-  });
-
-  // Fetch completions for this challenge
-  const { data: completions, isLoading: completionsLoading } = useQuery({
-    queryKey: ["/api/challenges/completions", challengeType],
+  // Fetch user progress and completions for this specific challenge
+  const { data: progressData, isLoading: progressLoading } = useQuery({
+    queryKey: ["/api/progress/all"],
     enabled: !!user,
   });
 
@@ -58,10 +52,16 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
     );
   }
 
-  const currentDay = (progress as any)?.currentDay || 1;
-  const completedDays = (completions as any)?.filter((c: ChallengeCompletion) => c.challengeType === challengeType).length || 0;
-  const streakCount = (progress as any)?.streakCount || 0;
-  const progressPercent = (completedDays / 21) * 100;
+  const allProgress = (progressData as any)?.allProgress || [];
+  const completions = (progressData as any)?.completions || [];
+  
+  const progress = allProgress.find((p: any) => p.challengeType === challengeType);
+  const challengeCompletions = completions.filter((c: any) => c.challengeType === challengeType);
+  
+  const currentDay = progress?.currentDay || 1;
+  const completedDays = challengeCompletions.length;
+  const streakCount = progress?.streakCount || 0;
+  const progressPercent = (completedDays / 30) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950">
@@ -118,7 +118,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Completed</span>
               </div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                {completedDays}/21
+                {completedDays}/30
               </p>
             </CardContent>
           </Card>
@@ -151,12 +151,12 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
         {/* Progress Bar */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>21-Day Challenge Progress</CardTitle>
+            <CardTitle>30-Day Challenge Progress</CardTitle>
           </CardHeader>
           <CardContent>
             <Progress value={progressPercent} className="h-3" />
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {completedDays} of 21 days completed
+              {completedDays} of 30 days completed ({Math.round(progressPercent)}%)
             </p>
           </CardContent>
         </Card>
@@ -202,11 +202,9 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
             >
-              {Array.from({ length: 21 }, (_, i) => {
+              {Array.from({ length: 30 }, (_, i) => {
                 const day = i + 1;
-                const isCompleted = (completions as any)?.some((c: ChallengeCompletion) => 
-                  c.challengeType === challengeType && c.day === day
-                );
+                const isCompleted = challengeCompletions.some((c: any) => c.day === day);
                 const isCurrent = day === currentDay;
                 const isAccessible = day <= currentDay;
                 const isFuture = day > currentDay;
