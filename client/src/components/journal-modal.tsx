@@ -72,7 +72,10 @@ export default function JournalModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal", day] });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal", day, challengeType] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal/analyze"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal/archived"] });
       toast({
         title: "Journal Saved",
         description: "Your journal entry has been saved successfully.",
