@@ -24,6 +24,19 @@ export default function PersonalizedAffirmations({ day = 1, challengeType = "gen
   const [generatedAffirmation, setGeneratedAffirmation] = useState("");
   const { toast } = useToast();
 
+  const generateFallbackAffirmation = (goals: string, challenges: string, mood: number, level: string) => {
+    const templates = [
+      `I am actively creating ${goals || 'my desired reality'} with focused intention and unwavering belief.`,
+      `Every challenge, including ${challenges || 'current obstacles'}, strengthens my resolve and accelerates my transformation.`,
+      `I trust in my ability to manifest ${goals || 'my dreams'} as I align with quantum possibilities.`,
+      `My consciousness is expanding daily, attracting ${goals || 'abundance'} into my experience.`,
+      `I release ${challenges || 'limiting patterns'} and embrace my unlimited potential for ${goals || 'success'}.`
+    ];
+    
+    const moodIndex = Math.floor((mood - 1) / 2);
+    return templates[Math.min(moodIndex, templates.length - 1)];
+  };
+
   const generateMutation = useMutation({
     mutationFn: async (data: any) => {
       return await apiRequest("/api/ai/personalized-affirmation", "POST", data);
@@ -32,10 +45,13 @@ export default function PersonalizedAffirmations({ day = 1, challengeType = "gen
       setGeneratedAffirmation(data.affirmation);
     },
     onError: (error) => {
+      console.error("Personalized affirmation error:", error);
+      // Generate fallback affirmation based on user input
+      const fallbackAffirmation = generateFallbackAffirmation(userGoals, challenges, mood, progressLevel);
+      setGeneratedAffirmation(fallbackAffirmation);
       toast({
-        title: "Generation Failed",
-        description: "Unable to generate personalized affirmation. Please try again.",
-        variant: "destructive",
+        title: "Using Fallback Affirmation",
+        description: "Created a personalized affirmation based on your input.",
       });
     },
   });

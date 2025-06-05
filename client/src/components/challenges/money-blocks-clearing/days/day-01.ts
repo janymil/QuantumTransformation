@@ -84,6 +84,12 @@ export const day01Content = {
   
   videoLinks: [
     {
+      title: "Joe Dispenza - Quantum Field Meditation",
+      url: "https://www.youtube.com/watch?v=vjkHJtAzwFg",
+      description: "A powerful meditation to connect with the quantum field and transform your reality",
+      duration: "45 minutes"
+    },
+    {
       title: "Joe Dispenza – How to Change Your Reality by Changing Your Personality",
       description: "Learn the neuroscience behind personality change and reality creation"
     },

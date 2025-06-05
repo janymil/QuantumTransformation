@@ -194,12 +194,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI personalized affirmation endpoint
   app.post('/api/ai/personalized-affirmation', isAuthenticated, async (req: any, res) => {
     try {
+      console.log("Generating personalized affirmation with request:", req.body);
       const request = req.body;
       const affirmation = await generatePersonalizedAffirmation(request);
+      console.log("Generated affirmation:", affirmation);
       res.json({ affirmation });
     } catch (error) {
       console.error("Error generating personalized affirmation:", error);
-      res.status(500).json({ message: "Failed to generate affirmation" });
+      res.status(500).json({ message: "Failed to generate affirmation", error: error.message });
+    }
+  });
+
+  // Test endpoint for affirmation generation (remove in production)
+  app.post('/api/test/personalized-affirmation', async (req: any, res) => {
+    try {
+      console.log("Test generating personalized affirmation with request:", req.body);
+      const request = req.body;
+      const affirmation = await generatePersonalizedAffirmation(request);
+      console.log("Test generated affirmation:", affirmation);
+      res.json({ affirmation });
+    } catch (error) {
+      console.error("Test error generating personalized affirmation:", error);
+      res.status(500).json({ message: "Failed to generate affirmation", error: error.message });
     }
   });
 

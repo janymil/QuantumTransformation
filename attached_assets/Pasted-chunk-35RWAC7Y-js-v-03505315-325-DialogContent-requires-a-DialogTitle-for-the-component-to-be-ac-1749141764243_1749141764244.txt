@@ -1,0 +1,39 @@
+chunk-35RWAC7Y.js?v=03505315:325 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:325
+chunk-35RWAC7Y.js?v=03505315:339 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:339
+chunk-35RWAC7Y.js?v=03505315:325 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:325
+chunk-35RWAC7Y.js?v=03505315:339 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:339
+chunk-35RWAC7Y.js?v=03505315:325 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:325
+chunk-35RWAC7Y.js?v=03505315:339 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:339
+chunk-35RWAC7Y.js?v=03505315:325 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:325
+chunk-35RWAC7Y.js?v=03505315:339 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:339
+chunk-35RWAC7Y.js?v=03505315:325 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+(anonymous) @ chunk-35RWAC7Y.js?v=03505315:325
+chunk-35RWAC7Y.js?v=03505315:339 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.

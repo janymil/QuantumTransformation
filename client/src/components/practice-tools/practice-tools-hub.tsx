@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { 
   Waves, 
   Eye, 
@@ -137,6 +138,10 @@ export default function PracticeToolsHub({ day = 1, challengeType = "general" }:
               </DialogTrigger>
               
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <VisuallyHidden>
+                  <DialogTitle>{tool.title}</DialogTitle>
+                  <DialogDescription>{tool.description}</DialogDescription>
+                </VisuallyHidden>
                 <ToolComponent 
                   day={day}
                   challengeType={challengeType}
