@@ -143,6 +143,15 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
           const totalDays = challengeType?.durationDays || 30;
           const progressPercentage = (completedDaysCount / totalDays) * 100;
           const currentDay = progress.currentDay || 1;
+          
+          console.log('MultiChallengeDashboard Debug:', {
+            challengeType: progress.challengeType,
+            completedDaysCount,
+            totalDays,
+            progressPercentage,
+            currentDay,
+            challengeCompletions: challengeCompletions.length
+          });
 
           return (
             <Card key={`${progress.challengeType}-${progress.id || index}`} className="overflow-hidden">

@@ -63,6 +63,15 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
   const streakCount = progress?.streakCount || 0;
   const totalDays = challengeData?.durationDays || 30;
   const progressPercent = (completedDays / totalDays) * 100;
+  
+  console.log('IndividualChallengeDashboard Debug:', {
+    challengeType,
+    completedDays,
+    totalDays,
+    progressPercent,
+    challengeCompletions: challengeCompletions.length,
+    progressData: progress
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950">
