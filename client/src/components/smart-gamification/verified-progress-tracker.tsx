@@ -106,6 +106,25 @@ export default function VerifiedProgressTracker({ challengeType, day }: Verified
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: [`/api/gamification/verified-progress/${challengeType}/${day}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/gamification/stats/${challengeType}`] });
+      
+      if (result.alreadyCompleted) {
+        toast({
+          title: "Already Completed",
+          description: "You've already earned points for this activity today",
+          variant: "default",
+        });
+        return;
+      }
+
+      if (result.verificationFailed) {
+        toast({
+          title: "Verification Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+        return;
+      }
       
       if (result.levelUp) {
         toast({
@@ -121,30 +140,43 @@ export default function VerifiedProgressTracker({ challengeType, day }: Verified
         });
       }
 
-      toast({
-        title: `+${result.pointsEarned} Points Earned!`,
-        description: "Verified practice completion",
-      });
+      if (result.pointsEarned > 0) {
+        toast({
+          title: `+${result.pointsEarned} Points Earned!`,
+          description: result.message || "Verified practice completion",
+        });
+      }
     },
     onError: (error) => {
-      toast({
-        title: "Verification Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      const errorMessage = error.message || "Verification failed";
+      
+      if (errorMessage.includes("already completed")) {
+        toast({
+          title: "Already Completed",
+          description: "You've already earned points for this activity today",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Verification Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     },
   });
 
-  // Video tracking with completion verification
+  // Video tracking with proper completion verification
   const handleVideoCompletion = (watchedDuration: number, totalDuration: number) => {
     const completionPercentage = (watchedDuration / totalDuration) * 100;
     
-    if (completionPercentage >= 80) {
+    // Enhanced verification: requires both percentage AND minimum watch time
+    if (completionPercentage >= 80 && watchedDuration >= (totalDuration * 0.8)) {
       trackVerifiedActivity.mutate({
         type: "video_learning",
         verificationData: {
-          watchedDuration,
-          totalDuration,
+          watchTime: watchedDuration,
+          videoDuration: totalDuration,
           completionPercentage,
           timestamp: new Date().toISOString()
         }

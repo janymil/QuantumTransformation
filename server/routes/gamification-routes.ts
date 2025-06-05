@@ -167,7 +167,7 @@ export function registerGamificationRoutes(app: Express) {
     }
   });
 
-  // Track verified activity with real validation
+  // Track verified activity with real validation and duplicate prevention
   app.post('/api/gamification/track-verified-activity', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -177,10 +177,31 @@ export function registerGamificationRoutes(app: Express) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
+      // Check if this activity has already been completed today
+      const existingActivity = await db
+        .select()
+        .from(microLearningActivities)
+        .where(and(
+          eq(microLearningActivities.userId, userId),
+          eq(microLearningActivities.challengeType, challengeType),
+          eq(microLearningActivities.day, day),
+          eq(microLearningActivities.activityType, type)
+        ))
+        .limit(1);
+
+      if (existingActivity.length > 0) {
+        return res.status(409).json({ 
+          message: "Activity already completed today",
+          pointsEarned: 0,
+          alreadyCompleted: true
+        });
+      }
+
       // Validate based on activity type
       let isValid = false;
       let pointsEarned = 0;
       let unlocked = [];
+      let validationMessage = '';
 
       switch (type) {
         case 'morning_meditation':
@@ -188,18 +209,23 @@ export function registerGamificationRoutes(app: Express) {
           isValid = verificationData.duration >= 600 && (currentHour >= 5 && currentHour <= 11);
           pointsEarned = isValid ? 30 : 0;
           unlocked = isValid ? ['morning_insights', 'energy_boost'] : [];
+          validationMessage = isValid ? 'Morning meditation verified' : 'Must meditate for 10+ minutes between 5-11 AM';
           break;
 
         case 'video_learning':
-          isValid = verificationData.completionPercentage >= 80;
-          pointsEarned = isValid ? 20 : 0;
-          unlocked = isValid ? ['advanced_techniques', 'bonus_content'] : [];
+          // Require both completion percentage AND minimum watch time
+          const minWatchTime = verificationData.videoDuration * 0.8; // 80% of video duration
+          isValid = verificationData.completionPercentage >= 80 && verificationData.watchTime >= minWatchTime;
+          pointsEarned = isValid ? 10 : 0;
+          unlocked = isValid ? ['advanced_techniques'] : [];
+          validationMessage = isValid ? 'Video learning verified' : 'Must watch at least 80% of the video';
           break;
 
         case 'journal_reflection':
           isValid = verificationData.wordCount >= 20 && verificationData.characterCount >= 100;
           pointsEarned = isValid ? 25 : 0;
           unlocked = isValid ? ['personal_insights', 'pattern_recognition'] : [];
+          validationMessage = isValid ? 'Journal reflection verified' : 'Must write at least 20 words (100 characters)';
           break;
 
         case 'evening_integration':
@@ -207,6 +233,7 @@ export function registerGamificationRoutes(app: Express) {
           isValid = verificationData.wordCount >= 15 && (eveningHour >= 18 && eveningHour <= 23);
           pointsEarned = isValid ? 35 : 0;
           unlocked = isValid ? ['next_day_preview', 'advanced_practices'] : [];
+          validationMessage = isValid ? 'Evening integration verified' : 'Must complete between 6-11 PM with 15+ words';
           break;
 
         default:
@@ -214,15 +241,21 @@ export function registerGamificationRoutes(app: Express) {
       }
 
       if (!isValid) {
-        return res.status(400).json({ message: "Activity verification failed" });
+        return res.status(400).json({ 
+          message: validationMessage,
+          pointsEarned: 0,
+          verificationFailed: true
+        });
       }
 
+      // Only track if validation passes
       const result = await trackActivity(userId, challengeType, day, type, verificationData);
       
       res.json({
         ...result,
         unlocked,
-        verificationPassed: true
+        verificationPassed: true,
+        message: validationMessage
       });
 
     } catch (error) {
