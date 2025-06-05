@@ -66,7 +66,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   });
 
   // Generate or fetch challenge content
-  const content = generateChallengeContent(challengeType, effectiveDay);
+  const content = generateChallengeContent(effectiveDay, challengeType);
 
   // Check if day is completed
   useEffect(() => {
