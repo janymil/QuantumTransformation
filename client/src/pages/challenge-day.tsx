@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JournalModal from "@/components/journal-modal";
 import AIAssistant from "@/components/ai-assistant";
+import AICoachingHub from "@/components/ai/ai-coaching-hub";
 import { 
   Play, 
   Star, 
@@ -388,6 +389,12 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* AI Coaching Hub - Prominent AI Tools */}
+          <AICoachingHub 
+            challengeType={challengeType || "general_quantum"}
+            currentDay={effectiveDay}
+          />
+          
           {/* Verified Progress Tracker - Smart Gamification */}
           <VerifiedProgressTracker 
             challengeType={challengeType}
