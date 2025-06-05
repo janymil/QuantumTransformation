@@ -413,31 +413,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Systems already initialized");
       }
 
-      // Generate base response using vector personalization
-      const baseResponse = await vectorPersonalization.generatePersonalizedResponse(
-        userId,
-        query,
+      // Get personalized context using semantic search
+      const personalizedContext = await vectorPersonalization.getPersonalizedContext(
+        userId, 
+        query, 
         challengeType
       );
 
-      // Enhance with emotional intelligence
-      const emotionallyAdaptedResponse = await emotionalIntelligence.generateEmotionallyAdaptedResponse(
-        userId,
+      // Create enhanced system prompt
+      const systemPrompt = `You are an advanced AI quantum consciousness coach specializing in ${challengeType}. 
+
+${personalizedContext.personalizedPrompt}
+
+Provide personalized, actionable guidance that:
+- References specific challenge techniques and practices
+- Builds upon user's documented experiences and insights
+- Adapts Joe Dispenza and Neville Goddard methods to this specific challenge
+- Addresses user's current progress level and challenges
+- Maintains quantum consciousness framework while being personally relevant`;
+
+      // Use intelligent model routing (automatically selects GPT-4o or GPT-4o-mini based on complexity)
+      const aiResult = await modelRouter.executeWithOptimalModel(
         query,
+        systemPrompt,
+        query,
+        'enhanced_coaching',
         challengeType,
-        baseResponse
+        userTier,
+        { temperature: 0.7, maxTokens: 1500 }
       );
 
-      // Get emotional insights
-      const emotionalInsights = await emotionalIntelligence.identifyEmotionalInsights(userId, challengeType);
+      // Get emotional profile and enhance response if using complex model
+      let emotionalInsights = null;
+      let finalResponse = aiResult.response;
 
-      // Track usage
-      await trackUsage(userId, 'enhanced_coaching', query, emotionallyAdaptedResponse, challengeType);
+      if (aiResult.routingDecision.complexity === 'complex' || aiResult.routingDecision.model === 'gpt-4o') {
+        emotionalInsights = await emotionalIntelligence.identifyEmotionalInsights(userId, challengeType);
+        finalResponse = await emotionalIntelligence.generateEmotionallyAdaptedResponse(
+          userId,
+          query,
+          challengeType,
+          aiResult.response
+        );
+      }
+
+      // Track usage with actual cost
+      await trackUsage(userId, 'enhanced_coaching', query, finalResponse, challengeType);
 
       res.json({
-        response: emotionallyAdaptedResponse,
+        response: finalResponse,
         emotionalInsights,
-        personalizationMethod: 'vector_semantic_search_with_emotional_intelligence',
+        personalizationMethod: 'intelligent_hybrid_routing_with_vector_search',
+        modelUsed: aiResult.modelUsed,
+        complexity: aiResult.routingDecision.complexity,
+        actualCost: aiResult.actualCost,
         challengeType,
         timestamp: new Date().toISOString()
       });

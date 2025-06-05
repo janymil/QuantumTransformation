@@ -267,6 +267,65 @@ export class VectorPersonalizationEngine {
   }
 
   /**
+   * Get simplified personalized context for external AI routing
+   */
+  async getPersonalizedContext(
+    userId: string,
+    query: string,
+    challengeType: string
+  ): Promise<{
+    personalizedPrompt: string;
+    relevantContext: string[];
+    userInsights: string[];
+    challengeContent: string[];
+  }> {
+    try {
+      // Get relevant challenge content
+      const challengeResults = await this.semanticSearch(
+        query,
+        `challenge_${challengeType}`,
+        3
+      );
+
+      // Get user-specific insights
+      const userResults = await this.semanticSearch(
+        query,
+        `user_${userId}`,
+        2
+      );
+
+      const challengeContent = challengeResults.map(r => r.pageContent);
+      const userInsights = userResults.map(r => r.pageContent);
+
+      // Build personalized prompt for external systems
+      const personalizedPrompt = `
+CHALLENGE CONTEXT (${challengeType}):
+${challengeContent.join('\n\n')}
+
+USER INSIGHTS & HISTORY:
+${userInsights.join('\n\n')}
+
+Use this context to provide highly personalized guidance that references specific techniques and builds upon the user's documented experiences.`;
+
+      return {
+        personalizedPrompt,
+        relevantContext: [...challengeContent, ...userInsights],
+        userInsights,
+        challengeContent
+      };
+
+    } catch (error) {
+      console.error("Error getting personalized context:", error);
+      return {
+        personalizedPrompt: `Provide guidance for ${challengeType} challenge based on quantum consciousness principles.`,
+        relevantContext: [],
+        userInsights: [],
+        challengeContent: []
+      };
+    }
+  }
+
+  /**
    * Create optimized personalized prompt with semantic context
    */
   private createPersonalizedPrompt(
