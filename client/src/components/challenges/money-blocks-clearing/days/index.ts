@@ -1,4 +1,5 @@
 // Day content imports for Money Blocks Clearing Challenge
+import { day00Content } from './day-00';
 import { day01Content } from './day-01';
 import { day02Content } from './day-02';
 import { day03Content } from './day-03';
@@ -6,6 +7,7 @@ import { day04Content } from './day-04';
 
 // Day content map
 export const moneyBlocksClearingDays: Record<number, any> = {
+  0: day00Content,
   1: day01Content,
   2: day02Content,
   3: day03Content,

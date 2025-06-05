@@ -103,13 +103,26 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
     },
     onSuccess: () => {
       setIsCompleted(true);
-      setShowCelebration(true);
+      
+      // Special handling for Day 0 - redirect to Day 1
+      if (effectiveDay === 0 && content.completionRedirectsToDay1) {
+        toast({
+          title: "Introduction Complete!",
+          description: "Moving to Day 1 of your transformation journey.",
+        });
+        setTimeout(() => {
+          window.location.href = `/${getChallengeUrl(challengeType)}/day/1`;
+        }, 1500);
+      } else {
+        setShowCelebration(true);
+        toast({
+          title: "Day completed!",
+          description: "Great job on completing today's practice!",
+        });
+      }
+      
       queryClient.invalidateQueries({ queryKey: ["/api/progress/all"] });
       queryClient.invalidateQueries({ queryKey: [`/api/challenge/completion/${effectiveDay}`] });
-      toast({
-        title: "Day completed!",
-        description: "Great job on completing today's practice!",
-      });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -191,16 +204,24 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="practice">Practice</TabsTrigger>
-              <TabsTrigger value="affirmations">Affirmations</TabsTrigger>
-              {content.videoLinks && content.videoLinks.length > 0 && (
-                <TabsTrigger value="videos">Videos</TabsTrigger>
-              )}
-              <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="tools">Practice Tools</TabsTrigger>
-            </TabsList>
+            {content.isIntroductionDay ? (
+              // Day 0 - Only show introduction
+              <TabsList className="grid w-full grid-cols-1">
+                <TabsTrigger value="overview">Introduction to the Program</TabsTrigger>
+              </TabsList>
+            ) : (
+              // Regular days - Show all tabs
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="practice">Practice</TabsTrigger>
+                <TabsTrigger value="affirmations">Affirmations</TabsTrigger>
+                {content.videoLinks && content.videoLinks.length > 0 && (
+                  <TabsTrigger value="videos">Videos</TabsTrigger>
+                )}
+                <TabsTrigger value="insights">Insights</TabsTrigger>
+                <TabsTrigger value="tools">Practice Tools</TabsTrigger>
+              </TabsList>
+            )}
 
             <TabsContent value="overview" className="space-y-6">
               <Card>
@@ -218,9 +239,20 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                 </CardHeader>
                 <CardContent>
                   <p className="text-lg text-muted-foreground mb-4">{content.subtitle}</p>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {content.description}
-                  </p>
+                  
+                  {content.isIntroductionDay && content.content?.introduction ? (
+                    // Day 0 - Show formatted introduction content
+                    <div className="prose dark:prose-invert max-w-none">
+                      <div className="whitespace-pre-line text-muted-foreground leading-relaxed">
+                        {content.content.introduction}
+                      </div>
+                    </div>
+                  ) : (
+                    // Regular days - Show description
+                    <p className="text-muted-foreground leading-relaxed">
+                      {content.description}
+                    </p>
+                  )}
                   
                   {content.expectedResults && (
                     <div className="mt-6 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-700">
@@ -239,54 +271,58 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
               </Card>
             </TabsContent>
 
-            <TabsContent value="practice" className="space-y-6">
-              <EnhancedPracticeContent 
-                practice={content.practice} 
-                duration={content.duration} 
-              />
-            </TabsContent>
+            {!content.isIntroductionDay && (
+              <>
+                <TabsContent value="practice" className="space-y-6">
+                  <EnhancedPracticeContent 
+                    practice={content.practice} 
+                    duration={content.duration} 
+                  />
+                </TabsContent>
 
-            <TabsContent value="affirmations" className="space-y-6">
-              <EnhancedAffirmationsSection 
-                affirmations={[content.affirmation || ""]}
-                dayNumber={currentDay}
-                challengeType={challengeType || "general_quantum"}
-              />
-            </TabsContent>
+                <TabsContent value="affirmations" className="space-y-6">
+                  <EnhancedAffirmationsSection 
+                    affirmations={[content.affirmation || ""]}
+                    dayNumber={currentDay}
+                    challengeType={challengeType || "general_quantum"}
+                  />
+                </TabsContent>
 
-            {content.videoLinks && content.videoLinks.length > 0 && (
-              <TabsContent value="videos" className="space-y-6">
-                <VideoPlayerTab videoLinks={content.videoLinks} />
-              </TabsContent>
-            )}
+                {content.videoLinks && content.videoLinks.length > 0 && (
+                  <TabsContent value="videos" className="space-y-6">
+                    <VideoPlayerTab videoLinks={content.videoLinks} />
+                  </TabsContent>
+                )}
 
-            <TabsContent value="insights" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Star className="w-6 h-6 mr-2 text-primary" />
-                    Key Insights to Remember
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {content.practice.insights?.map((insight: string, index: number) => (
-                      <div key={index} className="flex items-start space-x-3 p-4 bg-muted/30 rounded-lg">
-                        <Lightbulb className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                        <p className="text-muted-foreground">{insight}</p>
+                <TabsContent value="insights" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Star className="w-6 h-6 mr-2 text-primary" />
+                        Key Insights to Remember
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {content.practice.insights?.map((insight: string, index: number) => (
+                          <div key={index} className="flex items-start space-x-3 p-4 bg-muted/30 rounded-lg">
+                            <Lightbulb className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                            <p className="text-muted-foreground">{insight}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-            <TabsContent value="tools" className="space-y-6">
-              <PracticeToolsHub 
-                day={currentDay} 
-                challengeType={challengeType || "general_quantum"} 
-              />
-            </TabsContent>
+                <TabsContent value="tools" className="space-y-6">
+                  <PracticeToolsHub 
+                    day={currentDay} 
+                    challengeType={challengeType || "general_quantum"} 
+                  />
+                </TabsContent>
+              </>
+            )}
           </Tabs>
         </div>
 
