@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Quote, Bookmark, Share2, Copy, Twitter, Facebook } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -43,7 +43,7 @@ export default function EnhancedAffirmationsSection({
       });
     },
     onSuccess: (_, affirmation) => {
-      setSavedAffirmations(prev => new Set([...prev, affirmation]));
+      setSavedAffirmations(prev => new Set(Array.from(prev).concat([affirmation])));
       queryClient.invalidateQueries({ queryKey: ["/api/saved-phrases"] });
       toast({
         title: "Affirmation saved!",

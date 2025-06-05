@@ -31,7 +31,7 @@ import ChallengeContent from "@/components/challenge-day/challenge-content";
 import ActionButtons from "@/components/challenge-day/action-buttons";
 import ContextualTutorial from "@/components/contextual-tutorial";
 import VideoPlayerTab from "@/components/video-player-tab";
-import AffirmationsSection from "@/components/affirmations-section";
+import EnhancedAffirmationsSection from "@/components/enhanced-affirmations-section";
 import EnhancedPracticeContent from "@/components/enhanced-practice-content";
 
 interface ChallengeDayProps {
@@ -176,7 +176,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="practice">Practice</TabsTrigger>
               <TabsTrigger value="affirmations">Affirmations</TabsTrigger>
@@ -184,7 +184,6 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                 <TabsTrigger value="videos">Videos</TabsTrigger>
               )}
               <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="science">Science</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -232,7 +231,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
             </TabsContent>
 
             <TabsContent value="affirmations" className="space-y-6">
-              <AffirmationsSection 
+              <EnhancedAffirmationsSection 
                 affirmations={[content.affirmation || ""]}
                 dayNumber={currentDay}
                 challengeType={challengeType || "general_quantum"}
@@ -261,24 +260,6 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                         <p className="text-muted-foreground">{insight}</p>
                       </div>
                     ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="science" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Brain className="w-6 h-6 mr-2 text-primary" />
-                    The Science Behind Today's Practice
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-muted/30 rounded-lg p-6">
-                    <p className="text-muted-foreground leading-relaxed">
-                      {content.science}
-                    </p>
                   </div>
                 </CardContent>
               </Card>
