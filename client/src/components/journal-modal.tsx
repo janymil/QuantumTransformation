@@ -58,6 +58,19 @@ export default function JournalModal({
     enabled: isOpen,
   });
 
+  // Reset form when challenge type or day changes, or populate with existing data
+  useEffect(() => {
+    if (existingEntry) {
+      setExperience(existingEntry.experience || "");
+      setInsights(existingEntry.insights || "");
+      setIntention(existingEntry.intention || "");
+    } else {
+      setExperience("");
+      setInsights("");
+      setIntention("");
+    }
+  }, [existingEntry, challengeType, day]);
+
   const saveMutation = useMutation({
     mutationFn: async (data: { experience: string; insights: string; intention: string }) => {
       console.log("Journal Modal - Saving entry for day:", day, "with data:", data);
@@ -102,18 +115,7 @@ export default function JournalModal({
     },
   });
 
-  useEffect(() => {
-    if (existingEntry) {
-      setExperience(existingEntry.experience || "");
-      setInsights(existingEntry.insights || "");
-      setIntention(existingEntry.intention || "");
-    } else if (isOpen) {
-      // Reset form when opening for a new entry
-      setExperience("");
-      setInsights("");
-      setIntention("");
-    }
-  }, [existingEntry, isOpen]);
+
 
   const handleSave = () => {
     saveMutation.mutate({

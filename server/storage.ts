@@ -250,18 +250,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJournalEntriesForActiveChallenges(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]> {
-    // Get active challenges
+    // Get unique active challenge types
     const activeChallenges = await db
-      .select()
+      .selectDistinct({ challengeType: userProgress.challengeType })
       .from(userProgress)
       .where(eq(userProgress.userId, userId));
     
     const result = [];
-    for (const progress of activeChallenges) {
-      const entries = await this.getJournalEntriesByChallenge(userId, progress.challengeType);
+    for (const challenge of activeChallenges) {
+      const entries = await this.getJournalEntriesByChallenge(userId, challenge.challengeType);
       if (entries.length > 0) {
         result.push({
-          challengeType: progress.challengeType,
+          challengeType: challenge.challengeType,
           entries
         });
       }
