@@ -320,17 +320,18 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                                 </Badge>
                                 {isPast && (
                                   <div>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="text-xs px-2 py-1 h-auto"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        window.location.href = `/${getChallengeUrl(challengeType)}/day/${day}`;
-                                      }}
-                                    >
-                                      Review
-                                    </Button>
+                                    <Link href={`/${getChallengeUrl(challengeType)}/day/${day}`}>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="text-xs px-2 py-1 h-auto"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        Review
+                                      </Button>
+                                    </Link>
                                   </div>
                                 )}
                               </>
@@ -378,7 +379,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <Link href={`/${challengeType}/day/${currentDay}`}>
+            <Link href={`/${getChallengeUrl(challengeType)}/day/${currentDay}`}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -401,7 +402,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <Link href={`/challenges/${getChallengeUrl(challengeType)}/journal`}>
+            <Link href={`/${getChallengeUrl(challengeType)}/journal`}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
