@@ -111,7 +111,7 @@ export default function AiConversationHistory() {
     },
   });
 
-  // Helper function to safely parse and format text
+  // Helper function to safely parse and format text for human reading
   const formatText = (text: any): string => {
     if (typeof text === 'string') {
       try {
@@ -123,12 +123,9 @@ export default function AiConversationHistory() {
         // If it's an object, extract readable content
         if (typeof parsed === 'object' && parsed !== null) {
           if (Array.isArray(parsed)) {
-            return parsed.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join('\n');
+            return parsed.map(item => typeof item === 'string' ? item : formatObjectContent(item)).join('\n\n');
           }
-          if (parsed.content) return parsed.content;
-          if (parsed.text) return parsed.text;
-          if (parsed.message) return parsed.message;
-          return JSON.stringify(parsed, null, 2);
+          return formatObjectContent(parsed);
         }
         return String(parsed);
       } catch {
@@ -137,15 +134,97 @@ export default function AiConversationHistory() {
       }
     }
     if (typeof text === 'object' && text !== null) {
-      if (Array.isArray(text)) {
-        return text.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join('\n');
-      }
-      if (text.content) return text.content;
-      if (text.text) return text.text;
-      if (text.message) return text.message;
-      return JSON.stringify(text, null, 2);
+      return formatObjectContent(text);
     }
     return String(text || '');
+  };
+
+  // Helper function to format object content in a human-readable way
+  const formatObjectContent = (obj: any): string => {
+    if (!obj || typeof obj !== 'object') return String(obj);
+    
+    // Handle specific AI response structure
+    if (obj.personalizedMessage) {
+      let result = obj.personalizedMessage + '\n\n';
+      
+      if (obj.energyAlignment) {
+        result += `Energy Alignment: ${obj.energyAlignment}\n\n`;
+      }
+      
+      if (obj.challengeSupport) {
+        result += `Challenge Support: ${obj.challengeSupport}\n\n`;
+      }
+      
+      if (obj.nextStepsGuidance) {
+        result += `Next Steps: ${obj.nextStepsGuidance}\n\n`;
+      }
+      
+      if (obj.motivationalInsight) {
+        result += `Insight: ${obj.motivationalInsight}\n\n`;
+      }
+      
+      if (obj.practiceAdjustments && Array.isArray(obj.practiceAdjustments)) {
+        result += `Practice Adjustments:\n${obj.practiceAdjustments.map((item: string, index: number) => `${index + 1}. ${item}`).join('\n')}\n\n`;
+      }
+      
+      if (obj.progressRecognition) {
+        result += `Progress Recognition: ${obj.progressRecognition}\n\n`;
+      }
+      
+      if (obj.todaysRecommendation) {
+        result += `Today's Recommendation: ${obj.todaysRecommendation}`;
+      }
+      
+      return result.trim();
+    }
+    
+    // Handle user question structure
+    if (obj.challengeType || obj.currentDay || obj.userGoals) {
+      let result = '';
+      
+      if (obj.challengeType) {
+        result += `Challenge: ${obj.challengeType.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}\n`;
+      }
+      
+      if (obj.currentDay) {
+        result += `Day: ${obj.currentDay}\n`;
+      }
+      
+      if (obj.userGoals) {
+        result += `Goals: ${obj.userGoals}\n`;
+      }
+      
+      if (obj.mood) {
+        result += `Mood Level: ${obj.mood}/10\n`;
+      }
+      
+      if (obj.currentChallenges && Array.isArray(obj.currentChallenges) && obj.currentChallenges.length > 0) {
+        result += `Current Challenges: ${obj.currentChallenges.join(', ')}\n`;
+      }
+      
+      return result.trim();
+    }
+    
+    // Handle simple key-value objects
+    const entries = Object.entries(obj);
+    if (entries.length <= 3) {
+      return entries
+        .filter(([key, value]) => key !== 'userId' && key !== 'userTier')
+        .map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
+        .join('\n');
+    }
+    
+    // Fallback for complex objects
+    return Object.entries(obj)
+      .filter(([key, value]) => key !== 'userId' && key !== 'userTier' && value)
+      .map(([key, value]) => {
+        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        if (Array.isArray(value)) {
+          return `${formattedKey}:\n${value.map((item, index) => `  ${index + 1}. ${item}`).join('\n')}`;
+        }
+        return `${formattedKey}: ${value}`;
+      })
+      .join('\n\n');
   };
 
   // Filter logic
@@ -199,7 +278,7 @@ export default function AiConversationHistory() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
@@ -208,15 +287,16 @@ export default function AiConversationHistory() {
               className="flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to AI Coach
+              <span className="hidden sm:inline">Back to AI Coach</span>
+              <span className="sm:hidden">Back</span>
             </Button>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
                 <MessageSquare className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Chat History</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground">Chat History</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {filteredResponses.length} conversation{filteredResponses.length !== 1 ? 's' : ''}
                 </p>
               </div>
