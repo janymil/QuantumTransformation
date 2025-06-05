@@ -1,8 +1,11 @@
 export const day00 = {
+  day: 0,
   title: "Welcome to Your Quantum Money Transformation",
   subtitle: "Your 30-Day Journey to Financial Freedom Begins",
   duration: "15 minutes",
+  topic: "Program Introduction",
   description: "Welcome to your 30-Day Quantum Leap Challenge: a structured, multi-phase transformation system rooted in the teachings of Neville Goddard, Dr. Joe Dispenza, and supported by neuroscience and quantum physics. This program is designed as a complete reprogramming of your subconscious money blueprint, shifting your identity toward lasting financial freedom and internal abundance.",
+  science: "Neuroplasticity research shows that consistent repetition over 30 days creates lasting neural pathway changes. Dr. Joe Dispenza's work demonstrates that combining elevated emotions with clear intention creates measurable brain changes. Neville Goddard's techniques align with quantum physics principles about consciousness affecting reality.",
   
   content: `
 ## INTRODUCTION
@@ -88,26 +91,12 @@ This is not a generic program. This is precise, strategically layered mental eng
     ]
   },
 
-  affirmations: [
-    "I am ready for complete financial transformation",
-    "My subconscious mind eagerly accepts new abundance patterns",
-    "I commit fully to my 30-day quantum leap journey",
-    "Every day brings me closer to financial freedom",
-    "I trust the process of my money consciousness evolution"
-  ],
+  affirmation: "I am ready for complete financial transformation and commit fully to my 30-day quantum leap journey.",
 
-  scientificBacking: "Neuroplasticity research shows that consistent repetition over 30 days creates lasting neural pathway changes. Dr. Joe Dispenza's work demonstrates that combining elevated emotions with clear intention creates measurable brain changes. Neville Goddard's techniques align with quantum physics principles about consciousness affecting reality.",
-
-  expectedResults: [
-    "Clear understanding of the 30-day transformation process",
-    "Strong commitment to daily practice",
-    "Excited anticipation for the journey ahead",
-    "Foundation set for subconscious reprogramming"
-  ],
-
-
-
-  quote: "The feeling of the wish fulfilled is the secret of all successful prayer. - Neville Goddard",
+  quote: {
+    text: "The feeling of the wish fulfilled is the secret of all successful prayer.",
+    author: "Neville Goddard"
+  },
 
   videoLinks: [
     {
