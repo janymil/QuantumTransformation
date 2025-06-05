@@ -29,16 +29,30 @@ import {
 interface AICoachingHubProps {
   challengeType: string;
   currentDay: number;
+  initialTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export default function AICoachingHub({ challengeType, currentDay }: AICoachingHubProps) {
+export default function AICoachingHub({ 
+  challengeType, 
+  currentDay, 
+  initialTab = "coaching", 
+  onTabChange 
+}: AICoachingHubProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("coaching");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [question, setQuestion] = useState("");
   const [goals, setGoals] = useState("");
   const [challenges, setChallenges] = useState("");
   const [mood, setMood] = useState(5);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (onTabChange) {
+      onTabChange(tab);
+    }
+  };
 
   // Get AI usage stats
   const { data: usageStats } = useQuery({
@@ -49,7 +63,7 @@ export default function AICoachingHub({ challengeType, currentDay }: AICoachingH
   // Personalized coaching mutation
   const coachingMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/ai/coaching", "POST", {
+      return apiRequest("POST", "/api/ai/coaching", {
         currentDay,
         challengeType,
         userGoals: goals,
@@ -77,7 +91,7 @@ export default function AICoachingHub({ challengeType, currentDay }: AICoachingH
   // AI explanation mutation
   const explanationMutation = useMutation({
     mutationFn: async (questionText: string) => {
-      return apiRequest("/api/ai/explain", "POST", {
+      return apiRequest("POST", "/api/ai/explain", {
         topic: `Day ${currentDay} - ${challengeType}`,
         day: currentDay,
         userQuestion: questionText,
@@ -131,7 +145,7 @@ export default function AICoachingHub({ challengeType, currentDay }: AICoachingH
       </CardHeader>
       
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="coaching" className="text-xs">
               <Heart className="w-4 h-4 mr-1" />

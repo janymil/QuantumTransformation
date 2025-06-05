@@ -26,6 +26,7 @@ import {
 export default function AICoaching() {
   const { user } = useAuth();
   const [selectedChallenge, setSelectedChallenge] = useState("money_blocks_clearing");
+  const [activeTab, setActiveTab] = useState("coaching");
 
   // Get user challenges
   const { data: userChallenges } = useQuery({
@@ -164,6 +165,8 @@ export default function AICoaching() {
               <AICoachingHub 
                 challengeType={selectedChallenge}
                 currentDay={currentDay}
+                initialTab={activeTab}
+                onTabChange={setActiveTab}
               />
             </div>
 
@@ -216,22 +219,38 @@ export default function AICoaching() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("questions")}
+                  >
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Ask about today's practice
                   </Button>
                   
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("coaching")}
+                  >
                     <Target className="w-4 h-4 mr-2" />
                     Set new goals
                   </Button>
                   
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("questions")}
+                  >
                     <BookOpen className="w-4 h-4 mr-2" />
                     Explain concepts
                   </Button>
                   
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab("coaching")}
+                  >
                     <Heart className="w-4 h-4 mr-2" />
                     Overcome challenges
                   </Button>
