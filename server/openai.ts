@@ -212,6 +212,9 @@ Current Progress Analysis:
 User Goals: ${userGoals || 'General consciousness expansion'}
 Challenge Type: ${request.challengeType || 'general_quantum'}
 
+CHALLENGE-SPECIFIC CONTEXT:
+${getChallengeSpecificContext(request.challengeType, currentDay)}
+
 IMPORTANT: All coaching must stay within these consciousness and personal development domains:
 - Quantum consciousness and field theory applications
 - Joe Dispenza's meditation and neuroplasticity techniques  

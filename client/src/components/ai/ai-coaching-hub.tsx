@@ -98,7 +98,7 @@ export default function AICoachingHub({
   const { data: usageStats } = useQuery({
     queryKey: ["/api/ai/usage-stats"],
     retry: false,
-  }) as { data?: { requestsToday: number; dailyLimit: number; requestsThisWeek: number; totalRequests: number } };
+  }) as { data?: { dailyUsage: string; monthlyUsage: string; totalRequests: string } };
 
   // Personalized coaching mutation
   const coachingMutation = useMutation({
@@ -422,11 +422,11 @@ export default function AICoachingHub({
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Today's requests:</span>
-                        <span className="font-medium">{usageStats.requestsToday || 0}/{usageStats.dailyLimit || 10}</span>
+                        <span className="font-medium">{usageStats.dailyUsage || 0}/10</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">This week:</span>
-                        <span className="font-medium">{usageStats.requestsThisWeek || 0}</span>
+                        <span className="font-medium">{usageStats.monthlyUsage || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Total questions:</span>
