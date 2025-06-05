@@ -28,6 +28,8 @@ import MoneyDay from "@/pages/challenges/money-blocks/day";
 
 import MoneyBlocksClearingDashboard from "@/pages/challenges/money-blocks-clearing/dashboard";
 import MoneyBlocksClearingJournal from "@/pages/challenges/money-blocks-clearing/journal";
+import MoneyBlocksClearingProgress from "@/pages/challenges/money-blocks-clearing/progress";
+import MoneyBlocksClearingDay from "@/pages/challenges/money-blocks-clearing/day";
 
 import MoneyManifestationDashboard from "@/pages/challenges/money-manifestation/dashboard";
 import MoneyManifestationJournal from "@/pages/challenges/money-manifestation/journal";
@@ -104,8 +106,8 @@ function Router() {
         <Route path="/money-blocks/day/:day" component={MoneyDay} />
         <Route path="/money-blocks-clearing" component={MoneyBlocksClearingDashboard} />
         <Route path="/money-blocks-clearing/journal" component={MoneyBlocksClearingJournal} />
-        <Route path="/money-blocks-clearing/progress" component={MoneyProgress} />
-        <Route path="/money-blocks-clearing/day/:day" component={MoneyDay} />
+        <Route path="/money-blocks-clearing/progress" component={MoneyBlocksClearingProgress} />
+        <Route path="/money-blocks-clearing/day/:day" component={MoneyBlocksClearingDay} />
         
         {/* Money Manifestation Challenge */}
         <Route path="/money-manifestation" component={MoneyManifestationDashboard} />

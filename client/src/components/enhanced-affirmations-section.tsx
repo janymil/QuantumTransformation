@@ -27,11 +27,8 @@ export default function EnhancedAffirmationsSection({
   const [savedAffirmations, setSavedAffirmations] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
-  // Enhanced affirmations list including your specific one
-  const enhancedAffirmations = [
-    "I am now living in total financial freedom. Money flows to me easily, frequently, and from multiple sources.",
-    ...affirmations.filter(Boolean)
-  ];
+  // Use only the day-specific affirmations
+  const enhancedAffirmations = affirmations.filter(Boolean);
 
   const saveMutation = useMutation({
     mutationFn: async (affirmation: string) => {
