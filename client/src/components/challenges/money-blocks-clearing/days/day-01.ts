@@ -9,7 +9,8 @@ export const day01Content = {
   
   practice: {
     morning: {
-      title: "Quantum Intention Setting & Emotional Activation",
+      title: "🌅 MORNING PRACTICE: Quantum Intention Setting & Emotional Activation",
+      timeframe: "Upon waking (15-20 minutes)",
       quote: "Assume the feeling of the wish fulfilled. - Neville Goddard",
       steps: [
         "Upon waking, sit quietly in front of a mirror in a calm, undisturbed space",
@@ -26,7 +27,8 @@ export const day01Content = {
     },
     
     daytime: {
-      title: "Conscious Awareness & Thought Transformation",
+      title: "☀️ DAYTIME PRACTICE: Conscious Awareness & Thought Transformation",
+      timeframe: "Throughout the day (ongoing mindfulness)",
       quote: "It is not the circumstance that shapes you, but your thinking about it. - Bob Proctor",
       steps: [
         "Carry a small notebook or use a phone app to record your thoughts during the day",
@@ -42,7 +44,8 @@ export const day01Content = {
     },
     
     evening: {
-      title: "Visualization & Emotional Anchoring Before Sleep",
+      title: "🌙 EVENING PRACTICE: Visualization & Emotional Anchoring Before Sleep",
+      timeframe: "Before sleep (10-15 minutes)",
       quote: "Everything you can imagine and simultaneously feel as real, you can manifest. - Neville Goddard",
       steps: [
         "Before sleeping, reserve at least 10 minutes of quiet comfort, ideally lying on your back with closed eyes",
