@@ -75,9 +75,16 @@ export function registerAIRoutes(app: Express) {
       const coaching = await generatePersonalizedCoaching({
         userId,
         currentDay,
-        completedDays: userProgress?.completedDays || [],
-        streakCount: userProgress?.currentStreak || 0,
-        recentJournalEntries: recentEntries.slice(-5), // Last 5 entries
+        completedDays: Array.isArray(userProgress?.completedDays) ? userProgress.completedDays as number[] : [],
+        streakCount: userProgress?.streakCount || 0,
+        recentJournalEntries: recentEntries.slice(-5).map(entry => ({
+          day: entry.day,
+          experience: entry.experience || '',
+          insights: entry.insights || '',
+          intention: entry.intention || '',
+          mood: entry.mood || undefined,
+          challenges: entry.challenges || undefined
+        })), // Last 5 entries
         userGoals,
         preferredPracticeTime,
         difficultyLevel
@@ -179,10 +186,8 @@ export function registerAIRoutes(app: Express) {
       const session = await storage.createAiChatSession({
         userId,
         day,
-        topic,
         question,
-        context,
-        createdAt: new Date()
+        response: context || ''
       });
       
       res.json(session);
