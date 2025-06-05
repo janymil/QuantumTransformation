@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import {
 
 export default function AICoaching() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [selectedChallenge, setSelectedChallenge] = useState("money_blocks_clearing");
   const [activeTab, setActiveTab] = useState("coaching");
   const [prefilledQuestion, setPrefilledQuestion] = useState("");
@@ -64,16 +66,26 @@ export default function AICoaching() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center mr-4">
-                <Brain className="w-7 h-7 text-white" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center mr-4">
+                  <Brain className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground">AI Personal Coach</h1>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    Get personalized guidance, insights, and support for your transformation journey
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">AI Personal Coach</h1>
-                <p className="text-muted-foreground">
-                  Get personalized guidance, insights, and support for your transformation journey
-                </p>
-              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => setLocation('/ai-conversation-history')}
+                className="flex items-center gap-2 w-full sm:w-auto"
+              >
+                <History className="w-4 h-4" />
+                Chat History
+              </Button>
             </div>
 
             {/* Quick Stats */}

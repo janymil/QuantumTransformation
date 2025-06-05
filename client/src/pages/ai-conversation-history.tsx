@@ -20,11 +20,13 @@ import {
   MessageSquare,
   Heart,
   Save,
-  Trash2
+  Trash2,
+  ArrowLeft
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 interface AiResponse {
   id: number;
@@ -42,39 +44,42 @@ interface AiResponse {
 export default function AiConversationHistory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [sessionTypeFilter, setSessionTypeFilter] = useState("all");
   const [challengeTypeFilter, setChallengeTypeFilter] = useState("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedResponse, setSelectedResponse] = useState<AiResponse | null>(null);
   const [editingResponse, setEditingResponse] = useState<AiResponse | null>(null);
-  const [editedInput, setEditedInput] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
 
-  // Fetch user's AI conversation history
-  const { data: responses = [], isLoading } = useQuery({
-    queryKey: ["/api/ai/responses"],
+  // Fetch AI responses
+  const { data: responses, isLoading } = useQuery({
+    queryKey: ['/api/ai/responses'],
+    retry: false,
   });
 
   // Update response mutation
   const updateResponseMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return apiRequest(`/api/ai/responses/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
+    mutationFn: async ({ id, userInput }: { id: number; userInput: string }) => {
+      return await apiRequest(`/api/ai/responses/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ userInput })
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/ai/responses"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/responses'] });
+      setEditingResponse(null);
       toast({
-        title: "Updated",
+        title: "Response updated",
         description: "Your question has been updated successfully.",
       });
-      setEditingResponse(null);
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to update your question.",
+        description: "Failed to update response.",
         variant: "destructive",
       });
     },
@@ -83,109 +88,154 @@ export default function AiConversationHistory() {
   // Toggle favorite mutation
   const toggleFavoriteMutation = useMutation({
     mutationFn: async ({ id, isFavorited }: { id: number; isFavorited: boolean }) => {
-      return apiRequest(`/api/ai/responses/${id}/favorite`, {
-        method: "PATCH",
-        body: JSON.stringify({ isFavorited }),
+      return await apiRequest(`/api/ai/responses/${id}/favorite`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isFavorited })
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/ai/responses"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/responses'] });
     },
   });
 
-  // Archive response mutation
-  const archiveResponseMutation = useMutation({
+  // Toggle archive mutation
+  const toggleArchiveMutation = useMutation({
     mutationFn: async ({ id, isArchived }: { id: number; isArchived: boolean }) => {
-      return apiRequest(`/api/ai/responses/${id}/archive`, {
-        method: "PATCH",
-        body: JSON.stringify({ isArchived }),
+      return await apiRequest(`/api/ai/responses/${id}/archive`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isArchived })
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/ai/responses"] });
-      toast({
-        title: isArchived ? "Archived" : "Unarchived",
-        description: `Question ${isArchived ? "archived" : "restored"} successfully.`,
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/responses'] });
     },
   });
 
-  // Filter responses based on search and filters
-  const filteredResponses = useMemo(() => {
-    return responses.filter((response: AiResponse) => {
-      // Search filter
-      const matchesSearch = 
-        response.userInput.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (typeof response.aiResponse === 'string' ? response.aiResponse : JSON.stringify(response.aiResponse))
-          .toLowerCase().includes(searchTerm.toLowerCase());
-
-      // Session type filter
-      const matchesSessionType = sessionTypeFilter === "all" || response.sessionType === sessionTypeFilter;
-
-      // Challenge type filter
-      const matchesChallengeType = challengeTypeFilter === "all" || response.challengeType === challengeTypeFilter;
-
-      // Date range filter
-      const responseDate = new Date(response.createdAt);
-      const matchesDateRange = 
-        (!dateRange.from || responseDate >= dateRange.from) &&
-        (!dateRange.to || responseDate <= dateRange.to);
-
-      return matchesSearch && matchesSessionType && matchesChallengeType && matchesDateRange && !response.isArchived;
-    });
-  }, [responses, searchTerm, sessionTypeFilter, challengeTypeFilter, dateRange]);
-
-  const handleEditSave = () => {
-    if (editingResponse) {
-      updateResponseMutation.mutate({
-        id: editingResponse.id,
-        data: { userInput: editedInput }
-      });
+  // Helper function to safely parse and format text
+  const formatText = (text: any): string => {
+    if (typeof text === 'string') {
+      try {
+        // Try to parse if it's JSON
+        const parsed = JSON.parse(text);
+        if (typeof parsed === 'string') {
+          return parsed;
+        }
+        // If it's an object, extract readable content
+        if (typeof parsed === 'object' && parsed !== null) {
+          if (Array.isArray(parsed)) {
+            return parsed.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join('\n');
+          }
+          if (parsed.content) return parsed.content;
+          if (parsed.text) return parsed.text;
+          if (parsed.message) return parsed.message;
+          return JSON.stringify(parsed, null, 2);
+        }
+        return String(parsed);
+      } catch {
+        // If not JSON, return as is
+        return text;
+      }
     }
+    if (typeof text === 'object' && text !== null) {
+      if (Array.isArray(text)) {
+        return text.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join('\n');
+      }
+      if (text.content) return text.content;
+      if (text.text) return text.text;
+      if (text.message) return text.message;
+      return JSON.stringify(text, null, 2);
+    }
+    return String(text || '');
   };
 
-  const getResponseText = (aiResponse: any) => {
-    if (typeof aiResponse === 'string') return aiResponse;
-    if (aiResponse?.response) return aiResponse.response;
-    if (aiResponse?.content) return aiResponse.content;
-    return JSON.stringify(aiResponse);
-  };
+  // Filter logic
+  const filteredResponses = useMemo(() => {
+    if (!responses) return [];
+    
+    return (responses as AiResponse[]).filter((response: AiResponse) => {
+      const matchesSearch = !searchTerm || 
+        response.userInput.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        formatText(response.aiResponse).toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesSessionType = sessionTypeFilter === 'all' || response.sessionType === sessionTypeFilter;
+      const matchesChallengeType = challengeTypeFilter === 'all' || response.challengeType === challengeTypeFilter;
+      const matchesArchived = !showArchived || response.isArchived;
+      const matchesFavorited = !showFavorites || response.isFavorited;
+      
+      const responseDate = new Date(response.createdAt);
+      const matchesDateRange = !dateRange.from || !dateRange.to || 
+        (responseDate >= dateRange.from && responseDate <= dateRange.to);
+      
+      return matchesSearch && matchesSessionType && matchesChallengeType && 
+             matchesArchived && matchesFavorited && matchesDateRange;
+    });
+  }, [responses, searchTerm, sessionTypeFilter, challengeTypeFilter, showArchived, showFavorites, dateRange]);
 
-  const challengeTypes = ["all", "quantum_breakthrough", "reality_creation", "abundance_mindset", "health_transformation", "relationship_mastery"];
-  const sessionTypes = ["all", "coaching", "explanation", "guidance", "breakthrough"];
+  const quickFilters = [
+    { label: "Last 7 Days", onClick: () => setDateRange({ from: subDays(new Date(), 7), to: new Date() }) },
+    { label: "Last 30 Days", onClick: () => setDateRange({ from: subDays(new Date(), 30), to: new Date() }) },
+    { label: "Clear All", onClick: () => {
+      setSearchTerm("");
+      setSessionTypeFilter("all");
+      setChallengeTypeFilter("all");
+      setDateRange({});
+      setShowArchived(false);
+      setShowFavorites(false);
+    }}
+  ];
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Loading your conversation history...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <p className="text-muted-foreground">Loading your chat history...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-          AI Conversation History
-        </h1>
-        <p className="text-muted-foreground">
-          Search, filter, and manage your AI coaching conversations
-        </p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setLocation('/ai-coaching')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to AI Coach
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Chat History</h1>
+                <p className="text-sm text-muted-foreground">
+                  {filteredResponses.length} conversation{filteredResponses.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Search & Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Search & Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              <CardTitle className="text-lg">Search & Filters</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search questions and responses..."
                 value={searchTerm}
@@ -194,198 +244,214 @@ export default function AiConversationHistory() {
               />
             </div>
 
-            {/* Session Type Filter */}
-            <Select value={sessionTypeFilter} onValueChange={setSessionTypeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Session Type" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessionTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type === "all" ? "All Sessions" : type.charAt(0).toUpperCase() + type.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filters Row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Select value={sessionTypeFilter} onValueChange={setSessionTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Sessions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sessions</SelectItem>
+                  <SelectItem value="coaching">Coaching</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="breakthrough">Breakthrough</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Challenge Type Filter */}
-            <Select value={challengeTypeFilter} onValueChange={setChallengeTypeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Challenge Type" />
-              </SelectTrigger>
-              <SelectContent>
-                {challengeTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type === "all" ? "All Challenges" : type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={challengeTypeFilter} onValueChange={setChallengeTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Challenges" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Challenges</SelectItem>
+                  <SelectItem value="money_blocks_clearing">Money Blocks Clearing</SelectItem>
+                  <SelectItem value="quantum_consciousness">Quantum Consciousness</SelectItem>
+                  <SelectItem value="relationships">Relationships</SelectItem>
+                  <SelectItem value="health_vitality">Health & Vitality</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Date Range Filter */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "LLL dd")} -{" "}
-                        {format(dateRange.to, "LLL dd")}
-                      </>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "LLL dd")} -{" "}
+                          {format(dateRange.to, "LLL dd")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "LLL dd, y")
+                      )
                     ) : (
-                      format(dateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Pick a date range</span>
-                  )}
+                      "Pick a date range"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange.from}
+                    selected={dateRange as any}
+                    onSelect={setDateRange as any}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <div className="flex gap-2">
+                <Button
+                  variant={showFavorites ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowFavorites(!showFavorites)}
+                  className="flex items-center gap-1"
+                >
+                  <Star className="w-3 h-3" />
+                  Favorites
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={dateRange.from}
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="flex items-center gap-1"
+                >
+                  <Archive className="w-3 h-3" />
+                  Archived
+                </Button>
+              </div>
+            </div>
 
-          {/* Quick Filters */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDateRange({ from: subDays(new Date(), 7) })}
-            >
-              Last 7 Days
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDateRange({ from: subDays(new Date(), 30) })}
-            >
-              Last 30 Days
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSearchTerm("");
-                setSessionTypeFilter("all");
-                setChallengeTypeFilter("all");
-                setDateRange({});
-              }}
-            >
-              Clear All
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            {/* Quick Filters */}
+            <div className="flex gap-2">
+              {quickFilters.map((filter, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  onClick={filter.onClick}
+                >
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Results */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">
-            {filteredResponses.length} Conversation{filteredResponses.length !== 1 ? 's' : ''}
-          </h2>
-        </div>
-
+        {/* Results */}
         {filteredResponses.length === 0 ? (
           <Card>
-            <CardContent className="text-center py-8">
-              <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No conversations found matching your filters.</p>
+            <CardContent className="py-12 text-center">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-medium mb-2">No conversations found</h3>
+              <p className="text-muted-foreground">
+                {searchTerm || sessionTypeFilter !== 'all' || challengeTypeFilter !== 'all' || dateRange.from
+                  ? "Try adjusting your filters to see more results."
+                  : "Start a conversation with the AI Coach to see your history here."}
+              </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {filteredResponses.map((response: AiResponse) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredResponses.map((response) => (
               <Card key={response.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {/* Header */}
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary">
-                            {response.sessionType}
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {response.sessionType}
+                        </Badge>
+                        {response.challengeType && (
+                          <Badge variant="outline" className="text-xs">
+                            Day {response.day}
                           </Badge>
-                          {response.challengeType && (
-                            <Badge variant="outline">
-                              {response.challengeType.replace(/_/g, " ")}
-                            </Badge>
-                          )}
-                          {response.day && (
-                            <Badge variant="outline">
-                              Day {response.day}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(response.createdAt), "PPP 'at' p")}
-                        </p>
+                        )}
                       </div>
-                      
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleFavoriteMutation.mutate({ 
-                            id: response.id, 
-                            isFavorited: !response.isFavorited 
-                          })}
-                        >
-                          <Heart className={`w-4 h-4 ${response.isFavorited ? 'fill-red-500 text-red-500' : ''}`} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingResponse(response);
-                            setEditedInput(response.userInput);
-                          }}
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedResponse(response)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => archiveResponseMutation.mutate({ 
-                            id: response.id, 
-                            isArchived: true 
-                          })}
-                        >
-                          <Archive className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Question */}
-                    <div>
-                      <h4 className="font-medium mb-2">Your Question:</h4>
-                      <p className="text-sm bg-muted p-3 rounded-lg">
-                        {response.userInput}
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(response.createdAt), "MMM dd, yyyy 'at' h:mm a")}
                       </p>
                     </div>
-
-                    {/* AI Response Preview */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleFavoriteMutation.mutate({ 
+                          id: response.id, 
+                          isFavorited: !response.isFavorited 
+                        })}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Star className={`w-3 h-3 ${response.isFavorited ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingResponse(response)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-3">
                     <div>
-                      <h4 className="font-medium mb-2">AI Response:</h4>
+                      <h4 className="text-sm font-medium text-foreground mb-1">Your Question:</h4>
                       <p className="text-sm text-muted-foreground line-clamp-3">
-                        {getResponseText(response.aiResponse)}
+                        {formatText(response.userInput)}
                       </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground mb-1">AI Response:</h4>
+                      <p className="text-sm text-muted-foreground line-clamp-4">
+                        {formatText(response.aiResponse)}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Eye className="w-3 h-3 mr-1" />
+                            View Full
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Conversation Details</DialogTitle>
+                            <DialogDescription>
+                              {format(new Date(response.createdAt), "MMMM dd, yyyy 'at' h:mm a")}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium mb-2">Your Question:</h4>
+                              <div className="bg-muted p-4 rounded-lg">
+                                <p className="whitespace-pre-wrap">{formatText(response.userInput)}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-2">AI Response:</h4>
+                              <div className="bg-muted p-4 rounded-lg">
+                                <p className="whitespace-pre-wrap">{formatText(response.aiResponse)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleArchiveMutation.mutate({ 
+                          id: response.id, 
+                          isArchived: !response.isArchived 
+                        })}
+                      >
+                        <Archive className="w-3 h-3 mr-1" />
+                        {response.isArchived ? 'Unarchive' : 'Archive'}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -393,64 +459,44 @@ export default function AiConversationHistory() {
             ))}
           </div>
         )}
+
+        {/* Edit Dialog */}
+        {editingResponse && (
+          <Dialog open={!!editingResponse} onOpenChange={() => setEditingResponse(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Question</DialogTitle>
+                <DialogDescription>
+                  Modify your original question below.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  value={editingResponse.userInput}
+                  onChange={(e) => setEditingResponse({ ...editingResponse, userInput: e.target.value })}
+                  rows={4}
+                  placeholder="Enter your question..."
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setEditingResponse(null)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={() => updateResponseMutation.mutate({ 
+                      id: editingResponse.id, 
+                      userInput: editingResponse.userInput 
+                    })}
+                    disabled={updateResponseMutation.isPending}
+                  >
+                    <Save className="w-4 h-4 mr-1" />
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
-
-      {/* View Response Dialog */}
-      <Dialog open={!!selectedResponse} onOpenChange={() => setSelectedResponse(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Conversation Details</DialogTitle>
-            <DialogDescription>
-              {selectedResponse && format(new Date(selectedResponse.createdAt), "PPP 'at' p")}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedResponse && (
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-medium mb-2">Your Question:</h4>
-                <div className="bg-muted p-4 rounded-lg">
-                  {selectedResponse.userInput}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">AI Response:</h4>
-                <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap">
-                  {getResponseText(selectedResponse.aiResponse)}
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Response Dialog */}
-      <Dialog open={!!editingResponse} onOpenChange={() => setEditingResponse(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Question</DialogTitle>
-            <DialogDescription>
-              Update your original question
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              value={editedInput}
-              onChange={(e) => setEditedInput(e.target.value)}
-              placeholder="Edit your question..."
-              rows={4}
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditingResponse(null)}>
-                Cancel
-              </Button>
-              <Button onClick={handleEditSave} disabled={updateResponseMutation.isPending}>
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
