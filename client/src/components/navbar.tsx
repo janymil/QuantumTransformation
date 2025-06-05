@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User, BookOpen, BarChart3, Target, Sparkles } from "lucide-react";
+import { Bell, Settings, LogOut, User, BookOpen, BarChart3, Target, Sparkles, Heart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
 
