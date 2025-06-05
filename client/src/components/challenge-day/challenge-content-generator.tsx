@@ -1,81 +1,21 @@
-// AI-powered content generation for 30-day progressive challenges
+// Challenge content generation using separate content files
+import { getQuantumConsciousnessContent } from '@/content/quantum-consciousness';
+import { getMoneyManifestationContent } from '@/content/money-manifestation';
+import { getQuantumHealthContent } from '@/content/quantum-health';
+import { getQuantumRelationshipsContent } from '@/content/quantum-relationships';
+import { getMoneyBlocksClearingContent } from '@/content/money-blocks-clearing';
+
 export function generateChallengeContent(day: number, type: string) {
-  // Get challenge phase for progressive content structure
-  const getPhase = (day: number) => {
-    if (day <= 7) return 'foundation';
-    if (day <= 14) return 'deepening';
-    if (day <= 21) return 'integration';
-    return 'mastery';
+  const contentMap: Record<string, (day: number) => any> = {
+    general_quantum: getQuantumConsciousnessContent,
+    money_manifestation: getMoneyManifestationContent,
+    quantum_health: getQuantumHealthContent,
+    quantum_relationships: getQuantumRelationshipsContent,
+    money_blocks_clearing: getMoneyBlocksClearingContent,
   };
 
-  const phase = getPhase(day);
-  
-  const contentMap: Record<string, any> = {
-    general_quantum: generateQuantumContent(day, phase),
-    money_manifestation: generateMoneyManifestationContent(day, phase),
-    quantum_health: {
-      day,
-      title: `Day ${day}: Cellular Regeneration`,
-      subtitle: "Activate your body's natural healing intelligence",
-      description: "Harness the quantum field to promote healing and vitality in your body",
-      duration: "20-30 minutes",
-      topic: "Quantum Healing",
-      science: "Epigenetic research demonstrates that meditation and visualization can activate healing genes and reduce inflammation markers in the body.",
-      practice: {
-        steps: [
-          "Relax deeply and connect with your breath",
-          "Scan your body and send love to each part",
-          "Visualize healing light filling every cell",
-          "See your body functioning in perfect health",
-          "Feel gratitude for your body's wisdom",
-          "Program your cells for optimal health and vitality"
-        ],
-        tips: [
-          "Focus on health, not illness",
-          "Use specific visualizations for healing",
-          "Practice self-love and body appreciation"
-        ],
-        insights: [
-          "Your body has infinite healing capacity",
-          "Thoughts and emotions affect cellular health",
-          "Love is the most powerful healing force"
-        ]
-      },
-      affirmation: "My body is healing perfectly, and every cell vibrates with health and vitality."
-    },
-    money_blocks_clearing: {
-      day,
-      title: `Day ${day}: Money Block Identification`,
-      subtitle: "Discover and dissolve limiting money beliefs",
-      description: "Identify deep-rooted money blocks and begin the process of clearing them from your subconscious",
-      duration: "25-30 minutes",
-      topic: "Money Blocks Clearing",
-      science: "Neuroscience shows that limiting beliefs create neural pathways that can be rewired through conscious awareness and emotional clearing techniques.",
-      practice: {
-        steps: [
-          "Sit quietly and bring money to mind",
-          "Notice what emotions or thoughts arise",
-          "Identify the underlying beliefs about money",
-          "Feel where these beliefs are stored in your body",
-          "Send love and acceptance to these parts",
-          "Visualize releasing these old patterns with each exhale"
-        ],
-        tips: [
-          "Be gentle and non-judgmental with yourself",
-          "Journal about what comes up during practice",
-          "Remember that blocks served a purpose in the past"
-        ],
-        insights: [
-          "Money blocks are learned, not inherent",
-          "Awareness is the first step to transformation",
-          "You deserve financial abundance and freedom"
-        ]
-      },
-      affirmation: "I release all limiting beliefs about money and embrace my worthiness to receive abundance."
-    }
-  };
-
-  return contentMap[type] || contentMap.general_quantum;
+  const contentFunction = contentMap[type] || contentMap.general_quantum;
+  return contentFunction(day);
 }
 
 // Quantum Consciousness - 30 day progressive content
