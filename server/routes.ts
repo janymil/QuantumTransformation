@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory } from "@shared/schema";
+import { aiInteractionHistory } from "@shared/ai-interaction-schema";
 import { z } from "zod";
 import { registerAuthRoutes } from "./routes/auth-routes";
 import { registerChallengeRoutes } from "./routes/challenge-routes";

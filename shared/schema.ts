@@ -11,6 +11,7 @@ import {
   boolean,
   date,
   real,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -175,6 +176,15 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   aiResponse: jsonb("ai_response").notNull(),
   challengeType: varchar("challenge_type"),
   day: integer("day"),
+  
+  // Analytics fields for cost tracking
+  modelUsed: varchar("model_used").default("gpt-4o"), // 'gpt-4o', 'gpt-4o-mini'
+  tokenCount: integer("token_count").default(0),
+  cost: decimal("cost", { precision: 10, scale: 6 }).default("0"),
+  responseTime: integer("response_time").default(0), // milliseconds
+  responseQuality: integer("response_quality").default(8), // 1-10 scale
+  
+  // User interaction fields
   tags: jsonb("tags").default([]), // For filtering and search
   isFavorited: boolean("is_favorited").default(false),
   rating: integer("rating"), // 1-5 user rating of response quality
@@ -185,6 +195,7 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   index("ai_response_history_user_idx").on(table.userId),
   index("ai_response_history_session_type_idx").on(table.sessionType),
   index("ai_response_history_challenge_type_idx").on(table.challengeType),
+  index("ai_response_history_model_idx").on(table.modelUsed),
   index("ai_response_history_created_at_idx").on(table.createdAt),
 ]);
 
