@@ -58,6 +58,37 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
   const progress = allProgress.find((p: any) => p.challengeType === challengeType);
   const challengeCompletions = completions.filter((c: any) => c.challengeType === challengeType);
   
+  // Check if challenge has been started
+  if (progressLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Loading your challenge progress...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!progress) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className={`w-20 h-20 rounded-full ${challengeData.gradient} flex items-center justify-center text-white text-2xl font-bold mb-6 mx-auto`}>
+            {challengeData.icon}
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{challengeData.title}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">You haven't started this challenge yet.</p>
+          <Link href="/challenges">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+              Go to Challenges
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
   const currentDay = progress?.currentDay || 1;
   const completedDays = challengeCompletions.length;
   const streakCount = progress?.streakCount || 0;
