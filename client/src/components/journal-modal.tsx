@@ -41,18 +41,21 @@ export default function JournalModal({
   challengeType = "general_quantum"
 }: JournalModalProps) {
   const { toast } = useToast();
+  
+  // Create a unique key that resets component state when challenge/day changes
+  const modalKey = `${challengeType}-${day}`;
+  
   const [experience, setExperience] = useState("");
   const [insights, setInsights] = useState("");
   const [intention, setIntention] = useState("");
 
-  // Clear form state when modal closes
+  // Reset form state when challenge/day changes or modal closes
   useEffect(() => {
-    if (!isOpen) {
-      setExperience("");
-      setInsights("");
-      setIntention("");
-    }
-  }, [isOpen]);
+    console.log(`Modal state reset for key: ${modalKey}, isOpen: ${isOpen}`);
+    setExperience("");
+    setInsights("");
+    setIntention("");
+  }, [modalKey, isOpen]);
 
   const { data: existingEntry, isLoading } = useQuery<JournalEntry>({
     queryKey: ["/api/journal/entry", challengeType, day],
