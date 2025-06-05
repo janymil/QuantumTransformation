@@ -134,7 +134,7 @@ export function getAllChallengeTypes(): ChallengeType[] {
 // URL mapping for challenge routes
 export const CHALLENGE_URL_MAPPING: Record<string, string> = {
   'general_quantum': 'quantum-consciousness',
-  'money_manifestation': 'money-blocks',
+  'money_manifestation': 'money-manifestation',
   'quantum_health': 'health-transformation',
   'quantum_relationships': 'relationships',
   'money_blocks_clearing': 'money-blocks-clearing'
