@@ -138,10 +138,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
       });
       
-      // Check if already completed
-      const existing = await storage.getDayCompletion(userId, completionData.day);
+      console.log("Challenge completion request:", completionData);
+      
+      // Check if already completed for this specific challenge type
+      const existing = await storage.getDayCompletion(userId, completionData.day, completionData.challengeType);
+      console.log("Existing completion:", existing);
+      
       if (existing) {
-        return res.status(400).json({ message: "Day already completed" });
+        return res.status(400).json({ message: "Day already completed for this challenge" });
       }
       
       const completion = await storage.createChallengeCompletion(completionData);

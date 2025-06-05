@@ -49,14 +49,6 @@ export default function JournalModal({
   const [insights, setInsights] = useState("");
   const [intention, setIntention] = useState("");
 
-  // Reset form state when challenge/day changes or modal closes
-  useEffect(() => {
-    console.log(`Modal state reset for key: ${modalKey}, isOpen: ${isOpen}`);
-    setExperience("");
-    setInsights("");
-    setIntention("");
-  }, [modalKey, isOpen]);
-
   const { data: existingEntry, isLoading } = useQuery<JournalEntry>({
     queryKey: ["/api/journal/entry", challengeType, day],
     queryFn: async () => {
@@ -74,25 +66,39 @@ export default function JournalModal({
       return data;
     },
     enabled: isOpen,
-    staleTime: 0, // Always refetch
+    staleTime: 0,
+    gcTime: 0, // Don't cache at all
   });
 
-  // Populate form with fresh data when entry loads
+  // Reset and populate form based on modal key and data
   useEffect(() => {
-    if (isOpen) {
-      if (existingEntry) {
-        console.log(`Populating form with existing entry:`, existingEntry);
-        setExperience(existingEntry.experience || "");
-        setInsights(existingEntry.insights || "");
-        setIntention(existingEntry.intention || "");
-      } else if (!isLoading) {
-        console.log(`No existing entry - clearing form for ${challengeType} day ${day}`);
-        setExperience("");
-        setInsights("");
-        setIntention("");
-      }
+    console.log(`Modal effect for key: ${modalKey}, isOpen: ${isOpen}, hasEntry: ${!!existingEntry}, isLoading: ${isLoading}`);
+    
+    if (!isOpen) {
+      // Always clear when modal closes
+      setExperience("");
+      setInsights("");
+      setIntention("");
+      return;
     }
-  }, [existingEntry, isLoading, isOpen, challengeType, day]);
+
+    if (isLoading) {
+      // Don't change anything while loading
+      return;
+    }
+
+    if (existingEntry) {
+      console.log(`Populating form with existing entry for ${modalKey}:`, existingEntry);
+      setExperience(existingEntry.experience || "");
+      setInsights(existingEntry.insights || "");
+      setIntention(existingEntry.intention || "");
+    } else {
+      console.log(`No existing entry - clearing form for ${modalKey}`);
+      setExperience("");
+      setInsights("");
+      setIntention("");
+    }
+  }, [modalKey, isOpen, existingEntry, isLoading]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: { experience: string; insights: string; intention: string }) => {

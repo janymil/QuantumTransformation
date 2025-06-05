@@ -47,7 +47,7 @@ export interface IStorage {
   // Challenge completion operations
   createChallengeCompletion(completion: InsertChallengeCompletion): Promise<ChallengeCompletion>;
   getUserCompletions(userId: string): Promise<ChallengeCompletion[]>;
-  getDayCompletion(userId: string, day: number): Promise<ChallengeCompletion | undefined>;
+  getDayCompletion(userId: string, day: number, challengeType?: string): Promise<ChallengeCompletion | undefined>;
   
   // Journal operations
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
@@ -175,14 +175,20 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(challengeCompletions.day));
   }
 
-  async getDayCompletion(userId: string, day: number): Promise<ChallengeCompletion | undefined> {
+  async getDayCompletion(userId: string, day: number, challengeType?: string): Promise<ChallengeCompletion | undefined> {
+    const conditions = [
+      eq(challengeCompletions.userId, userId),
+      eq(challengeCompletions.day, day)
+    ];
+    
+    if (challengeType) {
+      conditions.push(eq(challengeCompletions.challengeType, challengeType));
+    }
+    
     const [completion] = await db
       .select()
       .from(challengeCompletions)
-      .where(and(
-        eq(challengeCompletions.userId, userId),
-        eq(challengeCompletions.day, day)
-      ));
+      .where(and(...conditions));
     return completion;
   }
 

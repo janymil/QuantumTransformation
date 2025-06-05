@@ -278,6 +278,7 @@ export default function ChallengeDay() {
     mutationFn: async (data: { rating?: number; timeSpent?: number }) => {
       return await apiRequest("POST", "/api/challenges/complete", {
         day: currentDay,
+        challengeType: challengeType,
         timeSpent: data.timeSpent || timeSpent,
         rating: data.rating,
       });
