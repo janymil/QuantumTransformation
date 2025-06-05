@@ -7,7 +7,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JournalModal from "@/components/journal-modal";
 import AIAssistant from "@/components/ai-assistant";
@@ -22,10 +21,7 @@ import {
   Lightbulb,
   ArrowLeft,
   Share,
-  Bookmark,
-  Sunrise,
-  Sun,
-  Moon
+  Bookmark
 } from "lucide-react";
 import VideoMeditationGuide from "@/components/video-meditation-guide";
 import ProgressCelebration from "@/components/progress-celebration";
@@ -52,65 +48,54 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   const [timeSpent, setTimeSpent] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
-  const [celebrationType, setCelebrationType] = useState<'day_completed' | 'streak_milestone' | 'week_completed' | 'challenge_started' | 'level_up'>('day_completed');
 
-  // Get challenge type from prop or URL parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  const challengeType = propChallengeType || urlParams.get('type') || 'general_quantum';
+  // Determine challenge type from URL or prop
+  const urlParts = window.location.pathname.split('/');
+  const challengeType = propChallengeType || urlParts[1] || 'general_quantum';
+  
+  const effectiveDay = currentDay;
 
-  const { data: progressData, isLoading: progressLoading } = useQuery({
+  // Fetch user progress data
+  const { data: progressData } = useQuery({
     queryKey: ["/api/progress/all"],
   });
 
-  // Find the progress for this specific challenge
-  const allProgress = (progressData as any)?.allProgress || [];
-  const challengeProgress = allProgress.find((p: any) => p.challengeType === challengeType);
-  const completedDays = (challengeProgress?.completedDays as number[]) || [];
-  const actualCurrentDay = challengeProgress?.currentDay || 1;
-  
-  // Use the URL day parameter, but validate access permissions
-  const effectiveDay = currentDay;
-  const canAccess = currentDay <= actualCurrentDay;
-
-  const content = generateChallengeContent(effectiveDay, challengeType);
-
-  const { data: completion, isLoading: completionLoading } = useQuery({
-    queryKey: ["/api/challenge/completion", effectiveDay, challengeType],
-    queryFn: async () => {
-      const response = await fetch(`/api/challenge/completion/${effectiveDay}?challengeType=${challengeType}`, {
-        credentials: "include",
-      });
-      if (response.status === 404) return null;
-      if (!response.ok) throw new Error("Failed to fetch completion");
-      return response.json();
-    },
+  // Fetch completion data for this specific day
+  const { data: completionData } = useQuery({
+    queryKey: [`/api/challenge/completion/${effectiveDay}`],
   });
 
-  const completeMutation = useMutation({
-    mutationFn: async ({ day, challengeType, timeSpent }: { day: number; challengeType: string; timeSpent: number }) => {
-      return await apiRequest(`/api/challenge/complete/${day}`, "POST", { challengeType, timeSpent });
+  // Generate or fetch challenge content
+  const content = generateChallengeContent(challengeType, effectiveDay);
+
+  // Check if day is completed
+  useEffect(() => {
+    if (completionData) {
+      setIsCompleted(true);
+    }
+  }, [completionData]);
+
+  // Timer for tracking time spent
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeSpent(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const completionMutation = useMutation({
+    mutationFn: async (completionData: any) => {
+      return apiRequest("/api/challenges/complete", "POST", completionData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/challenge/completion", effectiveDay, challengeType] });
-      queryClient.invalidateQueries({ queryKey: ["/api/progress/all"] });
       setIsCompleted(true);
-      
-      // Show appropriate celebration
-      if (effectiveDay % 7 === 0) {
-        setCelebrationType('week_completed');
-        setShowCelebration(true);
-      } else if (effectiveDay === 1) {
-        setCelebrationType('challenge_started');
-        setShowCelebration(true);
-      } else {
-        setCelebrationType('day_completed');
-        setShowCelebration(true);
-      }
-      
+      setShowCelebration(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/progress/all"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/challenge/completion/${effectiveDay}`] });
       toast({
-        title: "Day Completed!",
-        description: `You've successfully completed Day ${effectiveDay}!`,
+        title: "Day completed!",
+        description: "Great job on completing today's practice!",
       });
     },
     onError: (error) => {
@@ -125,37 +110,26 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
         }, 500);
         return;
       }
+      
       toast({
-        title: "Error",
-        description: "Failed to complete the day. Please try again.",
+        title: "Error completing day",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 
   const handleComplete = () => {
-    completeMutation.mutate({
+    if (isCompleted) return;
+
+    completionMutation.mutate({
       day: effectiveDay,
       challengeType,
       timeSpent,
+      rating: 5,
+      notes: "",
     });
   };
-
-  // Auto-mark as completed if completion data exists
-  useEffect(() => {
-    if (completion && !isCompleted) {
-      setIsCompleted(true);
-    }
-  }, [completion, isCompleted]);
-
-  // Timer for tracking time spent
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeSpent(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -163,20 +137,21 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (progressLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
+  const allProgress = (progressData as any)?.allProgress || [];
+  const userProgress = allProgress.find((p: any) => p.challengeType === challengeType);
+  const actualCurrentDay = userProgress?.currentDay || 1;
 
-  if (!canAccess) {
+  // Redirect if accessing future day
+  if (effectiveDay > actualCurrentDay) {
     return (
       <div className="container mx-auto p-6 max-w-4xl">
         <Card>
-          <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Day Not Yet Available</h2>
+          <CardContent className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">Day Not Available Yet</h2>
             <p className="text-muted-foreground mb-6">
-              Complete the previous days to unlock Day {effectiveDay}.
+              You need to complete Day {actualCurrentDay} first before accessing Day {effectiveDay}.
             </p>
-            <Link href={`/challenge/${actualCurrentDay}?type=${challengeType}`}>
+            <Link href={`/${challengeType}/day/${actualCurrentDay}`}>
               <Button>Go to Day {actualCurrentDay}</Button>
             </Link>
           </CardContent>
@@ -231,24 +206,20 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                   <p className="text-muted-foreground leading-relaxed">
                     {content.description}
                   </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="science" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Brain className="w-6 h-6 mr-2 text-primary" />
-                    The Science Behind Today's Practice
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-muted/30 rounded-lg p-6">
-                    <p className="text-muted-foreground leading-relaxed">
-                      {content.science}
-                    </p>
-                  </div>
+                  
+                  {content.expectedResults && (
+                    <div className="mt-6 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-700">
+                      <h4 className="font-semibold text-green-800 dark:text-green-200 mb-3">Expected Results</h4>
+                      <ul className="space-y-2">
+                        {content.expectedResults.map((result: string, index: number) => (
+                          <li key={index} className="text-green-700 dark:text-green-300 flex items-start">
+                            <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                            {result}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -273,50 +244,6 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                 <VideoPlayerTab videoLinks={content.videoLinks} />
               </TabsContent>
             )}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Play className="w-6 h-6 mr-2 text-primary" />
-                      Today's Practice: {content.practice.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-6">{content.practice.description}</p>
-                    
-                    <div className="space-y-4">
-                      <h4 className="font-semibold text-foreground">Step-by-Step Guide:</h4>
-                      <ol className="space-y-3">
-                        {content.practice.steps?.map((step: string, index: number) => (
-                          <li key={index} className="flex items-start space-x-3">
-                            <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="text-white text-sm font-medium">{index + 1}</span>
-                            </div>
-                            <p className="text-muted-foreground">{step}</p>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-
-                    <Separator className="my-6" />
-
-                    <div className="bg-muted/50 rounded-lg p-6">
-                      <h4 className="font-semibold text-foreground mb-3 flex items-center">
-                        <Lightbulb className="w-5 h-5 mr-2 text-warning" />
-                        Practice Tips
-                      </h4>
-                      <ul className="space-y-2">
-                        {content.practice.tips?.map((tip: string, index: number) => (
-                          <li key={index} className="text-muted-foreground flex items-start">
-                            <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2 mr-3"></span>
-                            {tip}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
 
             <TabsContent value="insights" className="space-y-6">
               <Card>
@@ -329,87 +256,80 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                 <CardContent>
                   <div className="space-y-4">
                     {content.practice.insights?.map((insight: string, index: number) => (
-                      <div key={index} className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg">
-                        <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
-                          <Lightbulb className="w-4 h-4 text-white" />
-                        </div>
+                      <div key={index} className="flex items-start space-x-3 p-4 bg-muted/30 rounded-lg">
+                        <Lightbulb className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                         <p className="text-muted-foreground">{insight}</p>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
 
-              {content.affirmation && (
-                <Card className="bg-gradient-to-r from-secondary/10 to-primary/10 border-primary/20">
-                  <CardContent className="p-6">
-                    <h4 className="font-semibold text-foreground mb-3">Today's Affirmation</h4>
-                    <p className="text-lg text-foreground italic leading-relaxed">
-                      "{content.affirmation}"
+            <TabsContent value="science" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Brain className="w-6 h-6 mr-2 text-primary" />
+                    The Science Behind Today's Practice
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted/30 rounded-lg p-6">
+                    <p className="text-muted-foreground leading-relaxed">
+                      {content.science}
                     </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {content.quote && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <Quote className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
-                      <div>
-                        <p className="text-lg text-foreground italic mb-2">
-                          "{content.quote.text}"
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          — {content.quote.author}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Progress</h3>
-                <Badge variant="secondary">Time: {formatTime(timeSpent)}</Badge>
-              </div>
-              <div className="space-y-2">
-                <Button 
-                  onClick={handleComplete}
-                  disabled={isCompleted || completionLoading}
-                  className="w-full"
-                >
-                  {isCompleted ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Completed
-                    </>
-                  ) : (
-                    "Mark as Complete"
-                  )}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowJournal(true)}
-                  className="w-full"
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Journal
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowAI(true)}
-                  className="w-full"
-                >
-                  <Brain className="w-4 h-4 mr-2" />
-                  AI Assistant
-                </Button>
+            <CardHeader>
+              <CardTitle>Today's Progress</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Time Spent</span>
+                  <Badge variant="secondary">Time: {formatTime(timeSpent)}</Badge>
+                </div>
+                <div className="space-y-2">
+                  <Button 
+                    onClick={handleComplete}
+                    disabled={isCompleted || completionMutation.isPending}
+                    className="w-full"
+                  >
+                    {isCompleted ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Completed
+                      </>
+                    ) : (
+                      "Mark as Complete"
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowJournal(true)}
+                    className="w-full"
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Journal
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowAI(true)}
+                    className="w-full"
+                  >
+                    <Brain className="w-4 h-4 mr-2" />
+                    AI Assistant
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -417,49 +337,28 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       </div>
 
       {showJournal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <CardTitle>Journal - Day {effectiveDay}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Journal functionality will be restored soon.</p>
-              <Button onClick={() => setShowJournal(false)} className="mt-4">
-                Close
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <JournalModal
+          isOpen={showJournal}
+          onClose={() => setShowJournal(false)}
+          day={effectiveDay}
+          challengeType={challengeType}
+        />
       )}
 
       {showAI && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <CardTitle>AI Assistant - Day {effectiveDay}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>AI Assistant functionality will be restored soon.</p>
-              <Button onClick={() => setShowAI(false)} className="mt-4">
-                Close
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <AIAssistant
+          isOpen={showAI}
+          onClose={() => setShowAI(false)}
+          day={effectiveDay}
+          challengeType={challengeType}
+        />
       )}
 
       {showCelebration && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md text-center">
-            <CardContent className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Congratulations!</h2>
-              <p>You completed Day {effectiveDay}!</p>
-              <Button onClick={() => setShowCelebration(false)} className="mt-4">
-                Continue
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <ProgressCelebration
+          day={effectiveDay}
+          onClose={() => setShowCelebration(false)}
+        />
       )}
     </div>
   );
