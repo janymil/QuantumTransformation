@@ -40,41 +40,27 @@ export default function VideoPlayerTab({ videoLinks }: VideoPlayerTabProps) {
 
   return (
     <div className="space-y-6">
-      {videoLinks.map((video, index) => (
-        <Card key={index} className="overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center">
-                <Play className="w-5 h-5 mr-2 text-primary" />
-                {video.title}
-              </span>
-              <Badge variant="secondary">
-                Recommended
-              </Badge>
-            </CardTitle>
-            {video.description && (
-              <p className="text-sm text-muted-foreground">{video.description}</p>
-            )}
-          </CardHeader>
-          <CardContent>
-            {video.url ? (
-              <YouTubeEmbed 
-                videoUrl={video.url} 
-                title=""
-                description=""
-                showFullscreen={true}
-              />
-            ) : (
-              <div className="bg-muted/30 rounded-lg p-6 text-center">
-                <Play className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  Video link will be available when added to the content
-                </p>
-              </div>
-            )}
+      {videoLinks.filter(video => video.url).map((video, index) => (
+        <YouTubeEmbed 
+          key={index}
+          videoUrl={video.url!} 
+          title={video.title}
+          description={video.description}
+          showFullscreen={true}
+        />
+      ))}
+      {videoLinks.filter(video => !video.url).length > 0 && (
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="bg-muted/30 rounded-lg p-6 text-center">
+              <Play className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                Additional recommended videos will be available soon
+              </p>
+            </div>
           </CardContent>
         </Card>
-      ))}
+      )}
     </div>
   );
 }
