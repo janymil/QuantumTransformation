@@ -11,6 +11,13 @@ import {
   generateMicroChallenges,
   generateDailyAffirmation
 } from "../openai";
+import { 
+  validateAIRequest,
+  cacheResponse,
+  trackUsage,
+  getUserAIStats,
+  optimizeContext
+} from "../ai-cost-control";
 
 export function registerAIRoutes(app: Express) {
   // AI explanation for challenge topics

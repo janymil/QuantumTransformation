@@ -286,6 +286,35 @@ export type KnowledgeQuiz = typeof knowledgeQuizzes.$inferSelect;
 export type InsertUserQuizResult = typeof userQuizResults.$inferInsert;
 export type UserQuizResult = typeof userQuizResults.$inferSelect;
 
+// AI Cost Control System
+export const aiUsageTracking = pgTable("ai_usage_tracking", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  requestType: varchar("request_type").notNull(), // 'explanation', 'coaching', 'analysis', etc.
+  inputHash: varchar("input_hash"), // Hash of input to detect duplicates
+  tokensUsed: integer("tokens_used").default(0),
+  cost: integer("cost").default(0), // in cents
+  isFromCache: boolean("is_from_cache").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiResponseCache = pgTable("ai_response_cache", {
+  id: serial("id").primaryKey(),
+  inputHash: varchar("input_hash").unique().notNull(),
+  requestType: varchar("request_type").notNull(),
+  challengeType: varchar("challenge_type"),
+  day: integer("day"),
+  response: text("response").notNull(),
+  tokensUsed: integer("tokens_used").default(0),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type InsertAiUsageTracking = typeof aiUsageTracking.$inferInsert;
+export type AiUsageTracking = typeof aiUsageTracking.$inferSelect;
+export type InsertAiResponseCache = typeof aiResponseCache.$inferInsert;
+export type AiResponseCache = typeof aiResponseCache.$inferSelect;
+
 // Insert schemas
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true });
 export const insertChallengeCompletionSchema = createInsertSchema(challengeCompletions).omit({ id: true });
