@@ -233,8 +233,8 @@ export default function Progress() {
     },
     {
       label: "Time Invested",
-      value: Math.round(stats.totalTimeSpent / 60),
-      suffix: "hrs",
+      value: stats.totalTimeSpent > 60 ? Math.round(stats.totalTimeSpent / 60) : stats.totalTimeSpent,
+      suffix: stats.totalTimeSpent > 60 ? "hrs" : "min",
       icon: Clock,
       color: "text-blue-500",
       bgColor: "from-blue-500/10 to-indigo-500/10"

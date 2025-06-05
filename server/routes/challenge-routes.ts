@@ -117,7 +117,6 @@ export function registerChallengeRoutes(app: Express) {
         challengeType,
         timeSpent: timeSpent || 0,
         rating: rating || 5,
-        notes: notes || "",
         completedAt: new Date()
       });
 

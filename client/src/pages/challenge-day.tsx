@@ -159,7 +159,6 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       challengeType,
       timeSpent: timeSpentMinutes,
       rating: 5,
-      notes: "",
     };
     
     console.log("Completion data being sent:", completionData);
