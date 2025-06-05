@@ -290,13 +290,13 @@ export default function AICoaching() {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Daily Requests</span>
-                        <span>{(usageStats as any)?.requestsToday || 0}/{(usageStats as any)?.dailyLimit || 10}</span>
+                        <span>{(usageStats as any)?.dailyUsage || 0}/10</span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2">
                         <div 
                           className="bg-primary h-2 rounded-full" 
                           style={{ 
-                            width: `${Math.min(100, ((usageStats as any)?.requestsToday || 0) / ((usageStats as any)?.dailyLimit || 10) * 100)}%` 
+                            width: `${Math.min(100, (parseInt((usageStats as any)?.dailyUsage) || 0) / 10 * 100)}%` 
                           }}
                         ></div>
                       </div>

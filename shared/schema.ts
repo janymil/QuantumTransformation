@@ -166,6 +166,28 @@ export const spacedRepetitionSchedule = pgTable("spaced_repetition_schedule", {
   completedAt: timestamp("completed_at"),
 });
 
+// AI Response History - Save all AI interactions for users
+export const aiResponseHistory = pgTable("ai_response_history", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  sessionType: varchar("session_type").notNull(), // 'coaching', 'questions', 'affirmation', 'explanation'
+  userInput: text("user_input").notNull(),
+  aiResponse: jsonb("ai_response").notNull(),
+  challengeType: varchar("challenge_type"),
+  day: integer("day"),
+  tags: jsonb("tags").default([]), // For filtering and search
+  isFavorited: boolean("is_favorited").default(false),
+  rating: integer("rating"), // 1-5 user rating of response quality
+  isArchived: boolean("is_archived").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("ai_response_history_user_idx").on(table.userId),
+  index("ai_response_history_session_type_idx").on(table.sessionType),
+  index("ai_response_history_challenge_type_idx").on(table.challengeType),
+  index("ai_response_history_created_at_idx").on(table.createdAt),
+]);
+
 // Schema types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -198,6 +220,9 @@ export type InsertSpacedRepetitionReview = typeof spacedRepetitionReviews.$infer
 export type SpacedRepetitionReview = typeof spacedRepetitionReviews.$inferSelect;
 
 export type InsertSpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferInsert;
+
+export type InsertAiResponseHistory = typeof aiResponseHistory.$inferInsert;
+export type AiResponseHistory = typeof aiResponseHistory.$inferSelect;
 export type SpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferSelect;
 
 // Gamification and Micro-Learning System
@@ -326,3 +351,4 @@ export const insertSavedPhraseSchema = createInsertSchema(savedPhrases).omit({ i
 export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true });
 export const insertAiChatSessionSchema = createInsertSchema(aiChatSessions).omit({ id: true });
 export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({ id: true });
+export const insertAiResponseHistorySchema = createInsertSchema(aiResponseHistory).omit({ id: true });

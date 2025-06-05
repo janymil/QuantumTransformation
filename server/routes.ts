@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema } from "@shared/schema";
+import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory } from "@shared/schema";
 import { z } from "zod";
 import { registerAuthRoutes } from "./routes/auth-routes";
 import { registerChallengeRoutes } from "./routes/challenge-routes";
