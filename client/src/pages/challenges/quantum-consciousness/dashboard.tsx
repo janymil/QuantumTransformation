@@ -37,9 +37,12 @@ export default function QuantumConsciousnessDashboard() {
     );
   }
 
+  // Map URL path to challenge type ID
+  const challengeTypeId = "general_quantum"; // quantum-consciousness maps to general_quantum
+
   return (
     <IndividualChallengeDashboard 
-      challengeType="general_quantum"
+      challengeType={challengeTypeId}
     />
   );
 }

@@ -125,6 +125,24 @@ export function getAllChallengeTypes(): ChallengeType[] {
   return Object.values(CHALLENGE_TYPES);
 }
 
+// URL mapping for challenge routes
+export const CHALLENGE_URL_MAPPING: Record<string, string> = {
+  'general_quantum': 'quantum-consciousness',
+  'money_manifestation': 'money-blocks',
+  'quantum_health': 'health-transformation',
+  'quantum_relationships': 'relationships',
+  'money_blocks_clearing': 'creativity-flow'
+};
+
+export function getChallengeUrl(challengeTypeId: string): string {
+  return CHALLENGE_URL_MAPPING[challengeTypeId] || challengeTypeId;
+}
+
+export function getChallengeTypeFromUrl(url: string): string | undefined {
+  const entry = Object.entries(CHALLENGE_URL_MAPPING).find(([_, urlPath]) => urlPath === url);
+  return entry ? entry[0] : undefined;
+}
+
 // Challenge-specific content prompts for AI generation
 export const CHALLENGE_CONTENT_PROMPTS: Record<string, {
   systemPrompt: string;

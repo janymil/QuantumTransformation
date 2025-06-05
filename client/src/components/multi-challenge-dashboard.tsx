@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { CHALLENGE_TYPES } from "@shared/challenge-types";
+import { CHALLENGE_TYPES, getChallengeUrl } from "@shared/challenge-types";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -236,25 +236,25 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
                           Actions
                         </h4>
                         <div className="space-y-2">
-                          <Link href={`/${progress.challengeType}/day/${currentDay}`}>
+                          <Link href={`/${getChallengeUrl(progress.challengeType)}/day/${currentDay}`}>
                             <Button size="sm" className="w-full">
                               <Play className="w-4 h-4 mr-2" />
                               Continue Day {currentDay}
                             </Button>
                           </Link>
-                          <Link href={`/${progress.challengeType}/progress`}>
+                          <Link href={`/${getChallengeUrl(progress.challengeType)}/progress`}>
                             <Button variant="outline" size="sm" className="w-full">
                               <Target className="w-4 h-4 mr-2" />
                               View Progress
                             </Button>
                           </Link>
-                          <Link href={`/${progress.challengeType}`}>
+                          <Link href={`/${getChallengeUrl(progress.challengeType)}`}>
                             <Button variant="outline" size="sm" className="w-full">
                               <Calendar className="w-4 h-4 mr-2" />
                               Challenge Dashboard
                             </Button>
                           </Link>
-                          <Link href={`/${progress.challengeType}/journal`}>
+                          <Link href={`/${getChallengeUrl(progress.challengeType)}/journal`}>
                             <Button variant="outline" size="sm" className="w-full">
                               <BookOpen className="w-4 h-4 mr-2" />
                               View Journal
