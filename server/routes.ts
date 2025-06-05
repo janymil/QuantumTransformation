@@ -2,16 +2,13 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { 
-  generateAIExplanation, 
-  analyzeJournalEntries, 
-  generateDailyAffirmation,
-  generatePersonalizedCoaching,
-  generateMicroLearningContent,
-  generatePersonalizedAffirmation
-} from "./openai";
-import { insertUserProgressSchema, insertChallengeCompletionSchema, insertJournalEntrySchema, insertSavedPhraseSchema, insertAiChatSessionSchema } from "@shared/schema";
+import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema } from "@shared/schema";
 import { z } from "zod";
+import { registerAuthRoutes } from "./routes/auth-routes";
+import { registerChallengeRoutes } from "./routes/challenge-routes";
+import { registerProgressRoutes } from "./routes/progress-routes";
+import { registerJournalRoutes } from "./routes/journal-routes";
+import { registerAIRoutes } from "./routes/ai-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware

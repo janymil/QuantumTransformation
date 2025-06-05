@@ -1,13 +1,29 @@
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JournalModal from "@/components/journal-modal";
 import AIAssistant from "@/components/ai-assistant";
-import { Play, Star } from "lucide-react";
+import { 
+  Play, 
+  Star, 
+  Clock, 
+  CheckCircle, 
+  BookOpen, 
+  Brain,
+  Quote,
+  Lightbulb,
+  ArrowLeft,
+  Share,
+  Bookmark
+} from "lucide-react";
 import { challengeContent } from "@/data/challenge-content";
 import VideoMeditationGuide from "@/components/video-meditation-guide";
 import ProgressCelebration from "@/components/progress-celebration";
