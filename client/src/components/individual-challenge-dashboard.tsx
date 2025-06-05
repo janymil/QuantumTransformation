@@ -210,12 +210,70 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                 const isCurrent = day === currentDay;
                 const isAccessible = day <= currentDay;
                 const isFuture = day > currentDay;
+                const isPast = day < currentDay;
+
+                // Generate day content based on challenge type and day
+                const getDayDescription = (dayNum: number, challengeType: string) => {
+                  const descriptions: Record<string, Record<number, string>> = {
+                    'general_quantum': {
+                      1: 'Setting Quantum Intentions',
+                      2: 'Observer Effect Practice',
+                      3: 'Coherent Heart States',
+                      4: 'Present Moment Awareness',
+                      5: 'Energy Field Expansion',
+                      6: 'Emotional State Mastery',
+                      7: 'Weekly Reflection & Integration'
+                    },
+                    'money_blocks_clearing': {
+                      1: 'Identifying Money Blocks',
+                      2: 'Childhood Money Stories',
+                      3: 'Scarcity vs Abundance',
+                      4: 'Worth & Value Recognition',
+                      5: 'Financial Fear Release',
+                      6: 'Money Flow Visualization',
+                      7: 'Weekly Progress Review'
+                    },
+                    'self_love': {
+                      1: 'Self-Compassion Foundation',
+                      2: 'Inner Critic Awareness',
+                      3: 'Body Appreciation',
+                      4: 'Boundary Setting',
+                      5: 'Self-Care Rituals',
+                      6: 'Forgiveness Practice',
+                      7: 'Weekly Self-Love Reflection'
+                    },
+                    'anxiety_relief': {
+                      1: 'Breath Awareness Basics',
+                      2: 'Anxiety Trigger Mapping',
+                      3: 'Grounding Techniques',
+                      4: 'Mindful Observation',
+                      5: 'Progressive Relaxation',
+                      6: 'Calming Visualization',
+                      7: 'Weekly Anxiety Review'
+                    },
+                    'productivity_focus': {
+                      1: 'Focus Foundation Setup',
+                      2: 'Distraction Elimination',
+                      3: 'Deep Work Blocks',
+                      4: 'Energy Management',
+                      5: 'Flow State Practice',
+                      6: 'Priority Clarity',
+                      7: 'Weekly Productivity Review'
+                    }
+                  };
+
+                  const challengeDescriptions = descriptions[challengeType] || descriptions['general_quantum'];
+                  const weekPattern = ((dayNum - 1) % 7) + 1;
+                  return challengeDescriptions[weekPattern] || `Day ${dayNum} Practice`;
+                };
+
+                const dayDescription = getDayDescription(day, challengeType);
 
                 return (
                   <div
                     key={day}
                     className={`
-                      flex-shrink-0 w-24 h-32 rounded-lg border-2 transition-all duration-200
+                      flex-shrink-0 w-40 h-48 rounded-lg border-2 transition-all duration-200
                       ${isCompleted 
                         ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700' 
                         : isCurrent 
@@ -224,15 +282,15 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                         ? 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 opacity-60' 
                         : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-600'
                       }
-                      ${isAccessible && !isFuture ? 'cursor-pointer hover:shadow-md' : 'cursor-not-allowed'}
+                      ${isAccessible ? 'cursor-pointer hover:shadow-md' : 'cursor-not-allowed'}
                     `}
                   >
-                    {isAccessible && !isFuture ? (
+                    {isAccessible ? (
                       <Link href={`/${getChallengeUrl(challengeType)}/day/${day}`}>
-                        <div className="h-full p-3 flex flex-col items-center justify-between">
+                        <div className="h-full p-4 flex flex-col justify-between">
                           <div className="text-center">
                             <div className={`
-                              w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                              w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mb-2
                               ${isCompleted 
                                 ? 'bg-green-500 text-white' 
                                 : isCurrent 
@@ -241,49 +299,72 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                               }
                             `}>
                               {isCompleted ? (
-                                <CheckCircle className="h-4 w-4" />
+                                <CheckCircle className="h-5 w-5" />
                               ) : (
                                 day
                               )}
                             </div>
-                            <p className="text-xs font-medium mt-1 text-gray-700 dark:text-gray-300">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
                               Day {day}
                             </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-300 leading-tight">
+                              {dayDescription}
+                            </p>
                           </div>
-                          <div className="text-center">
+                          
+                          <div className="text-center space-y-2">
                             {isCompleted && (
-                              <Badge variant="secondary" className="text-xs">
-                                Done
-                              </Badge>
+                              <>
+                                <Badge variant="secondary" className="text-xs">
+                                  Completed
+                                </Badge>
+                                {isPast && (
+                                  <div>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-xs px-2 py-1 h-auto"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        window.location.href = `/${getChallengeUrl(challengeType)}/day/${day}`;
+                                      }}
+                                    >
+                                      Review
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
                             )}
                             {isCurrent && !isCompleted && (
                               <Badge variant="default" className="text-xs">
-                                Current
+                                Start Today
+                              </Badge>
+                            )}
+                            {isPast && !isCompleted && (
+                              <Badge variant="outline" className="text-xs">
+                                Missed
                               </Badge>
                             )}
                           </div>
                         </div>
                       </Link>
                     ) : (
-                      <div className="h-full p-3 flex flex-col items-center justify-between">
+                      <div className="h-full p-4 flex flex-col justify-between">
                         <div className="text-center">
-                          <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                            {isFuture ? (
-                              <Lock className="h-4 w-4 text-gray-500" />
-                            ) : (
-                              <span className="text-sm font-bold text-gray-600 dark:text-gray-400">{day}</span>
-                            )}
+                          <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center mb-2">
+                            <Lock className="h-5 w-5 text-gray-500" />
                           </div>
-                          <p className="text-xs font-medium mt-1 text-gray-500 dark:text-gray-400">
+                          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1">
                             Day {day}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 leading-tight">
+                            {dayDescription}
                           </p>
                         </div>
                         <div className="text-center">
-                          {isFuture && (
-                            <Badge variant="outline" className="text-xs text-gray-400">
-                              Locked
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className="text-xs text-gray-400">
+                            Locked
+                          </Badge>
                         </div>
                       </div>
                     )}
