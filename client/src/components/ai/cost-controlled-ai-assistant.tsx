@@ -25,7 +25,7 @@ import {
 interface CostControlledAIAssistantProps {
   challengeType: string;
   currentDay: number;
-  userTier?: 'free' | 'premium' | 'unlimited';
+  userTier?: 'basic' | 'premium' | 'unlimited';
 }
 
 interface AIUsageStats {
@@ -36,8 +36,8 @@ interface AIUsageStats {
 }
 
 const TIER_LIMITS = {
-  free: { dailyRequests: 5, monthlyRequests: 100, maxInputLength: 500 },
-  premium: { dailyRequests: 50, monthlyRequests: 1000, maxInputLength: 2000 },
+  basic: { dailyRequests: 3, monthlyRequests: 90, maxInputLength: 500 },
+  premium: { dailyRequests: 25, monthlyRequests: 750, maxInputLength: 1500 },
   unlimited: { dailyRequests: -1, monthlyRequests: -1, maxInputLength: 5000 }
 };
 
@@ -52,7 +52,7 @@ const QUICK_PROMPTS = [
 export default function CostControlledAIAssistant({ 
   challengeType, 
   currentDay, 
-  userTier = 'free' 
+  userTier = 'basic' 
 }: CostControlledAIAssistantProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -165,7 +165,7 @@ export default function CostControlledAIAssistant({
         <CardTitle className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-blue-600" />
           AI Assistant
-          <Badge variant={userTier === 'free' ? 'outline' : userTier === 'premium' ? 'default' : 'secondary'}>
+          <Badge variant={userTier === 'basic' ? 'outline' : userTier === 'premium' ? 'default' : 'secondary'}>
             {userTier.charAt(0).toUpperCase() + userTier.slice(1)}
           </Badge>
         </CardTitle>
@@ -236,15 +236,15 @@ export default function CostControlledAIAssistant({
               </div>
             </div>
 
-            {/* Upgrade Prompt for Free Users */}
-            {userTier === 'free' && aiStats && aiStats.dailyUsage >= 3 && (
+            {/* Upgrade Prompt for Basic Users */}
+            {userTier === 'basic' && aiStats && aiStats.dailyUsage >= 2 && (
               <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-lg">
                 <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
                   <Sparkles className="h-4 w-4" />
                   <span className="text-sm font-medium">Almost at your daily limit</span>
                 </div>
                 <div className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                  Upgrade to Premium for 50 daily requests and longer messages
+                  Upgrade to Premium for 25 daily requests and longer messages
                 </div>
               </div>
             )}

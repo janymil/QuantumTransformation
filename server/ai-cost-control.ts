@@ -29,17 +29,17 @@ export const aiResponseCache = pgTable("ai_response_cache", {
 
 // Usage limits configuration
 export const USAGE_LIMITS = {
-  free: {
-    dailyRequests: 5,
-    monthlyRequests: 100,
+  basic: {
+    dailyRequests: 3,
+    monthlyRequests: 90,
     maxInputLength: 500,
-    cooldownSeconds: 60,
+    cooldownSeconds: 120, // 2 minutes
   },
   premium: {
-    dailyRequests: 50,
-    monthlyRequests: 1000,
-    maxInputLength: 2000,
-    cooldownSeconds: 10,
+    dailyRequests: 25,
+    monthlyRequests: 750,
+    maxInputLength: 1500,
+    cooldownSeconds: 30,
   },
   unlimited: {
     dailyRequests: -1, // unlimited
