@@ -11,6 +11,7 @@ import Journal from "@/pages/journal-new";
 import Progress from "@/pages/progress";
 import Challenges from "@/pages/challenges";
 import ChallengeProgress from "@/pages/challenge-progress";
+import SavedAffirmations from "@/pages/saved-affirmations";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
 
@@ -83,6 +84,7 @@ function Router() {
         <Route path="/challenges" component={Challenges} />
         <Route path="/journal" component={() => <Journal />} />
         <Route path="/progress" component={Progress} />
+        <Route path="/saved-affirmations" component={SavedAffirmations} />
         
         {/* Legacy challenge routes - keep for backwards compatibility */}
         <Route path="/challenge/:day" component={(props) => <ChallengeDay {...props} />} />

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Quote, Bookmark, Share2, Copy, Twitter, Facebook } from "lucide-react";
+import { Heart, Quote, Bookmark, Share2, Copy, Twitter, Facebook, MessageCircle } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -73,6 +73,8 @@ export default function EnhancedAffirmationsSection({
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
     } else if (platform === "facebook") {
       window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`, '_blank');
+    } else if (platform === "whatsapp") {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`, '_blank');
     } else {
       // Copy to clipboard
       navigator.clipboard.writeText(text).then(() => {
@@ -146,6 +148,10 @@ export default function EnhancedAffirmationsSection({
                         <DropdownMenuItem onClick={() => handleShare(affirmation, "facebook")}>
                           <Facebook className="w-4 h-4 mr-2" />
                           Share on Facebook
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleShare(affirmation, "whatsapp")}>
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Share on WhatsApp
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
