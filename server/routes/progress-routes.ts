@@ -26,7 +26,14 @@ export function registerProgressRoutes(app: Express) {
     try {
       const userId = req.user.claims.sub;
       const allProgress = await storage.getAllUserProgress(userId);
-      res.json({ allProgress });
+      const completions = await storage.getUserCompletions(userId);
+      const achievements = await storage.getUserAchievements(userId);
+      
+      res.json({ 
+        allProgress, 
+        completions, 
+        achievements 
+      });
     } catch (error) {
       console.error("Error fetching all progress:", error);
       res.status(500).json({ message: "Failed to fetch progress" });
