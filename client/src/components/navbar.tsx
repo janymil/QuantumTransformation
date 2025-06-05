@@ -22,7 +22,7 @@ export default function Navbar() {
     { name: "Dashboard", href: "/", icon: BarChart3 },
     { name: "Challenges", href: "/challenges", icon: Target },
     { name: "AI Coach", href: "/ai-coaching", icon: Brain },
-    { name: "AI Analytics", href: "/ai-responses", icon: MessageSquare },
+    { name: "AI History", href: "/ai-conversation-history", icon: MessageSquare },
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Progress", href: "/progress", icon: BarChart3 },
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },

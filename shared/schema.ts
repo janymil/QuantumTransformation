@@ -180,7 +180,7 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   // Analytics fields for cost tracking
   modelUsed: varchar("model_used").default("gpt-4o"), // 'gpt-4o', 'gpt-4o-mini'
   tokenCount: integer("token_count").default(0),
-  cost: decimal("cost", { precision: 10, scale: 6 }).default("0"),
+  cost: real("cost").default(0), // Cost in dollars
   responseTime: integer("response_time").default(0), // milliseconds
   responseQuality: integer("response_quality").default(8), // 1-10 scale
   
