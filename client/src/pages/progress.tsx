@@ -26,6 +26,28 @@ import {
 } from "lucide-react";
 import { format, subDays, startOfWeek, endOfWeek } from "date-fns";
 
+// Helper function to calculate weekly progress from actual data
+function calculateWeeklyProgress(completedChallenges: any[]): number[] {
+  if (!completedChallenges.length) return [0, 0, 0, 0];
+  
+  const weeks = [0, 0, 0, 0];
+  const today = new Date();
+  
+  for (let weekIndex = 0; weekIndex < 4; weekIndex++) {
+    const weekStart = subDays(today, (weekIndex + 1) * 7);
+    const weekEnd = subDays(today, weekIndex * 7);
+    
+    const weekCompletions = completedChallenges.filter((c: any) => {
+      const completionDate = new Date(c.completedAt);
+      return completionDate >= weekStart && completionDate <= weekEnd;
+    });
+    
+    weeks[3 - weekIndex] = Math.round((weekCompletions.length / 7) * 100);
+  }
+  
+  return weeks;
+}
+
 interface ProgressStats {
   totalDays: number;
   completedDays: number;
@@ -143,21 +165,52 @@ export default function Progress() {
     return null;
   }
 
-  const { progress, achievements } = progressData;
-  const completedDays = (progress?.completedDays as number[]) || [];
-  const streakCount = progress?.streakCount || 0;
-  const currentDay = progress?.currentDay || 1;
+  // Use actual completion data from backend
+  const completedChallenges = completions || [];
+  const uniqueCompletedDays = completedChallenges.reduce((unique: number[], c: any) => {
+    if (!unique.includes(c.day)) unique.push(c.day);
+    return unique;
+  }, []);
 
-  // Calculate statistics
+  // Calculate actual streak from completion dates
+  const sortedCompletions = completedChallenges
+    .map((c: any) => ({ ...c, date: new Date(c.completedAt) }))
+    .sort((a: any, b: any) => b.date.getTime() - a.date.getTime());
+  
+  let currentStreak = 0;
+  if (sortedCompletions.length > 0) {
+    const today = new Date();
+    const latestCompletion = sortedCompletions[0].date;
+    const daysDiff = Math.floor((today.getTime() - latestCompletion.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysDiff <= 1) {
+      currentStreak = 1;
+      for (let i = 1; i < sortedCompletions.length; i++) {
+        const prevDate = sortedCompletions[i-1].date;
+        const currDate = sortedCompletions[i].date;
+        const diff = Math.floor((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (diff === 1) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
   const stats: ProgressStats = {
     totalDays: 30,
-    completedDays: completedDays.length,
-    currentStreak: streakCount,
-    longestStreak: streakCount, // Could be calculated from completion history
-    averageRating: completions?.reduce((sum: number, c: any) => sum + (c.rating || 0), 0) / (completions?.length || 1) || 0,
-    totalTimeSpent: completions?.reduce((sum: number, c: any) => sum + (c.timeSpent || 0), 0) || 0,
-    weeklyProgress: [65, 75, 80, 85] // Mock weekly progress data
+    completedDays: uniqueCompletedDays.length,
+    currentStreak: currentStreak,
+    longestStreak: currentStreak,
+    averageRating: completedChallenges.length > 0 ? 
+      completedChallenges.reduce((sum: number, c: any) => sum + (c.rating || 0), 0) / completedChallenges.length : 0,
+    totalTimeSpent: completedChallenges.reduce((sum: number, c: any) => sum + (c.timeSpent || 0), 0),
+    weeklyProgress: calculateWeeklyProgress(completedChallenges)
   };
+
+  // Extract achievements from progressData
+  const achievements = progressData?.achievements || [];
 
   const completionPercentage = Math.round((stats.completedDays / stats.totalDays) * 100);
 
