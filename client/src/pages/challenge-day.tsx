@@ -378,6 +378,11 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Verified Progress Tracker - Smart Gamification */}
+          <VerifiedProgressTracker 
+            challengeType={challengeType}
+            day={effectiveDay}
+          />
           
           <Card>
             <CardHeader>
