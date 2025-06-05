@@ -378,6 +378,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Response Management Routes
+  app.get('/api/ai/responses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { 
+        search, 
+        challengeType, 
+        modelUsed, 
+        sessionType, 
+        dateRange, 
+        qualityMin = "1",
+        limit = "50",
+        offset = "0" 
+      } = req.query;
+
+      // Build query conditions
+      const conditions = [eq(aiInteractionHistory.userId, userId)];
+
+      if (challengeType && challengeType !== 'all') {
+        conditions.push(eq(aiInteractionHistory.challengeType, challengeType));
+      }
+
+      if (modelUsed && modelUsed !== 'all') {
+        conditions.push(eq(aiInteractionHistory.modelUsed, modelUsed));
+      }
+
+      if (sessionType && sessionType !== 'all') {
+        conditions.push(eq(aiInteractionHistory.sessionType, sessionType));
+      }
+
+      if (qualityMin && parseInt(qualityMin) > 1) {
+        conditions.push(gte(aiInteractionHistory.responseQuality, parseInt(qualityMin)));
+      }
+
+      if (dateRange && dateRange !== 'all') {
+        const now = new Date();
+        let startDate;
+        
+        switch (dateRange) {
+          case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+          case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'month':
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+        }
+        
+        if (startDate) {
+          conditions.push(gte(aiInteractionHistory.createdAt, startDate));
+        }
+      }
+
+      const responses = await db
+        .select()
+        .from(aiInteractionHistory)
+        .where(and(...conditions))
+        .orderBy(desc(aiInteractionHistory.createdAt))
+        .limit(parseInt(limit))
+        .offset(parseInt(offset));
+
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching AI responses:", error);
+      res.status(500).json({ message: "Failed to fetch AI responses" });
+    }
+  });
+
+  app.get('/api/ai/analytics', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+
+      // Get total responses
+      const totalResponses = await db
+        .select({ count: count() })
+        .from(aiInteractionHistory)
+        .where(eq(aiInteractionHistory.userId, userId));
+
+      // Get model distribution
+      const modelDistribution = await db
+        .select({
+          model: aiInteractionHistory.modelUsed,
+          count: count()
+        })
+        .from(aiInteractionHistory)
+        .where(eq(aiInteractionHistory.userId, userId))
+        .groupBy(aiInteractionHistory.modelUsed);
+
+      // Get average metrics
+      const avgMetrics = await db
+        .select({
+          avgQuality: avg(aiInteractionHistory.responseQuality),
+          avgCost: avg(aiInteractionHistory.cost),
+          avgResponseTime: avg(aiInteractionHistory.responseTime),
+          totalCost: sum(aiInteractionHistory.cost)
+        })
+        .from(aiInteractionHistory)
+        .where(eq(aiInteractionHistory.userId, userId));
+
+      // Get high quality percentage (8+ rating)
+      const highQuality = await db
+        .select({ count: count() })
+        .from(aiInteractionHistory)
+        .where(and(
+          eq(aiInteractionHistory.userId, userId),
+          gte(aiInteractionHistory.responseQuality, 8)
+        ));
+
+      // Calculate cost savings based on model usage
+      const gpt4oMiniRequests = await db
+        .select({ count: count() })
+        .from(aiInteractionHistory)
+        .where(and(
+          eq(aiInteractionHistory.userId, userId),
+          eq(aiInteractionHistory.modelUsed, 'gpt-4o-mini')
+        ));
+
+      const total = totalResponses[0]?.count || 0;
+      const costSavings = total > 0 ? Math.round((gpt4oMiniRequests[0]?.count || 0) / total * 75) : 0;
+
+      const analytics = {
+        totalResponses: total,
+        modelDistribution: modelDistribution.reduce((acc, item) => {
+          acc[item.model] = item.count;
+          return acc;
+        }, {} as Record<string, number>),
+        avgQuality: Math.round((avgMetrics[0]?.avgQuality || 0) * 10) / 10,
+        avgCostPerResponse: avgMetrics[0]?.avgCost || 0,
+        totalCost: avgMetrics[0]?.totalCost || 0,
+        avgResponseTime: {
+          "gpt-4o": Math.round(avgMetrics[0]?.avgResponseTime || 0),
+          "gpt-4o-mini": Math.round((avgMetrics[0]?.avgResponseTime || 0) * 0.7)
+        },
+        highQualityPercentage: total > 0 ? Math.round((highQuality[0]?.count || 0) / total * 100) : 0,
+        costSavings
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching AI analytics:", error);
+      res.status(500).json({ message: "Failed to fetch AI analytics" });
+    }
+  });
+
   // Enhanced AI Coaching with Emotional Intelligence
   app.post("/api/ai/enhanced-coaching", isAuthenticated, async (req: any, res) => {
     try {

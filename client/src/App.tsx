@@ -13,6 +13,7 @@ import Challenges from "@/pages/challenges";
 import ChallengeProgress from "@/pages/challenge-progress";
 import SavedAffirmations from "@/pages/saved-affirmations";
 import AICoaching from "@/pages/ai-coaching";
+import AIResponses from "@/pages/ai-responses";
 
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
