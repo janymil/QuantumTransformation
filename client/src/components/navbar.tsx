@@ -23,6 +23,7 @@ export default function Navbar() {
     { name: "Challenges", href: "/challenges", icon: Target },
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Progress", href: "/progress", icon: BarChart3 },
+    { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
   ];
 
   const getUserInitials = (user: any) => {
