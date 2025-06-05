@@ -67,7 +67,7 @@ export default function AICoachingHub({
     if (shouldFocusGoals) {
       // Focus on goals textarea when quick action is triggered
       setTimeout(() => {
-        const goalsTextarea = document.querySelector('textarea[placeholder*="goals"]') as HTMLTextAreaElement;
+        const goalsTextarea = document.querySelector('textarea[placeholder*="working to achieve"]') as HTMLTextAreaElement;
         if (goalsTextarea) {
           goalsTextarea.focus();
         }
@@ -77,11 +77,11 @@ export default function AICoachingHub({
 
   useEffect(() => {
     if (shouldFocusChallenges) {
-      // Focus on challenges textarea when quick action is triggered
+      // Focus on challenges input when quick action is triggered
       setTimeout(() => {
-        const challengesTextarea = document.querySelector('textarea[placeholder*="obstacles"]') as HTMLTextAreaElement;
-        if (challengesTextarea) {
-          challengesTextarea.focus();
+        const challengesInput = document.querySelector('input[placeholder*="obstacles are you facing"]') as HTMLInputElement;
+        if (challengesInput) {
+          challengesInput.focus();
         }
       }, 100);
     }

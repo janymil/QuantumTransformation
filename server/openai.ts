@@ -187,11 +187,14 @@ export async function generatePersonalizedCoaching(request: PersonalizedCoaching
 
 Your coaching approach:
 - Analyzes user's progress patterns and emotional states
-- Provides specific, actionable recommendations
+- Provides specific, actionable recommendations tailored to their exact goals
 - Adapts difficulty based on user's experience level
 - Recognizes achievements and addresses challenges
 - Offers energy-aligned practices for optimal results
 - Maintains scientific grounding while being inspirational
+- For financial goals: Include both mindset work AND practical financial strategies
+- For relationship goals: Balance inner work with practical communication skills
+- For health goals: Combine visualization with actionable wellness practices
 
 Respond in JSON format with detailed, personalized guidance for each aspect of their journey.`;
 
