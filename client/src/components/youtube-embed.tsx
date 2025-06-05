@@ -54,7 +54,7 @@ export default function YouTubeEmbed({
     );
   }
 
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
+  const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
   const VideoPlayer = ({ className = "" }: { className?: string }) => (

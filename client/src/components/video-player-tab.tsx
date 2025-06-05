@@ -1,7 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Play, ExternalLink } from "lucide-react";
-import YouTubeEmbed from "./youtube-embed";
+import { Card, CardContent } from "@/components/ui/card";
+import { Play } from "lucide-react";
+import SimpleYouTubeEmbed from "./simple-youtube-embed";
 
 interface VideoLink {
   title: string;
@@ -41,12 +40,11 @@ export default function VideoPlayerTab({ videoLinks }: VideoPlayerTabProps) {
   return (
     <div className="space-y-6">
       {videoLinks.filter(video => video.url).map((video, index) => (
-        <YouTubeEmbed 
+        <SimpleYouTubeEmbed 
           key={index}
           videoUrl={video.url!} 
           title={video.title}
           description={video.description}
-          showFullscreen={true}
         />
       ))}
       {videoLinks.filter(video => !video.url).length > 0 && (
