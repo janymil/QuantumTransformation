@@ -13,6 +13,7 @@ import Challenges from "@/pages/challenges";
 import ChallengeProgress from "@/pages/challenge-progress";
 import SavedAffirmations from "@/pages/saved-affirmations";
 import AICoaching from "@/pages/ai-coaching";
+import SmartAICoaching from "@/pages/smart-ai-coaching";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
 
@@ -86,6 +87,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/challenges" component={Challenges} />
         <Route path="/ai-coaching" component={AICoaching} />
+        <Route path="/smart-ai-coaching" component={SmartAICoaching} />
         <Route path="/journal" component={() => <Journal />} />
         <Route path="/progress" component={Progress} />
         <Route path="/saved-affirmations" component={SavedAffirmations} />

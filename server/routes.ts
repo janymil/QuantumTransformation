@@ -32,6 +32,7 @@ import { vectorPersonalization } from "./vector-personalization";
 import { emotionalIntelligence } from "./emotional-intelligence";
 import { advancedMemory } from "./advanced-memory";
 import { predictiveIntelligence } from "./predictive-intelligence";
+import { modelRouter } from "./intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -615,6 +616,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Supreme coaching error:", error);
       res.status(500).json({ error: "Failed to generate supreme coaching response" });
+    }
+  });
+
+  // Intelligent Cost-Optimized AI Coaching endpoint
+  app.post("/api/ai/smart-coaching", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { query, challengeType = 'general_quantum', userTier = 'basic' } = req.body;
+
+      if (!query) {
+        return res.status(400).json({ error: "Query is required" });
+      }
+
+      // Validate AI request
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'smart_coaching',
+        input: query,
+        challengeType,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests
+        });
+      }
+
+      // Initialize systems
+      try {
+        await vectorPersonalization.initialize();
+        await vectorPersonalization.indexChallengeContent();
+        await vectorPersonalization.indexUserData(userId);
+      } catch (initError) {
+        console.log("Systems already initialized");
+      }
+
+      // Get personalized context using semantic search
+      const personalizedContext = await vectorPersonalization.getPersonalizedContext(
+        userId, 
+        query, 
+        challengeType
+      );
+
+      // Create enhanced system prompt
+      const systemPrompt = `You are an advanced AI quantum consciousness coach specializing in ${challengeType}. 
+
+${personalizedContext.personalizedPrompt}
+
+Provide personalized, actionable guidance that:
+- References specific challenge techniques and practices
+- Builds upon user's documented experiences and insights
+- Adapts Joe Dispenza and Neville Goddard methods to this specific challenge
+- Addresses user's current progress level and challenges
+- Maintains quantum consciousness framework while being personally relevant`;
+
+      // Use intelligent model routing
+      const aiResult = await modelRouter.executeWithOptimalModel(
+        query,
+        systemPrompt,
+        query,
+        'smart_coaching',
+        challengeType,
+        userTier,
+        { temperature: 0.7, maxTokens: 1500 }
+      );
+
+      // Get additional insights based on complexity
+      let additionalInsights = {};
+      if (aiResult.routingDecision.complexity === 'complex') {
+        const emotionalInsights = await emotionalIntelligence.identifyEmotionalInsights(userId, challengeType);
+        const predictiveInsights = await predictiveIntelligence.generatePredictiveInsights(userId, challengeType);
+        additionalInsights = { emotionalInsights, predictiveInsights };
+      }
+
+      // Track usage with actual cost
+      await trackUsage(userId, 'smart_coaching', query, aiResult.response, challengeType);
+
+      res.json({
+        response: aiResult.response,
+        modelUsed: aiResult.modelUsed,
+        routingDecision: aiResult.routingDecision,
+        actualCost: aiResult.actualCost,
+        ...additionalInsights,
+        personalizationMethod: 'intelligent_model_routing_with_vector_search',
+        challengeType,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Smart coaching error:", error);
+      res.status(500).json({ error: "Failed to generate smart coaching response" });
+    }
+  });
+
+  // Model routing analytics endpoint
+  app.get("/api/ai/routing-stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { days = 30 } = req.query;
+
+      const routingStats = await modelRouter.getRoutingStats(userId, parseInt(days as string));
+
+      res.json({
+        stats: routingStats,
+        period: `${days} days`,
+        analysisDate: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Routing stats error:", error);
+      res.status(500).json({ error: "Failed to get routing statistics" });
     }
   });
 
