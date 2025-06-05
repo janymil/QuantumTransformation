@@ -15,9 +15,7 @@ export function registerAuthRoutes(app: Express) {
           currentDay: 1,
           completedDays: [],
           streakCount: 0,
-          startDate: new Date(),
-          lastActivityDate: new Date().toISOString(),
-          isActive: true
+          lastActivityDate: new Date().toISOString().split('T')[0]
         });
         
         await storage.upsertUserSettings(userId, {

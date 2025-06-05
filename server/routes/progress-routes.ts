@@ -56,11 +56,8 @@ export function registerProgressRoutes(app: Express) {
         challengeType,
         currentDay: 1,
         completedDays: [],
-        currentStreak: 0,
-        totalDaysCompleted: 0,
-        startDate: new Date(),
-        lastActivityDate: new Date(),
-        isActive: true
+        streakCount: 0,
+        lastActivityDate: new Date().toISOString().split('T')[0]
       });
 
       res.json(newProgress);

@@ -28,10 +28,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentDay: 1,
           completedDays: [],
           streakCount: 0,
-          totalDaysCompleted: 0,
-          startDate: new Date(),
-          lastActivityDate: new Date().toISOString(),
-          isActive: true
+          lastActivityDate: new Date().toISOString().split('T')[0]
         });
         
         // Initialize user settings
