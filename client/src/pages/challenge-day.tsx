@@ -34,7 +34,7 @@ interface ChallengeDayProps {
 }
 import ContextualTutorial from "@/components/contextual-tutorial";
 
-export default function ChallengeDay() {
+export default function ChallengeDay({ challengeType: propChallengeType }: ChallengeDayProps = {}) {
   const { day } = useParams<{ day: string }>();
   const currentDay = parseInt(day || "1");
   const { toast } = useToast();
@@ -47,9 +47,9 @@ export default function ChallengeDay() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [celebrationType, setCelebrationType] = useState<'day_completed' | 'streak_milestone' | 'week_completed' | 'challenge_started' | 'level_up'>('day_completed');
 
-  // Get challenge type from URL parameters
+  // Get challenge type from prop or URL parameters
   const urlParams = new URLSearchParams(window.location.search);
-  const challengeType = urlParams.get('type') || 'general_quantum';
+  const challengeType = propChallengeType || urlParams.get('type') || 'general_quantum';
 
   // Generate dynamic content based on challenge type
   const generateChallengeContent = (day: number, type: string) => {

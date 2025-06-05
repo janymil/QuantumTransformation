@@ -14,11 +14,31 @@ import ChallengeProgress from "@/pages/challenge-progress";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
 
-// Challenge-specific components - will be dynamically imported
-// import QuantumDashboard from "@/pages/challenges/quantum-consciousness/dashboard";
-// import QuantumJournal from "@/pages/challenges/quantum-consciousness/journal";
-// import QuantumProgress from "@/pages/challenges/quantum-consciousness/progress";
-// import QuantumDay from "@/pages/challenges/quantum-consciousness/day";
+// Challenge-specific components
+import QuantumDashboard from "@/pages/challenges/quantum-consciousness/dashboard";
+import QuantumJournal from "@/pages/challenges/quantum-consciousness/journal";
+import QuantumProgress from "@/pages/challenges/quantum-consciousness/progress";
+import QuantumDay from "@/pages/challenges/quantum-consciousness/day";
+
+import MoneyDashboard from "@/pages/challenges/money-blocks/dashboard";
+import MoneyJournal from "@/pages/challenges/money-blocks/journal";
+import MoneyProgress from "@/pages/challenges/money-blocks/progress";
+import MoneyDay from "@/pages/challenges/money-blocks/day";
+
+import RelationshipsDashboard from "@/pages/challenges/relationships/dashboard";
+import RelationshipsJournal from "@/pages/challenges/relationships/journal";
+import RelationshipsProgress from "@/pages/challenges/relationships/progress";
+import RelationshipsDay from "@/pages/challenges/relationships/day";
+
+import HealthDashboard from "@/pages/challenges/health-transformation/dashboard";
+import HealthJournal from "@/pages/challenges/health-transformation/journal";
+import HealthProgress from "@/pages/challenges/health-transformation/progress";
+import HealthDay from "@/pages/challenges/health-transformation/day";
+
+import CreativityDashboard from "@/pages/challenges/creativity-flow/dashboard";
+import CreativityJournal from "@/pages/challenges/creativity-flow/journal";
+import CreativityProgress from "@/pages/challenges/creativity-flow/progress";
+import CreativityDay from "@/pages/challenges/creativity-flow/day";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -64,7 +84,35 @@ function Router() {
         <Route path="/challenge-day" component={ChallengeDay} />
         <Route path="/challenge-progress" component={ChallengeProgress} />
         
-        {/* Challenge-specific routes will be added after fixing component issues */}
+        {/* Quantum Consciousness Challenge */}
+        <Route path="/quantum-consciousness" component={QuantumDashboard} />
+        <Route path="/quantum-consciousness/journal" component={QuantumJournal} />
+        <Route path="/quantum-consciousness/progress" component={QuantumProgress} />
+        <Route path="/quantum-consciousness/day/:day" component={QuantumDay} />
+        
+        {/* Money Blocks Challenge */}
+        <Route path="/money-blocks" component={MoneyDashboard} />
+        <Route path="/money-blocks/journal" component={MoneyJournal} />
+        <Route path="/money-blocks/progress" component={MoneyProgress} />
+        <Route path="/money-blocks/day/:day" component={MoneyDay} />
+        
+        {/* Relationships Challenge */}
+        <Route path="/relationships" component={RelationshipsDashboard} />
+        <Route path="/relationships/journal" component={RelationshipsJournal} />
+        <Route path="/relationships/progress" component={RelationshipsProgress} />
+        <Route path="/relationships/day/:day" component={RelationshipsDay} />
+        
+        {/* Health Transformation Challenge */}
+        <Route path="/health-transformation" component={HealthDashboard} />
+        <Route path="/health-transformation/journal" component={HealthJournal} />
+        <Route path="/health-transformation/progress" component={HealthProgress} />
+        <Route path="/health-transformation/day/:day" component={HealthDay} />
+        
+        {/* Creativity Flow Challenge */}
+        <Route path="/creativity-flow" component={CreativityDashboard} />
+        <Route path="/creativity-flow/journal" component={CreativityJournal} />
+        <Route path="/creativity-flow/progress" component={CreativityProgress} />
+        <Route path="/creativity-flow/day/:day" component={CreativityDay} />
         
         <Route component={NotFound} />
       </Switch>

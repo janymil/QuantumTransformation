@@ -236,19 +236,25 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
                           Actions
                         </h4>
                         <div className="space-y-2">
-                          <Link href={`/challenge-day?type=${progress.challengeType}&day=${currentDay}`}>
+                          <Link href={`/${progress.challengeType}/day/${currentDay}`}>
                             <Button size="sm" className="w-full">
                               <Play className="w-4 h-4 mr-2" />
                               Continue Day {currentDay}
                             </Button>
                           </Link>
-                          <Link href={`/challenge-progress?type=${progress.challengeType}`}>
+                          <Link href={`/${progress.challengeType}/progress`}>
                             <Button variant="outline" size="sm" className="w-full">
                               <Target className="w-4 h-4 mr-2" />
                               View Progress
                             </Button>
                           </Link>
-                          <Link href={`/journal?challenge=${progress.challengeType}`}>
+                          <Link href={`/${progress.challengeType}`}>
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Calendar className="w-4 h-4 mr-2" />
+                              Challenge Dashboard
+                            </Button>
+                          </Link>
+                          <Link href={`/${progress.challengeType}/journal`}>
                             <Button variant="outline" size="sm" className="w-full">
                               <BookOpen className="w-4 h-4 mr-2" />
                               View Journal

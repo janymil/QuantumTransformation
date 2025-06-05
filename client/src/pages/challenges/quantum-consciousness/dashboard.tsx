@@ -40,7 +40,6 @@ export default function QuantumConsciousnessDashboard() {
   return (
     <IndividualChallengeDashboard 
       challengeType="general_quantum"
-      progress={challengeProgress}
     />
   );
 }
