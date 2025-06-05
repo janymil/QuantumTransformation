@@ -26,6 +26,8 @@ import MoneyJournal from "@/pages/challenges/money-blocks/journal";
 import MoneyProgress from "@/pages/challenges/money-blocks/progress";
 import MoneyDay from "@/pages/challenges/money-blocks/day";
 
+import MoneyBlocksClearingDashboard from "@/pages/challenges/money-blocks-clearing/dashboard";
+
 import MoneyManifestationDashboard from "@/pages/challenges/money-manifestation/dashboard";
 import MoneyManifestationJournal from "@/pages/challenges/money-manifestation/journal";
 import MoneyManifestationProgress from "@/pages/challenges/money-manifestation/progress";
@@ -41,10 +43,7 @@ import HealthJournal from "@/pages/challenges/health-transformation/journal";
 import HealthProgress from "@/pages/challenges/health-transformation/progress";
 import HealthDay from "@/pages/challenges/health-transformation/day";
 
-import MoneyBlocksClearingDashboard from "@/pages/challenges/money-blocks-clearing/dashboard";
-import MoneyBlocksClearingJournal from "@/pages/challenges/money-blocks-clearing/journal";
-import MoneyBlocksClearingProgress from "@/pages/challenges/money-blocks-clearing/progress";
-import MoneyBlocksClearingDay from "@/pages/challenges/money-blocks-clearing/day";
+
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -102,7 +101,7 @@ function Router() {
         <Route path="/money-blocks/journal" component={MoneyJournal} />
         <Route path="/money-blocks/progress" component={MoneyProgress} />
         <Route path="/money-blocks/day/:day" component={MoneyDay} />
-        <Route path="/money-blocks-clearing" component={MoneyDashboard} />
+        <Route path="/money-blocks-clearing" component={MoneyBlocksClearingDashboard} />
         <Route path="/money-blocks-clearing/journal" component={MoneyJournal} />
         <Route path="/money-blocks-clearing/progress" component={MoneyProgress} />
         <Route path="/money-blocks-clearing/day/:day" component={MoneyDay} />

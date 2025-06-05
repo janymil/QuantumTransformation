@@ -168,7 +168,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
           <h1 className="text-3xl font-bold">{content.title}</h1>
           <p className="text-muted-foreground">Day {effectiveDay} • {challengeType}</p>
         </div>
-        <Link href={`/${challengeType}`}>
+        <Link href={challengeType === 'money_blocks_clearing' ? '/money-blocks-clearing' : `/${challengeType}`}>
           <Button variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
