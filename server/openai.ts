@@ -1,8 +1,220 @@
 import OpenAI from "openai";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
+import { aiResponseHistory, journalEntries, userProgress } from "@shared/schema";
 
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
 });
+
+/**
+ * Get challenge-specific content and training data
+ */
+function getChallengeKnowledgeBase(challengeType?: string): string {
+  const knowledgeBases = {
+    money_blocks_clearing: `
+MONEY BLOCKS CLEARING CHALLENGE - COMPLETE KNOWLEDGE BASE:
+
+Day 1: Foundation Setting
+- Identifying core money beliefs from childhood and family patterns
+- Understanding money as energy and consciousness reflection
+- Joe Dispenza technique: Becoming aware of unconscious money programs
+- Neville Goddard: "Assume the feeling of the wish fulfilled" for financial abundance
+- Practice: Money belief inventory and emotional clearing meditation
+
+Day 2: Breaking Old Patterns  
+- Releasing victim mentality around money and external circumstances
+- Understanding how past experiences create present financial reality
+- Technique: Past experience forgiveness and energy clearing
+- Quantum principle: Past doesn't equal future when consciousness changes
+- Practice: Breaking unconscious money patterns through elevated emotion
+
+Day 3: Embodying Abundance
+- Moving from scarcity to abundance consciousness
+- Creating new neural pathways for prosperity thinking
+- Heart coherence practices for abundance frequency
+- Visualization of financially free future self
+- Practice: Abundance meditation and gratitude elevation
+
+Day 4: Future Self Creation
+- Embodying the personality of financially successful self
+- Understanding money as tool for contribution and growth
+- Clearing fear-based money decisions and lack programming
+- Creating clear financial intentions and quantum goals
+- Practice: Future self embodiment and financial visioning
+
+Day 5: Integration and Action
+- Balancing spiritual abundance with practical financial steps
+- Maintaining elevated emotions while taking inspired action
+- Understanding money flow as reflection of inner state
+- Creating sustainable abundance practices
+- Practice: Integrated abundance lifestyle and inspired action
+
+CORE TECHNIQUES:
+- Money energy meditation and clearing practices
+- Abundance frequency elevation through heart coherence
+- Future financial self embodiment and personality creation
+- Scarcity pattern breaking through conscious awareness
+- Inspired action taking from elevated emotional states`,
+
+    general_quantum: `
+QUANTUM CONSCIOUSNESS CHALLENGE - COMPLETE KNOWLEDGE BASE:
+
+Day 1: Quantum Field Opening
+- Understanding consciousness as fundamental reality creator
+- Introduction to quantum field and its response to observation
+- Joe Dispenza: "Your personality creates your personal reality"
+- Neville Goddard: "Imagination creates reality" principle
+- Practice: Quantum field meditation and awareness expansion
+
+Day 2: Breaking Limited Patterns
+- Moving beyond past conditioning and familiar patterns
+- Understanding neuroplasticity and consciousness change
+- Breaking addiction to emotions and thoughts that limit
+- Creating new neural pathways through elevated states
+- Practice: Pattern interruption and unknown embracing
+
+Day 3: Elevated Emotion Mastery
+- Generating elevated emotions independent of external conditions
+- Heart-brain coherence and its quantum effects
+- Understanding how emotions influence quantum field
+- Creating new electromagnetic signature through feeling
+- Practice: Heart coherence and elevated emotion generation
+
+Day 4: Future Self Embodiment
+- Embodying the personality of your desired future
+- Quantum jumping through consciousness shifts
+- Understanding time as illusion in quantum consciousness
+- Creating new personal reality through being change
+- Practice: Future self meditation and personality embodiment
+
+Day 5: Becoming Supernatural
+- Integrating quantum consciousness into daily life
+- Sustaining elevated states and new personality
+- Understanding your role as conscious reality creator
+- Maintaining quantum awareness and expanded consciousness
+- Practice: Supernatural living and consciousness mastery
+
+CORE PRINCIPLES:
+- Consciousness creates reality through quantum field interaction
+- Elevated emotions generate coherent electromagnetic fields
+- Future personality creation through present moment embodiment
+- Breaking past conditioning through conscious awareness
+- Sustaining supernatural states through daily practice`,
+
+    relationships: `
+RELATIONSHIP TRANSFORMATION CHALLENGE - COMPLETE KNOWLEDGE BASE:
+
+Day 1: Self-Love Foundation
+- Understanding relationship with self as template for all relationships
+- Inner child healing and self-acceptance practices
+- Clearing past relationship wounds and emotional baggage
+- Creating loving internal dialogue and self-compassion
+- Practice: Self-love meditation and inner relationship healing
+
+Day 2: Heart Center Opening
+- Activating heart chakra and unconditional love frequency
+- Understanding love as elevated emotion and quantum state
+- Healing past relationship trauma through forgiveness
+- Opening to receive and give love freely
+- Practice: Heart center activation and love frequency meditation
+
+Day 3: Boundary Creation
+- Creating healthy boundaries while maintaining open heart
+- Understanding difference between love and codependency
+- Communicating authentically and setting clear limits
+- Balancing self-care with relationship nurturing
+- Practice: Boundary setting meditation and authentic communication
+
+Day 4: Relationship Manifestation
+- Embodying the love you wish to receive
+- Creating relationship vision from elevated consciousness
+- Understanding how inner state attracts outer relationships
+- Releasing attachment while maintaining clear intention
+- Practice: Relationship manifestation and love embodiment
+
+Day 5: Love Integration
+- Living from love frequency in all interactions
+- Maintaining relationship consciousness in daily life
+- Creating loving community and support systems
+- Understanding relationships as spiritual growth opportunities
+- Practice: Love integration and relationship mastery
+
+RELATIONSHIP PRINCIPLES:
+- Self-love creates template for all external relationships
+- Heart coherence attracts aligned loving connections
+- Boundaries maintain love frequency while protecting energy
+- Authentic communication creates deeper intimacy
+- Love embodiment attracts love reflection from others`
+  };
+
+  return knowledgeBases[challengeType as keyof typeof knowledgeBases] || knowledgeBases.general_quantum;
+}
+
+/**
+ * Get user's personalization context from database
+ */
+async function getUserPersonalizationContext(userId: string, challengeType?: string): Promise<string> {
+  try {
+    // Get user progress
+    const [userProgressData] = await db
+      .select()
+      .from(userProgress)
+      .where(eq(userProgress.userId, userId))
+      .limit(1);
+
+    // Get recent journal entries
+    const recentJournals = await db
+      .select()
+      .from(journalEntries)
+      .where(eq(journalEntries.userId, userId))
+      .orderBy(desc(journalEntries.createdAt))
+      .limit(5);
+
+    // Get recent AI interactions
+    const recentAIHistory = await db
+      .select()
+      .from(aiResponseHistory)
+      .where(eq(aiResponseHistory.userId, userId))
+      .orderBy(desc(aiResponseHistory.createdAt))
+      .limit(3);
+
+    return `
+USER PERSONALIZATION CONTEXT:
+
+Progress Overview:
+- Current Day: ${userProgressData?.currentDay || 1}
+- Completed Days: ${userProgressData?.completedDays ? (userProgressData.completedDays as number[]).length : 0}
+- Streak Count: ${userProgressData?.streakCount || 0}
+- Challenge Type: ${challengeType || 'general_quantum'}
+
+Recent Journal Insights:
+${recentJournals.map(j => `
+Day ${j.day}: ${j.insights || 'No insights recorded'}
+Experience: ${j.experience || 'No experience recorded'}
+Challenges: ${j.challenges || 'No challenges recorded'}
+`).join('\n')}
+
+Previous AI Interactions:
+${recentAIHistory.map(ai => `
+Session: ${ai.sessionType}
+User Input: ${ai.userInput}
+Generated Response Summary: ${typeof ai.aiResponse === 'object' ? JSON.stringify(ai.aiResponse).substring(0, 200) : String(ai.aiResponse).substring(0, 200)}...
+`).join('\n')}
+
+PERSONALIZATION INSTRUCTIONS:
+- Reference user's specific progress and challenges
+- Build upon previous journal insights and experiences
+- Acknowledge past AI conversation context
+- Adapt guidance to current day and completion rate
+- Address specific challenges mentioned in journal entries
+- Maintain continuity with previous coaching sessions
+`;
+  } catch (error) {
+    console.error("Error getting user context:", error);
+    return "USER CONTEXT: Unable to retrieve user history. Provide general guidance.";
+  }
+}
 
 export interface AIExplanationRequest {
   topic: string;
@@ -184,6 +396,10 @@ export async function generatePersonalizedCoaching(request: PersonalizedCoaching
     difficultyLevel 
   } = request;
 
+  // Get personalized context and challenge knowledge
+  const challengeKnowledge = getChallengeKnowledgeBase(request.challengeType);
+  const userContext = await getUserPersonalizationContext(userId, request.challengeType);
+
   const systemPrompt = `You are an advanced AI quantum consciousness coach, trained in the methodologies of Joe Dispenza, Neville Goddard, and modern neuroscience. You provide highly personalized guidance based on the user's specific journey, progress patterns, and individual needs.
 
 Your coaching approach:
@@ -197,6 +413,8 @@ Your coaching approach:
 - Transform all topics through the lens of subconscious reprogramming and elevated emotions
 - Connect user goals to spiritual growth, energy alignment, and quantum state creation
 - Never provide advice outside of quantum consciousness, meditation, and personal development domains
+
+CRITICAL: Use the provided CHALLENGE KNOWLEDGE BASE and USER PERSONALIZATION CONTEXT to create highly specific, relevant guidance that builds upon the user's actual progress and challenge content.
 
 Respond in JSON format with detailed, personalized guidance for each aspect of their journey.`;
 
@@ -212,8 +430,11 @@ Current Progress Analysis:
 User Goals: ${userGoals || 'General consciousness expansion'}
 Challenge Type: ${request.challengeType || 'general_quantum'}
 
-CHALLENGE-SPECIFIC CONTEXT:
-${getChallengeSpecificContext(request.challengeType, currentDay)}
+CHALLENGE KNOWLEDGE BASE:
+${challengeKnowledge}
+
+USER PERSONALIZATION:
+${userContext}
 
 IMPORTANT: All coaching must stay within these consciousness and personal development domains:
 - Quantum consciousness and field theory applications
