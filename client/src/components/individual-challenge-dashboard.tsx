@@ -424,28 +424,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
             </Link>
           </Card>
 
-          <Link href={`/${getChallengeUrl(challengeType)}/progress`}>
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                      <Award className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        Progress
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        View achievements
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+
         </div>
 
         {/* Challenge Description */}

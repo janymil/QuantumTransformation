@@ -20,7 +20,9 @@ import {
   Search,
   Filter,
   BarChart3,
-  Lightbulb
+  Lightbulb,
+  Trash2,
+  Edit
 } from "lucide-react";
 import { format } from "date-fns";
 import { challengeContent } from "@/data/challenge-content";
@@ -108,6 +110,38 @@ export default function Journal() {
       toast({
         title: "Error",
         description: "Failed to save journal entry. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (entryId: number) => {
+      return await apiRequest("DELETE", `/api/journal/${entryId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/journal/analyze"] });
+      toast({
+        title: "Journal Deleted",
+        description: "Your journal entry has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete journal entry. Please try again.",
         variant: "destructive",
       });
     },
@@ -450,7 +484,21 @@ export default function Journal() {
                                 size="sm"
                                 onClick={() => handleSelectEntry(entry)}
                               >
+                                <Edit className="w-4 h-4 mr-1" />
                                 Edit
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (window.confirm('Are you sure you want to delete this journal entry? This action cannot be undone.')) {
+                                    deleteMutation.mutate(entry.id);
+                                  }
+                                }}
+                                disabled={deleteMutation.isPending}
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Delete
                               </Button>
                             </div>
                           </div>
