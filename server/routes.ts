@@ -29,6 +29,7 @@ import {
 import { registerGamificationRoutes } from "./routes/gamification-routes";
 import { generatePersonalizedAffirmation } from "./openai";
 import { vectorPersonalization } from "./vector-personalization";
+import { emotionalIntelligence } from "./emotional-intelligence";
 import { initializeUserGamification } from "./gamification";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -350,6 +351,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Vector system initialization error:", error);
       res.status(500).json({ error: "Failed to initialize vector personalization system" });
+    }
+  });
+
+  // Emotional Intelligence Analysis endpoint
+  app.get("/api/ai/emotional-profile/:challengeType", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType } = req.params;
+
+      const emotionalProfile = await emotionalIntelligence.analyzeEmotionalProfile(userId, challengeType);
+      const insights = await emotionalIntelligence.identifyEmotionalInsights(userId, challengeType);
+
+      res.json({
+        emotionalProfile,
+        insights,
+        analysisDate: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Emotional analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze emotional profile" });
+    }
+  });
+
+  // Enhanced AI Coaching with Emotional Intelligence
+  app.post("/api/ai/enhanced-coaching", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { query, challengeType = 'general_quantum', userTier = 'basic' } = req.body;
+
+      if (!query) {
+        return res.status(400).json({ error: "Query is required" });
+      }
+
+      // Validate AI request
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'enhanced_coaching',
+        input: query,
+        challengeType,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests
+        });
+      }
+
+      // Initialize systems if needed
+      try {
+        await vectorPersonalization.initialize();
+        await vectorPersonalization.indexChallengeContent();
+        await vectorPersonalization.indexUserData(userId);
+      } catch (initError) {
+        console.log("Systems already initialized");
+      }
+
+      // Generate base response using vector personalization
+      const baseResponse = await vectorPersonalization.generatePersonalizedResponse(
+        userId,
+        query,
+        challengeType
+      );
+
+      // Enhance with emotional intelligence
+      const emotionallyAdaptedResponse = await emotionalIntelligence.generateEmotionallyAdaptedResponse(
+        userId,
+        query,
+        challengeType,
+        baseResponse
+      );
+
+      // Get emotional insights
+      const emotionalInsights = await emotionalIntelligence.identifyEmotionalInsights(userId, challengeType);
+
+      // Track usage
+      await trackUsage(userId, 'enhanced_coaching', query, emotionallyAdaptedResponse, challengeType);
+
+      res.json({
+        response: emotionallyAdaptedResponse,
+        emotionalInsights,
+        personalizationMethod: 'vector_semantic_search_with_emotional_intelligence',
+        challengeType,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Enhanced coaching error:", error);
+      res.status(500).json({ error: "Failed to generate enhanced response" });
+    }
+  });
+
+  // Emotional Evolution Tracking endpoint
+  app.get("/api/ai/emotional-evolution", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { days = 30 } = req.query;
+
+      const emotionalEvolution = await emotionalIntelligence.trackEmotionalEvolution(
+        userId, 
+        parseInt(days as string)
+      );
+
+      res.json({
+        evolutionAnalysis: emotionalEvolution,
+        analysisDate: new Date().toISOString(),
+        periodDays: parseInt(days as string)
+      });
+
+    } catch (error) {
+      console.error("Emotional evolution tracking error:", error);
+      res.status(500).json({ error: "Failed to track emotional evolution" });
     }
   });
 
