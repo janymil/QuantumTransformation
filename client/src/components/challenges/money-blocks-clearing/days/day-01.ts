@@ -95,6 +95,7 @@ export const day01Content = {
     },
     {
       title: "Neville Goddard – The Feeling of the Wish Fulfilled",
+      url: "https://www.youtube.com/watch?v=AiBHlRrWgcM",
       description: "Master the art of feeling your desires as already accomplished"
     }
   ],
