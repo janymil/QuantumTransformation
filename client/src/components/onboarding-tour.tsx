@@ -66,23 +66,7 @@ export default function OnboardingTour() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
-  useEffect(() => {
-    // Check if user is new (account created in last 24 hours)
-    if (user && user.createdAt) {
-      const accountAge = Date.now() - new Date(user.createdAt).getTime();
-      const isNewUser = accountAge < 24 * 60 * 60 * 1000; // 24 hours
-      
-      // Check if tour was already completed
-      const tourCompleted = localStorage.getItem('onboarding-tour-completed');
-      
-      if (isNewUser && !tourCompleted) {
-        setTimeout(() => {
-          setIsActive(true);
-          setIsVisible(true);
-        }, 2000); // Start tour after 2 seconds
-      }
-    }
-  }, [user]);
+  // Remove auto-trigger - tour is now manually started only
 
   const nextStep = () => {
     if (currentStep < tourSteps.length - 1) {

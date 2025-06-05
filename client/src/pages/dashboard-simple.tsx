@@ -88,8 +88,7 @@ export default function Dashboard() {
         </div>
       </div>
       
-      {/* Onboarding Tour */}
-      <OnboardingTour />
+
     </div>
   );
 }

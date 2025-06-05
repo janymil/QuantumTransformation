@@ -10,8 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User, BookOpen, BarChart3, Target } from "lucide-react";
+import { Bell, Settings, LogOut, User, BookOpen, BarChart3, Target, Sparkles } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import OnboardingTour from "@/components/onboarding-tour";
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -124,6 +125,10 @@ export default function Navbar() {
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => document.querySelector('[data-start-tour]')?.click()}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  <span>Tour Guide</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={() => window.location.href = '/api/logout'}
@@ -159,5 +164,9 @@ export default function Navbar() {
         </div>
       </div>
     </nav>
+    
+    {/* Onboarding Tour */}
+    <OnboardingTour />
+    </div>
   );
 }
