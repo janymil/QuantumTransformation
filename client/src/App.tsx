@@ -25,6 +25,11 @@ import MoneyJournal from "@/pages/challenges/money-blocks/journal";
 import MoneyProgress from "@/pages/challenges/money-blocks/progress";
 import MoneyDay from "@/pages/challenges/money-blocks/day";
 
+import MoneyManifestationDashboard from "@/pages/challenges/money-manifestation/dashboard";
+import MoneyManifestationJournal from "@/pages/challenges/money-manifestation/journal";
+import MoneyManifestationProgress from "@/pages/challenges/money-manifestation/progress";
+import MoneyManifestationDay from "@/pages/challenges/money-manifestation/day";
+
 import RelationshipsDashboard from "@/pages/challenges/relationships/dashboard";
 import RelationshipsJournal from "@/pages/challenges/relationships/journal";
 import RelationshipsProgress from "@/pages/challenges/relationships/progress";
@@ -95,6 +100,12 @@ function Router() {
         <Route path="/money-blocks/journal" component={MoneyJournal} />
         <Route path="/money-blocks/progress" component={MoneyProgress} />
         <Route path="/money-blocks/day/:day" component={MoneyDay} />
+        
+        {/* Money Manifestation Challenge */}
+        <Route path="/money-manifestation" component={MoneyManifestationDashboard} />
+        <Route path="/money-manifestation/journal" component={MoneyManifestationJournal} />
+        <Route path="/money-manifestation/progress" component={MoneyManifestationProgress} />
+        <Route path="/money-manifestation/day/:day" component={MoneyManifestationDay} />
         
         {/* Relationships Challenge */}
         <Route path="/relationships" component={RelationshipsDashboard} />
