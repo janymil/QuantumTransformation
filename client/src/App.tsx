@@ -76,13 +76,13 @@ function Router() {
         {/* Main shared routes */}
         <Route path="/" component={Dashboard} />
         <Route path="/challenges" component={Challenges} />
-        <Route path="/journal" component={Journal} />
+        <Route path="/journal" component={() => <Journal />} />
         <Route path="/progress" component={Progress} />
         
         {/* Legacy challenge routes - keep for backwards compatibility */}
-        <Route path="/challenge/:day" component={ChallengeDay} />
-        <Route path="/challenge-day" component={ChallengeDay} />
-        <Route path="/challenge-progress" component={ChallengeProgress} />
+        <Route path="/challenge/:day" component={(props) => <ChallengeDay {...props} />} />
+        <Route path="/challenge-day" component={() => <ChallengeDay />} />
+        <Route path="/challenge-progress" component={() => <ChallengeProgress />} />
         
         {/* Quantum Consciousness Challenge */}
         <Route path="/quantum-consciousness" component={QuantumDashboard} />

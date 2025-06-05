@@ -53,28 +53,23 @@ export function registerJournalRoutes(app: Express) {
     }
   });
 
-  // Get journal entry for specific day
-  app.get('/api/journal/:day', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const day = parseInt(req.params.day);
-      const challengeType = req.query.challengeType as string;
-      
-      const entry = await storage.getJournalEntry(userId, day, challengeType);
-      res.json(entry);
-    } catch (error) {
-      console.error("Error fetching journal entry:", error);
-      res.status(500).json({ message: "Failed to fetch journal entry" });
-    }
-  });
-
-  // Get all journal entries for user
+  // Get journal entries - handles both specific day and all entries
   app.get('/api/journal', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const challengeType = req.query.challengeType as string;
+      const { day, challengeType } = req.query;
       
-      if (challengeType) {
+      console.log(`GET /api/journal - userId: ${userId}, day: ${day}, challengeType: ${challengeType}`);
+      
+      if (day && challengeType) {
+        const entry = await storage.getJournalEntry(userId, parseInt(day as string), challengeType as string);
+        console.log(`GET /api/journal - Found entry:`, entry);
+        res.json(entry);
+      } else if (day) {
+        // Fallback for requests without challengeType (legacy)
+        const entry = await storage.getJournalEntry(userId, parseInt(day as string));
+        res.json(entry);
+      } else if (challengeType) {
         const entries = await storage.getJournalEntriesByChallenge(userId, challengeType);
         res.json(entries);
       } else {

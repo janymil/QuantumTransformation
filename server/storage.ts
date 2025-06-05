@@ -220,10 +220,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJournalEntry(userId: string, day: number, challengeType?: string): Promise<JournalEntry | undefined> {
-    // Add stack trace to debug where invalid calls are coming from
+    // Validate input parameters to prevent database errors
     if (!userId || isNaN(day) || day < 1) {
       console.error(`Invalid parameters for getJournalEntry: userId=${userId}, day=${day}, challengeType=${challengeType}`);
-      console.error('Stack trace:', new Error().stack);
       return undefined;
     }
     
