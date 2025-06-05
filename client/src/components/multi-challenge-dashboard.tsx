@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { CustomProgress } from "@/components/ui/custom-progress";
 import { Badge } from "@/components/ui/badge";
 import { 
   ChevronDown, 
@@ -181,9 +181,9 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
                     <div className="mt-4">
                       <div className="flex items-center justify-between text-sm mb-2">
                         <span>Progress</span>
-                        <span>{completedDaysCount}/{totalDays} days</span>
+                        <span>{completedDaysCount}/{totalDays} days ({Math.round(progressPercentage)}%)</span>
                       </div>
-                      <Progress value={progressPercentage} className="h-2" />
+                      <CustomProgress value={progressPercentage} className="h-2" />
                     </div>
                   </CardHeader>
                 </CollapsibleTrigger>

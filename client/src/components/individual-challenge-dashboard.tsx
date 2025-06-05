@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { CustomProgress } from "@/components/ui/custom-progress";
 import { Badge } from "@/components/ui/badge";
 import { 
   Calendar, 
@@ -157,7 +157,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
             <CardTitle>{totalDays}-Day Challenge Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <Progress value={progressPercent} className="h-3" />
+            <CustomProgress value={progressPercent} className="h-3" showPercentage={true} />
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               {completedDays} of {totalDays} days completed ({Math.round(progressPercent)}%)
             </p>
