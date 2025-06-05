@@ -4,11 +4,99 @@ import { storage } from "../storage";
 import { createInsertSchema } from "drizzle-zod";
 import { challengeCompletions } from "@shared/schema";
 import { z } from "zod";
+import { getAllChallengeTypes } from "@shared/challenge-types";
 
 const insertChallengeCompletionSchema = createInsertSchema(challengeCompletions);
 type InsertChallengeCompletion = z.infer<typeof insertChallengeCompletionSchema>;
 
 export function registerChallengeRoutes(app: Express) {
+  // Get all available challenge types
+  app.get('/api/challenges/types', async (req: any, res) => {
+    try {
+      const challengeTypes = getAllChallengeTypes();
+      res.json(challengeTypes);
+    } catch (error) {
+      console.error("Error fetching challenge types:", error);
+      res.status(500).json({ message: "Failed to fetch challenge types" });
+    }
+  });
+
+  // Get user's active challenges
+  app.get('/api/challenges/user-challenges', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userChallenges = await storage.getUserChallenges(userId);
+      res.json(userChallenges);
+    } catch (error) {
+      console.error("Error fetching user challenges:", error);
+      res.status(500).json({ message: "Failed to fetch user challenges" });
+    }
+  });
+
+  // Start a new challenge
+  app.post('/api/challenges/select', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType } = req.body;
+      
+      if (!challengeType) {
+        return res.status(400).json({ message: "Challenge type is required" });
+      }
+
+      // Check if user already has this challenge
+      const existingProgress = await storage.getUserProgressForChallenge(userId, challengeType);
+      if (existingProgress) {
+        return res.status(400).json({ message: "You are already participating in this challenge" });
+      }
+
+      // Create new challenge progress
+      const progress = await storage.createUserProgress({
+        userId,
+        challengeType,
+        currentDay: 1,
+        completedDays: [],
+        streakCount: 0,
+        startDate: new Date(),
+        lastActivityDate: new Date().toISOString(),
+        isActive: true
+      });
+
+      res.json(progress);
+    } catch (error) {
+      console.error("Error starting challenge:", error);
+      res.status(500).json({ message: "Failed to start challenge" });
+    }
+  });
+
+  // Quit a challenge
+  app.delete('/api/challenges/quit', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType } = req.body;
+      
+      if (!challengeType) {
+        return res.status(400).json({ message: "Challenge type is required" });
+      }
+
+      await storage.quitChallenge(userId, challengeType);
+      res.json({ message: "Challenge quit successfully" });
+    } catch (error) {
+      console.error("Error quitting challenge:", error);
+      res.status(500).json({ message: "Failed to quit challenge" });
+    }
+  });
+
+  // Get all user completions
+  app.get('/api/challenges/completions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const completions = await storage.getUserCompletions(userId);
+      res.json(completions);
+    } catch (error) {
+      console.error("Error fetching completions:", error);
+      res.status(500).json({ message: "Failed to fetch completions" });
+    }
+  });
   // Complete a challenge day
   app.post('/api/challenge/complete', isAuthenticated, async (req: any, res) => {
     try {
