@@ -22,7 +22,9 @@ import {
   BarChart3,
   Lightbulb,
   Archive,
-  Plus
+  Plus,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { format } from "date-fns";
 import { CHALLENGE_TYPES } from "@shared/challenge-types";
@@ -48,6 +50,57 @@ interface JournalAnalysis {
   patterns: string[];
   recommendations: string[];
   emotionalTrends: string;
+}
+
+// Collapsible Journal Entry Component
+function CollapsibleJournalEntry({ entry }: { entry: JournalEntry }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <Card className="transition-shadow hover:shadow-md">
+      <CardHeader 
+        className="pb-3 cursor-pointer" 
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-blue-600" />
+            <span className="font-medium">Day {entry.day}</span>
+            {isExpanded ? 
+              <ChevronDown className="h-4 w-4 text-gray-500" /> : 
+              <ChevronRight className="h-4 w-4 text-gray-500" />
+            }
+          </div>
+          <span className="text-sm text-gray-500">
+            {format(new Date(entry.createdAt), "MMM d, yyyy")}
+          </span>
+        </div>
+      </CardHeader>
+      
+      {isExpanded && (
+        <CardContent className="space-y-3">
+          {entry.experience && (
+            <div>
+              <h4 className="font-medium text-sm text-gray-700 mb-1">Experience</h4>
+              <p className="text-sm">{entry.experience}</p>
+            </div>
+          )}
+          {entry.insights && (
+            <div>
+              <h4 className="font-medium text-sm text-gray-700 mb-1">Insights</h4>
+              <p className="text-sm">{entry.insights}</p>
+            </div>
+          )}
+          {entry.intention && (
+            <div>
+              <h4 className="font-medium text-sm text-gray-700 mb-1">Intention</h4>
+              <p className="text-sm">{entry.intention}</p>
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
 }
 
 export default function JournalNew() {
@@ -292,15 +345,15 @@ export default function JournalNew() {
               <p>Loading active challenge entries...</p>
             </div>
           ) : activeChallengeEntries && activeChallengeEntries.length > 0 ? (
-            <Tabs defaultValue={activeChallengeEntries[0].challengeType} orientation="vertical">
-              <TabsList className="flex flex-col h-auto w-48">
+            <Tabs defaultValue={activeChallengeEntries[0].challengeType}>
+              <TabsList className="grid w-full gap-2 mb-6" style={{ gridTemplateColumns: `repeat(${activeChallengeEntries.length}, 1fr)` }}>
                 {activeChallengeEntries.map((challengeGroup) => (
                   <TabsTrigger 
                     key={challengeGroup.challengeType}
                     value={challengeGroup.challengeType}
-                    className="w-full justify-start"
+                    className="flex flex-col items-center p-3"
                   >
-                    <div className="text-left">
+                    <div className="text-center">
                       <div className="font-medium text-sm">
                         {getChallengeDisplayName(challengeGroup.challengeType)}
                       </div>
@@ -312,7 +365,7 @@ export default function JournalNew() {
                 ))}
               </TabsList>
               
-              <div className="flex-1 ml-6">
+              <div className="w-full">
                 {activeChallengeEntries.map((challengeGroup) => (
                   <TabsContent key={challengeGroup.challengeType} value={challengeGroup.challengeType}>
                     <div className="space-y-4">
@@ -327,39 +380,7 @@ export default function JournalNew() {
                       
                       <div className="grid gap-4">
                         {filterEntries(challengeGroup.entries).map((entry) => (
-                          <Card key={entry.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                            <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-blue-600" />
-                                  <span className="font-medium">Day {entry.day}</span>
-                                </div>
-                                <span className="text-sm text-gray-500">
-                                  {format(new Date(entry.createdAt), "MMM d, yyyy")}
-                                </span>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              {entry.experience && (
-                                <div>
-                                  <h4 className="font-medium text-sm text-gray-700 mb-1">Experience</h4>
-                                  <p className="text-sm">{entry.experience}</p>
-                                </div>
-                              )}
-                              {entry.insights && (
-                                <div>
-                                  <h4 className="font-medium text-sm text-gray-700 mb-1">Insights</h4>
-                                  <p className="text-sm">{entry.insights}</p>
-                                </div>
-                              )}
-                              {entry.intention && (
-                                <div>
-                                  <h4 className="font-medium text-sm text-gray-700 mb-1">Intention</h4>
-                                  <p className="text-sm">{entry.intention}</p>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
+                          <CollapsibleJournalEntry key={entry.id} entry={entry} />
                         ))}
                       </div>
                     </div>
