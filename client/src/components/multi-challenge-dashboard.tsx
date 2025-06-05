@@ -175,7 +175,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
                         <div className="text-right">
                           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                             <Calendar className="w-4 h-4" />
-                            <span>Day {currentDay} of 30</span>
+                            <span>Day {currentDay} of {totalDays}</span>
                           </div>
                           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                             <Flame className="w-4 h-4" />
