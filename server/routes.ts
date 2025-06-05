@@ -129,6 +129,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get challenge completion status
+  app.get('/api/challenges/completion', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { day, challengeType } = req.query;
+      
+      if (day && challengeType) {
+        const completion = await storage.getDayCompletion(userId, parseInt(day as string), challengeType as string);
+        res.json(completion || null);
+      } else if (day) {
+        // Legacy support without challengeType
+        const completion = await storage.getDayCompletion(userId, parseInt(day as string));
+        res.json(completion || null);
+      } else {
+        // Return all completions for user
+        const completions = await storage.getUserCompletions(userId);
+        res.json(completions);
+      }
+    } catch (error) {
+      console.error("Error fetching completion status:", error);
+      res.status(500).json({ message: "Failed to fetch completion status" });
+    }
+  });
+
   // Challenge completion routes
   app.post('/api/challenges/complete', isAuthenticated, async (req: any, res) => {
     try {
