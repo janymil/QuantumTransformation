@@ -222,7 +222,17 @@ export default function AICoaching() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
-                    onClick={() => setActiveTab("questions")}
+                    onClick={() => {
+                      setActiveTab("questions");
+                      // Pre-fill question about today's practice
+                      setTimeout(() => {
+                        const questionInput = document.querySelector('textarea[placeholder*="Ask any question"]') as HTMLTextAreaElement;
+                        if (questionInput) {
+                          questionInput.value = "Can you help me understand today's practice and how to get the most out of it?";
+                          questionInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                      }, 100);
+                    }}
                   >
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Ask about today's practice
@@ -231,7 +241,16 @@ export default function AICoaching() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
-                    onClick={() => setActiveTab("coaching")}
+                    onClick={() => {
+                      setActiveTab("coaching");
+                      // Switch to goals section
+                      setTimeout(() => {
+                        const goalsInput = document.querySelector('textarea[placeholder*="goals"]') as HTMLTextAreaElement;
+                        if (goalsInput) {
+                          goalsInput.focus();
+                        }
+                      }, 100);
+                    }}
                   >
                     <Target className="w-4 h-4 mr-2" />
                     Set new goals
@@ -240,7 +259,17 @@ export default function AICoaching() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
-                    onClick={() => setActiveTab("questions")}
+                    onClick={() => {
+                      setActiveTab("questions");
+                      // Pre-fill question about concepts
+                      setTimeout(() => {
+                        const questionInput = document.querySelector('textarea[placeholder*="Ask any question"]') as HTMLTextAreaElement;
+                        if (questionInput) {
+                          questionInput.value = "Can you explain the key concepts behind this challenge and how they work?";
+                          questionInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                      }, 100);
+                    }}
                   >
                     <BookOpen className="w-4 h-4 mr-2" />
                     Explain concepts
@@ -249,7 +278,16 @@ export default function AICoaching() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
-                    onClick={() => setActiveTab("coaching")}
+                    onClick={() => {
+                      setActiveTab("coaching");
+                      // Switch to challenges section
+                      setTimeout(() => {
+                        const challengesInput = document.querySelector('textarea[placeholder*="challenges"]') as HTMLTextAreaElement;
+                        if (challengesInput) {
+                          challengesInput.focus();
+                        }
+                      }, 100);
+                    }}
                   >
                     <Heart className="w-4 h-4 mr-2" />
                     Overcome challenges

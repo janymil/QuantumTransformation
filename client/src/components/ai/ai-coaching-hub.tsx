@@ -238,7 +238,7 @@ export default function AICoachingHub({
                         Personal Message
                       </h4>
                       <p className="text-sm text-purple-700 dark:text-purple-300">
-                        {coachingMutation.data.personalizedMessage}
+                        {(coachingMutation.data || coachingResponse)?.personalizedMessage || "No response available"}
                       </p>
                     </div>
                     
@@ -248,18 +248,18 @@ export default function AICoachingHub({
                         Today's Recommendation
                       </h4>
                       <p className="text-sm text-blue-700 dark:text-blue-300">
-                        {coachingMutation.data.todaysRecommendation}
+                        {(coachingMutation.data || coachingResponse)?.todaysRecommendation || "No recommendation available"}
                       </p>
                     </div>
 
-                    {coachingMutation.data.practiceAdjustments && (
+                    {(coachingMutation.data || coachingResponse)?.practiceAdjustments && (
                       <div>
                         <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center">
                           <TrendingUp className="w-4 h-4 mr-2" />
                           Practice Adjustments
                         </h4>
                         <ul className="space-y-1">
-                          {coachingMutation.data.practiceAdjustments.map((adjustment: string, index: number) => (
+                          {((coachingMutation.data || coachingResponse)?.practiceAdjustments || []).map((adjustment: string, index: number) => (
                             <li key={index} className="text-sm text-green-700 dark:text-green-300 flex items-start">
                               <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0 mt-2 mr-2"></span>
                               {adjustment}
@@ -317,7 +317,7 @@ export default function AICoachingHub({
               </div>
             </div>
 
-            {explanationMutation.data && (
+            {(explanationMutation.data || explanationResponse) && (
               <Card className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/20 dark:to-green-950/20 border-blue-200 dark:border-blue-700">
                 <CardContent className="p-4">
                   <div className="space-y-3">
@@ -327,11 +327,11 @@ export default function AICoachingHub({
                         AI Response
                       </h4>
                       <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-                        {explanationMutation.data.explanation}
+                        {(explanationMutation.data || explanationResponse)?.explanation || "No response available"}
                       </p>
                     </div>
 
-                    {explanationMutation.data.practicalTips && explanationMutation.data.practicalTips.length > 0 && (
+                    {((explanationMutation.data || explanationResponse)?.practicalTips?.length > 0) && (
                       <div>
                         <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center">
                           <Lightbulb className="w-4 h-4 mr-2" />
