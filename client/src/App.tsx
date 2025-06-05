@@ -27,6 +27,7 @@ import MoneyProgress from "@/pages/challenges/money-blocks/progress";
 import MoneyDay from "@/pages/challenges/money-blocks/day";
 
 import MoneyBlocksClearingDashboard from "@/pages/challenges/money-blocks-clearing/dashboard";
+import MoneyBlocksJournal from "@/pages/challenges/money-blocks/journal";
 
 import MoneyManifestationDashboard from "@/pages/challenges/money-manifestation/dashboard";
 import MoneyManifestationJournal from "@/pages/challenges/money-manifestation/journal";
