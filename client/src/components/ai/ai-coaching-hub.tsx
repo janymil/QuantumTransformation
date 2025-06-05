@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -56,7 +56,7 @@ export default function AICoachingHub({
   const [explanationResponse, setExplanationResponse] = useState<any>(null);
 
   // Update question when prefilledQuestion changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (prefilledQuestion) {
       setQuestion(prefilledQuestion);
     }
