@@ -51,8 +51,8 @@ export interface IStorage {
   
   // Journal operations
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
-  updateJournalEntry(userId: string, day: number, updates: Partial<InsertJournalEntry>): Promise<JournalEntry>;
-  getJournalEntry(userId: string, day: number): Promise<JournalEntry | undefined>;
+  updateJournalEntry(userId: string, day: number, updates: Partial<InsertJournalEntry>, challengeType?: string): Promise<JournalEntry>;
+  getJournalEntry(userId: string, day: number, challengeType?: string): Promise<JournalEntry | undefined>;
   getUserJournalEntries(userId: string): Promise<JournalEntry[]>;
   getJournalEntriesByChallenge(userId: string, challengeType: string): Promise<JournalEntry[]>;
   getJournalEntriesForActiveChallenges(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]>;
