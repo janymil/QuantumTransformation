@@ -12,6 +12,7 @@ import Progress from "@/pages/progress";
 import Challenges from "@/pages/challenges";
 import ChallengeProgress from "@/pages/challenge-progress";
 import SavedAffirmations from "@/pages/saved-affirmations";
+import AICoaching from "@/pages/ai-coaching";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
 
@@ -84,6 +85,7 @@ function Router() {
         {/* Main shared routes */}
         <Route path="/" component={Dashboard} />
         <Route path="/challenges" component={Challenges} />
+        <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/journal" component={() => <Journal />} />
         <Route path="/progress" component={Progress} />
         <Route path="/saved-affirmations" component={SavedAffirmations} />
