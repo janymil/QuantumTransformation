@@ -460,6 +460,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Generating personalized coaching with request:", coachingRequest);
       
+      // Track AI usage
+      await trackUsage(
+        userId,
+        'coaching',
+        JSON.stringify(coachingRequest),
+        0,
+        0
+      );
+      
       const coaching = await generatePersonalizedCoaching(coachingRequest);
       
       console.log("Generated coaching response:", coaching);
@@ -467,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(coaching);
     } catch (error) {
       console.error("Error generating personalized coaching:", error);
-      res.status(500).json({ message: "Failed to generate coaching", error: error.message });
+      res.status(500).json({ message: "Failed to generate coaching", error: (error as Error).message });
     }
   });
 

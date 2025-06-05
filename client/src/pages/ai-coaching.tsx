@@ -229,37 +229,13 @@ export default function AICoaching() {
                     variant="outline" 
                     className="w-full justify-start"
                     onClick={() => {
-                      setActiveTab("questions");
-                      setPrefilledQuestion("Can you help me understand today's practice and how to get the most out of it?");
-                    }}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Ask about today's practice
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
                       setActiveTab("coaching");
                       setShouldFocusGoals(true);
                       setShouldFocusChallenges(false);
                     }}
                   >
                     <Target className="w-4 h-4 mr-2" />
-                    Set new goals
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setActiveTab("questions");
-                      setPrefilledQuestion("Can you explain the key concepts behind this challenge and how they work?");
-                    }}
-                  >
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Explain concepts
+                    Set quantum goals
                   </Button>
                   
                   <Button 
@@ -272,7 +248,31 @@ export default function AICoaching() {
                     }}
                   >
                     <Heart className="w-4 h-4 mr-2" />
-                    Overcome challenges
+                    Release blocks
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setActiveTab("questions");
+                      setPrefilledQuestion("What specific meditation technique should I focus on today for my transformation?");
+                    }}
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Today's practice
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setActiveTab("questions");
+                      setPrefilledQuestion("How can I deepen my quantum consciousness experience and break through limiting patterns?");
+                    }}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Breakthrough guidance
                   </Button>
                 </CardContent>
               </Card>
