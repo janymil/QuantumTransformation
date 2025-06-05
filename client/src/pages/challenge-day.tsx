@@ -272,56 +272,60 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
             </TabsContent>
 
             {!content.isIntroductionDay && (
-              <>
-                <TabsContent value="practice" className="space-y-6">
-                  <EnhancedPracticeContent 
-                    practice={content.practice} 
-                    duration={content.duration} 
-                  />
-                </TabsContent>
+              <TabsContent value="practice" className="space-y-6">
+                <EnhancedPracticeContent 
+                  practice={content.practice} 
+                  duration={content.duration} 
+                />
+              </TabsContent>
+            )}
 
-                <TabsContent value="affirmations" className="space-y-6">
-                  <EnhancedAffirmationsSection 
-                    affirmations={[content.affirmation || ""]}
-                    dayNumber={currentDay}
-                    challengeType={challengeType || "general_quantum"}
-                  />
-                </TabsContent>
+            {!content.isIntroductionDay && (
+              <TabsContent value="affirmations" className="space-y-6">
+                <EnhancedAffirmationsSection 
+                  affirmations={[content.affirmation || ""]}
+                  dayNumber={currentDay}
+                  challengeType={challengeType || "general_quantum"}
+                />
+              </TabsContent>
+            )}
 
-                {content.videoLinks && content.videoLinks.length > 0 && (
-                  <TabsContent value="videos" className="space-y-6">
-                    <VideoPlayerTab videoLinks={content.videoLinks} />
-                  </TabsContent>
-                )}
+            {!content.isIntroductionDay && content.videoLinks && content.videoLinks.length > 0 && (
+              <TabsContent value="videos" className="space-y-6">
+                <VideoPlayerTab videoLinks={content.videoLinks} />
+              </TabsContent>
+            )}
 
-                <TabsContent value="insights" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Star className="w-6 h-6 mr-2 text-primary" />
-                        Key Insights to Remember
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {content.practice.insights?.map((insight: string, index: number) => (
-                          <div key={index} className="flex items-start space-x-3 p-4 bg-muted/30 rounded-lg">
-                            <Lightbulb className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                            <p className="text-muted-foreground">{insight}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+            {!content.isIntroductionDay && (
+              <TabsContent value="insights" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Star className="w-6 h-6 mr-2 text-primary" />
+                      Key Insights to Remember
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {content.practice.insights?.map((insight: string, index: number) => (
+                        <div key={index} className="flex items-start space-x-3 p-4 bg-muted/30 rounded-lg">
+                          <Lightbulb className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                          <p className="text-muted-foreground">{insight}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
 
-                <TabsContent value="tools" className="space-y-6">
-                  <PracticeToolsHub 
-                    day={currentDay} 
-                    challengeType={challengeType || "general_quantum"} 
-                  />
-                </TabsContent>
-              </>
+            {!content.isIntroductionDay && (
+              <TabsContent value="tools" className="space-y-6">
+                <PracticeToolsHub 
+                  day={currentDay} 
+                  challengeType={challengeType || "general_quantum"} 
+                />
+              </TabsContent>
             )}
           </Tabs>
         </div>
