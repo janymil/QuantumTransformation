@@ -17,6 +17,7 @@ import {
   getUserAIStats 
 } from "./ai-cost-control";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
+import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
 import { registerGamificationRoutes } from "./routes/gamification-routes";
 import { generatePersonalizedAffirmation } from "./openai";
 import { initializeUserGamification } from "./gamification";
@@ -163,6 +164,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Usage stats error:", error);
       res.status(500).json({ error: "Failed to get usage statistics" });
+    }
+  });
+
+  // Market Research endpoint for pricing analysis
+  app.get("/api/market-research", isAuthenticated, async (req: any, res) => {
+    try {
+      console.log("Starting market research analysis...");
+      const researchData = await conductMarketResearch();
+      const analysis = await analyzePricingStrategy(researchData);
+      
+      res.json({
+        timestamp: new Date().toISOString(),
+        analysis,
+        researchData
+      });
+    } catch (error) {
+      console.error("Market research error:", error);
+      res.status(500).json({ error: "Failed to conduct market research" });
     }
   });
 
