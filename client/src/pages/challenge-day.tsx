@@ -168,10 +168,12 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
           <h1 className="text-3xl font-bold">{content.title}</h1>
           <p className="text-muted-foreground">Day {effectiveDay} • {challengeType}</p>
         </div>
-        <Button variant="outline" onClick={() => window.history.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        <Link href={`/${challengeType}`}>
+          <Button variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
