@@ -48,12 +48,19 @@ export default function AICoachingHub({
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState(prefilledQuestion);
   const [goals, setGoals] = useState("");
   const [challenges, setChallenges] = useState("");
   const [mood, setMood] = useState(5);
   const [coachingResponse, setCoachingResponse] = useState<any>(null);
   const [explanationResponse, setExplanationResponse] = useState<any>(null);
+
+  // Update question when prefilledQuestion changes
+  React.useEffect(() => {
+    if (prefilledQuestion) {
+      setQuestion(prefilledQuestion);
+    }
+  }, [prefilledQuestion]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);

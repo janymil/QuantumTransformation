@@ -170,6 +170,9 @@ export default function AICoaching() {
                 currentDay={currentDay}
                 initialTab={activeTab}
                 onTabChange={setActiveTab}
+                prefilledQuestion={prefilledQuestion}
+                shouldFocusGoals={shouldFocusGoals}
+                shouldFocusChallenges={shouldFocusChallenges}
               />
             </div>
 
