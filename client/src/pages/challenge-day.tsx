@@ -687,6 +687,7 @@ export default function ChallengeDay() {
 
       {/* Modals */}
       <JournalModal 
+        key={`${challengeType}-${currentDay}`}
         isOpen={showJournal}
         onClose={() => setShowJournal(false)}
         day={currentDay}
