@@ -23,6 +23,9 @@ export const aiResponseCache = pgTable("ai_response_cache", {
   day: integer("day"),
   response: text("response").notNull(),
   tokensUsed: integer("tokens_used").default(0),
+  userId: varchar("user_id").notNull(), // Track who originally asked
+  hitCount: integer("hit_count").default(0), // Track how many times this response was reused
+  lastHitAt: timestamp("last_hit_at"), // When this was last accessed
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -73,13 +76,13 @@ interface AIRequest {
   input: string;
   challengeType?: string;
   day?: number;
-  userTier: 'free' | 'premium' | 'unlimited';
+  userTier: 'basic' | 'premium' | 'unlimited';
 }
 
 /**
  * Create hash of input for cache lookup and duplicate detection
  */
-function createInputHash(input: string, requestType: string, challengeType?: string, day?: number): string {
+export function createInputHash(input: string, requestType: string, challengeType?: string, day?: number): string {
   const crypto = require('crypto');
   const hashInput = `${requestType}:${challengeType || 'none'}:${day || 0}:${input.toLowerCase().trim()}`;
   return crypto.createHash('md5').update(hashInput).digest('hex');
@@ -188,33 +191,46 @@ export async function checkUsageLimit(userId: string, userTier: string = 'free')
 }
 
 /**
- * Check cache for existing response
+ * Check cache for existing response (global across all users)
  */
 export async function getCachedResponse(inputHash: string): Promise<any | null> {
-  const cached = await db
-    .select()
-    .from(aiResponseCache)
-    .where(and(
-      eq(aiResponseCache.inputHash, inputHash),
-      sql`expires_at > NOW() OR expires_at IS NULL`
-    ))
-    .limit(1);
-  
-  if (cached.length > 0) {
-    // Update usage tracking to show cache hit
-    await db.insert(aiUsageTracking).values({
-      userId: 'cache',
-      requestType: cached[0].requestType,
-      inputHash,
-      tokensUsed: 0,
-      cost: 0,
-      isFromCache: true
-    });
+  try {
+    const cached = await db
+      .select()
+      .from(aiResponseCache)
+      .where(and(
+        eq(aiResponseCache.inputHash, inputHash),
+        sql`expires_at > NOW() OR expires_at IS NULL`
+      ))
+      .orderBy(sql`created_at DESC`)
+      .limit(1);
     
-    return JSON.parse(cached[0].response);
+    if (cached.length > 0) {
+      // Update hit count and last accessed time
+      await db
+        .update(aiResponseCache)
+        .set({ 
+          hitCount: sql`${aiResponseCache.hitCount} + 1`,
+          lastHitAt: new Date()
+        })
+        .where(eq(aiResponseCache.id, cached[0].id));
+      
+      const response = JSON.parse(cached[0].response);
+      return {
+        ...response,
+        fromCache: true,
+        cacheId: cached[0].id,
+        originallyAskedBy: cached[0].userId,
+        hitCount: cached[0].hitCount + 1,
+        originalDate: cached[0].createdAt
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error checking cache:", error);
+    return null;
   }
-  
-  return null;
 }
 
 /**
@@ -224,6 +240,7 @@ export async function cacheResponse(
   inputHash: string, 
   requestType: string, 
   response: any, 
+  userId: string,
   challengeType?: string, 
   day?: number,
   tokensUsed: number = 0
@@ -245,13 +262,16 @@ export async function cacheResponse(
     day,
     response: JSON.stringify(response),
     tokensUsed,
+    userId,
+    hitCount: 0,
     expiresAt
   }).onConflictDoUpdate({
     target: aiResponseCache.inputHash,
     set: {
       response: JSON.stringify(response),
       tokensUsed,
-      expiresAt
+      expiresAt,
+      userId // Update to latest user who asked
     }
   });
 }

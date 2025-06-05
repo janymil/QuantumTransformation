@@ -306,6 +306,9 @@ export const aiResponseCache = pgTable("ai_response_cache", {
   day: integer("day"),
   response: text("response").notNull(),
   tokensUsed: integer("tokens_used").default(0),
+  userId: varchar("user_id").notNull(), // Track who originally asked
+  hitCount: integer("hit_count").default(0), // Track how many times this response was reused
+  lastHitAt: timestamp("last_hit_at"), // When this was last accessed
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });

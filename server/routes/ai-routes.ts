@@ -1,220 +1,248 @@
 import type { Express } from "express";
 import { isAuthenticated } from "../replitAuth";
-import { storage } from "../storage";
 import { 
-  generateAIExplanation, 
-  analyzeJournalEntries, 
-  generatePersonalizedCoaching,
-  generateMicroLearningContent,
-  generatePersonalizedAffirmation,
-  generateWellnessTip,
-  generateMicroChallenges,
-  generateDailyAffirmation
-} from "../openai";
-import { 
-  validateAIRequest,
-  cacheResponse,
+  validateAIRequest, 
+  getCachedResponse, 
+  cacheResponse, 
   trackUsage,
-  getUserAIStats,
-  optimizeContext
+  createInputHash,
+  getUserAIStats 
 } from "../ai-cost-control";
+import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "../openai";
+import { db } from "../db";
+import { aiResponseCache, aiUsageTracking } from "../ai-cost-control";
+import { sql, desc, count, avg } from "drizzle-orm";
 
 export function registerAIRoutes(app: Express) {
-  // AI explanation for challenge topics
-  app.post('/api/ai/explain', isAuthenticated, async (req: any, res) => {
+  // AI Explanation endpoint with global caching
+  app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {
     try {
-      const { topic, day, userQuestion, context } = req.body;
-      
-      const explanation = await generateAIExplanation({
-        topic,
+      const userId = req.user.claims.sub;
+      const { topic, day, userQuestion, challengeType, userTier = 'basic' } = req.body;
+
+      // Create input hash for caching
+      const inputHash = createInputHash(userQuestion || topic, 'explanation', challengeType, day);
+
+      // Validate request
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'explanation',
+        input: userQuestion || topic,
+        challengeType,
+        day,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests 
+        });
+      }
+
+      // Check global cache first
+      const cachedResponse = await getCachedResponse(inputHash);
+      if (cachedResponse) {
+        // Track cache hit for analytics
+        await trackUsage(userId, 'explanation', inputHash, 0, 0);
+        
+        return res.json({
+          ...cachedResponse,
+          fromCache: true,
+          remainingRequests: validation.remainingRequests
+        });
+      }
+
+      // Generate new AI response
+      const aiResponse = await generateAIExplanation({
+        topic: topic || challengeType,
         day,
         userQuestion,
-        context
+        context: `Challenge: ${challengeType}, Day: ${day}`
       });
-      
-      res.json(explanation);
+
+      // Estimate tokens used (rough calculation)
+      const tokensUsed = Math.ceil((userQuestion?.length || 0) / 4) + Math.ceil(JSON.stringify(aiResponse).length / 4);
+      const cost = Math.ceil(tokensUsed * 0.00002 * 100); // Cost in cents
+
+      // Cache the response globally
+      await cacheResponse(inputHash, 'explanation', aiResponse, userId, challengeType, day, tokensUsed);
+
+      // Track usage
+      await trackUsage(userId, 'explanation', inputHash, tokensUsed, cost);
+
+      res.json({
+        ...aiResponse,
+        fromCache: false,
+        tokensUsed,
+        remainingRequests: validation.remainingRequests
+      });
+
     } catch (error) {
-      console.error("Error generating AI explanation:", error);
-      res.status(500).json({ message: "Failed to generate explanation" });
+      console.error("AI explanation error:", error);
+      res.status(500).json({ error: "Failed to generate AI explanation" });
     }
   });
 
-  // Analyze journal entries
-  app.post('/api/ai/analyze-journal', isAuthenticated, async (req: any, res) => {
+  // Journal Analysis endpoint
+  app.post("/api/ai/analyze-journal", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { challengeType, entries } = req.body;
-      
-      let journalEntries = entries;
-      if (!journalEntries) {
-        // Get user's journal entries if not provided
-        if (challengeType) {
-          journalEntries = await storage.getJournalEntriesByChallenge(userId, challengeType);
-        } else {
-          journalEntries = await storage.getUserJournalEntries(userId);
-        }
+      const { entries, userTier = 'basic' } = req.body;
+
+      const inputText = JSON.stringify(entries);
+      const inputHash = createInputHash(inputText, 'journal_analysis');
+
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'journal_analysis',
+        input: inputText,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests 
+        });
       }
-      
-      const analysis = await analyzeJournalEntries({ entries: journalEntries });
-      res.json(analysis);
+
+      // Check cache
+      const cachedResponse = await getCachedResponse(inputHash);
+      if (cachedResponse) {
+        await trackUsage(userId, 'journal_analysis', inputHash, 0, 0);
+        return res.json({ ...cachedResponse, fromCache: true });
+      }
+
+      // Generate analysis
+      const analysis = await analyzeJournalEntries({ entries });
+      const tokensUsed = Math.ceil(inputText.length / 4) + Math.ceil(JSON.stringify(analysis).length / 4);
+      const cost = Math.ceil(tokensUsed * 0.00002 * 100);
+
+      // Cache and track
+      await cacheResponse(inputHash, 'journal_analysis', analysis, userId, undefined, undefined, tokensUsed);
+      await trackUsage(userId, 'journal_analysis', inputHash, tokensUsed, cost);
+
+      res.json({ ...analysis, fromCache: false, tokensUsed });
+
     } catch (error) {
-      console.error("Error analyzing journal entries:", error);
-      res.status(500).json({ message: "Failed to analyze journal entries" });
+      console.error("Journal analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze journal entries" });
     }
   });
 
-  // Generate personalized coaching
-  app.post('/api/ai/coaching', isAuthenticated, async (req: any, res) => {
+  // Personalized Coaching endpoint
+  app.post("/api/ai/coaching", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { 
-        currentDay, 
-        challengeType, 
-        userGoals, 
-        preferredPracticeTime, 
-        difficultyLevel 
-      } = req.body;
-      
-      // Get user progress and recent journal entries
-      const userProgress = await storage.getUserProgressForChallenge(userId, challengeType);
-      const recentEntries = await storage.getJournalEntriesByChallenge(userId, challengeType);
-      
-      const coaching = await generatePersonalizedCoaching({
+      const coachingRequest = { ...req.body, userId };
+      const { userTier = 'basic' } = req.body;
+
+      const inputText = JSON.stringify(coachingRequest);
+      const inputHash = createInputHash(inputText, 'coaching');
+
+      const validation = await validateAIRequest({
         userId,
-        currentDay,
-        completedDays: Array.isArray(userProgress?.completedDays) ? userProgress.completedDays as number[] : [],
-        streakCount: userProgress?.streakCount || 0,
-        recentJournalEntries: recentEntries.slice(-5).map(entry => ({
-          day: entry.day,
-          experience: entry.experience || '',
-          insights: entry.insights || '',
-          intention: entry.intention || '',
-          mood: entry.mood || undefined,
-          challenges: entry.challenges || undefined
-        })), // Last 5 entries
-        userGoals,
-        preferredPracticeTime,
-        difficultyLevel
+        requestType: 'coaching',
+        input: inputText,
+        userTier
       });
-      
-      res.json(coaching);
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests 
+        });
+      }
+
+      // Check cache (shorter expiration for personalized content)
+      const cachedResponse = await getCachedResponse(inputHash);
+      if (cachedResponse) {
+        await trackUsage(userId, 'coaching', inputHash, 0, 0);
+        return res.json({ ...cachedResponse, fromCache: true });
+      }
+
+      // Generate coaching
+      const coaching = await generatePersonalizedCoaching(coachingRequest);
+      const tokensUsed = Math.ceil(inputText.length / 4) + Math.ceil(JSON.stringify(coaching).length / 4);
+      const cost = Math.ceil(tokensUsed * 0.00002 * 100);
+
+      // Cache and track
+      await cacheResponse(inputHash, 'coaching', coaching, userId, undefined, undefined, tokensUsed);
+      await trackUsage(userId, 'coaching', inputHash, tokensUsed, cost);
+
+      res.json({ ...coaching, fromCache: false, tokensUsed });
+
     } catch (error) {
-      console.error("Error generating personalized coaching:", error);
-      res.status(500).json({ message: "Failed to generate coaching" });
+      console.error("Coaching error:", error);
+      res.status(500).json({ error: "Failed to generate personalized coaching" });
     }
   });
 
-  // Generate micro-learning content
-  app.post('/api/ai/micro-learning', isAuthenticated, async (req: any, res) => {
-    try {
-      const { day, topic, userLevel } = req.body;
-      
-      const content = await generateMicroLearningContent(day, topic, userLevel);
-      res.json(content);
-    } catch (error) {
-      console.error("Error generating micro-learning content:", error);
-      res.status(500).json({ message: "Failed to generate micro-learning content" });
-    }
-  });
-
-  // Generate personalized affirmation
-  app.post('/api/ai/affirmation', isAuthenticated, async (req: any, res) => {
-    try {
-      const { 
-        day, 
-        userGoals, 
-        currentChallenges, 
-        recentInsights, 
-        mood, 
-        progressLevel 
-      } = req.body;
-      
-      const affirmation = await generatePersonalizedAffirmation({
-        day,
-        userGoals,
-        currentChallenges,
-        recentInsights,
-        mood,
-        progressLevel
-      });
-      
-      res.json({ affirmation });
-    } catch (error) {
-      console.error("Error generating personalized affirmation:", error);
-      res.status(500).json({ message: "Failed to generate affirmation" });
-    }
-  });
-
-  // Generate wellness tip
-  app.post('/api/ai/wellness-tip', isAuthenticated, async (req: any, res) => {
-    try {
-      const { category, day, preferences } = req.body;
-      
-      const tip = await generateWellnessTip({ category, day, preferences });
-      res.json(tip);
-    } catch (error) {
-      console.error("Error generating wellness tip:", error);
-      res.status(500).json({ message: "Failed to generate wellness tip" });
-    }
-  });
-
-  // Generate micro challenges
-  app.post('/api/ai/micro-challenges', isAuthenticated, async (req: any, res) => {
-    try {
-      const { day, count } = req.body;
-      
-      const challenges = await generateMicroChallenges(day, count);
-      res.json({ challenges });
-    } catch (error) {
-      console.error("Error generating micro challenges:", error);
-      res.status(500).json({ message: "Failed to generate micro challenges" });
-    }
-  });
-
-  // Generate daily affirmation
-  app.post('/api/ai/daily-affirmation', isAuthenticated, async (req: any, res) => {
-    try {
-      const { day, userGoals, challengeType } = req.body;
-      
-      const affirmation = await generateDailyAffirmation(day, userGoals, challengeType);
-      res.json({ affirmation });
-    } catch (error) {
-      console.error("Error generating daily affirmation:", error);
-      res.status(500).json({ message: "Failed to generate daily affirmation" });
-    }
-  });
-
-  // Create AI chat session
-  app.post('/api/ai/chat', isAuthenticated, async (req: any, res) => {
+  // AI Usage Statistics endpoint
+  app.get("/api/ai/usage-stats", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { day, topic, question, context } = req.body;
-      
-      const session = await storage.createAiChatSession({
-        userId,
-        day,
-        question,
-        response: context || ''
-      });
-      
-      res.json(session);
+      const stats = await getUserAIStats(userId);
+      res.json(stats);
     } catch (error) {
-      console.error("Error creating AI chat session:", error);
-      res.status(500).json({ message: "Failed to create chat session" });
+      console.error("Usage stats error:", error);
+      res.status(500).json({ error: "Failed to get usage statistics" });
     }
   });
 
-  // Get AI chat sessions
-  app.get('/api/ai/chat', isAuthenticated, async (req: any, res) => {
+  // Global Cache Analytics (admin endpoint)
+  app.get("/api/ai/cache-analytics", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const day = req.query.day ? parseInt(req.query.day as string) : undefined;
-      
-      const sessions = await storage.getUserAiChatSessions(userId, day);
-      res.json(sessions);
+      // Get cache performance metrics
+      const cacheStats = await db
+        .select({
+          totalCachedResponses: count(),
+          averageHitCount: avg(aiResponseCache.hitCount),
+          topQuestions: sql<string>`array_agg(request_type ORDER BY hit_count DESC LIMIT 10)`
+        })
+        .from(aiResponseCache);
+
+      // Get cache hit rate over time
+      const hitRateStats = await db
+        .select({
+          totalRequests: count(),
+          cacheHits: sql<number>`SUM(CASE WHEN is_from_cache THEN 1 ELSE 0 END)`,
+          apiCalls: sql<number>`SUM(CASE WHEN is_from_cache THEN 0 ELSE 1 END)`,
+          totalCost: sql<number>`SUM(cost)`,
+          savedCost: sql<number>`SUM(CASE WHEN is_from_cache THEN tokens_used * 0.02 ELSE 0 END)`
+        })
+        .from(aiUsageTracking);
+
+      // Most popular cached questions
+      const popularQuestions = await db
+        .select({
+          requestType: aiResponseCache.requestType,
+          challengeType: aiResponseCache.challengeType,
+          day: aiResponseCache.day,
+          hitCount: aiResponseCache.hitCount,
+          createdAt: aiResponseCache.createdAt
+        })
+        .from(aiResponseCache)
+        .orderBy(desc(aiResponseCache.hitCount))
+        .limit(20);
+
+      const hitRate = hitRateStats[0] ? 
+        (hitRateStats[0].cacheHits / hitRateStats[0].totalRequests * 100) : 0;
+
+      res.json({
+        cachePerformance: {
+          ...cacheStats[0],
+          hitRate: Math.round(hitRate),
+          totalSavedCost: hitRateStats[0]?.savedCost || 0
+        },
+        usageStats: hitRateStats[0],
+        popularQuestions
+      });
+
     } catch (error) {
-      console.error("Error fetching AI chat sessions:", error);
-      res.status(500).json({ message: "Failed to fetch chat sessions" });
+      console.error("Cache analytics error:", error);
+      res.status(500).json({ error: "Failed to get cache analytics" });
     }
   });
 }
