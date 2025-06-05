@@ -71,6 +71,7 @@ export default function JournalModal({
       return data;
     },
     enabled: isOpen,
+    staleTime: 0, // Always refetch
   });
 
   // Populate form with fresh data when entry loads
@@ -102,10 +103,10 @@ export default function JournalModal({
       return result;
     },
     onSuccess: () => {
+      // Invalidate the exact query key used in useQuery
+      queryClient.invalidateQueries({ queryKey: ["/api/journal/entry", challengeType, day] });
+      // Also invalidate broader journal queries
       queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/journal", day] });
-      queryClient.invalidateQueries({ queryKey: ["/api/journal", day, challengeType] });
-      queryClient.invalidateQueries({ queryKey: ["/api/journal/analyze"] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal/active"] });
       queryClient.invalidateQueries({ queryKey: ["/api/journal/archived"] });
       toast({

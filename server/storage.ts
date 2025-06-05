@@ -214,6 +214,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJournalEntry(userId: string, day: number, challengeType?: string): Promise<JournalEntry | undefined> {
+    console.log(`Storage.getJournalEntry called with userId: ${userId}, day: ${day}, challengeType: ${challengeType}`);
+    
     const conditions = [
       eq(journalEntries.userId, userId),
       eq(journalEntries.day, day)
@@ -221,12 +223,15 @@ export class DatabaseStorage implements IStorage {
     
     if (challengeType) {
       conditions.push(eq(journalEntries.challengeType, challengeType));
+      console.log(`Added challengeType condition: ${challengeType}`);
     }
     
     const [entry] = await db
       .select()
       .from(journalEntries)
       .where(and(...conditions));
+    
+    console.log(`Storage.getJournalEntry result:`, entry);
     return entry;
   }
 
