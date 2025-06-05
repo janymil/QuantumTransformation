@@ -88,6 +88,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/challenges" component={Challenges} />
         <Route path="/ai-coaching" component={AICoaching} />
+        <Route path="/ai-responses" component={AIResponses} />
         <Route path="/journal" component={() => <Journal />} />
         <Route path="/progress" component={Progress} />
         <Route path="/saved-affirmations" component={SavedAffirmations} />

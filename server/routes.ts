@@ -18,7 +18,7 @@ import {
 } from "./ai-cost-control";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
 import { db } from "./db";
-import { eq, desc, and, ilike, or } from "drizzle-orm";
+import { eq, desc, and, ilike, or, gte, count, avg, sum } from "drizzle-orm";
 import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
 import { 
   determineCacheStrategy, 
@@ -394,22 +394,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.query;
 
       // Build query conditions
-      const conditions = [eq(aiInteractionHistory.userId, userId)];
+      const conditions = [eq(aiResponseHistory.userId, userId)];
 
       if (challengeType && challengeType !== 'all') {
-        conditions.push(eq(aiInteractionHistory.challengeType, challengeType));
+        conditions.push(eq(aiResponseHistory.challengeType, challengeType));
       }
 
       if (modelUsed && modelUsed !== 'all') {
-        conditions.push(eq(aiInteractionHistory.modelUsed, modelUsed));
+        conditions.push(eq(aiResponseHistory.modelUsed, modelUsed));
       }
 
       if (sessionType && sessionType !== 'all') {
-        conditions.push(eq(aiInteractionHistory.sessionType, sessionType));
+        conditions.push(eq(aiResponseHistory.sessionType, sessionType));
       }
 
       if (qualityMin && parseInt(qualityMin) > 1) {
-        conditions.push(gte(aiInteractionHistory.responseQuality, parseInt(qualityMin)));
+        conditions.push(gte(aiResponseHistory.responseQuality, parseInt(qualityMin)));
       }
 
       if (dateRange && dateRange !== 'all') {
@@ -429,15 +429,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         if (startDate) {
-          conditions.push(gte(aiInteractionHistory.createdAt, startDate));
+          conditions.push(gte(aiResponseHistory.createdAt, startDate));
         }
       }
 
       const responses = await db
         .select()
-        .from(aiInteractionHistory)
+        .from(aiResponseHistory)
         .where(and(...conditions))
-        .orderBy(desc(aiInteractionHistory.createdAt))
+        .orderBy(desc(aiResponseHistory.createdAt))
         .limit(parseInt(limit))
         .offset(parseInt(offset));
 
@@ -455,46 +455,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get total responses
       const totalResponses = await db
         .select({ count: count() })
-        .from(aiInteractionHistory)
-        .where(eq(aiInteractionHistory.userId, userId));
+        .from(aiResponseHistory)
+        .where(eq(aiResponseHistory.userId, userId));
 
       // Get model distribution
       const modelDistribution = await db
         .select({
-          model: aiInteractionHistory.modelUsed,
+          model: aiResponseHistory.modelUsed,
           count: count()
         })
-        .from(aiInteractionHistory)
-        .where(eq(aiInteractionHistory.userId, userId))
-        .groupBy(aiInteractionHistory.modelUsed);
+        .from(aiResponseHistory)
+        .where(eq(aiResponseHistory.userId, userId))
+        .groupBy(aiResponseHistory.modelUsed);
 
       // Get average metrics
       const avgMetrics = await db
         .select({
-          avgQuality: avg(aiInteractionHistory.responseQuality),
-          avgCost: avg(aiInteractionHistory.cost),
-          avgResponseTime: avg(aiInteractionHistory.responseTime),
-          totalCost: sum(aiInteractionHistory.cost)
+          avgQuality: avg(aiResponseHistory.responseQuality),
+          avgCost: avg(aiResponseHistory.cost),
+          avgResponseTime: avg(aiResponseHistory.responseTime),
+          totalCost: sum(aiResponseHistory.cost)
         })
-        .from(aiInteractionHistory)
-        .where(eq(aiInteractionHistory.userId, userId));
+        .from(aiResponseHistory)
+        .where(eq(aiResponseHistory.userId, userId));
 
       // Get high quality percentage (8+ rating)
       const highQuality = await db
         .select({ count: count() })
-        .from(aiInteractionHistory)
+        .from(aiResponseHistory)
         .where(and(
-          eq(aiInteractionHistory.userId, userId),
-          gte(aiInteractionHistory.responseQuality, 8)
+          eq(aiResponseHistory.userId, userId),
+          gte(aiResponseHistory.responseQuality, 8)
         ));
 
       // Calculate cost savings based on model usage
       const gpt4oMiniRequests = await db
         .select({ count: count() })
-        .from(aiInteractionHistory)
+        .from(aiResponseHistory)
         .where(and(
-          eq(aiInteractionHistory.userId, userId),
-          eq(aiInteractionHistory.modelUsed, 'gpt-4o-mini')
+          eq(aiResponseHistory.userId, userId),
+          eq(aiResponseHistory.modelUsed, 'gpt-4o-mini')
         ));
 
       const total = totalResponses[0]?.count || 0;
