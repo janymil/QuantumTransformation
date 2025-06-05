@@ -1,9 +1,9 @@
 // Challenge content generation using separate content files
-import { getQuantumConsciousnessContent } from '@/content/quantum-consciousness';
-import { getMoneyManifestationContent } from '@/content/money-manifestation';
-import { getQuantumHealthContent } from '@/content/quantum-health';
-import { getQuantumRelationshipsContent } from '@/content/quantum-relationships';
-import { getMoneyBlocksClearingContent } from '@/content/money-blocks-clearing';
+import { getQuantumConsciousnessContent } from '@/components/challenges/quantum-consciousness/quantum-consciousness';
+import { getMoneyManifestationContent } from '@/components/challenges/money-manifestation/money-manifestation';
+import { getQuantumHealthContent } from '@/components/challenges/quantum-health/quantum-health';
+import { getQuantumRelationshipsContent } from '@/components/challenges/quantum-relationships/quantum-relationships';
+import { getMoneyBlocksClearingContent } from '@/components/challenges/money-blocks-clearing/money-blocks-clearing';
 
 export function generateChallengeContent(day: number, type: string) {
   const contentMap: Record<string, (day: number) => any> = {
