@@ -191,47 +191,16 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview" className="w-full">
-            {(() => {
-              const availableTabs = [];
-              
-              // Always show overview
-              availableTabs.push({ value: "overview", label: "Overview" });
-              
-              // Show practice tab if practice content exists
-              if (content.practice && (content.practice.morning || content.practice.daytime || content.practice.evening)) {
-                availableTabs.push({ value: "practice", label: "Practice" });
-              }
-              
-              // Show affirmations tab if affirmations exist
-              if (content.affirmations && content.affirmations.length > 0) {
-                availableTabs.push({ value: "affirmations", label: "Affirmations" });
-              }
-              
-              // Show videos tab if video links exist
-              if (content.videoLinks && content.videoLinks.length > 0) {
-                availableTabs.push({ value: "videos", label: "Videos" });
-              }
-              
-              // Show insights tab if insights exist
-              if (content.practice?.insights && content.practice.insights.length > 0) {
-                availableTabs.push({ value: "insights", label: "Insights" });
-              }
-              
-              // Show tools tab if tools content exists (for now, always show for non-intro days)
-              if (effectiveDay > 0) {
-                availableTabs.push({ value: "tools", label: "Practice Tools" });
-              }
-
-              return (
-                <TabsList className={`grid w-full grid-cols-${availableTabs.length}`}>
-                  {availableTabs.map(tab => (
-                    <TabsTrigger key={tab.value} value={tab.value}>
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              );
-            })()}
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="practice">Practice</TabsTrigger>
+              <TabsTrigger value="affirmations">Affirmations</TabsTrigger>
+              {content.videoLinks && content.videoLinks.length > 0 && (
+                <TabsTrigger value="videos">Videos</TabsTrigger>
+              )}
+              <TabsTrigger value="insights">Insights</TabsTrigger>
+              <TabsTrigger value="tools">Practice Tools</TabsTrigger>
+            </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
               <Card>

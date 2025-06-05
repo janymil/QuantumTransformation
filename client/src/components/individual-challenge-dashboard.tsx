@@ -131,29 +131,6 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Introduction Section for Money Blocks Clearing */}
-        {challengeType === 'money_blocks_clearing' && (
-          <Card className="mb-8 border-2 border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-amber-800 dark:text-amber-200">
-                <BookOpen className="h-6 w-6" />
-                <span>Welcome to Your 30-Day Quantum Leap Challenge</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-amber-700 dark:text-amber-300 mb-4">
-                Start your journey with our comprehensive introduction that explains the science, structure, and commitment behind your transformation.
-              </p>
-              <Link href={`/${getChallengeUrl(challengeType)}/day/0`}>
-                <Button className="bg-amber-600 hover:bg-amber-700 text-white">
-                  <Play className="h-4 w-4 mr-2" />
-                  Begin with Introduction
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Progress Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
