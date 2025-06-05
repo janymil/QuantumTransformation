@@ -424,8 +424,8 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
             </Link>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <Link href={`/${getChallengeUrl(challengeType)}/progress`}>
+          <Link href={`/${getChallengeUrl(challengeType)}/progress`}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -444,8 +444,8 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                   <ChevronRight className="h-5 w-5 text-gray-400" />
                 </div>
               </CardContent>
-            </Link>
-          </Card>
+            </Card>
+          </Link>
         </div>
 
         {/* Challenge Description */}
