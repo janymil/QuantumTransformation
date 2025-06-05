@@ -104,14 +104,14 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
     onSuccess: () => {
       setIsCompleted(true);
       
-      // Special handling for Day 0 - redirect to Day 1
+      // Special handling for Day 0 - redirect to challenge dashboard
       if (effectiveDay === 0 && content.completionRedirectsToDay1) {
         toast({
           title: "Introduction Complete!",
-          description: "Moving to Day 1 of your transformation journey.",
+          description: "Welcome to your transformation journey! Day 1 is now unlocked.",
         });
         setTimeout(() => {
-          window.location.href = `/${getChallengeUrl(challengeType)}/day/1`;
+          window.location.href = `/${getChallengeUrl(challengeType)}`;
         }, 1500);
       } else {
         setShowCelebration(true);
@@ -148,13 +148,16 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   const handleComplete = () => {
     if (isCompleted) return;
 
-    completionMutation.mutate({
+    const completionData = {
       day: effectiveDay,
       challengeType,
       timeSpent,
       rating: 5,
       notes: "",
-    });
+    };
+    
+    console.log("Completion data being sent:", completionData);
+    completionMutation.mutate(completionData);
   };
 
   const formatTime = (seconds: number) => {
