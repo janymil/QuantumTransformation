@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
 import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
+import OnboardingTour from "@/components/onboarding-tour";
 import { Play, BookOpen, Brain, Target, Zap } from "lucide-react";
 import { Link } from "wouter";
 
@@ -27,7 +28,7 @@ export default function Dashboard() {
         <div className="space-y-8">
           
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between" data-tour-target="dashboard-header">
             <div>
               <h1 className="text-3xl font-bold text-foreground">
                 Welcome back, {(user as any)?.firstName || "Transformer"}!
@@ -37,7 +38,7 @@ export default function Dashboard() {
               </p>
             </div>
             <Link href="/challenges">
-              <Button>
+              <Button data-tour-target="challenges-section">
                 <Play className="w-4 h-4 mr-2" />
                 Start New Challenge
               </Button>
@@ -45,7 +46,9 @@ export default function Dashboard() {
           </div>
 
           {/* Multi-Challenge Dashboard */}
-          <MultiChallengeDashboard />
+          <div data-tour-target="practice-area">
+            <MultiChallengeDashboard />
+          </div>
 
           {/* Additional Learning Tools */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -62,13 +65,13 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Link href="/journal">
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full" data-tour-target="journal-section">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Journal Insights
                   </Button>
                 </Link>
                 <Link href="/progress">
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full" data-tour-target="progress-section">
                     <Target className="w-4 h-4 mr-2" />
                     Progress Analytics
                   </Button>
@@ -84,6 +87,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Onboarding Tour */}
+      <OnboardingTour />
     </div>
   );
 }
