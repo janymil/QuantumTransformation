@@ -136,6 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const completionData = insertChallengeCompletionSchema.parse({
         ...req.body,
         userId,
+        challengeType: req.body.challengeType || "general_quantum",
       });
       
       console.log("Challenge completion request:", completionData);
@@ -150,25 +151,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const completion = await storage.createChallengeCompletion(completionData);
       
-      // Update user progress
-      const progress = await storage.getUserProgress(userId);
-      if (progress) {
-        const completedDays = [...(progress.completedDays as number[] || []), completionData.day];
-        const newCurrentDay = Math.max(completionData.day + 1, progress.currentDay ?? 0);
-        
-        // Calculate streak
-        const today = new Date().toISOString().split('T')[0];
-        const streakCount = progress.lastActivityDate === today ? (progress.streakCount ?? 0) : (progress.streakCount ?? 0) + 1;
-        
-        await storage.updateUserProgress(userId, {
-          completedDays,
-          currentDay: newCurrentDay,
-          streakCount,
-          lastActivityDate: today,
-        });
-        
-        // Check for achievements
-        await checkAndUnlockAchievements(userId, completedDays.length, streakCount);
+      // Update challenge-specific progress
+      if (completionData.challengeType) {
+        const progress = await storage.getUserProgressForChallenge(userId, completionData.challengeType);
+        if (progress) {
+          const completedDays = [...(progress.completedDays as number[] || []), completionData.day];
+          const newCurrentDay = Math.max(completionData.day + 1, progress.currentDay ?? 0);
+          
+          // Calculate streak
+          const today = new Date().toISOString().split('T')[0];
+          const streakCount = progress.lastActivityDate === today ? (progress.streakCount ?? 0) : (progress.streakCount ?? 0) + 1;
+          
+          await storage.updateChallengeProgress(userId, completionData.challengeType, {
+            completedDays,
+            currentDay: newCurrentDay,
+            streakCount,
+            lastActivityDate: today,
+          });
+          
+          // Check for achievements
+          await checkAndUnlockAchievements(userId, completedDays.length, streakCount);
+        }
       }
       
       res.json(completion);

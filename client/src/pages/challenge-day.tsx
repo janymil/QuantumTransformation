@@ -285,6 +285,8 @@ export default function ChallengeDay() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/progress"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/progress/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/challenges/completion"] });
       setIsCompleted(true);
       
       // Trigger celebration animation
