@@ -34,6 +34,9 @@ import { generateChallengeContent } from "@/components/challenge-day/challenge-c
 import ChallengeContent from "@/components/challenge-day/challenge-content";
 import ActionButtons from "@/components/challenge-day/action-buttons";
 import ContextualTutorial from "@/components/contextual-tutorial";
+import VideoPlayerTab from "@/components/video-player-tab";
+import AffirmationsSection from "@/components/affirmations-section";
+import EnhancedPracticeContent from "@/components/enhanced-practice-content";
 
 interface ChallengeDayProps {
   challengeType?: string;
@@ -198,9 +201,13 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="practice">Practice</TabsTrigger>
+              <TabsTrigger value="affirmations">Affirmations</TabsTrigger>
+              {content.videoLinks && content.videoLinks.length > 0 && (
+                <TabsTrigger value="videos">Videos</TabsTrigger>
+              )}
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="science">Science</TabsTrigger>
             </TabsList>
@@ -247,105 +254,25 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
             </TabsContent>
 
             <TabsContent value="practice" className="space-y-6">
-              {/* Check if challenge has 3-part structure (morning, daytime, evening) */}
-              {content.practice.morning || content.practice.daytime || content.practice.evening ? (
-                <>
-                  {/* Morning Practice */}
-                  {content.practice.morning && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Sunrise className="w-6 h-6 mr-2 text-orange-500" />
-                          {content.practice.morning.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <ol className="space-y-3">
-                            {content.practice.morning.steps.map((step: string, index: number) => (
-                              <li key={index} className="flex items-start space-x-3">
-                                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                  <span className="text-white text-sm font-medium">{index + 1}</span>
-                                </div>
-                                <p className="text-muted-foreground">{step}</p>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+              <EnhancedPracticeContent 
+                practice={content.practice} 
+                duration={content.duration} 
+              />
+            </TabsContent>
 
-                  {/* Daytime Practice */}
-                  {content.practice.daytime && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Sun className="w-6 h-6 mr-2 text-yellow-500" />
-                          {content.practice.daytime.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <ol className="space-y-3">
-                            {content.practice.daytime.steps.map((step: string, index: number) => (
-                              <li key={index} className="flex items-start space-x-3">
-                                <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                  <span className="text-white text-sm font-medium">{index + 1}</span>
-                                </div>
-                                <p className="text-muted-foreground">{step}</p>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+            <TabsContent value="affirmations" className="space-y-6">
+              <AffirmationsSection 
+                affirmations={[content.affirmation || ""]}
+                dayNumber={currentDay}
+                challengeType={challengeType || "general_quantum"}
+              />
+            </TabsContent>
 
-                  {/* Evening Practice */}
-                  {content.practice.evening && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Moon className="w-6 h-6 mr-2 text-purple-500" />
-                          {content.practice.evening.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <ol className="space-y-3">
-                            {content.practice.evening.steps.map((step: string, index: number) => (
-                              <li key={index} className="flex items-start space-x-3">
-                                <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                  <span className="text-white text-sm font-medium">{index + 1}</span>
-                                </div>
-                                <p className="text-muted-foreground">{step}</p>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Tips and Insights for 3-part structure */}
-                  <div className="bg-muted/50 rounded-lg p-6">
-                    <h4 className="font-semibold text-foreground mb-3 flex items-center">
-                      <Lightbulb className="w-5 h-5 mr-2 text-warning" />
-                      Practice Tips
-                    </h4>
-                    <ul className="space-y-2">
-                      {content.practice.tips.map((tip: string, index: number) => (
-                        <li key={index} className="text-muted-foreground flex items-start">
-                          <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2 mr-3"></span>
-                          {tip}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
-              ) : (
-                /* Original single practice format for backward compatibility */
+            {content.videoLinks && content.videoLinks.length > 0 && (
+              <TabsContent value="videos" className="space-y-6">
+                <VideoPlayerTab videoLinks={content.videoLinks} />
+              </TabsContent>
+            )}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
