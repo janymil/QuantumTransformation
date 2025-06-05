@@ -101,7 +101,7 @@ function Router() {
         <Route path="/money-blocks/journal" component={MoneyJournal} />
         <Route path="/money-blocks/progress" component={MoneyProgress} />
         <Route path="/money-blocks/day/:day" component={MoneyDay} />
-        <Route path="/money-blocks-clearing" component={MoneyDashboard} />
+        <Route path="/money-blocks-clearing" component={MoneyBlocksClearingDashboard} />
         <Route path="/money-blocks-clearing/journal" component={MoneyJournal} />
         <Route path="/money-blocks-clearing/progress" component={MoneyProgress} />
         <Route path="/money-blocks-clearing/day/:day" component={MoneyDay} />

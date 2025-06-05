@@ -236,8 +236,8 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
             >
-              {Array.from({ length: totalDays }, (_, i) => {
-                const day = i + 1;
+              {Array.from({ length: totalDays + 1 }, (_, i) => {
+                const day = i;
                 const isCompleted = challengeCompletions.some((c: any) => c.day === day);
                 const isCurrent = day === currentDay;
                 const isAccessible = day <= currentDay;
@@ -257,6 +257,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                       7: 'Weekly Reflection & Integration'
                     },
                     'money_blocks_clearing': {
+                      0: 'Introduction to the Program',
                       1: 'Identifying Money Blocks',
                       2: 'Childhood Money Stories',
                       3: 'Scarcity vs Abundance',
