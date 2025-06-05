@@ -83,9 +83,16 @@ interface AIRequest {
  * Create hash of input for cache lookup and duplicate detection
  */
 export function createInputHash(input: string, requestType: string, challengeType?: string, day?: number): string {
-  const crypto = require('crypto');
   const hashInput = `${requestType}:${challengeType || 'none'}:${day || 0}:${input.toLowerCase().trim()}`;
-  return crypto.createHash('md5').update(hashInput).digest('hex');
+  
+  // Simple hash function for input deduplication
+  let hash = 0;
+  for (let i = 0; i < hashInput.length; i++) {
+    const char = hashInput.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(16);
 }
 
 /**

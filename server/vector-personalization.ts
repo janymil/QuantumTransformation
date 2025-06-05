@@ -200,14 +200,19 @@ export class VectorPersonalizationEngine {
   }
 
   /**
-   * Get personalized context using semantic search
+   * Get personalized context using semantic search with simplified output for hybrid routing
    */
   async getPersonalizedContext(
     userId: string, 
     query: string, 
     challengeType: string,
     maxResults: number = 10
-  ): Promise<PersonalizedContext> {
+  ): Promise<{
+    personalizedPrompt: string;
+    relevantContext: string[];
+    userInsights: string[];
+    challengeContent: string[];
+  }> {
     try {
       const queryEmbedding = await this.createEmbedding(query);
 
@@ -241,76 +246,19 @@ export class VectorPersonalizationEngine {
         }
       }
 
-      const personalizedPrompt = this.createPersonalizedPrompt(
-        challengeContent,
-        userHistory,
-        challengeType,
-        query
-      );
-
-      return {
-        challengeContent,
-        userHistory,
-        relevantInsights,
-        personalizedPrompt
-      };
-
-    } catch (error) {
-      console.error("Error getting personalized context:", error);
-      return {
-        challengeContent: [],
-        userHistory: [],
-        relevantInsights: [],
-        personalizedPrompt: "Error retrieving personalized context. Provide general guidance."
-      };
-    }
-  }
-
-  /**
-   * Get simplified personalized context for external AI routing
-   */
-  async getPersonalizedContext(
-    userId: string,
-    query: string,
-    challengeType: string
-  ): Promise<{
-    personalizedPrompt: string;
-    relevantContext: string[];
-    userInsights: string[];
-    challengeContent: string[];
-  }> {
-    try {
-      // Get relevant challenge content
-      const challengeResults = await this.semanticSearch(
-        query,
-        `challenge_${challengeType}`,
-        3
-      );
-
-      // Get user-specific insights
-      const userResults = await this.semanticSearch(
-        query,
-        `user_${userId}`,
-        2
-      );
-
-      const challengeContent = challengeResults.map(r => r.pageContent);
-      const userInsights = userResults.map(r => r.pageContent);
-
-      // Build personalized prompt for external systems
       const personalizedPrompt = `
 CHALLENGE CONTEXT (${challengeType}):
 ${challengeContent.join('\n\n')}
 
 USER INSIGHTS & HISTORY:
-${userInsights.join('\n\n')}
+${userHistory.join('\n\n')}
 
 Use this context to provide highly personalized guidance that references specific techniques and builds upon the user's documented experiences.`;
 
       return {
         personalizedPrompt,
-        relevantContext: [...challengeContent, ...userInsights],
-        userInsights,
+        relevantContext: [...challengeContent, ...userHistory],
+        userInsights: userHistory,
         challengeContent
       };
 
@@ -324,6 +272,8 @@ Use this context to provide highly personalized guidance that references specifi
       };
     }
   }
+
+
 
   /**
    * Create optimized personalized prompt with semantic context
