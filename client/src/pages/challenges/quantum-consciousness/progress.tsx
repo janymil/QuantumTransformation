@@ -33,7 +33,7 @@ export default function QuantumConsciousnessProgress() {
   // Find the progress for quantum consciousness challenge
   const allProgress = (progressData as any)?.allProgress || [];
   const challengeProgress = allProgress.find((p: any) => p.challengeType === 'general_quantum');
-  
+
   if (!challengeProgress) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -181,7 +181,9 @@ export default function QuantumConsciousnessProgress() {
                         <span className="font-medium">Day {completion.day} Completed</span>
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {format(new Date(completion.createdAt), 'MMM dd, yyyy')}
+                        {completion.createdAt && !isNaN(new Date(completion.createdAt).getTime()) 
+                          ? format(new Date(completion.createdAt), 'MMM dd, yyyy')
+                          : 'Date unavailable'}
                       </span>
                     </div>
                   ))}
