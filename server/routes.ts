@@ -217,6 +217,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cache Verification endpoint - test cache system functionality
+  app.get("/api/ai/verify-cache", isAuthenticated, async (req: any, res) => {
+    try {
+      const { verifyCacheSystem } = await import("./cache-verification");
+      const verification = await verifyCacheSystem();
+      
+      res.json({
+        status: verification.systemStatus,
+        testResults: verification.testResults,
+        summary: verification.summary,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Cache verification error:", error);
+      res.status(500).json({ error: "Failed to verify cache system" });
+    }
+  });
+
+  // Cache Statistics endpoint
+  app.get("/api/ai/cache-stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const { getCacheStatistics } = await import("./cache-verification");
+      const stats = await getCacheStatistics();
+      
+      if (stats) {
+        res.json(stats);
+      } else {
+        res.status(500).json({ error: "Failed to retrieve cache statistics" });
+      }
+    } catch (error) {
+      console.error("Cache statistics error:", error);
+      res.status(500).json({ error: "Failed to get cache statistics" });
+    }
+  });
+
   // Market Research endpoint for pricing analysis
   app.get("/api/market-research", isAuthenticated, async (req: any, res) => {
     try {
@@ -238,6 +273,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test endpoint without auth to verify server is working
   app.get('/api/test', async (req: any, res) => {
     res.json({ message: "Server is working", timestamp: new Date().toISOString() });
+  });
+
+  // Cache demonstration endpoint - no auth required for testing
+  app.get('/api/cache-demo', async (req: any, res) => {
+    try {
+      const { determineCacheStrategy, getTemplateResponse } = await import("./enhanced-caching");
+      const { createInputHash } = await import("./ai-cost-control");
+      
+      const testQuestions = [
+        "How long should I practice today's meditation?",
+        "What if I'm having trouble with this exercise?",
+        "How does this connect to quantum physics?"
+      ];
+      
+      const results = [];
+      
+      for (const question of testQuestions) {
+        const startTime = Date.now();
+        
+        // Test caching strategy
+        const strategy = determineCacheStrategy(question, 'general_quantum', 1, 'basic');
+        
+        let responseSource = 'unknown';
+        let cost = 0.02;
+        let hasResponse = false;
+        
+        // Check if template response exists
+        if (strategy.useTemplateResponse) {
+          const templateResponse = getTemplateResponse(strategy.reason);
+          if (templateResponse) {
+            responseSource = 'template';
+            cost = 0;
+            hasResponse = true;
+          }
+        }
+        
+        const responseTime = Date.now() - startTime;
+        
+        results.push({
+          question,
+          strategy: strategy.reason,
+          useTemplate: strategy.useTemplateResponse,
+          usePreGenerated: strategy.usePreGenerated,
+          generateFresh: strategy.generateFresh,
+          responseSource,
+          responseTime,
+          cost,
+          hasResponse
+        });
+      }
+      
+      const summary = {
+        totalQuestions: results.length,
+        templateHits: results.filter(r => r.responseSource === 'template').length,
+        avgResponseTime: Math.round(results.reduce((sum, r) => sum + r.responseTime, 0) / results.length),
+        costSavings: results.filter(r => r.cost === 0).length * 0.02
+      };
+      
+      res.json({
+        message: "Cache system demonstration",
+        results,
+        summary,
+        explanation: "This shows how the enhanced caching system routes different question types to appropriate response sources",
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error("Cache demo error:", error);
+      res.status(500).json({ error: "Failed to demonstrate cache system" });
+    }
   });
 
   // Saved phrases routes
