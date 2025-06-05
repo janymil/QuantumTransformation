@@ -18,6 +18,11 @@ import {
   Clock,
   Star,
   Zap,
+  History,
+  Search,
+  Filter,
+  Heart as HeartIcon,
+  Trash2,
   BookOpen,
   Users,
   BarChart3

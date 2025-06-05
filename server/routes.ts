@@ -17,6 +17,8 @@ import {
   getUserAIStats 
 } from "./ai-cost-control";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
+import { db } from "./db";
+import { eq, desc, and, ilike, or } from "drizzle-orm";
 import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
 import { 
   determineCacheStrategy, 
@@ -473,6 +475,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Generated coaching response:", coaching);
       
+      // Save to response history
+      await db.insert(aiResponseHistory).values({
+        userId,
+        sessionType: 'coaching',
+        userInput: JSON.stringify(coachingRequest),
+        aiResponse: coaching,
+        challengeType: coachingRequest.challengeType,
+        day: coachingRequest.currentDay,
+        tags: ['coaching', 'personalized', coachingRequest.challengeType || 'general']
+      });
+      
       res.json(coaching);
     } catch (error) {
       console.error("Error generating personalized coaching:", error);
@@ -505,6 +518,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Test error generating personalized affirmation:", error);
       res.status(500).json({ message: "Failed to generate affirmation", error: error.message });
+    }
+  });
+
+  // AI Response History endpoints
+  app.get('/api/ai/response-history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { 
+        sessionType, 
+        challengeType, 
+        searchQuery, 
+        isFavorited, 
+        limit = 50, 
+        offset = 0 
+      } = req.query;
+
+      // Build conditions array
+      const conditions = [eq(aiResponseHistory.userId, userId)];
+      
+      if (sessionType) {
+        conditions.push(eq(aiResponseHistory.sessionType, sessionType));
+      }
+      if (challengeType) {
+        conditions.push(eq(aiResponseHistory.challengeType, challengeType));
+      }
+      if (isFavorited === 'true') {
+        conditions.push(eq(aiResponseHistory.isFavorited, true));
+      }
+      if (searchQuery) {
+        conditions.push(
+          or(
+            ilike(aiResponseHistory.userInput, `%${searchQuery}%`),
+            ilike(aiResponseHistory.aiResponse, `%${searchQuery}%`)
+          )
+        );
+      }
+
+      const responses = await db
+        .select()
+        .from(aiResponseHistory)
+        .where(and(...conditions))
+        .orderBy(desc(aiResponseHistory.createdAt))
+        .limit(parseInt(limit as string))
+        .offset(parseInt(offset as string));
+
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching AI response history:", error);
+      res.status(500).json({ message: "Failed to fetch response history", error: (error as Error).message });
+    }
+  });
+
+  // Toggle favorite status
+  app.patch('/api/ai/response-history/:id/favorite', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const responseId = parseInt(req.params.id);
+      const { isFavorited } = req.body;
+
+      await db
+        .update(aiResponseHistory)
+        .set({ isFavorited, updatedAt: new Date() })
+        .where(and(
+          eq(aiResponseHistory.id, responseId),
+          eq(aiResponseHistory.userId, userId)
+        ));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating favorite status:", error);
+      res.status(500).json({ message: "Failed to update favorite status", error: (error as Error).message });
+    }
+  });
+
+  // Rate AI response
+  app.patch('/api/ai/response-history/:id/rate', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const responseId = parseInt(req.params.id);
+      const { rating } = req.body;
+
+      await db
+        .update(aiResponseHistory)
+        .set({ rating, updatedAt: new Date() })
+        .where(and(
+          eq(aiResponseHistory.id, responseId),
+          eq(aiResponseHistory.userId, userId)
+        ));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error rating response:", error);
+      res.status(500).json({ message: "Failed to rate response", error: (error as Error).message });
+    }
+  });
+
+  // Delete AI response from history
+  app.delete('/api/ai/response-history/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const responseId = parseInt(req.params.id);
+
+      await db
+        .delete(aiResponseHistory)
+        .where(and(
+          eq(aiResponseHistory.id, responseId),
+          eq(aiResponseHistory.userId, userId)
+        ));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting response:", error);
+      res.status(500).json({ message: "Failed to delete response", error: (error as Error).message });
     }
   });
 
