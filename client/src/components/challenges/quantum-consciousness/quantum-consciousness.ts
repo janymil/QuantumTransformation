@@ -50,8 +50,9 @@ export function getQuantumConsciousnessContent(day: number): DayContent {
   };
 
   const baseContent = progressiveContent[day] || progressiveContent[1];
-  const topicIndex = (day - 1) % phaseContent[phase as keyof typeof phaseContent].topics.length;
-  const currentTopic = phaseContent[phase as keyof typeof phaseContent].topics[topicIndex];
+  const phaseData = phaseContent[phase as keyof typeof phaseContent];
+  const topicIndex = (day - 1) % (phaseData?.topics?.length || 1);
+  const currentTopic = phaseData?.topics?.[topicIndex] || 'quantum consciousness';
 
   return {
     day,
