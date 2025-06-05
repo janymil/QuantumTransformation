@@ -65,6 +65,15 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   
   const challengeType = propChallengeType || challengeTypeMapping[urlChallengeType] || 'general_quantum';
   
+  console.log('Challenge Day Debug:', {
+    pathname: window.location.pathname,
+    urlParts,
+    urlChallengeType,
+    propChallengeType,
+    mappedType: challengeTypeMapping[urlChallengeType],
+    finalChallengeType: challengeType
+  });
+  
   const effectiveDay = currentDay;
 
   // Fetch user progress data
