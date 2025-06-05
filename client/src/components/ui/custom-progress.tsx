@@ -16,7 +16,7 @@ export function CustomProgress({
   
   return (
     <div className={cn("relative", className)}>
-      <div className="w-full bg-secondary rounded-full h-4 overflow-hidden">
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
         <div
           className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
           style={{ width: `${clampedValue}%` }}
