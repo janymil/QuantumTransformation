@@ -103,7 +103,11 @@ function CollapsibleJournalEntry({ entry }: { entry: JournalEntry }) {
   );
 }
 
-export default function JournalNew() {
+interface JournalNewProps {
+  challengeType?: string;
+}
+
+export default function JournalNew({ challengeType }: JournalNewProps = {}) {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);

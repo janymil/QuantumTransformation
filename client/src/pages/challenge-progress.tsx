@@ -2,13 +2,17 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import IndividualChallengeDashboard from "@/components/individual-challenge-dashboard";
 
-export default function ChallengeProgressPage() {
+interface ChallengeProgressProps {
+  challengeType?: string;
+}
+
+export default function ChallengeProgress({ challengeType: propChallengeType }: ChallengeProgressProps = {}) {
   const { isAuthenticated } = useAuth();
   const [location] = useLocation();
   
-  // Extract challenge type from URL params
+  // Use prop first, then URL params as fallback
   const urlParams = new URLSearchParams(window.location.search);
-  const challengeType = urlParams.get('type');
+  const challengeType = propChallengeType || urlParams.get('type');
 
   if (!isAuthenticated) {
     return (
