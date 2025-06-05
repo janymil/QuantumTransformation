@@ -9,6 +9,7 @@ import { registerChallengeRoutes } from "./routes/challenge-routes";
 import { registerProgressRoutes } from "./routes/progress-routes";
 import { registerJournalRoutes } from "./routes/journal-routes";
 import { registerAIRoutes } from "./routes/ai-routes";
+import { generatePersonalizedAffirmation } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -187,6 +188,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting phrase:", error);
       res.status(500).json({ message: "Failed to delete phrase" });
+    }
+  });
+
+  // AI personalized affirmation endpoint
+  app.post('/api/ai/personalized-affirmation', isAuthenticated, async (req: any, res) => {
+    try {
+      const request = req.body;
+      const affirmation = await generatePersonalizedAffirmation(request);
+      res.json({ affirmation });
+    } catch (error) {
+      console.error("Error generating personalized affirmation:", error);
+      res.status(500).json({ message: "Failed to generate affirmation" });
     }
   });
 

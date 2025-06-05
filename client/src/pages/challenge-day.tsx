@@ -28,6 +28,7 @@ import ProgressCelebration from "@/components/progress-celebration";
 import ChallengeHeader from "@/components/challenge-day/challenge-header";
 import { generateChallengeContent } from "@/components/challenge-day/challenge-content-generator";
 import ChallengeContent from "@/components/challenge-day/challenge-content";
+import PracticeToolsHub from "@/components/practice-tools/practice-tools-hub";
 import ActionButtons from "@/components/challenge-day/action-buttons";
 import ContextualTutorial from "@/components/contextual-tutorial";
 import VideoPlayerTab from "@/components/video-player-tab";
@@ -176,7 +177,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="practice">Practice</TabsTrigger>
               <TabsTrigger value="affirmations">Affirmations</TabsTrigger>
@@ -184,6 +185,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                 <TabsTrigger value="videos">Videos</TabsTrigger>
               )}
               <TabsTrigger value="insights">Insights</TabsTrigger>
+              <TabsTrigger value="tools">Practice Tools</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -263,6 +265,13 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="tools" className="space-y-6">
+              <PracticeToolsHub 
+                day={currentDay} 
+                challengeType={challengeType || "general_quantum"} 
+              />
             </TabsContent>
           </Tabs>
         </div>
