@@ -339,7 +339,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
             {!content.isIntroductionDay && (
               <TabsContent value="affirmations" className="space-y-6">
                 <EnhancedAffirmationsSection 
-                  affirmations={[content.affirmation || ""]}
+                  affirmations={content.affirmations || [content.affirmation || ""]}
                   dayNumber={currentDay}
                   challengeType={challengeType || "general_quantum"}
                 />

@@ -61,10 +61,9 @@ export const day02Content = {
   },
   
   affirmations: [
-    "I am ready to let go of these old beliefs and open to new empowering truths.",
-    "I am free to create my abundant life.",
     "Money flows to me freely and abundantly.",
-    "I forgive myself and others for any past mistakes or beliefs that have held me back. I release all emotional blocks to abundance."
+    "I forgive myself and others for any past mistakes or beliefs that have held me back. I release all emotional blocks to abundance.",
+    "I am free to create my abundant life."
   ],
   
   quote: {
