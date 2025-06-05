@@ -178,11 +178,11 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   day: integer("day"),
   
   // Analytics fields for cost tracking
-  modelUsed: varchar("model_used").default("gpt-4o"), // 'gpt-4o', 'gpt-4o-mini'
+  model: varchar("model").default("gpt-4o"), // 'gpt-4o', 'gpt-4o-mini'
   tokenCount: integer("token_count").default(0),
   cost: real("cost").default(0), // Cost in dollars
   responseTime: integer("response_time").default(0), // milliseconds
-  responseQuality: integer("response_quality").default(8), // 1-10 scale
+  qualityScore: integer("quality_score").default(8), // 1-10 scale
   
   // User interaction fields
   tags: jsonb("tags").default([]), // For filtering and search
@@ -195,8 +195,47 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   index("ai_response_history_user_idx").on(table.userId),
   index("ai_response_history_session_type_idx").on(table.sessionType),
   index("ai_response_history_challenge_type_idx").on(table.challengeType),
-  index("ai_response_history_model_idx").on(table.modelUsed),
+  index("ai_response_history_model_idx").on(table.model),
   index("ai_response_history_created_at_idx").on(table.createdAt),
+]);
+
+// AI Usage Tracking - Independent tracking for all AI requests (analytics-focused)
+export const aiUsageTracking = pgTable("ai_usage_tracking", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  requestType: varchar("request_type").notNull(), // 'coaching', 'questions', 'chat', 'explanation'
+  challengeType: varchar("challenge_type"),
+  day: integer("day"),
+  
+  // Request details
+  model: varchar("model").notNull(), // 'gpt-4o', 'gpt-4o-mini'
+  inputTokens: integer("input_tokens").notNull(),
+  outputTokens: integer("output_tokens").notNull(),
+  totalTokens: integer("total_tokens").notNull(),
+  cost: decimal("cost", { precision: 8, scale: 6 }).notNull(), // Precise cost tracking
+  
+  // Performance metrics
+  responseTime: integer("response_time").notNull(), // milliseconds
+  requestHash: varchar("request_hash"), // For duplicate detection
+  wasFromCache: boolean("was_from_cache").default(false),
+  
+  // Quality and routing
+  modelSelected: varchar("model_selected").notNull(), // 'intelligent_routing', 'manual_selection'
+  complexityScore: integer("complexity_score").default(5), // 1-10 scale
+  qualityScore: integer("quality_score").default(8), // 1-10 scale (estimated or user-rated)
+  
+  // Metadata
+  userAgent: varchar("user_agent"),
+  ipAddress: varchar("ip_address"),
+  sessionId: varchar("session_id"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("ai_usage_tracking_user_idx").on(table.userId),
+  index("ai_usage_tracking_model_idx").on(table.model),
+  index("ai_usage_tracking_date_idx").on(table.createdAt),
+  index("ai_usage_tracking_cost_idx").on(table.cost),
+  index("ai_usage_tracking_challenge_idx").on(table.challengeType),
 ]);
 
 // Schema types
@@ -322,18 +361,7 @@ export type KnowledgeQuiz = typeof knowledgeQuizzes.$inferSelect;
 export type InsertUserQuizResult = typeof userQuizResults.$inferInsert;
 export type UserQuizResult = typeof userQuizResults.$inferSelect;
 
-// AI Cost Control System
-export const aiUsageTracking = pgTable("ai_usage_tracking", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  requestType: varchar("request_type").notNull(), // 'explanation', 'coaching', 'analysis', etc.
-  inputHash: varchar("input_hash"), // Hash of input to detect duplicates
-  tokensUsed: integer("tokens_used").default(0),
-  cost: integer("cost").default(0), // in cents
-  isFromCache: boolean("is_from_cache").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
+// AI Response Cache for optimizing repeat requests
 export const aiResponseCache = pgTable("ai_response_cache", {
   id: serial("id").primaryKey(),
   inputHash: varchar("input_hash").unique().notNull(),
@@ -349,8 +377,6 @@ export const aiResponseCache = pgTable("ai_response_cache", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export type InsertAiUsageTracking = typeof aiUsageTracking.$inferInsert;
-export type AiUsageTracking = typeof aiUsageTracking.$inferSelect;
 export type InsertAiResponseCache = typeof aiResponseCache.$inferInsert;
 export type AiResponseCache = typeof aiResponseCache.$inferSelect;
 
