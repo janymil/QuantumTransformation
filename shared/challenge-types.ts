@@ -4,6 +4,7 @@ export interface ChallengeType {
   subtitle: string;
   description: string;
   duration: string;
+  durationDays: number;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   icon: string;
   color: string;
@@ -20,6 +21,7 @@ export const CHALLENGE_TYPES: Record<string, ChallengeType> = {
     subtitle: 'Master the fundamentals of quantum reality',
     description: 'A comprehensive introduction to quantum consciousness principles combining Joe Dispenza\'s neuroscience with Neville Goddard\'s manifestation techniques. Perfect for beginners ready to transform their reality.',
     duration: '30 days',
+    durationDays: 30,
     difficulty: 'Beginner',
     icon: '🧠',
     color: 'blue',
@@ -39,7 +41,8 @@ export const CHALLENGE_TYPES: Record<string, ChallengeType> = {
     title: 'Quantum Money Manifestation',
     subtitle: 'Align with abundance consciousness',
     description: 'Transform your relationship with money using quantum field principles. Learn to operate from abundance consciousness and attract financial prosperity through elevated emotional states.',
-    duration: '30 days',
+    duration: '21 days',
+    durationDays: 21,
     difficulty: 'Intermediate',
     icon: '💰',
     color: 'green',
@@ -59,7 +62,8 @@ export const CHALLENGE_TYPES: Record<string, ChallengeType> = {
     title: 'Quantum Health Transformation',
     subtitle: 'Heal from the quantum field',
     description: 'Harness the power of quantum healing to transform your physical and mental well-being. Use consciousness to influence your biology and create optimal health from within.',
-    duration: '30 days',
+    duration: '21 days',
+    durationDays: 21,
     difficulty: 'Intermediate',
     icon: '🌱',
     color: 'emerald',
@@ -79,7 +83,8 @@ export const CHALLENGE_TYPES: Record<string, ChallengeType> = {
     title: 'Quantum Relationships',
     subtitle: 'Connect from higher consciousness',
     description: 'Transform all your relationships through quantum consciousness. Learn to attract and maintain harmonious connections by operating from love, authenticity, and elevated emotional states.',
-    duration: '30 days',
+    duration: '7 days',
+    durationDays: 7,
     difficulty: 'Advanced',
     icon: '💝',
     color: 'pink',
@@ -99,7 +104,8 @@ export const CHALLENGE_TYPES: Record<string, ChallengeType> = {
     title: 'Money Blocks Clearing',
     subtitle: 'Release subconscious money limitations',
     description: 'Identify and dissolve deep-rooted money blocks, limiting beliefs, and subconscious patterns that prevent financial abundance. Clear generational money trauma and reprogram your relationship with wealth.',
-    duration: '30 days',
+    duration: '21 days',
+    durationDays: 21,
     difficulty: 'Advanced',
     icon: '🔓',
     color: 'amber',

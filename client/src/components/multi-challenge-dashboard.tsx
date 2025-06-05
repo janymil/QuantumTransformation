@@ -140,7 +140,8 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
             (c: any) => c.challengeType === progress.challengeType
           );
           const completedDaysCount = challengeCompletions.length;
-          const progressPercentage = (completedDaysCount / 30) * 100;
+          const totalDays = challengeType?.durationDays || 30;
+          const progressPercentage = (completedDaysCount / totalDays) * 100;
           const currentDay = progress.currentDay || 1;
 
           return (
@@ -178,7 +179,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
                     <div className="mt-4">
                       <div className="flex items-center justify-between text-sm mb-2">
                         <span>Progress</span>
-                        <span>{completedDaysCount}/30 days</span>
+                        <span>{completedDaysCount}/{totalDays} days</span>
                       </div>
                       <Progress value={progressPercentage} className="h-2" />
                     </div>
