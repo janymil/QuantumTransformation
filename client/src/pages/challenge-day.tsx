@@ -31,9 +31,9 @@ import { challengeContent } from "@/data/challenge-content";
 import VideoMeditationGuide from "@/components/video-meditation-guide";
 import ProgressCelebration from "@/components/progress-celebration";
 import ChallengeHeader from "@/components/challenge-day/challenge-header";
+import { generateChallengeContent } from "@/components/challenge-day/challenge-content-generator";
 import ChallengeContent from "@/components/challenge-day/challenge-content";
 import ActionButtons from "@/components/challenge-day/action-buttons";
-import { generateChallengeContent } from "@/components/challenge-day/challenge-content-generator";
 
 interface ChallengeDayProps {
   challengeType?: string;
@@ -56,215 +56,6 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   // Get challenge type from prop or URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const challengeType = propChallengeType || urlParams.get('type') || 'general_quantum';
-
-  // Generate dynamic content based on challenge type
-  const generateChallengeContent = (day: number, type: string) => {
-    const contentMap: Record<string, any> = {
-      general_quantum: {
-        day,
-        title: `Day ${day}: Quantum Consciousness Foundation`,
-        subtitle: "Master the fundamentals of quantum reality and consciousness elevation",
-        description: "Master the fundamentals of quantum reality and consciousness elevation",
-        duration: "15-20 minutes",
-        topic: "Quantum Consciousness",
-        science: "Neuroscience research shows that elevated emotional states create new neural pathways and increase brain coherence, supporting the quantum field theory of consciousness.",
-        practice: {
-          name: "Quantum Meditation",
-          description: "A guided meditation to elevate your consciousness and align with quantum possibilities",
-          steps: [
-            "Find a quiet space and sit comfortably with your spine straight",
-            "Begin with heart coherence breathing - 5 seconds in, 5 seconds out",
-            "Cultivate elevated emotions of gratitude, love, and joy",
-            "Visualize your future self living your desired reality",
-            "Feel the emotions of having already achieved your goals",
-            "Connect with the quantum field of infinite possibilities",
-            "Set your intention for the day with elevated energy"
-          ],
-          tips: [
-            "Practice at the same time each day to build consistency",
-            "Start with 10-15 minutes and gradually increase duration",
-            "Focus on feeling the emotions, not just visualizing",
-            "Keep a journal nearby to capture insights"
-          ]
-        },
-        keyPrinciples: ["Consciousness Elevation", "Quantum Field Access", "Reality Creation", "Mind-Matter Interface"],
-        techniques: ["Heart Coherence Breathing", "Elevated Emotion Cultivation", "Future Self Visualization", "Quantum Field Connection"],
-        insights: [
-          "Your thoughts and emotions directly influence your reality",
-          "Elevated states create new neural pathways for transformation",
-          "The quantum field responds to coherent heart-brain states"
-        ],
-        affirmation: "I am the creator of my reality, aligned with infinite possibilities and elevated consciousness.",
-        quote: {
-          text: "The moment you change your energy, you change your life.",
-          author: "Dr. Joe Dispenza"
-        }
-      },
-      money_blocks_clearing: {
-        day,
-        title: `Day ${day}: Money Blocks Clearing`,
-        subtitle: "Identify and dissolve limiting beliefs and subconscious blocks around money and abundance",
-        description: "Identify and dissolve limiting beliefs and subconscious blocks around money and abundance",
-        duration: "20-25 minutes",
-        topic: "Money Blocks Clearing",
-        science: "Neuroscience shows that limiting beliefs create neural pathways that can be rewired through conscious awareness and emotional healing practices.",
-        practice: {
-          name: "Block Clearing Meditation",
-          description: "A powerful session to uncover and release deep-rooted money blocks and limiting beliefs",
-          steps: [
-            "Create a safe, sacred space for deep inner work",
-            "Begin with grounding breaths to center yourself",
-            "Scan your body for tension or resistance around money topics",
-            "Bring to mind your earliest money memories and observe without judgment",
-            "Notice what limiting beliefs arise about money and worthiness",
-            "Send love and compassion to these wounded parts of yourself",
-            "Visualize golden light dissolving these blocks and limitations",
-            "Affirm your natural worthiness and right to abundance"
-          ],
-          tips: [
-            "Go gently with yourself - deep healing takes time",
-            "Write down any limiting beliefs that surface during practice",
-            "If emotions arise, allow them to flow without resistance",
-            "Practice daily for 21 days to create lasting change"
-          ]
-        },
-        keyPrinciples: ["Block Identification", "Belief Archaeology", "Trauma Healing", "Subconscious Reprogramming"],
-        techniques: ["Shadow Work Exploration", "Belief Identification", "Energy Clearing", "Subconscious Reprogramming"],
-        insights: [
-          "Money blocks often stem from childhood experiences and family beliefs",
-          "Clearing blocks requires both awareness and emotional healing",
-          "Your worthiness is not determined by your financial status"
-        ],
-        affirmation: "I release all limiting beliefs about money and embrace my natural abundance and worth.",
-        quote: {
-          text: "Your relationship with money is a reflection of your relationship with yourself.",
-          author: "Louise Hay"
-        }
-      },
-      money_manifestation: {
-        day,
-        title: `Day ${day}: Abundance Manifestation`,
-        subtitle: "Cultivate wealth consciousness and attract financial abundance through elevated states",
-        description: "Cultivate wealth consciousness and attract financial abundance through elevated states",
-        duration: "15-20 minutes",
-        topic: "Abundance Manifestation",
-        science: "Studies show that visualization combined with elevated emotions activates the same neural networks as actual experiences, programming the subconscious for abundance.",
-        practice: {
-          name: "Abundance Meditation",
-          description: "A manifestation practice to align with abundance and attract financial prosperity",
-          steps: [
-            "Sit in meditation posture and connect with your heart center",
-            "Breathe deeply and feel gratitude for all current abundance",
-            "Visualize yourself living in complete financial freedom",
-            "Feel the emotions of having unlimited resources",
-            "See money flowing to you easily and effortlessly",
-            "Embody the energy of someone who is naturally abundant",
-            "Set intentions for specific financial goals with elevated emotion"
-          ],
-          tips: [
-            "Feel the emotions as if your abundance is already here",
-            "Visualize specific amounts and sources of income",
-            "Practice gratitude for money before it arrives",
-            "Maintain elevated emotions throughout the day"
-          ]
-        },
-        keyPrinciples: ["Abundance Mindset", "Wealth Consciousness", "Financial Alignment", "Prosperity Vibration"],
-        techniques: ["Abundance Visualization", "Gratitude Amplification", "Wealth Frequency Attunement", "Prosperity Anchoring"],
-        insights: [
-          "Abundance is a state of being, not something you acquire",
-          "Your emotional frequency attracts corresponding financial experiences",
-          "Gratitude amplifies your magnetic field for prosperity"
-        ],
-        affirmation: "I am a powerful money magnet, attracting abundance with ease and grace.",
-        quote: {
-          text: "Abundance is not something we acquire, it is something we tune into.",
-          author: "Wayne Dyer"
-        }
-      },
-      quantum_health: {
-        day,
-        title: `Day ${day}: Quantum Health Transformation`,
-        subtitle: "Harness the power of consciousness to heal and transform your physical body",
-        description: "Harness the power of consciousness to heal and transform your physical body",
-        duration: "20-25 minutes",
-        topic: "Quantum Health",
-        science: "Epigenetic research demonstrates that consciousness and emotional states can directly influence gene expression and cellular regeneration processes.",
-        practice: {
-          name: "Healing Meditation",
-          description: "A transformational practice to activate your body's natural healing intelligence",
-          steps: [
-            "Lie down comfortably and scan your entire body",
-            "Send breath and awareness to any areas needing healing",
-            "Visualize healing light flowing through every cell",
-            "Communicate with your body's innate intelligence",
-            "See yourself in perfect health and vitality",
-            "Feel gratitude for your body's natural healing abilities",
-            "Program new instructions for optimal health and wellness"
-          ],
-          tips: [
-            "Trust your body's innate wisdom to heal itself",
-            "Speak to your cells with love and appreciation",
-            "Visualize healing light in colors that feel right to you",
-            "Practice consistently for 21 days to see results"
-          ]
-        },
-        keyPrinciples: ["Self-Healing", "Biological Transformation", "Mind-Body Unity", "Cellular Regeneration"],
-        techniques: ["Body Scan Healing", "Cellular Communication", "Energy Medicine", "Biological Reprogramming"],
-        insights: [
-          "Your body is constantly regenerating and can heal itself",
-          "Consciousness directly influences cellular behavior and gene expression",
-          "Love and appreciation are powerful healing frequencies"
-        ],
-        affirmation: "My body knows how to heal, and I trust its infinite wisdom and regenerative power.",
-        quote: {
-          text: "The body is the servant of the mind. It obeys the operations of the mind.",
-          author: "James Allen"
-        }
-      },
-      quantum_relationships: {
-        day,
-        title: `Day ${day}: Heart-Centered Connection`,
-        subtitle: "Develop authentic, conscious relationships through heart coherence and love",
-        description: "Develop authentic, conscious relationships through heart coherence and love",
-        duration: "15-20 minutes",
-        topic: "Quantum Relationships",
-        science: "HeartMath research shows that heart coherence creates a measurable electromagnetic field that influences others, promoting deeper connection and empathy.",
-        practice: {
-          name: "Heart Coherence Practice",
-          description: "A heart-opening practice to cultivate love, compassion, and authentic connection",
-          steps: [
-            "Place your hand on your heart and breathe deeply",
-            "Focus your attention on your heart center",
-            "Cultivate feelings of appreciation and gratitude",
-            "Send love to yourself unconditionally",
-            "Expand this love to include your relationships",
-            "Visualize harmonious connections with all people",
-            "Set intentions for authentic, loving communication"
-          ],
-          tips: [
-            "Start by loving yourself first before extending to others",
-            "Practice heart coherence breathing: 5 seconds in, 5 seconds out",
-            "Send loving thoughts to difficult people in your life",
-            "Notice how your energy shifts when you focus on love"
-          ]
-        },
-        keyPrinciples: ["Heart Intelligence", "Authentic Love", "Conscious Communication", "Energetic Resonance"],
-        techniques: ["Heart Coherence Breathing", "Love Field Activation", "Compassion Cultivation", "Authentic Expression"],
-        insights: [
-          "Your heart generates a powerful electromagnetic field that affects others",
-          "Love is the highest frequency and most transformative force",
-          "Authentic relationships begin with a loving relationship with yourself"
-        ],
-        affirmation: "I am love, I give love, and I attract loving, authentic relationships into my life.",
-        quote: {
-          text: "Love is the bridge between two hearts.",
-          author: "Rumi"
-        }
-      }
-    };
-
-    return contentMap[type] || contentMap.general_quantum;
-  };
 
   const { data: progressData, isLoading: progressLoading } = useQuery({
     queryKey: ["/api/progress/all"],
@@ -295,37 +86,33 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   });
 
   const completeMutation = useMutation({
-    mutationFn: async (data: { rating?: number; timeSpent?: number }) => {
-      return await apiRequest("POST", "/api/challenge/complete", {
-        day: currentDay,
-        challengeType: challengeType,
-        timeSpent: data.timeSpent || timeSpent,
-        rating: data.rating,
+    mutationFn: async ({ day, challengeType, timeSpent }: { day: number; challengeType: string; timeSpent: number }) => {
+      const response = await apiRequest(`/api/challenge/complete/${day}`, {
+        method: "POST",
+        body: { challengeType, timeSpent },
       });
+      return response;
     },
-    onSuccess: (data) => {
-      // Invalidate all related queries to update the UI immediately
-      queryClient.invalidateQueries({ queryKey: ["/api/progress"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/progress/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/challenge/completion"] });
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/challenge/completion", effectiveDay, challengeType] });
+      queryClient.invalidateQueries({ queryKey: ["/api/progress/all"] });
       setIsCompleted(true);
       
-      // Trigger celebration animation
-      setCelebrationType('day_completed');
-      setShowCelebration(true);
-      
-      // Check for milestone celebrations
-      if (currentDay % 7 === 0) {
-        setTimeout(() => {
-          setCelebrationType('week_completed');
-          setShowCelebration(true);
-        }, 2000);
+      // Show appropriate celebration
+      if (effectiveDay % 7 === 0) {
+        setCelebrationType('week_completed');
+        setShowCelebration(true);
+      } else if (effectiveDay === 1) {
+        setCelebrationType('challenge_started');
+        setShowCelebration(true);
+      } else {
+        setCelebrationType('day_completed');
+        setShowCelebration(true);
       }
       
       toast({
-        title: "Challenge Complete!",
-        description: `Great job on completing Day ${currentDay}. You're building powerful momentum!`,
+        title: "Day Completed!",
+        description: `You've successfully completed Day ${effectiveDay}!`,
       });
     },
     onError: (error) => {
@@ -342,83 +129,57 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       }
       toast({
         title: "Error",
-        description: "Failed to complete challenge. Please try again.",
+        description: "Failed to complete the day. Please try again.",
         variant: "destructive",
       });
     },
   });
 
+  const handleComplete = () => {
+    completeMutation.mutate({
+      day: effectiveDay,
+      challengeType,
+      timeSpent,
+    });
+  };
+
+  // Auto-mark as completed if completion data exists
   useEffect(() => {
-    if (completion) {
+    if (completion && !isCompleted) {
       setIsCompleted(true);
     }
-  }, [completion]);
+  }, [completion, isCompleted]);
 
+  // Timer for tracking time spent
   useEffect(() => {
-    if (!progressLoading && !progressData) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [progressData, progressLoading, toast]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       setTimeSpent(prev => prev + 1);
-    }, 60000); // Increment every minute
+    }, 1000);
 
-    return () => clearInterval(timer);
+    return () => clearInterval(interval);
   }, []);
 
-  if (progressLoading || completionLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-muted-foreground">Loading challenge content...</p>
-        </div>
-      </div>
-    );
-  }
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
-  if (!content) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md mx-4">
-          <CardContent className="pt-6 text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Day Not Found</h1>
-            <p className="text-muted-foreground mb-6">
-              The requested challenge day could not be found.
-            </p>
-            <Link href="/">
-              <Button>Return to Dashboard</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (progressLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   if (!canAccess) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md mx-4">
-          <CardContent className="pt-6 text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Clock className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-4">Day Locked</h1>
+      <div className="container mx-auto p-6 max-w-4xl">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h2 className="text-2xl font-bold mb-4">Day Not Yet Available</h2>
             <p className="text-muted-foreground mb-6">
-              Complete the previous challenges to unlock Day {currentDay}.
+              Complete the previous days to unlock Day {effectiveDay}.
             </p>
-            <Link href="/">
-              <Button>Return to Dashboard</Button>
+            <Link href={`/challenge/${actualCurrentDay}?type=${challengeType}`}>
+              <Button>Go to Day {actualCurrentDay}</Button>
             </Link>
           </CardContent>
         </Card>
@@ -427,254 +188,149 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="container mx-auto p-6 max-w-6xl space-y-6">
       <ChallengeHeader 
+        currentDay={effectiveDay}
         challengeType={challengeType}
-        currentDay={currentDay}
-        challengeTitle={content.title}
-        isCompleted={isCompleted}
+        content={content}
+        completedDays={completedDays}
+        onBack={() => window.history.back()}
       />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Hero Section */}
-        <Card className="bg-gradient-primary text-white mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full transform translate-x-32 -translate-y-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-10 rounded-full transform -translate-x-24 translate-y-24"></div>
-          <CardContent className="relative z-10 p-8">
-            <div className="flex items-center justify-between mb-4">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                Day {currentDay} of 30
-              </Badge>
-              <div className="flex items-center space-x-4 text-white/90">
-                <span className="text-sm flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {content.duration}
-                </span>
-                {isCompleted && (
-                  <Badge variant="secondary" className="bg-success/20 text-success border-success/30">
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    Completed
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <h1 className="text-3xl font-bold mb-2">{content.title}</h1>
-            <p className="text-white/90 text-lg mb-6">{content.subtitle}</p>
-            <div className="flex items-center space-x-4">
-              {!isCompleted && (
-                <Button 
-                  variant="secondary" 
-                  size="lg"
-                  className="bg-white text-primary hover:bg-white/90"
-                  onClick={() => setShowJournal(true)}
-                >
-                  <Play className="w-5 h-5 mr-2" />
-                  Start Practice
-                </Button>
-              )}
-              <Button 
-                variant="ghost" 
-                size="lg"
-                className="text-white border-white/30 hover:bg-white/10"
-                onClick={() => setShowJournal(true)}
-              >
-                <BookOpen className="w-5 h-5 mr-2" />
-                Open Journal
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="lg"
-                className="text-white border-white/30 hover:bg-white/10"
-                onClick={() => setShowAI(true)}
-              >
-                <Brain className="w-5 h-5 mr-2" />
-                AI Guide
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="practice">Practice</TabsTrigger>
+              <TabsTrigger value="insights">Insights</TabsTrigger>
+              <TabsTrigger value="science">Science</TabsTrigger>
+            </TabsList>
 
-        {/* Content Tabs */}
-        <Tabs defaultValue="lesson" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="lesson">Today's Lesson</TabsTrigger>
-            <TabsTrigger value="practice">Practice Guide</TabsTrigger>
-            <TabsTrigger value="insights">Key Insights</TabsTrigger>
-          </TabsList>
+            <TabsContent value="overview" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <BookOpen className="w-6 h-6 mr-2 text-primary" />
+                      {content.title}
+                    </span>
+                    <Badge variant="secondary" className="ml-2">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {content.duration}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg text-muted-foreground mb-4">{content.subtitle}</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {content.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="lesson" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BookOpen className="w-6 h-6 mr-2 text-primary" />
-                  Understanding {content.topic}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="prose max-w-none">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-semibold text-foreground mb-4">Core Concept</h3>
+            <TabsContent value="science" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Brain className="w-6 h-6 mr-2 text-primary" />
+                    The Science Behind Today's Practice
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted/30 rounded-lg p-6">
                     <p className="text-muted-foreground leading-relaxed">
-                      {content.description}
+                      {content.science}
                     </p>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  {content.quote && (
-                    <Card className="bg-primary/5 border-primary/20">
-                      <CardContent className="p-6">
-                        <div className="flex items-start space-x-4">
-                          <Quote className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                          <div>
-                            <p className="text-foreground italic text-lg mb-2">
-                              "{content.quote.text}"
-                            </p>
-                            <p className="text-muted-foreground text-sm">
-                              — {content.quote.author}
-                            </p>
-                          </div>
+            <TabsContent value="practice" className="space-y-6">
+              {/* Check if challenge has 3-part structure (morning, daytime, evening) */}
+              {content.practice.morning || content.practice.daytime || content.practice.evening ? (
+                <>
+                  {/* Morning Practice */}
+                  {content.practice.morning && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Sunrise className="w-6 h-6 mr-2 text-orange-500" />
+                          {content.practice.morning.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <ol className="space-y-3">
+                            {content.practice.morning.steps.map((step: string, index: number) => (
+                              <li key={index} className="flex items-start space-x-3">
+                                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="text-white text-sm font-medium">{index + 1}</span>
+                                </div>
+                                <p className="text-muted-foreground">{step}</p>
+                              </li>
+                            ))}
+                          </ol>
                         </div>
                       </CardContent>
                     </Card>
                   )}
 
-                  <div>
-                    <h3 className="text-xl font-semibold text-foreground mb-4">Scientific Foundation</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {content.science}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  {/* Daytime Practice */}
+                  {content.practice.daytime && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Sun className="w-6 h-6 mr-2 text-yellow-500" />
+                          {content.practice.daytime.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <ol className="space-y-3">
+                            {content.practice.daytime.steps.map((step: string, index: number) => (
+                              <li key={index} className="flex items-start space-x-3">
+                                <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="text-white text-sm font-medium">{index + 1}</span>
+                                </div>
+                                <p className="text-muted-foreground">{step}</p>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-          <TabsContent value="practice" className="space-y-6">
-            {/* Check if challenge has 3-part structure (morning, daytime, evening) */}
-            {content.practice.morning || content.practice.daytime || content.practice.evening ? (
-              <>
-                {/* Morning Practice */}
-                {content.practice.morning && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Sunrise className="w-6 h-6 mr-2 text-orange-500" />
-                        {content.practice.morning.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <ol className="space-y-3">
-                          {content.practice.morning.steps.map((step: string, index: number) => (
-                            <li key={index} className="flex items-start space-x-3">
-                              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-sm font-medium">{index + 1}</span>
-                              </div>
-                              <p className="text-muted-foreground">{step}</p>
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                  {/* Evening Practice */}
+                  {content.practice.evening && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Moon className="w-6 h-6 mr-2 text-purple-500" />
+                          {content.practice.evening.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <ol className="space-y-3">
+                            {content.practice.evening.steps.map((step: string, index: number) => (
+                              <li key={index} className="flex items-start space-x-3">
+                                <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="text-white text-sm font-medium">{index + 1}</span>
+                                </div>
+                                <p className="text-muted-foreground">{step}</p>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                {/* Daytime Practice */}
-                {content.practice.daytime && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Sun className="w-6 h-6 mr-2 text-yellow-500" />
-                        {content.practice.daytime.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <ol className="space-y-3">
-                          {content.practice.daytime.steps.map((step: string, index: number) => (
-                            <li key={index} className="flex items-start space-x-3">
-                              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-sm font-medium">{index + 1}</span>
-                              </div>
-                              <p className="text-muted-foreground">{step}</p>
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Evening Practice */}
-                {content.practice.evening && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Moon className="w-6 h-6 mr-2 text-purple-500" />
-                        {content.practice.evening.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <ol className="space-y-3">
-                          {content.practice.evening.steps.map((step: string, index: number) => (
-                            <li key={index} className="flex items-start space-x-3">
-                              <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-sm font-medium">{index + 1}</span>
-                              </div>
-                              <p className="text-muted-foreground">{step}</p>
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Tips and Insights for 3-part structure */}
-                <div className="bg-muted/50 rounded-lg p-6">
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center">
-                    <Lightbulb className="w-5 h-5 mr-2 text-warning" />
-                    Practice Tips
-                  </h4>
-                  <ul className="space-y-2">
-                    {content.practice.tips.map((tip: string, index: number) => (
-                      <li key={index} className="text-muted-foreground flex items-start">
-                        <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2 mr-3"></span>
-                        {tip}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </>
-            ) : (
-              /* Original single practice format for backward compatibility */
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Play className="w-6 h-6 mr-2 text-primary" />
-                    Today's Practice: {content.practice.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-6">{content.practice.description}</p>
-                  
-                  <div className="space-y-4">
-                    <h4 className="font-semibold text-foreground">Step-by-Step Guide:</h4>
-                    <ol className="space-y-3">
-                      {content.practice.steps.map((step: string, index: number) => (
-                        <li key={index} className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-white text-sm font-medium">{index + 1}</span>
-                          </div>
-                          <p className="text-muted-foreground">{step}</p>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-
-                  <Separator className="my-6" />
-
+                  {/* Tips and Insights for 3-part structure */}
                   <div className="bg-muted/50 rounded-lg p-6">
                     <h4 className="font-semibold text-foreground mb-3 flex items-center">
                       <Lightbulb className="w-5 h-5 mr-2 text-warning" />
@@ -689,149 +345,156 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                       ))}
                     </ul>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="insights" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Star className="w-6 h-6 mr-2 text-primary" />
-                  Key Insights to Remember
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {content.insights.map((insight, index) => (
-                    <div key={index} className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg">
-                      <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
-                        <Lightbulb className="w-4 h-4 text-white" />
-                      </div>
-                      <p className="text-muted-foreground">{insight}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {content.affirmation && (
-              <Card className="bg-gradient-to-r from-secondary/10 to-primary/10 border-primary/20">
-                <CardContent className="p-6">
-                  <h4 className="font-semibold text-foreground mb-3">Today's Affirmation</h4>
-                  <p className="text-lg text-foreground italic leading-relaxed">
-                    "{content.affirmation}"
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {/* Action Buttons */}
-        <Card className="mt-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              {!isCompleted ? (
-                <Button 
-                  size="lg"
-                  className="flex-1"
-                  onClick={() => completeMutation.mutate({})}
-                  disabled={completeMutation.isPending}
-                >
-                  {completeMutation.isPending ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Completing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Mark as Complete
-                    </>
-                  )}
-                </Button>
+                </>
               ) : (
-                <Button size="lg" variant="outline" className="flex-1" disabled>
-                  <CheckCircle className="w-5 h-5 mr-2 text-success" />
-                  Completed
-                </Button>
-              )}
-              
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => setShowJournal(true)}
-              >
-                <BookOpen className="w-5 h-5 mr-2" />
-                Open Journal
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => setShowAI(true)}
-              >
-                <Brain className="w-5 h-5 mr-2" />
-                AI Explanation
-              </Button>
-            </div>
-            
-            {timeSpent > 0 && (
-              <div className="mt-4 text-center text-sm text-muted-foreground">
-                Time spent today: {timeSpent} minutes
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                /* Original single practice format for backward compatibility */
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Play className="w-6 h-6 mr-2 text-primary" />
+                      Today's Practice: {content.practice.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-6">{content.practice.description}</p>
+                    
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-foreground">Step-by-Step Guide:</h4>
+                      <ol className="space-y-3">
+                        {content.practice.steps.map((step: string, index: number) => (
+                          <li key={index} className="flex items-start space-x-3">
+                            <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-white text-sm font-medium">{index + 1}</span>
+                            </div>
+                            <p className="text-muted-foreground">{step}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
 
-        {/* Video Meditation Guide */}
-        <div className="mt-8">
-          <VideoMeditationGuide 
-            challengeType={challengeType}
-            day={currentDay}
-          />
+                    <Separator className="my-6" />
+
+                    <div className="bg-muted/50 rounded-lg p-6">
+                      <h4 className="font-semibold text-foreground mb-3 flex items-center">
+                        <Lightbulb className="w-5 h-5 mr-2 text-warning" />
+                        Practice Tips
+                      </h4>
+                      <ul className="space-y-2">
+                        {content.practice.tips.map((tip: string, index: number) => (
+                          <li key={index} className="text-muted-foreground flex items-start">
+                            <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2 mr-3"></span>
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="insights" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Star className="w-6 h-6 mr-2 text-primary" />
+                    Key Insights to Remember
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {content.practice.insights.map((insight: string, index: number) => (
+                      <div key={index} className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg">
+                        <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
+                          <Lightbulb className="w-4 h-4 text-white" />
+                        </div>
+                        <p className="text-muted-foreground">{insight}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {content.affirmation && (
+                <Card className="bg-gradient-to-r from-secondary/10 to-primary/10 border-primary/20">
+                  <CardContent className="p-6">
+                    <h4 className="font-semibold text-foreground mb-3">Today's Affirmation</h4>
+                    <p className="text-lg text-foreground italic leading-relaxed">
+                      "{content.affirmation}"
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {content.quote && (
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-4">
+                      <Quote className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="text-lg text-foreground italic mb-2">
+                          "{content.quote.text}"
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          — {content.quote.author}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
 
-      {/* Modals */}
-      <JournalModal 
-        key={`${challengeType}-${currentDay}`}
-        isOpen={showJournal}
-        onClose={() => setShowJournal(false)}
-        day={currentDay}
-        title={content.title}
-        challengeType={challengeType}
-      />
+        <div className="space-y-6">
+          <ActionButtons
+            isCompleted={isCompleted}
+            completionLoading={completionLoading}
+            onComplete={handleComplete}
+            onJournal={() => setShowJournal(true)}
+            onAI={() => setShowAI(true)}
+            timeSpent={formatTime(timeSpent)}
+          />
 
-      <AIAssistant
-        isOpen={showAI}
-        onClose={() => setShowAI(false)}
-        day={currentDay}
-        topic={content.topic}
-        context={content.title}
-      />
+          <VideoMeditationGuide 
+            day={effectiveDay}
+            challengeType={challengeType}
+          />
+        </div>
+      </div>
 
-      {/* Progress Celebration */}
-      <ProgressCelebration
-        isVisible={showCelebration}
-        onClose={() => setShowCelebration(false)}
-        achievementType={celebrationType}
-        details={{
-          day: currentDay,
-          week: Math.ceil(currentDay / 7),
-          challengeName: challengeType.replace('_', ' ').toUpperCase()
-        }}
-      />
+      {showJournal && (
+        <JournalModal
+          day={effectiveDay}
+          challengeType={challengeType}
+          onClose={() => setShowJournal(false)}
+        />
+      )}
 
-      {/* Contextual Tutorial */}
-      <ContextualTutorial
-        isVisible={showTutorial}
-        onClose={() => setShowTutorial(false)}
-        tutorialType="challenge_start"
-        onComplete={() => setShowTutorial(false)}
-      />
+      {showAI && (
+        <AIAssistant
+          day={effectiveDay}
+          challengeType={challengeType}
+          content={content}
+          onClose={() => setShowAI(false)}
+        />
+      )}
+
+      {showCelebration && (
+        <ProgressCelebration
+          type={celebrationType}
+          day={effectiveDay}
+          onClose={() => setShowCelebration(false)}
+        />
+      )}
+
+      {showTutorial && (
+        <ContextualTutorial
+          step="challenge_day"
+          onClose={() => setShowTutorial(false)}
+        />
+      )}
     </div>
   );
 }
