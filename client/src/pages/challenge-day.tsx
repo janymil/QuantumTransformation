@@ -99,7 +99,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
   const completionMutation = useMutation({
     mutationFn: async (completionData: any) => {
-      return apiRequest("/api/challenge/complete", "POST", completionData);
+      return apiRequest("POST", "/api/challenge/complete", completionData);
     },
     onSuccess: () => {
       setIsCompleted(true);
@@ -241,11 +241,53 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
                   <p className="text-lg text-muted-foreground mb-4">{content.subtitle}</p>
                   
                   {content.isIntroductionDay && content.content?.introduction ? (
-                    // Day 0 - Show formatted introduction content
-                    <div className="prose dark:prose-invert max-w-none">
-                      <div className="whitespace-pre-line text-muted-foreground leading-relaxed">
-                        {content.content.introduction}
-                      </div>
+                    // Day 0 - Show structured introduction content
+                    <div className="space-y-8">
+                      {content.content.introduction.sections?.map((section: any, index: number) => (
+                        <div key={index} className={`
+                          ${section.type === 'hero' ? 'text-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-6 rounded-lg' : ''}
+                          ${section.type === 'highlight' ? 'bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border-l-4 border-yellow-400' : ''}
+                        `}>
+                          <h3 className={`font-bold mb-3 ${section.type === 'hero' ? 'text-2xl' : 'text-xl'}`}>
+                            {section.title}
+                          </h3>
+                          <p className="text-muted-foreground leading-relaxed mb-4">
+                            {section.content}
+                          </p>
+                          
+                          {section.bullets && (
+                            <ul className="space-y-2 ml-4">
+                              {section.bullets.map((bullet: string, bulletIndex: number) => (
+                                <li key={bulletIndex} className="flex items-start">
+                                  <span className="text-blue-500 mr-2">•</span>
+                                  <span className="text-muted-foreground">{bullet}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          
+                          {section.phases && (
+                            <div className="grid gap-4 mt-4">
+                              {section.phases.map((phase: any, phaseIndex: number) => (
+                                <div key={phaseIndex} className="bg-white dark:bg-gray-800 p-4 rounded-lg border">
+                                  <h4 className="font-semibold mb-2">{phase.title}</h4>
+                                  <p className="text-sm text-muted-foreground">{phase.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {section.methods && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                              {section.methods.map((method: string, methodIndex: number) => (
+                                <div key={methodIndex} className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded text-sm">
+                                  {method}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     // Regular days - Show description
