@@ -67,7 +67,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   
   const challengeType = propChallengeType || challengeTypeMapping[urlChallengeType] || 'general_quantum';
   
-  // Gamification hooks
+  // Gamification hooks (initialized after challengeType is determined)
   const gamification = useGamification(challengeType);
   
   const effectiveDay = currentDay;
@@ -381,6 +381,17 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Micro-Learning Gamification Widget */}
+          <MicroLearningWidget 
+            challengeType={challengeType}
+            day={effectiveDay}
+            onActivityComplete={(points, levelUp) => {
+              if (levelUp) {
+                setShowCelebration(true);
+              }
+            }}
+          />
+          
           <Card>
             <CardHeader>
               <CardTitle>Today's Progress</CardTitle>
