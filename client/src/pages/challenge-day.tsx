@@ -273,9 +273,9 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   const completedDays = (challengeProgress?.completedDays as number[]) || [];
   const actualCurrentDay = challengeProgress?.currentDay || 1;
   
-  // Use the actual current day from progress, not URL
-  const effectiveDay = actualCurrentDay;
-  const canAccess = effectiveDay >= 1;
+  // Use the URL day parameter, but validate access permissions
+  const effectiveDay = currentDay;
+  const canAccess = currentDay <= actualCurrentDay;
 
   const content = generateChallengeContent(effectiveDay, challengeType);
 
