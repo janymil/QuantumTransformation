@@ -27,6 +27,9 @@ export default function AICoaching() {
   const { user } = useAuth();
   const [selectedChallenge, setSelectedChallenge] = useState("money_blocks_clearing");
   const [activeTab, setActiveTab] = useState("coaching");
+  const [prefilledQuestion, setPrefilledQuestion] = useState("");
+  const [shouldFocusGoals, setShouldFocusGoals] = useState(false);
+  const [shouldFocusChallenges, setShouldFocusChallenges] = useState(false);
 
   // Get user challenges
   const { data: userChallenges } = useQuery({
@@ -224,14 +227,7 @@ export default function AICoaching() {
                     className="w-full justify-start"
                     onClick={() => {
                       setActiveTab("questions");
-                      // Pre-fill question about today's practice
-                      setTimeout(() => {
-                        const questionInput = document.querySelector('textarea[placeholder*="Ask any question"]') as HTMLTextAreaElement;
-                        if (questionInput) {
-                          questionInput.value = "Can you help me understand today's practice and how to get the most out of it?";
-                          questionInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                      }, 100);
+                      setPrefilledQuestion("Can you help me understand today's practice and how to get the most out of it?");
                     }}
                   >
                     <MessageSquare className="w-4 h-4 mr-2" />
@@ -243,13 +239,8 @@ export default function AICoaching() {
                     className="w-full justify-start"
                     onClick={() => {
                       setActiveTab("coaching");
-                      // Switch to goals section
-                      setTimeout(() => {
-                        const goalsInput = document.querySelector('textarea[placeholder*="goals"]') as HTMLTextAreaElement;
-                        if (goalsInput) {
-                          goalsInput.focus();
-                        }
-                      }, 100);
+                      setShouldFocusGoals(true);
+                      setShouldFocusChallenges(false);
                     }}
                   >
                     <Target className="w-4 h-4 mr-2" />
@@ -261,14 +252,7 @@ export default function AICoaching() {
                     className="w-full justify-start"
                     onClick={() => {
                       setActiveTab("questions");
-                      // Pre-fill question about concepts
-                      setTimeout(() => {
-                        const questionInput = document.querySelector('textarea[placeholder*="Ask any question"]') as HTMLTextAreaElement;
-                        if (questionInput) {
-                          questionInput.value = "Can you explain the key concepts behind this challenge and how they work?";
-                          questionInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                      }, 100);
+                      setPrefilledQuestion("Can you explain the key concepts behind this challenge and how they work?");
                     }}
                   >
                     <BookOpen className="w-4 h-4 mr-2" />
@@ -280,13 +264,8 @@ export default function AICoaching() {
                     className="w-full justify-start"
                     onClick={() => {
                       setActiveTab("coaching");
-                      // Switch to challenges section
-                      setTimeout(() => {
-                        const challengesInput = document.querySelector('textarea[placeholder*="challenges"]') as HTMLTextAreaElement;
-                        if (challengesInput) {
-                          challengesInput.focus();
-                        }
-                      }, 100);
+                      setShouldFocusGoals(false);
+                      setShouldFocusChallenges(true);
                     }}
                   >
                     <Heart className="w-4 h-4 mr-2" />

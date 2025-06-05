@@ -31,13 +31,19 @@ interface AICoachingHubProps {
   currentDay: number;
   initialTab?: string;
   onTabChange?: (tab: string) => void;
+  prefilledQuestion?: string;
+  shouldFocusGoals?: boolean;
+  shouldFocusChallenges?: boolean;
 }
 
 export default function AICoachingHub({ 
   challengeType, 
   currentDay, 
   initialTab = "coaching", 
-  onTabChange 
+  onTabChange,
+  prefilledQuestion = "",
+  shouldFocusGoals = false,
+  shouldFocusChallenges = false
 }: AICoachingHubProps) {
   const { user } = useAuth();
   const { toast } = useToast();

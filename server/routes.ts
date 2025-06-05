@@ -452,6 +452,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI personalized coaching endpoint
+  app.post('/api/ai/coaching', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const coachingRequest = { ...req.body, userId };
+      
+      console.log("Generating personalized coaching with request:", coachingRequest);
+      
+      const coaching = await generatePersonalizedCoaching(coachingRequest);
+      
+      console.log("Generated coaching response:", coaching);
+      
+      res.json(coaching);
+    } catch (error) {
+      console.error("Error generating personalized coaching:", error);
+      res.status(500).json({ message: "Failed to generate coaching", error: error.message });
+    }
+  });
+
   // AI personalized affirmation endpoint
   app.post('/api/ai/personalized-affirmation', isAuthenticated, async (req: any, res) => {
     try {
