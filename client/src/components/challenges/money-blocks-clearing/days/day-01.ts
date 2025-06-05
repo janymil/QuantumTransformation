@@ -16,7 +16,7 @@ export const day01Content = {
         "Take deep, mindful breaths to center yourself and connect with your inner state",
         "Look directly into your own eyes in the mirror with compassion and presence",
         "Create a vivid mental image of your ideal financial situation - not just a picture, but a full feeling that you are already living it",
-        "Say aloud slowly: 'I am now living in total financial freedom. Money flows to me easily, frequently, and from multiple sources.' Repeat three times",
+        "Say aloud slowly: 'I am now living in total financial freedom. Money flows to me easily, frequently, and from multiple sources. I am releasing all limiting beliefs about money and embracing my infinite capacity for wealth and abundance.' Repeat three times",
         "After each repetition, close your eyes and focus on the feeling of gratitude that this reality is already true",
         "Hold this elevated emotional state for 2-3 minutes, allowing it to permeate every cell",
         "Write this affirmation in your journal, then add five sentences describing how you feel in this new reality using strong emotional language"

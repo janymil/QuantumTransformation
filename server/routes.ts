@@ -147,6 +147,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Saved phrases endpoints
+  app.get('/api/saved-phrases', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const savedPhrases = await storage.getUserSavedPhrases(userId);
+      res.json(savedPhrases);
+    } catch (error) {
+      console.error("Error fetching saved phrases:", error);
+      res.status(500).json({ message: "Failed to fetch saved phrases" });
+    }
+  });
+
+  app.post('/api/saved-phrases', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { text, category, day, challengeType } = req.body;
+      
+      const savedPhrase = await storage.createSavedPhrase({
+        userId,
+        phrase: text,
+        category: category || 'affirmation',
+        source: challengeType ? `${challengeType} Day ${day}` : null
+      });
+      
+      res.json(savedPhrase);
+    } catch (error) {
+      console.error("Error saving phrase:", error);
+      res.status(500).json({ message: "Failed to save phrase" });
+    }
+  });
+
+  app.delete('/api/saved-phrases/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const phraseId = parseInt(req.params.id);
+      await storage.deleteSavedPhrase(userId, phraseId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting phrase:", error);
+      res.status(500).json({ message: "Failed to delete phrase" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
