@@ -4,30 +4,17 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JournalModal from "@/components/journal-modal";
 import AIAssistant from "@/components/ai-assistant";
-import { 
-  Play, 
-  CheckCircle, 
-  BookOpen, 
-  Brain, 
-  Clock, 
-  Star, 
-  Lightbulb,
-  Quote,
-  ArrowLeft,
-  Share,
-  Bookmark
-} from "lucide-react";
-import { Link } from "wouter";
+import { Play, Star } from "lucide-react";
 import { challengeContent } from "@/data/challenge-content";
 import VideoMeditationGuide from "@/components/video-meditation-guide";
 import ProgressCelebration from "@/components/progress-celebration";
+import ChallengeHeader from "@/components/challenge-day/challenge-header";
+import ChallengeContent from "@/components/challenge-day/challenge-content";
+import ActionButtons from "@/components/challenge-day/action-buttons";
+import { generateChallengeContent } from "@/components/challenge-day/challenge-content-generator";
 
 interface ChallengeDayProps {
   challengeType?: string;
@@ -420,25 +407,14 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
   return (
     <div className="min-h-screen bg-background">
+      <ChallengeHeader 
+        challengeType={challengeType}
+        currentDay={currentDay}
+        challengeTitle={content.title}
+        isCompleted={isCompleted}
+      />
+      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm">
-              <Bookmark className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Share className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
 
         {/* Hero Section */}
         <Card className="bg-gradient-primary text-white mb-8 relative overflow-hidden">
