@@ -338,7 +338,7 @@ export default function AICoachingHub({
                           Practical Tips
                         </h4>
                         <ul className="space-y-1">
-                          {explanationMutation.data.practicalTips.map((tip: string, index: number) => (
+                          {((explanationMutation.data || explanationResponse)?.practicalTips || []).map((tip: string, index: number) => (
                             <li key={index} className="text-sm text-green-700 dark:text-green-300 flex items-start">
                               <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0 mt-2 mr-2"></span>
                               {tip}
