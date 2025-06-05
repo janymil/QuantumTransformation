@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getChallengeUrl } from "@shared/challenge-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,15 +65,6 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   };
   
   const challengeType = propChallengeType || challengeTypeMapping[urlChallengeType] || 'general_quantum';
-  
-  console.log('Challenge Day Debug:', {
-    pathname: window.location.pathname,
-    urlParts,
-    urlChallengeType,
-    propChallengeType,
-    mappedType: challengeTypeMapping[urlChallengeType],
-    finalChallengeType: challengeType
-  });
   
   const effectiveDay = currentDay;
 
@@ -188,7 +180,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
           <h1 className="text-3xl font-bold">{content.title}</h1>
           <p className="text-muted-foreground">Day {effectiveDay} • {challengeType}</p>
         </div>
-        <Link href={challengeType === 'money_blocks_clearing' ? '/money-blocks-clearing' : `/${challengeType}`}>
+        <Link href={`/${getChallengeUrl(challengeType)}`}>
           <Button variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
