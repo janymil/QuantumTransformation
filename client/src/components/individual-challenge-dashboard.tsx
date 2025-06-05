@@ -54,9 +54,9 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
     );
   }
 
-  const currentDay = progress?.currentDay || 1;
-  const completedDays = completions?.filter((c: ChallengeCompletion) => c.challengeType === challengeType).length || 0;
-  const streakCount = progress?.streakCount || 0;
+  const currentDay = (progress as any)?.currentDay || 1;
+  const completedDays = (completions as any)?.filter((c: ChallengeCompletion) => c.challengeType === challengeType).length || 0;
+  const streakCount = (progress as any)?.streakCount || 0;
   const progressPercent = (completedDays / 21) * 100;
 
   return (
@@ -203,7 +203,7 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
                 </div>
               </CardContent>
             </Link>
-          </Card>d>
+          </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <Link href={`/${getChallengeUrl(challengeType)}/progress`}>
