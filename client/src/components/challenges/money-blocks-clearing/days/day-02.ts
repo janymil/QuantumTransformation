@@ -60,7 +60,12 @@ export const day02Content = {
     ]
   },
   
-  affirmation: "I am ready to let go of these old beliefs and open to new empowering truths. I am free to create my abundant life.",
+  affirmations: [
+    "I am ready to let go of these old beliefs and open to new empowering truths.",
+    "I am free to create my abundant life.",
+    "Money flows to me freely and abundantly.",
+    "I forgive myself and others for any past mistakes or beliefs that have held me back. I release all emotional blocks to abundance."
+  ],
   
   quote: {
     text: "To change your personal reality, you must change your personality.",
