@@ -35,10 +35,10 @@ import HealthJournal from "@/pages/challenges/health-transformation/journal";
 import HealthProgress from "@/pages/challenges/health-transformation/progress";
 import HealthDay from "@/pages/challenges/health-transformation/day";
 
-import CreativityDashboard from "@/pages/challenges/creativity-flow/dashboard";
-import CreativityJournal from "@/pages/challenges/creativity-flow/journal";
-import CreativityProgress from "@/pages/challenges/creativity-flow/progress";
-import CreativityDay from "@/pages/challenges/creativity-flow/day";
+import MoneyBlocksClearingDashboard from "@/pages/challenges/money-blocks-clearing/dashboard";
+import MoneyBlocksClearingJournal from "@/pages/challenges/money-blocks-clearing/journal";
+import MoneyBlocksClearingProgress from "@/pages/challenges/money-blocks-clearing/progress";
+import MoneyBlocksClearingDay from "@/pages/challenges/money-blocks-clearing/day";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -109,10 +109,10 @@ function Router() {
         <Route path="/health-transformation/day/:day" component={HealthDay} />
         
         {/* Money Blocks Clearing Challenge */}
-        <Route path="/money-blocks-clearing" component={CreativityDashboard} />
-        <Route path="/money-blocks-clearing/journal" component={CreativityJournal} />
-        <Route path="/money-blocks-clearing/progress" component={CreativityProgress} />
-        <Route path="/money-blocks-clearing/day/:day" component={CreativityDay} />
+        <Route path="/money-blocks-clearing" component={MoneyBlocksClearingDashboard} />
+        <Route path="/money-blocks-clearing/journal" component={MoneyBlocksClearingJournal} />
+        <Route path="/money-blocks-clearing/progress" component={MoneyBlocksClearingProgress} />
+        <Route path="/money-blocks-clearing/day/:day" component={MoneyBlocksClearingDay} />
         
         <Route component={NotFound} />
       </Switch>
