@@ -12,8 +12,11 @@ import {
   Play, 
   Award,
   ChevronRight,
+  ChevronLeft,
   Clock,
-  Flame
+  Flame,
+  Lock,
+  CheckCircle
 } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -28,6 +31,7 @@ export interface IndividualChallengeDashboardProps {
 export default function IndividualChallengeDashboard({ challengeType }: IndividualChallengeDashboardProps) {
   const { user } = useAuth();
   const challengeData = getChallengeType(challengeType);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   // Fetch user progress for this specific challenge
   const { data: progress, isLoading: progressLoading } = useQuery({
@@ -154,6 +158,139 @@ export default function IndividualChallengeDashboard({ challengeType }: Individu
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               {completedDays} of 21 days completed
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Horizontal Day Progress */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              Daily Progress
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const container = document.getElementById('days-container');
+                    if (container) {
+                      container.scrollBy({ left: -200, behavior: 'smooth' });
+                    }
+                  }}
+                  disabled={scrollPosition <= 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const container = document.getElementById('days-container');
+                    if (container) {
+                      container.scrollBy({ left: 200, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div 
+              id="days-container"
+              className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
+            >
+              {Array.from({ length: 21 }, (_, i) => {
+                const day = i + 1;
+                const isCompleted = (completions as any)?.some((c: ChallengeCompletion) => 
+                  c.challengeType === challengeType && c.day === day
+                );
+                const isCurrent = day === currentDay;
+                const isAccessible = day <= currentDay;
+                const isFuture = day > currentDay;
+
+                return (
+                  <div
+                    key={day}
+                    className={`
+                      flex-shrink-0 w-24 h-32 rounded-lg border-2 transition-all duration-200
+                      ${isCompleted 
+                        ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700' 
+                        : isCurrent 
+                        ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-600' 
+                        : isFuture 
+                        ? 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 opacity-60' 
+                        : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-600'
+                      }
+                      ${isAccessible && !isFuture ? 'cursor-pointer hover:shadow-md' : 'cursor-not-allowed'}
+                    `}
+                  >
+                    {isAccessible && !isFuture ? (
+                      <Link href={`/${getChallengeUrl(challengeType)}/day/${day}`}>
+                        <div className="h-full p-3 flex flex-col items-center justify-between">
+                          <div className="text-center">
+                            <div className={`
+                              w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                              ${isCompleted 
+                                ? 'bg-green-500 text-white' 
+                                : isCurrent 
+                                ? 'bg-blue-500 text-white' 
+                                : 'bg-gray-300 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+                              }
+                            `}>
+                              {isCompleted ? (
+                                <CheckCircle className="h-4 w-4" />
+                              ) : (
+                                day
+                              )}
+                            </div>
+                            <p className="text-xs font-medium mt-1 text-gray-700 dark:text-gray-300">
+                              Day {day}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            {isCompleted && (
+                              <Badge variant="secondary" className="text-xs">
+                                Done
+                              </Badge>
+                            )}
+                            {isCurrent && !isCompleted && (
+                              <Badge variant="default" className="text-xs">
+                                Current
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    ) : (
+                      <div className="h-full p-3 flex flex-col items-center justify-between">
+                        <div className="text-center">
+                          <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                            {isFuture ? (
+                              <Lock className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <span className="text-sm font-bold text-gray-600 dark:text-gray-400">{day}</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-medium mt-1 text-gray-500 dark:text-gray-400">
+                            Day {day}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          {isFuture && (
+                            <Badge variant="outline" className="text-xs text-gray-400">
+                              Locked
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
 

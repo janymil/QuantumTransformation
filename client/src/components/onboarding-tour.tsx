@@ -66,7 +66,28 @@ export default function OnboardingTour() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Remove auto-trigger - tour is now manually started only
+  // Add manual start function for navbar button
+  const startTour = () => {
+    setIsActive(true);
+    setIsVisible(true);
+    setCurrentStep(0);
+  };
+
+  // Make startTour available globally for navbar button
+  useEffect(() => {
+    const startButton = document.createElement('button');
+    startButton.setAttribute('data-start-tour', 'true');
+    startButton.style.display = 'none';
+    startButton.onclick = startTour;
+    document.body.appendChild(startButton);
+
+    return () => {
+      const existingButton = document.querySelector('[data-start-tour]');
+      if (existingButton) {
+        document.body.removeChild(existingButton);
+      }
+    };
+  }, []);
 
   const nextStep = () => {
     if (currentStep < tourSteps.length - 1) {
