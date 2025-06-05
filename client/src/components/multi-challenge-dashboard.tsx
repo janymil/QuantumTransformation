@@ -48,10 +48,8 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   // Quit challenge mutation
   const quitChallengeMutation = useMutation({
     mutationFn: async (challengeType: string) => {
-      return await apiRequest(`/api/challenges/quit`, {
-        method: 'DELETE',
-        body: JSON.stringify({ challengeType }),
-        headers: { 'Content-Type': 'application/json' }
+      return await apiRequest('DELETE', '/api/challenges/quit', {
+        challengeType
       });
     },
     onSuccess: (data: any, challengeType: string) => {

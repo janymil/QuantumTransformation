@@ -52,10 +52,8 @@ export default function ChallengesPage() {
   // Start new challenge mutation
   const startChallengeMutation = useMutation({
     mutationFn: async (challengeType: string) => {
-      return await apiRequest('/api/challenges/select', {
-        method: 'POST',
-        body: JSON.stringify({ challengeType }),
-        headers: { 'Content-Type': 'application/json' }
+      return await apiRequest('POST', '/api/challenges/select', {
+        challengeType
       });
     },
     onSuccess: (data: any) => {
@@ -84,10 +82,8 @@ export default function ChallengesPage() {
   // Quit challenge mutation
   const quitChallengeMutation = useMutation({
     mutationFn: async (challengeType: string) => {
-      return await apiRequest(`/api/challenges/quit`, {
-        method: 'DELETE',
-        body: JSON.stringify({ challengeType }),
-        headers: { 'Content-Type': 'application/json' }
+      return await apiRequest('DELETE', '/api/challenges/quit', {
+        challengeType
       });
     },
     onSuccess: (data: any, challengeType: string) => {
