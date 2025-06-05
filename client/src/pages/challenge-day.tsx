@@ -280,9 +280,9 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
   const content = generateChallengeContent(effectiveDay, challengeType);
 
   const { data: completion, isLoading: completionLoading } = useQuery({
-    queryKey: ["/api/challenges/completion", effectiveDay, challengeType],
+    queryKey: ["/api/challenge/completion", effectiveDay, challengeType],
     queryFn: async () => {
-      const response = await fetch(`/api/challenges/completion?day=${effectiveDay}&challengeType=${challengeType}`, {
+      const response = await fetch(`/api/challenge/completion/${effectiveDay}?challengeType=${challengeType}`, {
         credentials: "include",
       });
       if (response.status === 404) return null;
@@ -293,7 +293,7 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
 
   const completeMutation = useMutation({
     mutationFn: async (data: { rating?: number; timeSpent?: number }) => {
-      return await apiRequest("POST", "/api/challenges/complete", {
+      return await apiRequest("POST", "/api/challenge/complete", {
         day: currentDay,
         challengeType: challengeType,
         timeSpent: data.timeSpent || timeSpent,
@@ -301,9 +301,11 @@ export default function ChallengeDay({ challengeType: propChallengeType }: Chall
       });
     },
     onSuccess: (data) => {
+      // Invalidate all related queries to update the UI immediately
       queryClient.invalidateQueries({ queryKey: ["/api/progress"] });
       queryClient.invalidateQueries({ queryKey: ["/api/progress/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/challenges/completion"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/challenge/completion"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/challenge/completion", effectiveDay, challengeType] });
       setIsCompleted(true);
       
       // Trigger celebration animation
