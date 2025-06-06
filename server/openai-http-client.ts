@@ -23,7 +23,7 @@ export class OpenAIHttpClient {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(30000) // 30 second timeout
+      signal: AbortSignal.timeout(20000) // 20 second timeout
     });
 
     if (!response.ok) {
