@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, Download, Trash2, Plus, Type, Image as ImageIcon, Save, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import VisionBoardCanvas from "@/components/vision-board/vision-board-canvas";
 
 interface VisionBoardItem {
   id: string;
@@ -130,16 +131,28 @@ export default function VisionBoard({ onSave, initialItems = [], onClose, boardI
     setNewText("");
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    try {
+      // Upload file to server
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) throw new Error('Failed to upload image');
+      
+      const data = await response.json();
+      
       const newItem: VisionBoardItem = {
         id: Date.now().toString(),
         type: 'image',
-        content: e.target?.result as string,
+        content: data.url,
         x: 100,
         y: 100,
         width: 150,
@@ -147,8 +160,87 @@ export default function VisionBoard({ onSave, initialItems = [], onClose, boardI
       };
       
       setItems(prev => [...prev, newItem]);
+      toast({ title: "Image uploaded successfully!" });
+    } catch (error) {
+      toast({ 
+        title: "Failed to upload image", 
+        description: "Please try again",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Generate AI image function
+  const generateAIImage = async (prompt: string) => {
+    if (!prompt.trim()) return;
+    
+    setIsGeneratingImage(true);
+    try {
+      const response = await fetch('/api/ai/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          size: "1024x1024",
+          quality: "standard"
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to generate image');
+      
+      const data = await response.json();
+      
+      const newItem: VisionBoardItem = {
+        id: Date.now().toString(),
+        type: 'image',
+        content: data.imageUrl,
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 200
+      };
+      
+      setItems(prev => [...prev, newItem]);
+      toast({ title: "AI image generated successfully!" });
+    } catch (error) {
+      toast({ 
+        title: "Failed to generate AI image", 
+        description: "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  // Save vision board function
+  const saveVisionBoard = async () => {
+    if (!boardTitle.trim()) {
+      toast({ 
+        title: "Title required", 
+        description: "Please enter a title for your vision board",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const boardData = {
+      title: boardTitle,
+      description: boardDescription,
+      canvasData: {
+        elements: items,
+        backgroundColor: '#ffffff'
+      },
+      templateCategory: 'custom',
+      tags: [],
+      isPublic: false
     };
-    reader.readAsDataURL(file);
+
+    if (boardId) {
+      updateVisionBoardMutation.mutate({ id: boardId, data: boardData });
+    } else {
+      saveVisionBoardMutation.mutate(boardData);
+    }
   };
 
   const deleteItem = (id: string) => {
@@ -213,39 +305,119 @@ export default function VisionBoard({ onSave, initialItems = [], onClose, boardI
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Controls */}
-        <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Add text to your vision board..."
-              value={newText}
-              onChange={(e) => setNewText(e.target.value)}
-              className="w-64"
-              onKeyPress={(e) => e.key === 'Enter' && addTextItem()}
-            />
-            <Button onClick={addTextItem} size="sm">
-              <Type className="w-4 h-4 mr-1" />
-              Add Text
-            </Button>
+        {/* Board Settings */}
+        <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="board-title" className="text-sm font-medium">Vision Board Title</Label>
+              <Input
+                id="board-title"
+                placeholder="My Vision Board"
+                value={boardTitle}
+                onChange={(e) => setBoardTitle(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="board-description" className="text-sm font-medium">Description (Optional)</Label>
+              <Input
+                id="board-description"
+                placeholder="Describe your vision..."
+                value={boardDescription}
+                onChange={(e) => setBoardDescription(e.target.value)}
+                className="mt-1"
+              />
+            </div>
           </div>
           
-          <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline">
-            <ImageIcon className="w-4 h-4 mr-1" />
-            Add Image
-          </Button>
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-          
-          <Button onClick={exportBoard} size="sm" variant="outline">
-            <Download className="w-4 h-4 mr-1" />
-            Export
-          </Button>
+          <div className="flex justify-end gap-2">
+            <Button 
+              onClick={saveVisionBoard} 
+              disabled={saveVisionBoardMutation.isPending || updateVisionBoardMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {(saveVisionBoardMutation.isPending || updateVisionBoardMutation.isPending) ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              {boardId ? 'Update Board' : 'Save Board'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Add text to your vision board..."
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                className="w-64"
+                onKeyPress={(e) => e.key === 'Enter' && addTextItem()}
+              />
+              <Button onClick={addTextItem} size="sm">
+                <Type className="w-4 h-4 mr-1" />
+                Add Text
+              </Button>
+            </div>
+            
+            <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline">
+              <ImageIcon className="w-4 h-4 mr-1" />
+              Upload Image
+            </Button>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            
+            <Button onClick={exportBoard} size="sm" variant="outline">
+              <Download className="w-4 h-4 mr-1" />
+              Export
+            </Button>
+          </div>
+
+          {/* AI Image Generation */}
+          <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border">
+            <h3 className="text-sm font-semibold mb-2 text-purple-700">AI Image Generator</h3>
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Describe the image you want to generate..."
+                className="flex-1"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    generateAIImage((e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+              />
+              <Button 
+                onClick={(e) => {
+                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  generateAIImage(input.value);
+                  input.value = '';
+                }}
+                disabled={isGeneratingImage}
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {isGeneratingImage ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-4 h-4 mr-1" />
+                )}
+                Generate
+              </Button>
+            </div>
+            <p className="text-xs text-purple-600 mt-1">
+              Create custom images using AI to enhance your vision board
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-6">
