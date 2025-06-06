@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { 
   BookOpen, 
   Calendar, 
@@ -78,6 +79,11 @@ export default function Journal() {
   const [reflectionFilter, setReflectionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedEntries, setExpandedEntries] = useState<Set<string | number>>(new Set());
+  const [activeTab, setActiveTab] = useState("write");
+  const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  const [editExperience, setEditExperience] = useState("");
+  const [editInsights, setEditInsights] = useState("");
+  const [editIntention, setEditIntention] = useState("");
 
   const toggleEntryExpansion = (entryId: string | number) => {
     const newExpanded = new Set(expandedEntries);
@@ -207,10 +213,33 @@ export default function Journal() {
   }, [entries, entriesLoading, toast]);
 
   const handleSelectEntry = (entry: JournalEntry) => {
-    setSelectedDay(entry.day);
-    setExperience(entry.experience || "");
-    setInsights(entry.insights || "");
-    setIntention(entry.intention || "");
+    setEditingEntry(entry);
+    setEditExperience(entry.experience || "");
+    setEditInsights(entry.insights || "");
+    setEditIntention(entry.intention || "");
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingEntry) return;
+    
+    saveMutation.mutate({
+      day: editingEntry.day,
+      experience: editExperience,
+      insights: editInsights,
+      intention: editIntention,
+    });
+    
+    setEditingEntry(null);
+    setEditExperience("");
+    setEditInsights("");
+    setEditIntention("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntry(null);
+    setEditExperience("");
+    setEditInsights("");
+    setEditIntention("");
   };
 
   const handleNewEntry = (day: number) => {
@@ -773,6 +802,82 @@ export default function Journal() {
             ) : null}
           </TabsContent>
         </Tabs>
+
+        {/* Edit Journal Entry Modal */}
+        <Dialog open={!!editingEntry} onOpenChange={(open) => !open && handleCancelEdit()}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <Edit className="w-5 h-5 mr-2" />
+                Edit Day {editingEntry?.day} Journal Entry
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  How did today's practice feel?
+                </label>
+                <Textarea
+                  placeholder="Describe your experience with today's practice..."
+                  value={editExperience}
+                  onChange={(e) => setEditExperience(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  What insights did you gain?
+                </label>
+                <Textarea
+                  placeholder="Share your realizations and breakthroughs..."
+                  value={editInsights}
+                  onChange={(e) => setEditInsights(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Tomorrow's intention
+                </label>
+                <Textarea
+                  placeholder="What do you intend to focus on tomorrow?"
+                  value={editIntention}
+                  onChange={(e) => setEditIntention(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveEdit}
+                disabled={saveMutation.isPending}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                {saveMutation.isPending ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
