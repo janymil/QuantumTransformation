@@ -484,6 +484,8 @@ Required JSON structure:
 }`;
 
   try {
+    const startTime = Date.now();
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -494,6 +496,35 @@ Required JSON structure:
       temperature: 0.7,
       response_format: { type: "json_object" }
     });
+
+    const endTime = Date.now();
+    const responseTime = endTime - startTime;
+
+    // Track AI usage for analytics
+    try {
+      const { trackSimpleUsage, calculateUsageCost } = await import('./simple-usage-tracker');
+      
+      const inputTokens = response.usage?.prompt_tokens || 0;
+      const outputTokens = response.usage?.completion_tokens || 0;
+      const totalTokens = response.usage?.total_tokens || 0;
+      const cost = calculateUsageCost('gpt-4o', inputTokens, outputTokens);
+
+      await trackSimpleUsage({
+        userId,
+        requestType: 'coaching',
+        challengeType: request.challengeType,
+        day: currentDay,
+        model: 'gpt-4o',
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        cost,
+        responseTime,
+        wasFromCache: false,
+      });
+    } catch (trackingError) {
+      console.log("Usage tracking error:", trackingError);
+    }
 
     return JSON.parse(response.choices[0].message.content || '{}');
   } catch (error) {
