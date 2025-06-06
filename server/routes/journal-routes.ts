@@ -123,4 +123,36 @@ export function registerJournalRoutes(app: Express) {
       res.status(500).json({ message: "Failed to delete journal entry" });
     }
   });
+
+  // Journal analysis endpoint
+  app.get('/api/journal/analyze', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const entries = await storage.getUserJournalEntries(userId);
+      
+      if (entries.length === 0) {
+        return res.json({
+          overallProgress: "No journal entries available yet. Start writing your first entry to begin your journey analysis.",
+          patterns: [],
+          recommendations: ["Start by writing your first journal entry", "Be consistent with daily reflections"],
+          emotionalTrends: "No emotional data to analyze yet."
+        });
+      }
+      
+      const { analyzeJournalEntries } = await import('../openai');
+      const analysis = await analyzeJournalEntries({
+        entries: entries.map(entry => ({
+          day: entry.day,
+          experience: entry.experience || "",
+          insights: entry.insights || "",
+          intention: entry.intention || "",
+        }))
+      });
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing journal:", error);
+      res.status(500).json({ message: "Failed to analyze journal entries" });
+    }
+  });
 }

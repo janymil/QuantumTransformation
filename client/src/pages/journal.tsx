@@ -79,7 +79,7 @@ export default function Journal() {
   const [reflectionFilter, setReflectionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedEntries, setExpandedEntries] = useState<Set<string | number>>(new Set());
-  const [activeTab, setActiveTab] = useState("insights");
+  const [activeTab, setActiveTab] = useState("write");
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [editExperience, setEditExperience] = useState("");
   const [editInsights, setEditInsights] = useState("");
@@ -112,6 +112,11 @@ export default function Journal() {
     queryKey: ["/api/journal/analyze"],
     enabled: entries && entries.length > 0,
   });
+
+  useEffect(() => {
+    console.log("Analysis Data:", analysis);
+    console.log("Analysis Loading:", analysisLoading);
+  }, [analysis, analysisLoading]);
 
   const { data: progressData } = useQuery({
     queryKey: ["/api/progress"],
