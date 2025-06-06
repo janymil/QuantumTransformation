@@ -1522,7 +1522,16 @@ Provide personalized, actionable guidance that:
       const { personalizedChallengePlans } = await import('@shared/schema');
       
       const plans = await db
-        .select()
+        .select({
+          id: personalizedChallengePlans.id,
+          userId: personalizedChallengePlans.userId,
+          planName: personalizedChallengePlans.planName,
+          baseChallengeType: personalizedChallengePlans.baseChallengeType,
+          status: personalizedChallengePlans.status,
+          currentDay: personalizedChallengePlans.currentDay,
+          totalDays: personalizedChallengePlans.totalDays,
+          createdAt: personalizedChallengePlans.createdAt
+        })
         .from(personalizedChallengePlans)
         .where(eq(personalizedChallengePlans.userId, userId))
         .orderBy(desc(personalizedChallengePlans.createdAt));
