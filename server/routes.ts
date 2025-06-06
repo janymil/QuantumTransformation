@@ -2577,6 +2577,324 @@ Focus on practical, implementable suggestions that directly support their ${focu
     }
   });
 
+  // AI Image Generation
+  app.post('/api/ai/generate-image', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { prompt, size = '1024x1024', quality = 'standard', userTier = 'basic' } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+
+      // Import cost control functions
+      const { 
+        validateAIRequest, 
+        getCachedResponse, 
+        cacheResponse, 
+        trackUsage,
+        createInputHash 
+      } = await import('./ai-cost-control');
+
+      // Validate AI request with cost controls
+      const inputHash = createInputHash(prompt, 'image_generation');
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'image_generation',
+        input: prompt,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests 
+        });
+      }
+
+      // Check cache first
+      if (validation.cachedResponse) {
+        await trackUsage(userId, 'image_generation', inputHash, 0, 0);
+        return res.json({ 
+          ...validation.cachedResponse, 
+          fromCache: true,
+          remainingRequests: validation.remainingRequests
+        });
+      }
+
+      const { OpenAI } = await import('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const startTime = Date.now();
+      
+      // Generate image using DALL-E
+      const response = await openai.images.generate({
+        model: "dall-e-3", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        prompt: prompt,
+        n: 1,
+        size: size as "1024x1024" | "1792x1024" | "1024x1792",
+        quality: quality as "standard" | "hd"
+      });
+
+      const responseTime = Date.now() - startTime;
+      const imageUrl = response.data[0]?.url;
+      
+      if (!imageUrl) {
+        throw new Error('No image URL received from OpenAI');
+      }
+
+      // Calculate cost (DALL-E pricing: ~$0.04 for standard, ~$0.08 for HD)
+      const cost = quality === 'hd' ? 0.08 : 0.04;
+
+      const result = {
+        imageUrl,
+        prompt,
+        size,
+        quality,
+        model: 'dall-e-3',
+        cost,
+        remainingRequests: validation.remainingRequests
+      };
+
+      // Cache the response
+      await cacheResponse(inputHash, 'image_generation', result, 24); // 24 hour cache
+      
+      // Track usage
+      await trackUsage(userId, 'image_generation', inputHash, responseTime, cost);
+
+      res.json(result);
+      
+    } catch (error: any) {
+      console.error('Error generating image:', error);
+      
+      if (error.message?.includes('429')) {
+        res.status(429).json({ 
+          error: 'Rate limit exceeded. Please try again later.',
+          type: 'rate_limit'
+        });
+      } else if (error.message?.includes('content_policy')) {
+        res.status(400).json({ 
+          error: 'Content violates policy. Please modify your prompt.',
+          type: 'content_policy'
+        });
+      } else {
+        res.status(500).json({ 
+          error: 'Failed to generate image. Please try again.',
+          type: 'generation_error'
+        });
+      }
+    }
+  });
+
+  // AI Vision Board Generator (Data Analysis)
+  app.post('/api/ai/generate-vision-board', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { 
+        includeJournals = true, 
+        includeAffirmations = true, 
+        includeChallenges = true, 
+        includeUserProfile = true,
+        userTier = 'basic'
+      } = req.body;
+
+      // Import cost control functions
+      const { 
+        validateAIRequest, 
+        getCachedResponse, 
+        cacheResponse, 
+        trackUsage,
+        createInputHash 
+      } = await import('./ai-cost-control');
+
+      // Create input hash based on user data flags and user ID
+      const dataFlags = `${includeJournals}-${includeAffirmations}-${includeChallenges}-${includeUserProfile}`;
+      const inputHash = createInputHash(userId + dataFlags, 'vision_board_generation');
+      
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'vision_board_generation',
+        input: dataFlags,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests 
+        });
+      }
+
+      // Check cache first (shorter cache for personalized content)
+      if (validation.cachedResponse) {
+        await trackUsage(userId, 'vision_board_generation', inputHash, 0, 0);
+        return res.json({ 
+          ...validation.cachedResponse, 
+          fromCache: true,
+          remainingRequests: validation.remainingRequests
+        });
+      }
+
+      const storage = req.storage;
+      let userDataAnalysis = '';
+
+      // Gather user data for analysis
+      if (includeJournals) {
+        const journals = await storage.getUserJournalEntries(userId);
+        if (journals.length > 0) {
+          const recentJournals = journals.slice(-10); // Last 10 entries
+          userDataAnalysis += `\n\nRecent Journal Insights:\n${recentJournals.map(j => 
+            `Date: ${j.date}, Mood: ${j.mood || 'N/A'}, Entry: ${j.content?.slice(0, 200)}...`
+          ).join('\n')}`;
+        }
+      }
+
+      if (includeAffirmations) {
+        const affirmations = await storage.getUserAffirmations(userId);
+        if (affirmations.length > 0) {
+          userDataAnalysis += `\n\nPersonal Affirmations:\n${affirmations.map(a => 
+            `- ${a.content}`
+          ).join('\n')}`;
+        }
+      }
+
+      if (includeChallenges) {
+        const challenges = await storage.getUserChallenges(userId);
+        if (challenges.length > 0) {
+          userDataAnalysis += `\n\nActive Challenges & Goals:\n${challenges.map(c => 
+            `Challenge: ${c.currentChallenge}, Day: ${c.currentDay}, Progress: ${c.completionPercentage}%`
+          ).join('\n')}`;
+        }
+      }
+
+      if (includeUserProfile) {
+        const profile = await storage.getUserProfile(userId);
+        if (profile) {
+          userDataAnalysis += `\n\nUser Profile Context:\n`;
+          if (profile.preferences) userDataAnalysis += `Preferences: ${JSON.stringify(profile.preferences)}\n`;
+          if (profile.goals) userDataAnalysis += `Stated Goals: ${profile.goals}\n`;
+        }
+      }
+
+      // Check if we have sufficient data
+      if (userDataAnalysis.trim().length < 100) {
+        return res.status(400).json({ 
+          error: 'insufficient data',
+          message: 'Not enough personal data for AI analysis. Please add more journal entries, affirmations, or goals.'
+        });
+      }
+
+      const { OpenAI } = await import('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const startTime = Date.now();
+
+      const prompt = `You are an expert manifestation coach and vision board designer. Analyze the user's personal data and create a comprehensive, personalized vision board design.
+
+User Personal Data Analysis:
+${userDataAnalysis}
+
+Based on this analysis, create a detailed vision board design in JSON format with the following structure:
+
+{
+  "title": "Personalized title based on user's main aspirations",
+  "theme": "Overall theme (e.g., 'Abundance & Growth', 'Professional Success', 'Holistic Wellness')",
+  "backgroundColor": "Hex color that reflects the user's energy and goals",
+  "elements": [
+    {
+      "id": "unique_id",
+      "type": "text|image|icon",
+      "content": "Text content or image description",
+      "position": {"x": number, "y": number},
+      "size": {"width": number, "height": number},
+      "style": {
+        "fontSize": number,
+        "fontWeight": "normal|bold",
+        "color": "hex_color",
+        "backgroundColor": "hex_color",
+        "borderRadius": number
+      },
+      "reasoning": "Why this element was chosen based on user data"
+    }
+  ],
+  "personalizedInsights": [
+    "Insight 1 based on user's patterns",
+    "Insight 2 about their manifestation style",
+    "Insight 3 about recommended focus areas"
+  ],
+  "goalCategories": ["financial", "career", "health", "relationships", "personal", "travel", "lifestyle"],
+  "manifestationTips": [
+    "Specific tip based on user's data",
+    "Actionable advice for their goals",
+    "Personalized manifestation strategy"
+  ]
+}
+
+Design the vision board with 6-12 elements strategically placed. Include inspirational quotes that resonate with their journal themes, visual representations of their stated goals, and colors that reflect their emotional patterns. Make it deeply personal and meaningful.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_tokens: 2000
+      });
+
+      const responseTime = Date.now() - startTime;
+      const cost = 0.15; // Estimated cost for comprehensive analysis
+
+      let visionBoard;
+      try {
+        visionBoard = JSON.parse(response.choices[0].message.content || '{}');
+      } catch (parseError) {
+        throw new Error('Failed to parse AI response');
+      }
+
+      if (!visionBoard.elements || !Array.isArray(visionBoard.elements)) {
+        throw new Error('Invalid vision board structure received');
+      }
+
+      const result = {
+        visionBoard,
+        analysisSource: {
+          journalsAnalyzed: includeJournals,
+          affirmationsAnalyzed: includeAffirmations,
+          challengesAnalyzed: includeChallenges,
+          profileAnalyzed: includeUserProfile
+        },
+        cost,
+        remainingRequests: validation.remainingRequests
+      };
+
+      // Cache the response for 6 hours (shorter for personalized content)
+      await cacheResponse(inputHash, 'vision_board_generation', result, 6);
+      
+      // Track usage
+      await trackUsage(userId, 'vision_board_generation', inputHash, responseTime, cost);
+
+      res.json(result);
+      
+    } catch (error: any) {
+      console.error('Error generating vision board:', error);
+      
+      if (error.message?.includes('429') || error.message?.includes('limit')) {
+        res.status(429).json({ 
+          error: 'Usage limit reached. This feature requires premium access.',
+          type: 'usage_limit'
+        });
+      } else if (error.message?.includes('insufficient data')) {
+        res.status(400).json({ 
+          error: 'insufficient data',
+          message: 'Please add more journal entries, affirmations, or goals for better AI analysis.'
+        });
+      } else {
+        res.status(500).json({ 
+          error: 'Failed to generate personalized vision board. Please try again.',
+          type: 'generation_error'
+        });
+      }
+    }
+  });
+
   // Vision Board API Routes
   app.get('/api/vision-boards', isAuthenticated, async (req: any, res) => {
     try {
