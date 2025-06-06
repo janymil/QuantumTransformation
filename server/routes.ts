@@ -2986,6 +2986,232 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
+  // Vision Board Templates and Categories Endpoints
+  app.get('/api/vision-board/templates', async (req, res) => {
+    try {
+      const templates = [
+        {
+          id: 'financial_freedom',
+          name: 'Financial Freedom',
+          category: 'wealth',
+          description: 'Manifest abundance and financial prosperity',
+          thumbnail: '/templates/financial_freedom.jpg',
+          elements: [
+            { type: 'text', content: 'Financial Freedom', position: { x: 100, y: 50 }, style: { fontSize: 32, fontWeight: 'bold', color: '#2d5a27' } },
+            { type: 'text', content: '$1,000,000', position: { x: 300, y: 150 }, style: { fontSize: 28, color: '#2d5a27' } },
+            { type: 'text', content: 'Multiple Income Streams', position: { x: 50, y: 250 }, style: { fontSize: 20, color: '#2d5a27' } }
+          ]
+        },
+        {
+          id: 'health_wellness',
+          name: 'Health & Wellness',
+          category: 'health',
+          description: 'Focus on physical and mental well-being',
+          thumbnail: '/templates/health_wellness.jpg',
+          elements: [
+            { type: 'text', content: 'Vibrant Health', position: { x: 100, y: 50 }, style: { fontSize: 32, fontWeight: 'bold', color: '#2d5a27' } },
+            { type: 'text', content: 'Daily Exercise', position: { x: 50, y: 150 }, style: { fontSize: 20, color: '#2d5a27' } },
+            { type: 'text', content: 'Nutritious Food', position: { x: 300, y: 200 }, style: { fontSize: 20, color: '#2d5a27' } }
+          ]
+        },
+        {
+          id: 'career_success',
+          name: 'Career Success',
+          category: 'career',
+          description: 'Achieve professional goals and recognition',
+          thumbnail: '/templates/career_success.jpg',
+          elements: [
+            { type: 'text', content: 'Career Excellence', position: { x: 100, y: 50 }, style: { fontSize: 32, fontWeight: 'bold', color: '#2d5a27' } },
+            { type: 'text', content: 'Leadership Role', position: { x: 50, y: 150 }, style: { fontSize: 20, color: '#2d5a27' } },
+            { type: 'text', content: 'Industry Recognition', position: { x: 250, y: 200 }, style: { fontSize: 20, color: '#2d5a27' } }
+          ]
+        },
+        {
+          id: 'relationships',
+          name: 'Love & Relationships',
+          category: 'relationships',
+          description: 'Attract meaningful connections and love',
+          thumbnail: '/templates/relationships.jpg',
+          elements: [
+            { type: 'text', content: 'Loving Relationships', position: { x: 100, y: 50 }, style: { fontSize: 32, fontWeight: 'bold', color: '#2d5a27' } },
+            { type: 'text', content: 'Soulmate Connection', position: { x: 50, y: 150 }, style: { fontSize: 20, color: '#2d5a27' } },
+            { type: 'text', content: 'Strong Family Bonds', position: { x: 250, y: 200 }, style: { fontSize: 20, color: '#2d5a27' } }
+          ]
+        },
+        {
+          id: 'travel_adventure',
+          name: 'Travel & Adventure',
+          category: 'lifestyle',
+          description: 'Explore the world and create memories',
+          thumbnail: '/templates/travel_adventure.jpg',
+          elements: [
+            { type: 'text', content: 'World Explorer', position: { x: 100, y: 50 }, style: { fontSize: 32, fontWeight: 'bold', color: '#2d5a27' } },
+            { type: 'text', content: 'Europe Trip', position: { x: 50, y: 150 }, style: { fontSize: 20, color: '#2d5a27' } },
+            { type: 'text', content: 'Adventure Memories', position: { x: 250, y: 200 }, style: { fontSize: 20, color: '#2d5a27' } }
+          ]
+        },
+        {
+          id: 'personal_growth',
+          name: 'Personal Growth',
+          category: 'personal',
+          description: 'Develop mindfulness and self-awareness',
+          thumbnail: '/templates/personal_growth.jpg',
+          elements: [
+            { type: 'text', content: 'Inner Peace', position: { x: 100, y: 50 }, style: { fontSize: 32, fontWeight: 'bold', color: '#2d5a27' } },
+            { type: 'text', content: 'Daily Meditation', position: { x: 50, y: 150 }, style: { fontSize: 20, color: '#2d5a27' } },
+            { type: 'text', content: 'Emotional Balance', position: { x: 250, y: 200 }, style: { fontSize: 20, color: '#2d5a27' } }
+          ]
+        }
+      ];
+      
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching vision board templates:', error);
+      res.status(500).json({ message: 'Failed to fetch templates' });
+    }
+  });
+
+  app.get('/api/vision-board/categories', async (req, res) => {
+    try {
+      const categories = [
+        { id: 'wealth', name: 'Wealth & Abundance', icon: '💰', description: 'Financial goals and prosperity' },
+        { id: 'health', name: 'Health & Wellness', icon: '🌿', description: 'Physical and mental well-being' },
+        { id: 'career', name: 'Career & Success', icon: '🎯', description: 'Professional achievements' },
+        { id: 'relationships', name: 'Love & Relationships', icon: '❤️', description: 'Meaningful connections' },
+        { id: 'lifestyle', name: 'Lifestyle & Travel', icon: '✈️', description: 'Experiences and adventures' },
+        { id: 'personal', name: 'Personal Growth', icon: '🧘', description: 'Self-improvement and mindfulness' },
+        { id: 'creativity', name: 'Creativity & Arts', icon: '🎨', description: 'Creative expression and projects' },
+        { id: 'family', name: 'Family & Home', icon: '🏠', description: 'Family goals and home life' }
+      ];
+      
+      res.json(categories);
+    } catch (error) {
+      console.error('Error fetching vision board categories:', error);
+      res.status(500).json({ message: 'Failed to fetch categories' });
+    }
+  });
+
+  app.get('/api/vision-board/examples', async (req, res) => {
+    try {
+      const examples = [
+        {
+          id: 'entrepreneur_success',
+          title: 'Entrepreneur Success Story',
+          description: 'Vision board for building a successful business',
+          category: 'career',
+          imageUrl: '/examples/entrepreneur.jpg',
+          elements: [
+            'Company Logo',
+            'Revenue Goals',
+            'Team Vision',
+            'Market Leadership'
+          ]
+        },
+        {
+          id: 'healthy_lifestyle',
+          title: 'Healthy Lifestyle Goals',
+          description: 'Complete wellness transformation',
+          category: 'health',
+          imageUrl: '/examples/wellness.jpg',
+          elements: [
+            'Fitness Goals',
+            'Nutrition Plan',
+            'Mental Health',
+            'Energy & Vitality'
+          ]
+        },
+        {
+          id: 'dream_home',
+          title: 'Dream Home Manifestation',
+          description: 'Creating the perfect living space',
+          category: 'lifestyle',
+          imageUrl: '/examples/dream_home.jpg',
+          elements: [
+            'House Design',
+            'Location',
+            'Interior Style',
+            'Garden & Outdoor Space'
+          ]
+        }
+      ];
+      
+      res.json(examples);
+    } catch (error) {
+      console.error('Error fetching vision board examples:', error);
+      res.status(500).json({ message: 'Failed to fetch examples' });
+    }
+  });
+
+  app.get('/api/vision-board/progress-analytics/:userId', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      
+      // Get user's vision boards
+      const visionBoards = await storage.getVisionBoards(userId);
+      
+      // Calculate analytics
+      const analytics = {
+        totalBoards: visionBoards.length,
+        completedGoals: 0, // Would need goal tracking implementation
+        activeGoals: visionBoards.length * 3, // Estimated based on boards
+        engagementMetrics: {
+          boardsCreatedThisMonth: visionBoards.filter(board => {
+            const boardDate = new Date(board.createdAt);
+            const now = new Date();
+            return boardDate.getMonth() === now.getMonth() && boardDate.getFullYear() === now.getFullYear();
+          }).length,
+          lastActivityDate: visionBoards.length > 0 ? visionBoards[0].updatedAt : null,
+          averageElementsPerBoard: visionBoards.length > 0 ? 
+            visionBoards.reduce((sum, board) => sum + (board.canvasData?.elements?.length || 0), 0) / visionBoards.length : 0
+        },
+        categoryBreakdown: visionBoards.reduce((acc, board) => {
+          const category = board.templateCategory || 'general';
+          acc[category] = (acc[category] || 0) + 1;
+          return acc;
+        }, {})
+      };
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching vision board analytics:', error);
+      res.status(500).json({ message: 'Failed to fetch analytics' });
+    }
+  });
+
+  app.post('/api/vision-board/generate-mobile-wallpaper', async (req, res) => {
+    try {
+      const { visionBoard, deviceType = 'iphone', style = 'modern' } = req.body;
+      
+      if (!visionBoard) {
+        return res.status(400).json({ message: 'Vision board data is required' });
+      }
+      
+      // Device dimensions
+      const dimensions = {
+        iphone: { width: 1170, height: 2532 },
+        android: { width: 1080, height: 2340 },
+        ipad: { width: 1620, height: 2160 }
+      };
+      
+      const deviceDimensions = dimensions[deviceType] || dimensions.iphone;
+      
+      // Generate wallpaper (simplified implementation)
+      const wallpaperData = {
+        wallpaperUrl: `/api/vision-board/wallpaper/${Date.now()}.png`, // Would generate actual image
+        deviceType,
+        dimensions: deviceDimensions,
+        style,
+        elements: visionBoard.elements || [],
+        backgroundColor: visionBoard.backgroundColor || '#ffffff'
+      };
+      
+      res.json(wallpaperData);
+    } catch (error) {
+      console.error('Error generating mobile wallpaper:', error);
+      res.status(500).json({ message: 'Failed to generate wallpaper' });
+    }
+  });
+
   // AI Cost Optimization & Savings Endpoints
   app.get('/api/ai-cost-optimization/status', isAuthenticated, async (req: any, res) => {
     try {
