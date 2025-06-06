@@ -34,12 +34,15 @@ import {
   Brain,
   HelpCircle,
   Palette,
-  FolderOpen
+  FolderOpen,
+  MoreHorizontal,
+  Edit,
+  Share
 } from "lucide-react";
 
 interface VisionBoardItem {
   id: string;
-  type: 'image' | 'text' | 'shape';
+  type: 'image' | 'text' | 'shape' | 'svg';
   content: string;
   x: number;
   y: number;
@@ -59,6 +62,9 @@ interface VisionBoardItem {
     textAlign?: 'left' | 'center' | 'right';
     fontWeight?: 'normal' | 'bold';
     fontStyle?: 'normal' | 'italic';
+    fill?: string;
+    stroke?: string;
+    strokeWidth?: number;
   };
 }
 
@@ -113,7 +119,179 @@ export default function EnhancedVisionBoard() {
   const [showAIGuide, setShowAIGuide] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [showSvgDialog, setShowSvgDialog] = useState(false);
   const [currentBoardId, setCurrentBoardId] = useState<number | null>(null);
+
+  // Predefined SVG elements library
+  const predefinedSvgs = [
+    {
+      name: "Star",
+      category: "Shapes",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`
+    },
+    {
+      name: "Heart",
+      category: "Emotions",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`
+    },
+    {
+      name: "Flower",
+      category: "Nature",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a10 10 0 0 1-10-10 10 10 0 0 1 10-10 10 10 0 0 1 10 10 10 10 0 0 1-10 10zm0-18a8 8 0 0 0-8 8 8 8 0 0 0 8 8 8 8 0 0 0 8-8 8 8 0 0 0-8-8zm-4 8a4 4 0 1 1 8 0 4 4 0 0 1-8 0z"/></svg>`
+    },
+    {
+      name: "Sun",
+      category: "Nature",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
+    },
+    {
+      name: "Rainbow",
+      category: "Nature",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17a10 10 0 0 0-20 0"/><path d="M6 17a6 6 0 0 1 12 0"/><path d="M10 17a2 2 0 0 1 4 0"/></svg>`
+    },
+    {
+      name: "Smiley",
+      category: "Emotions",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>`
+    },
+    {
+      name: "Lightning",
+      category: "Energy",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/></svg>`
+    },
+    {
+      name: "Crown",
+      category: "Symbols",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 7l3.5 3L12 4l5.5 6L21 7l-2 9H5z"/></svg>`
+    },
+    {
+      name: "Diamond",
+      category: "Shapes",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"/></svg>`
+    },
+    {
+      name: "Tree",
+      category: "Nature",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L8 8h8l-4-6zm0 8L8 16h8l-4-6zm-1 8h2v4h-2v-4z"/></svg>`
+    }
+  ];
+
+  // SVG element functions
+  const addSvgElement = (svgData: { name: string; svg: string }) => {
+    const newItem: VisionBoardItem = {
+      id: Date.now().toString(),
+      type: 'svg',
+      content: svgData.svg,
+      x: 100,
+      y: 100,
+      width: 80,
+      height: 80,
+      rotation: 0,
+      opacity: 1,
+      zIndex: items.length,
+      styling: {
+        fill: '#3b82f6',
+        stroke: '#1d4ed8',
+        strokeWidth: 1
+      }
+    };
+    setItems(prev => [...prev, newItem]);
+    setShowSvgDialog(false);
+    drawCanvas();
+  };
+
+  // Enhanced functionality
+  const duplicateBoard = async () => {
+    try {
+      const duplicatedBoard = {
+        title: `${board.title} (Copy)`,
+        description: board.description,
+        canvasData: board.canvasData,
+        templateCategory: board.templateCategory
+      };
+
+      const response = await fetch('/api/vision-boards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicatedBoard)
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Board Duplicated!",
+          description: "A copy of your vision board has been created.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Duplication Failed",
+        description: "Failed to duplicate vision board.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteBoard = async (boardId: number) => {
+    try {
+      const response = await fetch(`/api/vision-boards/${boardId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Board Deleted",
+          description: "Vision board has been permanently deleted.",
+        });
+        refetchBoards();
+      }
+    } catch (error) {
+      toast({
+        title: "Deletion Failed",
+        description: "Failed to delete vision board.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const exportBoard = async (format: 'png' | 'jpg' | 'pdf') => {
+    if (!canvasRef.current) return;
+
+    try {
+      let dataUrl: string;
+      
+      if (format === 'pdf') {
+        // For PDF export, we'll create a high-quality image first
+        const canvas = canvasRef.current;
+        dataUrl = canvas.toDataURL('image/png', 1.0);
+        
+        // Create a simple PDF-like download by opening the image
+        const link = document.createElement('a');
+        link.download = `${board.title || 'vision-board'}.png`;
+        link.href = dataUrl;
+        link.click();
+      } else {
+        const canvas = canvasRef.current;
+        const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+        dataUrl = canvas.toDataURL(mimeType, 0.9);
+        
+        const link = document.createElement('a');
+        link.download = `${board.title || 'vision-board'}.${format}`;
+        link.href = dataUrl;
+        link.click();
+      }
+
+      toast({
+        title: "Export Successful!",
+        description: `Vision board exported as ${format.toUpperCase()}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export vision board.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Save/Load functionality
   const saveVisionBoard = async () => {
@@ -977,6 +1155,15 @@ export default function EnhancedVisionBoard() {
           >
             <Type className="w-4 h-4 mr-1" />
             Add Text
+          </Button>
+
+          <Button
+            onClick={() => setShowSvgDialog(true)}
+            variant="outline"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Elements
           </Button>
 
           <div className="w-px bg-border" />
