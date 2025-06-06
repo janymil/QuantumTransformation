@@ -38,7 +38,8 @@ import {
   FolderOpen,
   MoreHorizontal,
   Edit,
-  Share
+  Share,
+  Sparkles
 } from "lucide-react";
 
 interface VisionBoardItem {
@@ -1404,6 +1405,16 @@ export default function EnhancedVisionBoard() {
             AI Guide
           </Button>
 
+          <Button
+            onClick={() => setShowAISuggestions(true)}
+            variant="outline"
+            size="sm"
+            className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 hover:from-purple-100 hover:to-pink-100"
+          >
+            <Sparkles className="w-4 h-4 mr-1 text-purple-600" />
+            AI Suggestions
+          </Button>
+
           <div className="w-px bg-border" />
 
           <Button
@@ -1866,6 +1877,14 @@ export default function EnhancedVisionBoard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Suggestion Engine */}
+      <AISuggestionEngine
+        board={board}
+        onAddSuggestion={handleAISuggestion}
+        onClose={() => setShowAISuggestions(false)}
+        isOpen={showAISuggestions}
+      />
     </Card>
   );
 }
