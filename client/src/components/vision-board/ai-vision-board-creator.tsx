@@ -98,8 +98,8 @@ export default function AIVisionBoardCreator({ onVisionBoardGenerated }: AIVisio
       setAnalysisProgress(80);
       setCurrentStep('Finalizing your personalized board...');
       
-      if (response.visionBoard) {
-        setGeneratedBoard(response.visionBoard);
+      if (data.visionBoard) {
+        setGeneratedBoard(data.visionBoard);
         setAnalysisProgress(100);
         setCurrentStep('Complete! Your AI-generated vision board is ready.');
         

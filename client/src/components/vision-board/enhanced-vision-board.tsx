@@ -16,6 +16,9 @@ import { getActiveHostingConfig } from "@/lib/hosting-config";
 import VisionBoardTour from "./vision-board-tour";
 import AIVisionGuide from "./ai-vision-guide";
 import AISuggestionEngine from "./ai-suggestion-engine";
+import MobileWallpaperGenerator from "./mobile-wallpaper-generator";
+import AIImageGenerator from "./ai-image-generator";
+import AIVisionBoardCreator from "./ai-vision-board-creator";
 import {
   Monitor,
   Camera,
@@ -901,6 +904,111 @@ export default function EnhancedVisionBoard() {
     toast({ title: "Text added to vision board!" });
   };
 
+  // AI Image Generation Handler
+  const handleAIImageGenerated = async (imageUrl: string) => {
+    try {
+      // Upload the AI-generated image to BunnyCDN
+      const hostingConfig = getActiveHostingConfig();
+      const uploader = new ExternalHostingUploader(hostingConfig);
+      
+      // Convert image URL to blob for upload
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `ai-generated-${Date.now()}.png`, { type: 'image/png' });
+      
+      const uploadResult = await uploader.uploadImage(file, {
+        quality: 85,
+        maxWidth: 1200,
+        maxHeight: 1200
+      });
+
+      if (uploadResult.success && uploadResult.url) {
+        // Add to vision board
+        const imageItem: VisionBoardItem = {
+          id: Date.now().toString(),
+          type: 'image',
+          content: uploadResult.url,
+          x: Math.random() * (board.canvasData.canvasWidth - 200),
+          y: Math.random() * (board.canvasData.canvasHeight - 200),
+          width: 200,
+          height: 200,
+          rotation: 0,
+          opacity: 1,
+          zIndex: board.canvasData.items.length,
+          styling: {}
+        };
+
+        setBoard(prev => ({
+          ...prev,
+          canvasData: {
+            ...prev.canvasData,
+            items: [...prev.canvasData.items, imageItem]
+          }
+        }));
+
+        toast({
+          title: "AI Image Added",
+          description: "Custom AI-generated image added to your vision board"
+        });
+      }
+    } catch (error) {
+      console.error('Error adding AI image:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to add AI-generated image. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // AI Vision Board Creation Handler
+  const handleAIVisionBoardGenerated = (visionBoardData: any) => {
+    try {
+      // Apply the AI-generated vision board structure
+      const newItems: VisionBoardItem[] = [];
+      
+      visionBoardData.elements.forEach((element: any, index: number) => {
+        const item: VisionBoardItem = {
+          id: `ai-${Date.now()}-${index}`,
+          type: element.type === 'icon' ? 'svg' : element.type,
+          content: element.content,
+          x: element.position.x,
+          y: element.position.y,
+          width: element.size.width,
+          height: element.size.height,
+          rotation: 0,
+          opacity: 1,
+          zIndex: index,
+          styling: element.style
+        };
+        newItems.push(item);
+      });
+
+      // Update the vision board with AI-generated content
+      setBoard(prev => ({
+        ...prev,
+        title: visionBoardData.title || prev.title,
+        canvasData: {
+          ...prev.canvasData,
+          backgroundColor: visionBoardData.backgroundColor || prev.canvasData.backgroundColor,
+          items: newItems
+        }
+      }));
+
+      toast({
+        title: "AI Vision Board Created",
+        description: `Your personalized "${visionBoardData.title}" vision board is ready`
+      });
+    } catch (error) {
+      console.error('Error applying AI vision board:', error);
+      toast({
+        title: "Application Failed",
+        description: "Failed to apply AI-generated vision board. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // AI Suggestion Handler
   const handleAISuggestion = (suggestion: any) => {
     if (suggestion.type === 'text') {
@@ -1414,6 +1522,12 @@ export default function EnhancedVisionBoard() {
             <Sparkles className="w-4 h-4 mr-1 text-purple-600" />
             AI Suggestions
           </Button>
+
+          <AIVisionBoardCreator onVisionBoardGenerated={handleAIVisionBoardGenerated} />
+
+          <AIImageGenerator onImageGenerated={handleAIImageGenerated} />
+
+          <MobileWallpaperGenerator canvasRef={canvasRef} />
 
           <div className="w-px bg-border" />
 
