@@ -138,30 +138,11 @@ Respond in JSON:
         { temperature: 0.7, maxTokens: 800 }
       );
 
-      const content = response.choices[0]?.message?.content;
-      if (!content) throw new Error("No response from AI");
-
-      // Track usage
-      await trackUsage(
-        context.profile?.userId || 'unknown',
-        'daily_coaching_analysis',
-        prompt,
-        response.usage?.prompt_tokens || 0,
-        response.usage?.completion_tokens || 0
-      );
-
-      // Cache response
-      await cacheResponse(
-        inputHash,
-        'daily_coaching_analysis',
-        undefined,
-        undefined,
-        content,
-        response.usage?.total_tokens || 0,
-        context.profile?.userId || 'unknown'
-      );
-
-      return JSON.parse(content);
+      const analysisResult = JSON.parse(aiResult.response);
+      
+      console.log(`AI Analysis - Model: ${aiResult.modelUsed}, Complexity: ${aiResult.routingDecision.complexity}, Cost: $${aiResult.actualCost.toFixed(4)}`);
+      
+      return analysisResult;
     } catch (error) {
       console.error("Error in AI analysis:", error);
       return {
@@ -227,7 +208,7 @@ Respond in JSON format:
       const aiResult = await modelRouter.executeWithOptimalModel(
         prompt,
         "You are an advanced AI coach creating detailed daily coaching content with therapeutic exercises.",
-        contextString,
+        JSON.stringify(context),
         'therapeutic_content_generation',
         'advanced_ai_couch',
         'premium',
