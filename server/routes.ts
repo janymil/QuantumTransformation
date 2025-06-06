@@ -17,6 +17,7 @@ import {
   createInputHash,
   getUserAIStats 
 } from "./ai-cost-control";
+import { costOptimizationEngine } from "./ai-cost-optimization";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
 import { aiCouchEngine } from "./ai-couch-simple";
 import { db } from "./db";
