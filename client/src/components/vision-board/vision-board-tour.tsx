@@ -280,7 +280,7 @@ export default function VisionBoardTour({ isOpen, onClose, onComplete }: VisionB
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <Card className="w-full max-w-4xl max-h-[90vh] flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -298,7 +298,7 @@ export default function VisionBoardTour({ isOpen, onClose, onComplete }: VisionB
           </Button>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 overflow-y-auto flex-1">
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="w-full bg-muted rounded-full h-2">

@@ -271,6 +271,8 @@ export const aiUsageTracking = pgTable("ai_usage_tracking", {
   index("ai_usage_tracking_challenge_idx").on(table.challengeType),
 ]);
 
+
+
 // Schema types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -309,6 +311,9 @@ export type InsertSpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$in
 export type InsertAiResponseHistory = typeof aiResponseHistory.$inferInsert;
 export type AiResponseHistory = typeof aiResponseHistory.$inferSelect;
 export type SpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferSelect;
+
+export type InsertVisionBoard = typeof visionBoards.$inferInsert;
+export type VisionBoard = typeof visionBoards.$inferSelect;
 
 // Gamification and Micro-Learning System
 export const userLevels = pgTable("user_levels", {
