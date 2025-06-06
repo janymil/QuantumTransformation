@@ -165,8 +165,23 @@ export default function AdminAnalytics() {
           </Alert>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="ai-usage" className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              AI Usage Analytics
+            </TabsTrigger>
+            <TabsTrigger value="user-metrics" className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4" />
+              User Statistics & Metrics
+            </TabsTrigger>
+          </TabsList>
+
+          {/* AI Usage Analytics Tab */}
+          <TabsContent value="ai-usage" className="space-y-6">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -397,7 +412,284 @@ export default function AdminAnalytics() {
               </Alert>
             </CardContent>
           </Card>
-        </div>
+            </div>
+          </TabsContent>
+
+          {/* User Statistics & Metrics Tab */}
+          <TabsContent value="user-metrics" className="space-y-6">
+            {userStatsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
+                  <p className="text-muted-foreground">Loading user statistics...</p>
+                </div>
+              </div>
+            ) : userStatsError ? (
+              <div className="flex items-center justify-center py-12">
+                <Card className="w-full max-w-md">
+                  <CardContent className="py-12 text-center">
+                    <Database className="w-12 h-12 mx-auto mb-4 text-red-500" />
+                    <h3 className="text-lg font-medium mb-2">Failed to Load User Statistics</h3>
+                    <p className="text-muted-foreground">
+                      Unable to fetch user data. Please check the server connection.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <>
+                {/* User Overview Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{userStats?.userOverview?.totalUsers || 0}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Registered platform users
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                      <UserCheck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{userStats?.userOverview?.activeUsers || 0}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Users with challenge progress
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Activation Rate</CardTitle>
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{userStats?.userOverview?.activationRate || 0}%</div>
+                      <p className="text-xs text-muted-foreground">
+                        Users who started challenges
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Challenge Participation & Day Completions */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="w-5 h-5" />
+                        Challenge Participation
+                      </CardTitle>
+                      <CardDescription>
+                        User participation across different challenge types
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {userStats?.challengeParticipation?.map((challenge: any, index: number) => (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{challenge.challengeType}</span>
+                            <Badge variant="secondary">{challenge.userCount} users</Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div>Avg Progress: Day {challenge.avgProgress}</div>
+                            <div>Completion Rate: {challenge.completionRate}%</div>
+                          </div>
+                        </div>
+                      )) || <p className="text-muted-foreground">No challenge data available</p>}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5" />
+                        Day Completions Overview
+                      </CardTitle>
+                      <CardDescription>
+                        Total days completed across all challenges
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {userStats?.dayCompletions?.map((completion: any, index: number) => (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{completion.challengeType}</span>
+                            <Badge variant="outline">{completion.totalDaysCompleted} days</Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            <div>Avg per user: {completion.avgCompletedDays} days</div>
+                            <div>Participants: {completion.userCount} users</div>
+                          </div>
+                        </div>
+                      )) || <p className="text-muted-foreground">No completion data available</p>}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Retention & Engagement Metrics */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5" />
+                        User Retention Metrics
+                      </CardTitle>
+                      <CardDescription>
+                        Percentage of users completing milestone days
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">7-Day Retention</span>
+                            <span className="text-lg font-bold">{userStats?.retentionMetrics?.sevenDayRetention || 0}%</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${userStats?.retentionMetrics?.sevenDayRetention || 0}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">14-Day Retention</span>
+                            <span className="text-lg font-bold">{userStats?.retentionMetrics?.fourteenDayRetention || 0}%</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${userStats?.retentionMetrics?.fourteenDayRetention || 0}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">21-Day Completion</span>
+                            <span className="text-lg font-bold">{userStats?.retentionMetrics?.twentyOneDayRetention || 0}%</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-purple-500 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${userStats?.retentionMetrics?.twentyOneDayRetention || 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Award className="w-5 h-5" />
+                        Streak & Engagement
+                      </CardTitle>
+                      <CardDescription>
+                        User engagement patterns and streaks
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">{userStats?.streakMetrics?.avgStreak || 0}</div>
+                          <div className="text-sm text-muted-foreground">Avg Streak</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">{userStats?.streakMetrics?.maxStreak || 0}</div>
+                          <div className="text-sm text-muted-foreground">Max Streak</div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-center">
+                        <div className="text-lg font-bold">{userStats?.streakMetrics?.usersWithStreaks || 0}</div>
+                        <div className="text-sm text-muted-foreground">Users with Active Streaks</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Journal Activity & Popular Challenges */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5" />
+                        Journal Activity
+                      </CardTitle>
+                      <CardDescription>
+                        User journaling engagement and mood tracking
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">{userStats?.journalActivity?.totalEntries || 0}</div>
+                          <div className="text-sm text-muted-foreground">Total Entries</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">{userStats?.journalActivity?.activeJournalers || 0}</div>
+                          <div className="text-sm text-muted-foreground">Active Journalers</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                        <div className="text-center">
+                          <div className="text-lg font-bold">{userStats?.journalActivity?.avgMood || 0}/10</div>
+                          <div className="text-sm text-muted-foreground">Avg Mood</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold">{userStats?.journalActivity?.avgEnergy || 0}/10</div>
+                          <div className="text-sm text-muted-foreground">Avg Energy</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Star className="w-5 h-5" />
+                        Popular Challenges
+                      </CardTitle>
+                      <CardDescription>
+                        Most engaged challenge types by participation
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {userStats?.popularChallenges?.slice(0, 5).map((challenge: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium">{challenge.challengeType}</div>
+                            <div className="text-xs text-muted-foreground">
+                              Avg progress: Day {challenge.avgCurrentDay}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold">{challenge.participants}</div>
+                            <div className="text-xs text-muted-foreground">participants</div>
+                          </div>
+                        </div>
+                      )) || <p className="text-muted-foreground">No challenge data available</p>}
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

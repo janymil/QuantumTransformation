@@ -611,6 +611,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin User Statistics endpoint (password protected in frontend)
+  app.get('/api/admin/user-statistics', async (req, res) => {
+    try {
+      // Get user interaction statistics and metrics
+      const userStats = await storage.getUserStatistics();
+      
+      res.json(userStats);
+    } catch (error) {
+      console.error("Admin user statistics error:", error);
+      res.status(500).json({ error: "Failed to get user statistics" });
+    }
+  });
+
   // Enhanced AI Coaching with Emotional Intelligence
   app.post("/api/ai/enhanced-coaching", isAuthenticated, async (req: any, res) => {
     try {

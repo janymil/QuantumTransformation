@@ -28,7 +28,7 @@ import {
   type InsertUserSettings,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql, count } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -501,6 +501,156 @@ export class DatabaseStorage implements IStorage {
       return profile;
     } catch (error) {
       console.error("Error updating AI Couch profile:", error);
+      throw error;
+    }
+  }
+
+  async getUserStatistics(): Promise<any> {
+    try {
+      // Get total users count
+      const totalUsers = await db
+        .select({ count: sql`COUNT(*)` })
+        .from(users);
+
+      // Get user registration stats by month
+      const userRegistrations = await db
+        .select({
+          month: sql`TO_CHAR(created_at, 'YYYY-MM')`,
+          count: sql`COUNT(*)`
+        })
+        .from(users)
+        .groupBy(sql`TO_CHAR(created_at, 'YYYY-MM')`)
+        .orderBy(sql`TO_CHAR(created_at, 'YYYY-MM') DESC`)
+        .limit(12);
+
+      // Get active users (users with any progress)
+      const activeUsers = await db
+        .select({ count: sql`COUNT(DISTINCT user_id)` })
+        .from(userProgress);
+
+      // Get challenge participation stats
+      const challengeParticipation = await db
+        .select({
+          challengeType: userProgress.challengeType,
+          userCount: sql`COUNT(DISTINCT user_id)`,
+          avgProgress: sql`AVG(current_day)`,
+          completionRate: sql`AVG(CASE WHEN ARRAY_LENGTH(completed_days, 1) >= 21 THEN 1 ELSE 0 END) * 100`
+        })
+        .from(userProgress)
+        .groupBy(userProgress.challengeType)
+        .orderBy(sql`COUNT(DISTINCT user_id) DESC`);
+
+      // Get journal activity stats
+      const journalStats = await db
+        .select({
+          totalEntries: sql`COUNT(*)`,
+          activeJournalers: sql`COUNT(DISTINCT user_id)`,
+          avgMood: sql`AVG(mood)`,
+          avgEnergy: sql`AVG(energy)`
+        })
+        .from(journalEntries);
+
+      // Get day completion statistics
+      const dayCompletions = await db
+        .select({
+          challengeType: userProgress.challengeType,
+          totalDaysCompleted: sql`SUM(ARRAY_LENGTH(completed_days, 1))`,
+          avgCompletedDays: sql`AVG(ARRAY_LENGTH(completed_days, 1))`,
+          userCount: sql`COUNT(DISTINCT user_id)`
+        })
+        .from(userProgress)
+        .groupBy(userProgress.challengeType);
+
+      // Get user retention data (users who completed at least 7 days)
+      const retentionStats = await db
+        .select({
+          sevenDayRetention: sql`COUNT(CASE WHEN ARRAY_LENGTH(completed_days, 1) >= 7 THEN 1 END)`,
+          fourteenDayRetention: sql`COUNT(CASE WHEN ARRAY_LENGTH(completed_days, 1) >= 14 THEN 1 END)`,
+          twentyOneDayRetention: sql`COUNT(CASE WHEN ARRAY_LENGTH(completed_days, 1) >= 21 THEN 1 END)`,
+          totalActiveUsers: sql`COUNT(*)`
+        })
+        .from(userProgress);
+
+      // Get user streak statistics
+      const streakStats = await db
+        .select({
+          avgStreak: sql`AVG(streak_count)`,
+          maxStreak: sql`MAX(streak_count)`,
+          usersWithStreaks: sql`COUNT(CASE WHEN streak_count > 0 THEN 1 END)`
+        })
+        .from(userProgress);
+
+      // Get most popular challenge types
+      const popularChallenges = await db
+        .select({
+          challengeType: userProgress.challengeType,
+          participants: sql`COUNT(DISTINCT user_id)`,
+          avgCurrentDay: sql`AVG(current_day)`,
+          totalDaysCompleted: sql`SUM(ARRAY_LENGTH(completed_days, 1))`
+        })
+        .from(userProgress)
+        .groupBy(userProgress.challengeType)
+        .orderBy(sql`COUNT(DISTINCT user_id) DESC`)
+        .limit(10);
+
+      return {
+        userOverview: {
+          totalUsers: Number(totalUsers[0]?.count) || 0,
+          activeUsers: Number(activeUsers[0]?.count) || 0,
+          activationRate: totalUsers[0]?.count ? 
+            ((Number(activeUsers[0]?.count) / Number(totalUsers[0]?.count)) * 100).toFixed(1) : 0
+        },
+        userRegistrations: userRegistrations.map(reg => ({
+          month: reg.month,
+          count: Number(reg.count)
+        })),
+        challengeMetrics: {
+          totalChallengeParticipations: challengeParticipation.reduce((sum, ch) => sum + Number(ch.userCount), 0),
+          avgProgressPerUser: challengeParticipation.length > 0 ? 
+            (challengeParticipation.reduce((sum, ch) => sum + Number(ch.avgProgress), 0) / challengeParticipation.length).toFixed(1) : 0,
+          overallCompletionRate: challengeParticipation.length > 0 ? 
+            (challengeParticipation.reduce((sum, ch) => sum + Number(ch.completionRate), 0) / challengeParticipation.length).toFixed(1) : 0
+        },
+        challengeParticipation: challengeParticipation.map(ch => ({
+          challengeType: ch.challengeType,
+          userCount: Number(ch.userCount),
+          avgProgress: Number(ch.avgProgress).toFixed(1),
+          completionRate: Number(ch.completionRate).toFixed(1)
+        })),
+        journalActivity: {
+          totalEntries: Number(journalStats[0]?.totalEntries) || 0,
+          activeJournalers: Number(journalStats[0]?.activeJournalers) || 0,
+          avgMood: Number(journalStats[0]?.avgMood).toFixed(1) || 0,
+          avgEnergy: Number(journalStats[0]?.avgEnergy).toFixed(1) || 0
+        },
+        dayCompletions: dayCompletions.map(dc => ({
+          challengeType: dc.challengeType,
+          totalDaysCompleted: Number(dc.totalDaysCompleted) || 0,
+          avgCompletedDays: Number(dc.avgCompletedDays).toFixed(1),
+          userCount: Number(dc.userCount)
+        })),
+        retentionMetrics: {
+          sevenDayRetention: retentionStats[0] ? 
+            ((Number(retentionStats[0].sevenDayRetention) / Number(retentionStats[0].totalActiveUsers)) * 100).toFixed(1) : 0,
+          fourteenDayRetention: retentionStats[0] ? 
+            ((Number(retentionStats[0].fourteenDayRetention) / Number(retentionStats[0].totalActiveUsers)) * 100).toFixed(1) : 0,
+          twentyOneDayRetention: retentionStats[0] ? 
+            ((Number(retentionStats[0].twentyOneDayRetention) / Number(retentionStats[0].totalActiveUsers)) * 100).toFixed(1) : 0
+        },
+        streakMetrics: {
+          avgStreak: Number(streakStats[0]?.avgStreak).toFixed(1) || 0,
+          maxStreak: Number(streakStats[0]?.maxStreak) || 0,
+          usersWithStreaks: Number(streakStats[0]?.usersWithStreaks) || 0
+        },
+        popularChallenges: popularChallenges.map(pc => ({
+          challengeType: pc.challengeType,
+          participants: Number(pc.participants),
+          avgCurrentDay: Number(pc.avgCurrentDay).toFixed(1),
+          totalDaysCompleted: Number(pc.totalDaysCompleted) || 0
+        }))
+      };
+    } catch (error) {
+      console.error("Error getting user statistics:", error);
       throw error;
     }
   }
