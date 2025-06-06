@@ -25,12 +25,12 @@ export const HOSTING_CONFIGS: Record<string, HostingConfig> = {
   // BunnyCDN Configuration  
   bunnycdn: {
     provider: 'bunnycdn',
-    enabled: false, // Set to true when configured
+    enabled: true, // Enabled with proper configuration
     config: {
-      storageZone: 'your-storage-zone', // Your BunnyCDN storage zone name
-      accessKey: '', // Your BunnyCDN access key
-      baseUrl: 'https://storage.bunnycdn.com', // BunnyCDN storage API URL
-      cdnUrl: 'https://your-storage-zone.b-cdn.net' // CDN URL for serving files
+      storageZone: 'visionboard', // BunnyCDN storage zone name
+      accessKey: '71b084b5-28b6-41a0-a6da725f3453-1318-4cbb', // BunnyCDN access key
+      baseUrl: 'https://ny.storage.bunnycdn.com', // NY region storage API URL
+      cdnUrl: 'https://visionboard.b-cdn.net' // CDN URL for serving files
     }
   },
 
@@ -54,10 +54,15 @@ export function getActiveHostingConfig(): HostingConfig {
       config: {
         storageZone: import.meta.env.VITE_BUNNYCDN_STORAGE_ZONE,
         accessKey: import.meta.env.VITE_BUNNYCDN_ACCESS_KEY,
-        baseUrl: 'https://storage.bunnycdn.com',
+        baseUrl: 'https://ny.storage.bunnycdn.com',
         cdnUrl: `https://${import.meta.env.VITE_BUNNYCDN_STORAGE_ZONE}.b-cdn.net`
       }
     };
+  }
+
+  // Use hardcoded BunnyCDN configuration
+  if (HOSTING_CONFIGS.bunnycdn.enabled) {
+    return HOSTING_CONFIGS.bunnycdn;
   }
 
   if (import.meta.env.VITE_HOSTINGER_API_ENDPOINT && import.meta.env.VITE_HOSTINGER_AUTH_TOKEN) {
@@ -73,7 +78,7 @@ export function getActiveHostingConfig(): HostingConfig {
     };
   }
 
-  // Fallback to localStorage
+  // Fallback to localStorage only as last resort
   return HOSTING_CONFIGS.localStorage;
 }
 
