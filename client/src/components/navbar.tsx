@@ -39,7 +39,7 @@ export default function Navbar() {
     return "U";
   };
 
-  const getUserDisplayName = (user: User | null) => {
+  const getUserDisplayName = (user: User | undefined | null) => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
     }
@@ -103,9 +103,9 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.profileImageUrl || undefined} alt={getUserDisplayName(user)} />
+                    <AvatarImage src={user?.profileImageUrl || undefined} alt={getUserDisplayName(user || null)} />
                     <AvatarFallback className="bg-gradient-primary text-white text-sm">
-                      {getUserInitials(user)}
+                      {getUserInitials(user || null)}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -113,7 +113,7 @@ export default function Navbar() {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{getUserDisplayName(user)}</p>
+                    <p className="text-sm font-medium leading-none">{getUserDisplayName(user || null)}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user?.email}
                     </p>

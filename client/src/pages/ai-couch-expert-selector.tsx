@@ -47,7 +47,7 @@ export default function AiCouchExpertSelector() {
   const [currentGuidance, setCurrentGuidance] = useState<ExpertGuidance | null>(null);
 
   // Fetch available expert domains
-  const { data: expertDomains, isLoading: domainsLoading } = useQuery({
+  const { data: expertDomains, isLoading: domainsLoading } = useQuery<ExpertDomain[]>({
     queryKey: ['/api/ai-couch/expert-domains'],
     retry: false,
   });
