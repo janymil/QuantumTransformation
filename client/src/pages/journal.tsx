@@ -75,6 +75,7 @@ export default function Journal() {
   const [searchQuery, setSearchQuery] = useState("");
   const [reflectionFilter, setReflectionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
 
   // Add debugging for journal data
   const { data: entries, isLoading: entriesLoading, error: entriesError } = useQuery<JournalEntry[]>({
@@ -205,6 +206,16 @@ export default function Journal() {
     setExperience("");
     setInsights("");
     setIntention("");
+  };
+
+  const toggleEntryExpansion = (entryId: number) => {
+    const newExpandedEntries = new Set(expandedEntries);
+    if (newExpandedEntries.has(entryId)) {
+      newExpandedEntries.delete(entryId);
+    } else {
+      newExpandedEntries.add(entryId);
+    }
+    setExpandedEntries(newExpandedEntries);
   };
 
   const handleSave = () => {
