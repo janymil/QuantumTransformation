@@ -214,11 +214,10 @@ export default function EnhancedVisionBoard() {
       ctx.translate(-centerX, -centerY);
 
       if (item.type === 'image') {
-        const img = new Image();
-        img.onload = () => {
+        const img = loadedImages.get(item.content);
+        if (img && img.complete) {
           ctx.drawImage(img, item.x, item.y, item.width, item.height);
-        };
-        img.src = item.content;
+        }
       } else if (item.type === 'text') {
         const { fontSize = 24, fontFamily = 'Arial', color = '#000000', textAlign = 'left', fontWeight = 'normal', fontStyle = 'normal' } = item.styling;
         
@@ -272,10 +271,10 @@ export default function EnhancedVisionBoard() {
         
         // Draw resize handles for images
         if (item.type === 'image') {
-          const handleSize = 12;
+          const handleSize = 20; // Much larger handles
           ctx.fillStyle = '#3b82f6';
           ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 3;
           
           // Corner handles
           const handles = [
@@ -290,24 +289,25 @@ export default function EnhancedVisionBoard() {
             ctx.strokeRect(handle.x, handle.y, handleSize, handleSize);
           });
           
-          // Rotation handle - circle above the image
-          const rotationHandleDistance = 30;
+          // Rotation handle - larger circle above the image
+          const rotationHandleDistance = 35;
           const centerX = item.x + item.width / 2;
           const rotationY = item.y - rotationHandleDistance;
           
           ctx.fillStyle = '#22c55e'; // Green color for rotation
           ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
           ctx.beginPath();
-          ctx.arc(centerX, rotationY, 8, 0, 2 * Math.PI);
+          ctx.arc(centerX, rotationY, 12, 0, 2 * Math.PI); // Larger rotation handle
           ctx.fill();
           ctx.stroke();
           
           // Draw line connecting rotation handle to image
           ctx.strokeStyle = '#3b82f6';
-          ctx.lineWidth = 1;
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.moveTo(centerX, rotationY + 8);
-          ctx.lineTo(centerX, item.y - 5);
+          ctx.moveTo(centerX, rotationY + 12);
+          ctx.lineTo(centerX, item.y - 8);
           ctx.stroke();
         }
       }
@@ -506,13 +506,13 @@ export default function EnhancedVisionBoard() {
       
       // Check if clicking on resize handle or rotation handle for images
       if (clickedItem.type === 'image') {
-        // Check rotation handle first
-        const rotationHandleDistance = 30;
+        // Check rotation handle first (larger hit area)
+        const rotationHandleDistance = 35;
         const centerX = clickedItem.x + clickedItem.width / 2;
         const rotationY = clickedItem.y - rotationHandleDistance;
         const rotationDistance = Math.sqrt((x - centerX) ** 2 + (y - rotationY) ** 2);
         
-        if (rotationDistance <= 12) {
+        if (rotationDistance <= 18) { // Larger hit area for rotation
           event.preventDefault();
           event.stopPropagation();
           setIsRotating(true);
@@ -522,13 +522,13 @@ export default function EnhancedVisionBoard() {
             startAngle: Math.atan2(y - (clickedItem.y + clickedItem.height / 2), x - (clickedItem.x + clickedItem.width / 2)),
             initialRotation: clickedItem.rotation || 0
           });
-          canvas.style.cursor = 'grab';
+          canvas.style.cursor = 'grabbing';
           console.log('Starting rotation');
           return;
         }
         
-        // Check resize handles
-        const handleSize = 12;
+        // Check resize handles (larger handles)
+        const handleSize = 20;
         const handles = [
           { id: 'nw', x: clickedItem.x - handleSize/2, y: clickedItem.y - handleSize/2, cursor: 'nw-resize' },
           { id: 'ne', x: clickedItem.x + clickedItem.width - handleSize/2, y: clickedItem.y - handleSize/2, cursor: 'ne-resize' },
@@ -593,7 +593,19 @@ export default function EnhancedVisionBoard() {
       const selectedItemData = board.canvasData.items.find(item => item.id === selectedItem);
       
       if (selectedItemData?.type === 'image') {
-        const handleSize = 12;
+        // Check rotation handle hover first
+        const rotationHandleDistance = 35;
+        const centerX = selectedItemData.x + selectedItemData.width / 2;
+        const rotationY = selectedItemData.y - rotationHandleDistance;
+        const rotationDistance = Math.sqrt((x - centerX) ** 2 + (y - rotationY) ** 2);
+        
+        if (rotationDistance <= 18) {
+          canvas.style.cursor = 'grab';
+          return;
+        }
+        
+        // Check resize handles hover
+        const handleSize = 20;
         const handles = [
           { id: 'nw', x: selectedItemData.x - handleSize/2, y: selectedItemData.y - handleSize/2, cursor: 'nw-resize' },
           { id: 'ne', x: selectedItemData.x + selectedItemData.width - handleSize/2, y: selectedItemData.y - handleSize/2, cursor: 'ne-resize' },
