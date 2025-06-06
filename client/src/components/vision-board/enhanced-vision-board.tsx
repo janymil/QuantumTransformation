@@ -33,7 +33,8 @@ import {
   PlayCircle,
   Brain,
   HelpCircle,
-  Palette
+  Palette,
+  FolderOpen
 } from "lucide-react";
 
 interface VisionBoardItem {
@@ -177,7 +178,7 @@ export default function EnhancedVisionBoard() {
         
         // Redraw canvas with loaded data
         setTimeout(() => {
-          redrawCanvas();
+          drawCanvas();
         }, 100);
         
         toast({
@@ -1141,6 +1142,118 @@ export default function EnhancedVisionBoard() {
         isOpen={showAIGuide}
         onClose={() => setShowAIGuide(false)}
       />
+
+      {/* Save Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save Vision Board</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="save-title">Title</Label>
+              <Input
+                id="save-title"
+                value={board.title}
+                onChange={(e) => setBoard(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter board title..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="save-description">Description</Label>
+              <Textarea
+                id="save-description"
+                value={board.description}
+                onChange={(e) => setBoard(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Enter board description..."
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="save-category">Category</Label>
+              <Select 
+                value={board.templateCategory} 
+                onValueChange={(value) => setBoard(prev => ({ ...prev, templateCategory: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="career">Career</SelectItem>
+                  <SelectItem value="personal">Personal</SelectItem>
+                  <SelectItem value="health">Health & Wellness</SelectItem>
+                  <SelectItem value="financial">Financial</SelectItem>
+                  <SelectItem value="relationships">Relationships</SelectItem>
+                  <SelectItem value="travel">Travel</SelectItem>
+                  <SelectItem value="education">Education</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => setShowSaveDialog(false)} variant="outline">
+                Cancel
+              </Button>
+              <Button onClick={saveVisionBoard}>
+                {currentBoardId ? 'Update' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Dialog */}
+      <Dialog open={showLoadDialog} onOpenChange={setShowLoadDialog}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Load Vision Board</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {savedBoards.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No saved vision boards found.</p>
+                <p className="text-sm">Create and save your first vision board to see it here.</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {savedBoards.map((savedBoard: any) => (
+                  <div 
+                    key={savedBoard.id} 
+                    className="border rounded-lg p-4 hover:bg-accent cursor-pointer transition-colors"
+                    onClick={() => loadVisionBoard(savedBoard.id)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{savedBoard.title}</h3>
+                        {savedBoard.description && (
+                          <p className="text-muted-foreground text-sm mt-1">{savedBoard.description}</p>
+                        )}
+                        <div className="flex gap-2 mt-2">
+                          <span className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-xs">
+                            {savedBoard.templateCategory}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(savedBoard.updatedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {savedBoard.canvasData?.items?.length || 0} items
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button onClick={() => setShowLoadDialog(false)} variant="outline">
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
