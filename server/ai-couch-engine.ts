@@ -1087,6 +1087,20 @@ RECENT PROGRESS:
 - Emotional State: ${context.emotionalState}
 - Last Response: ${JSON.stringify(context.lastAssessmentResponse)}
 
+JOURNAL ENTRIES (last 30 days):
+${context.journalEntries?.length > 0 ? 
+  context.journalEntries.map(entry => `
+- Day ${entry.day}: Experience: "${entry.experience || 'Not specified'}", Insights: "${entry.insights || 'Not specified'}", Mood: ${entry.mood}/10, Energy: ${entry.energy}/10, Challenges: "${entry.challenges || 'None mentioned'}"
+`).join('') : '- No recent journal entries found'}
+
+SAVED PHRASES & AFFIRMATIONS:
+${context.savedPhrases?.length > 0 ? 
+  context.savedPhrases.map(phrase => `- "${phrase.phrase}" (${phrase.category || 'general'}) from ${phrase.source || 'unknown source'}`).join('\n') : '- No saved phrases or affirmations found'}
+
+RECENT AI CONVERSATIONS:
+${context.recentAIChats?.length > 0 ? 
+  context.recentAIChats.map(chat => `- User asked: "${chat.question}" | AI responded with insights about transformation`).join('\n') : '- No recent AI conversations found'}
+
 Based on this analysis, determine what this user should focus on TODAY. Say something like:
 
 "Based on your current challenges with [specific issue] and your goal of [specific goal], we need to start with [specific focus area] because this will [specific benefit] and prepare you for [next steps]."
@@ -1136,6 +1150,16 @@ CURRENT FOCUS: ${analysis.currentFocus}
 THERAPEUTIC APPROACHES: ${analysis.therapeuticApproaches.join(', ')}
 USER LEARNING STYLE: ${context.profile?.learningStyle}
 USER COMMUNICATION STYLE: ${context.profile?.communicationStyle}
+
+PERSONAL CONTEXT FROM JOURNAL:
+${context.journalEntries?.length > 0 ? 
+  `Recent entries show: ${context.journalEntries.slice(0, 3).map(entry => 
+    `Day ${entry.day} mood ${entry.mood}/10, insights: "${entry.insights}", challenges: "${entry.challenges}"`
+  ).join('; ')}` : 'No journal entries to reference'}
+
+AFFIRMATIONS TO INTEGRATE:
+${context.savedPhrases?.length > 0 ? 
+  `User resonates with: ${context.savedPhrases.slice(0, 3).map(p => `"${p.phrase}"`).join(', ')}` : 'No saved affirmations to reference'}
 
 Create TODAY'S specific content:
 
@@ -1225,9 +1249,36 @@ Respond in JSON format:
         .orderBy(desc(aiCouchSessions.createdAt))
         .limit(10);
 
+      // Get recent journal entries (last 30 days)
+      const recentJournalEntries = await db
+        .select()
+        .from(journalEntries)
+        .where(eq(journalEntries.userId, userId))
+        .orderBy(desc(journalEntries.createdAt))
+        .limit(20);
+
+      // Get saved phrases/affirmations
+      const savedPhrases = await db
+        .select()
+        .from(savedPhrases)
+        .where(eq(savedPhrases.userId, userId))
+        .orderBy(desc(savedPhrases.createdAt))
+        .limit(15);
+
+      // Get recent AI coaching sessions for additional context
+      const recentAIChats = await db
+        .select()
+        .from(aiCouchSessions)
+        .where(eq(aiCouchSessions.userId, userId))
+        .orderBy(desc(aiCouchSessions.createdAt))
+        .limit(5);
+
       return {
         profile,
         recentSessions: recentSessions || [],
+        journalEntries: recentJournalEntries || [],
+        savedPhrases: savedPhrases || [],
+        recentAIChats: recentAIChats || [],
         currentChallenges: Array.isArray(profile?.traumaAreas) ? profile.traumaAreas : [],
         emotionalState: recentSessions?.emotionalState || 'neutral',
         lastAssessmentResponse: recentSessions || null
@@ -1237,6 +1288,9 @@ Respond in JSON format:
       return {
         profile: null,
         recentSessions: [],
+        journalEntries: [],
+        savedPhrases: [],
+        recentAIChats: [],
         currentChallenges: [],
         emotionalState: 'neutral',
         lastAssessmentResponse: null
@@ -1256,7 +1310,13 @@ Respond in JSON format:
 The user has completed their daily assessment. Based on their responses, provide insights for tomorrow's adaptation.
 
 USER RESPONSES: ${JSON.stringify(responses)}
-CURRENT PROGRESS: ${JSON.stringify(context)}
+
+COMPLETE USER CONTEXT:
+- Profile: Healing Readiness ${context.profile?.healingReadiness}/10, Goals: ${JSON.stringify(context.profile?.primaryGoals)}
+- Recent Journal Insights: ${context.journalEntries?.slice(0, 3).map(e => e.insights).filter(Boolean).join('; ') || 'None'}
+- Current Emotional Patterns: From journal - Mood trends, energy levels, recurring challenges
+- Saved Affirmations: ${context.savedPhrases?.slice(0, 3).map(p => p.phrase).join('; ') || 'None saved'}
+- Recent AI Conversations: ${context.recentAIChats?.slice(0, 2).map(c => c.question).join('; ') || 'None'}
 
 Analyze:
 1. How did they respond to today's exercises?
