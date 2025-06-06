@@ -200,11 +200,11 @@ const moodThemes: MoodTheme[] = [
       primary: '330 80% 70%',
       secondary: '20 100% 80%',
       accent: '350 100% 85%',
-      background: '240 10% 9%',
+      background: '210 11% 18%',
       foreground: '0 0% 98%',
-      muted: '240 4% 20%',
-      card: '240 10% 9%',
-      border: '240 4% 20%'
+      muted: '210 11% 28%',
+      card: '210 11% 18%',
+      border: '210 11% 28%'
     }
   }
 ];

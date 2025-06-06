@@ -2317,6 +2317,93 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // AI Vision Board Guide
+  app.post('/api/ai/vision-board-guide', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userGoals } = req.body;
+      
+      if (!userGoals) {
+        return res.status(400).json({ error: 'User goals are required' });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const prompt = `You are an expert vision board coach and manifestation specialist. Analyze the user's goals and provide a comprehensive, personalized vision board creation guide.
+
+User's Goals and Aspirations:
+${userGoals}
+
+Create a detailed, actionable guide with the following structure (respond in JSON format):
+
+{
+  "goalAnalysis": {
+    "primaryGoals": ["array of 3-5 main goals extracted"],
+    "timeframe": "short-term/medium-term/long-term based on their timeline",
+    "motivationType": "achievement-focused/experience-focused/impact-focused etc",
+    "emotionalTheme": "primary emotional driver"
+  },
+  "imageRecommendations": [
+    {
+      "category": "Professional/Career",
+      "suggestions": ["specific image ideas"],
+      "reasoning": "why these images align with their goals"
+    }
+  ],
+  "layoutSuggestions": {
+    "style": "Central Focus/Grid Layout/Flow Design etc",
+    "description": "detailed layout recommendation",
+    "positioning": ["specific positioning tips"]
+  },
+  "textElements": {
+    "affirmations": ["5 personalized present-tense affirmations"],
+    "powerWords": ["motivational words that align with their goals"],
+    "deadlines": ["key dates and milestones to include"]
+  },
+  "colorTheme": {
+    "recommended": "Energetic/Calm/Nature/Passionate/Focused/Loving",
+    "reasoning": "why this theme matches their goals and personality",
+    "alternatives": ["2-3 backup theme options"]
+  },
+  "manifestationTips": ["5-7 specific manifestation techniques for their goals"],
+  "actionSteps": ["5-7 concrete next steps they should take"]
+}
+
+Make recommendations specific to their exact goals, timeline, and aspirations. Focus on practical, actionable advice that will help them create a powerful vision board for manifestation.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert vision board coach and manifestation specialist. Provide detailed, personalized guidance for creating effective vision boards."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const guide = JSON.parse(response.choices[0].message.content);
+
+      res.json({ 
+        success: true, 
+        guide,
+        message: "Personalized vision board guide generated successfully"
+      });
+
+    } catch (error) {
+      console.error('Vision board guide generation error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate vision board guide',
+        details: error.message 
+      });
+    }
+  });
+
   // Vision Board API Routes
   app.get('/api/vision-boards', isAuthenticated, async (req: any, res) => {
     try {

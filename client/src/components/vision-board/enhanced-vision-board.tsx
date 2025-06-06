@@ -13,6 +13,8 @@ import ImageEditor from "@/components/image-editor/image-editor";
 import { apiRequest } from "@/lib/queryClient";
 import { ImageCompressor, ExternalHostingUploader } from "@/lib/image-compression";
 import { getActiveHostingConfig } from "@/lib/hosting-config";
+import VisionBoardTour from "./vision-board-tour";
+import AIVisionGuide from "./ai-vision-guide";
 import {
   Monitor,
   Camera,
@@ -28,6 +30,9 @@ import {
   Settings,
   Download,
   Grid,
+  PlayCircle,
+  Brain,
+  HelpCircle,
   Palette
 } from "lucide-react";
 
@@ -514,31 +519,18 @@ export default function EnhancedVisionBoard() {
       
       // Check if clicking on resize handle or rotation handle for images
       if (clickedItem.type === 'image') {
-        // Transform mouse coordinates to account for rotation
         const itemCenterX = clickedItem.x + clickedItem.width / 2;
         const itemCenterY = clickedItem.y + clickedItem.height / 2;
-        const rotation = (clickedItem.rotation || 0) * Math.PI / 180;
         
-        // Inverse transform to get coordinates in the item's local space
-        const dx = x - itemCenterX;
-        const dy = y - itemCenterY;
-        const localX = itemCenterX + (dx * Math.cos(-rotation) - dy * Math.sin(-rotation));
-        const localY = itemCenterY + (dx * Math.sin(-rotation) + dy * Math.cos(-rotation));
-        
-        // Check rotation handle first (larger hit area) using original coordinates
+        // Simple rotation handle check - no complex coordinate transformation
         const rotationHandleDistance = 35;
-        const rotationHandleX = itemCenterX;
         const rotationHandleY = clickedItem.y - rotationHandleDistance;
         
-        // Transform rotation handle position
-        const rhDx = rotationHandleX - itemCenterX;
-        const rhDy = rotationHandleY - itemCenterY;
-        const transformedRhX = itemCenterX + (rhDx * Math.cos(rotation) - rhDy * Math.sin(rotation));
-        const transformedRhY = itemCenterY + (rhDx * Math.sin(rotation) + rhDy * Math.cos(rotation));
+        // Check if mouse is near the rotation handle area (larger hit zone)
+        const distanceFromCenter = Math.sqrt((x - itemCenterX) ** 2 + (y - itemCenterY) ** 2);
+        const isNearRotationHandle = Math.abs(y - rotationHandleY) < 25 && Math.abs(x - itemCenterX) < 25;
         
-        const rotationDistance = Math.sqrt((x - transformedRhX) ** 2 + (y - transformedRhY) ** 2);
-        
-        if (rotationDistance <= 18) { // Larger hit area for rotation
+        if (isNearRotationHandle) {
           event.preventDefault();
           event.stopPropagation();
           setIsRotating(true);
@@ -549,7 +541,7 @@ export default function EnhancedVisionBoard() {
             initialRotation: clickedItem.rotation || 0
           });
           canvas.style.cursor = 'grabbing';
-          console.log('Starting rotation');
+          console.log('Starting rotation with simplified detection');
           return;
         }
         
