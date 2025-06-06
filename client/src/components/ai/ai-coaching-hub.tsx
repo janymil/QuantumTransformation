@@ -129,16 +129,16 @@ export default function AICoachingHub({
   useEffect(() => {
     if (aiProfile && !isEditingProfile) {
       setProfileForm({
-        primaryGoals: Array.isArray(aiProfile.primaryGoals) ? aiProfile.primaryGoals : [],
-        currentChallenges: Array.isArray(aiProfile.currentChallenges) ? aiProfile.currentChallenges : [],
-        healingReadiness: aiProfile.healingReadiness || 5,
-        preferredMode: aiProfile.personalityType || 'mixed',
-        communicationStyle: aiProfile.communicationStyle || 'gentle',
-        learningStyle: aiProfile.learningStyle || 'visual',
-        traumaHistory: aiProfile.traumaHistory || '',
-        spiritualBackground: aiProfile.spiritualBackground || '',
-        mentalHealthHistory: aiProfile.mentalHealthHistory || '',
-        lifeContext: aiProfile.lifeContext || ''
+        primaryGoals: Array.isArray(aiProfile?.primaryGoals) ? aiProfile.primaryGoals : [],
+        currentChallenges: Array.isArray(aiProfile?.currentChallenges) ? aiProfile.currentChallenges : [],
+        healingReadiness: aiProfile?.healingReadiness || 5,
+        preferredMode: aiProfile?.preferredMode || 'mixed',
+        communicationStyle: aiProfile?.communicationStyle || 'gentle',
+        learningStyle: aiProfile?.learningStyle || 'visual',
+        traumaHistory: aiProfile?.traumaHistory || '',
+        spiritualBackground: aiProfile?.spiritualBackground || '',
+        mentalHealthHistory: aiProfile?.mentalHealthHistory || '',
+        lifeContext: (typeof aiProfile?.lifeContext === 'string') ? aiProfile.lifeContext : ''
       });
     }
   }, [aiProfile, isEditingProfile]);
@@ -252,7 +252,7 @@ export default function AICoachingHub({
         {usageStats && (
           <div className="flex items-center text-sm text-muted-foreground">
             <Zap className="w-4 h-4 mr-1" />
-            {usageStats.requestsToday || 0}/{usageStats.dailyLimit || 10} requests today
+            {usageStats?.dailyUsage || 0}/10 requests today
           </div>
         )}
       </CardHeader>
@@ -535,16 +535,16 @@ export default function AICoachingHub({
                         setIsEditingProfile(false);
                         if (aiProfile) {
                           setProfileForm({
-                            primaryGoals: Array.isArray(aiProfile.primaryGoals) ? aiProfile.primaryGoals : [],
-                            currentChallenges: Array.isArray(aiProfile.currentChallenges) ? aiProfile.currentChallenges : [],
-                            healingReadiness: aiProfile.healingReadiness || 5,
-                            preferredMode: aiProfile.personalityType || 'mixed',
-                            communicationStyle: aiProfile.communicationStyle || 'gentle',
-                            learningStyle: aiProfile.learningStyle || 'visual',
-                            traumaHistory: aiProfile.traumaHistory || '',
-                            spiritualBackground: aiProfile.spiritualBackground || '',
-                            mentalHealthHistory: aiProfile.mentalHealthHistory || '',
-                            lifeContext: aiProfile.lifeContext || ''
+                            primaryGoals: Array.isArray(aiProfile?.primaryGoals) ? aiProfile.primaryGoals : [],
+                            currentChallenges: Array.isArray(aiProfile?.currentChallenges) ? aiProfile.currentChallenges : [],
+                            healingReadiness: aiProfile?.healingReadiness || 5,
+                            preferredMode: aiProfile?.preferredMode || 'mixed',
+                            communicationStyle: aiProfile?.communicationStyle || 'gentle',
+                            learningStyle: aiProfile?.learningStyle || 'visual',
+                            traumaHistory: aiProfile?.traumaHistory || '',
+                            spiritualBackground: aiProfile?.spiritualBackground || '',
+                            mentalHealthHistory: aiProfile?.mentalHealthHistory || '',
+                            lifeContext: (typeof aiProfile?.lifeContext === 'string') ? aiProfile.lifeContext : ''
                           });
                         }
                       }}
