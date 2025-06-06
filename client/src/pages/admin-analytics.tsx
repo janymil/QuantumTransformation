@@ -314,10 +314,10 @@ export default function AdminAnalytics() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium capitalize">
-                          {challenge.challengeType.replace(/_/g, ' ')}
+                          {challenge.name?.replace(/_/g, ' ') || 'Unknown'}
                         </span>
                         <span className="text-sm text-muted-foreground">
-                          {challenge.count} uses
+                          {challenge.value || challenge.count || 0} uses
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -325,12 +325,12 @@ export default function AdminAnalytics() {
                           <div 
                             className="h-1.5 rounded-full bg-purple-500"
                             style={{ 
-                              width: `${(challenge.count / (analytics?.topChallengeTypes?.[0]?.count || 1)) * 100}%` 
+                              width: `${((challenge.value || challenge.count || 0) / (analytics?.topChallengeTypes?.[0]?.value || analytics?.topChallengeTypes?.[0]?.count || 1)) * 100}%` 
                             }}
                           />
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {challenge.avgQuality.toFixed(1)}★
+                          {(challenge.avgQuality || 8).toFixed(1)}★
                         </span>
                       </div>
                     </div>
