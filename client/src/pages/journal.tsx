@@ -552,12 +552,28 @@ export default function Journal() {
                       <Card key={`journal-${entry.id}`} className="hover:shadow-lg transition-shadow duration-300">
                         <CardHeader>
                           <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center">
-                              <Calendar className="w-5 h-5 mr-2 text-primary" />
-                              Day {entry.day}: {content?.title || `Challenge Day ${entry.day}`}
-                            </CardTitle>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant="outline">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleEntryExpansion(entry.id)}
+                                className="p-1 h-auto"
+                              >
+                                {expandedEntries.has(entry.id) ? (
+                                  <ChevronDown className="w-4 h-4" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <CardTitle className="flex items-center truncate">
+                                <Calendar className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                                <span className="truncate">
+                                  Day {entry.day}: {content?.title || `Challenge Day ${entry.day}`}
+                                </span>
+                              </CardTitle>
+                            </div>
+                            <div className="flex items-center space-x-2 flex-shrink-0">
+                              <Badge variant="outline" className="whitespace-nowrap">
                                 {format(new Date(entry.updatedAt), 'MMM d, yyyy')}
                               </Badge>
                               <Button
@@ -584,26 +600,28 @@ export default function Journal() {
                             </div>
                           </div>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          {entry.experience && (
-                            <div>
-                              <h4 className="font-medium text-foreground mb-2">Experience</h4>
-                              <p className="text-muted-foreground">{entry.experience}</p>
-                            </div>
-                          )}
-                          {entry.insights && (
-                            <div>
-                              <h4 className="font-medium text-foreground mb-2">Insights</h4>
-                              <p className="text-muted-foreground">{entry.insights}</p>
-                            </div>
-                          )}
-                          {entry.intention && (
-                            <div>
-                              <h4 className="font-medium text-foreground mb-2">Intention</h4>
-                              <p className="text-muted-foreground">{entry.intention}</p>
-                            </div>
-                          )}
-                        </CardContent>
+                        {expandedEntries.has(entry.id) && (
+                          <CardContent className="space-y-4">
+                            {entry.experience && (
+                              <div>
+                                <h4 className="font-medium text-foreground mb-2">Experience</h4>
+                                <p className="text-muted-foreground">{entry.experience}</p>
+                              </div>
+                            )}
+                            {entry.insights && (
+                              <div>
+                                <h4 className="font-medium text-foreground mb-2">Insights</h4>
+                                <p className="text-muted-foreground">{entry.insights}</p>
+                              </div>
+                            )}
+                            {entry.intention && (
+                              <div>
+                                <h4 className="font-medium text-foreground mb-2">Intention</h4>
+                                <p className="text-muted-foreground">{entry.intention}</p>
+                              </div>
+                            )}
+                          </CardContent>
+                        )}
                       </Card>
                     );
                   })}
