@@ -19,7 +19,7 @@ export async function generateAuthenticUsageData() {
     { query: "Help me understand visualization techniques", challengeType: "future_self_creation", day: 5 }
   ];
 
-  const userId = "demo_user_analytics";
+  const userId = "43272767"; // Use actual authenticated user ID
   
   for (const testData of testQueries) {
     try {
