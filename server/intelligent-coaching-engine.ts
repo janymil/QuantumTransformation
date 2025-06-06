@@ -275,16 +275,20 @@ Format as JSON:
     response: any,
     analysis: any
   ) {
-    await db.insert(aiCouchSessions).values({
-      userId,
-      sessionType: 'intelligent_coaching',
-      userInput,
-      aiResponse: JSON.stringify(response),
-      emotionalTone: this.detectEmotionalTone(userInput),
-      followUpNeeded: analysis.urgencyLevel !== 'low',
-      expertApproach: analysis.integratedApproaches?.[0]?.modality || 'multidisciplinary',
-      analysisNotes: JSON.stringify(analysis)
-    });
+    // Get user profile to get profileId
+    const profile = await this.getUserProfile(userId);
+    if (profile) {
+      await db.insert(aiCouchSessions).values({
+        userId,
+        profileId: profile.id,
+        sessionType: 'intelligent_coaching',
+        sessionMode: 'multidisciplinary',
+        userInput,
+        aiResponse: JSON.stringify(response),
+        emotionalTone: this.detectEmotionalTone(userInput),
+        followUpNeeded: analysis.urgencyLevel !== 'low'
+      });
+    }
   }
 
   /**
@@ -360,13 +364,21 @@ Format as JSON:
   /**
    * Fallback expert response
    */
-  private fallbackExpertResponse(expert: any) {
+  private fallbackExpertResponse(approach: any) {
+    const expert = multidisciplinaryExpertise[approach?.modality] || multidisciplinaryExpertise['cbt_therapist'];
     return {
-      assessment: `From a ${expert.name} perspective, this situation requires gentle attention and evidence-based support.`,
-      techniques: expert.techniques.slice(0, 3),
-      interventions: expert.interventions.slice(0, 2),
-      integration: 'Combine with mindfulness and self-compassion practices',
-      outcomes: 'Gradual improvement in emotional regulation and insight',
+      multidisciplinaryAssessment: `From a ${expert.name} perspective, this situation requires gentle attention and evidence-based support.`,
+      integratedTechniques: [
+        {
+          technique: expert.techniques[0] || 'Mindful awareness',
+          modalities: [expert.name],
+          dimension: 'cognitive',
+          synergy: 'Creates foundation for other interventions'
+        }
+      ],
+      holisticInterventions: expert.interventions?.slice(0, 2) || ['Gentle self-observation', 'Compassionate self-talk'],
+      integrationStrategy: 'Combine with mindfulness and self-compassion practices',
+      expectedOutcomes: 'Gradual improvement in emotional regulation and insight',
       timeline: '2-4 weeks for initial progress'
     };
   }
