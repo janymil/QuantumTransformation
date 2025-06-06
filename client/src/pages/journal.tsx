@@ -224,6 +224,7 @@ export default function Journal() {
     
     saveMutation.mutate({
       day: editingEntry.day,
+      challengeType: editingEntry.challengeType,
       experience: editExperience,
       insights: editInsights,
       intention: editIntention,
