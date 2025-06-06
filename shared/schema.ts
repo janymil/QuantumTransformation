@@ -399,6 +399,66 @@ export type UserQuizResult = typeof userQuizResults.$inferSelect;
 export type InsertAiResponseCache = typeof aiResponseCache.$inferInsert;
 export type AiResponseCache = typeof aiResponseCache.$inferSelect;
 
+// Vision Board System
+export const visionBoards = pgTable("vision_boards", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  canvasData: jsonb("canvas_data").notNull(), // Complete board layout
+  thumbnailUrl: varchar("thumbnail_url"), // Preview image
+  isPublic: boolean("is_public").default(false),
+  templateCategory: varchar("template_category"), // financial, health, career, etc.
+  tags: jsonb("tags").default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("vision_boards_user_idx").on(table.userId),
+  index("vision_boards_public_idx").on(table.isPublic),
+  index("vision_boards_category_idx").on(table.templateCategory),
+]);
+
+export const visionBoardItems = pgTable("vision_board_items", {
+  id: serial("id").primaryKey(),
+  boardId: integer("board_id").notNull().references(() => visionBoards.id, { onDelete: "cascade" }),
+  itemType: varchar("item_type").notNull(), // 'image', 'text', 'shape', 'drawing'
+  content: text("content").notNull(), // image URL, text content, or shape data
+  x: real("x").notNull(),
+  y: real("y").notNull(),
+  width: real("width").notNull(),
+  height: real("height").notNull(),
+  rotation: real("rotation").default(0),
+  opacity: real("opacity").default(1),
+  zIndex: integer("z_index").default(0),
+  styling: jsonb("styling").default({}), // fonts, colors, filters, etc.
+  metadata: jsonb("metadata").default({}), // source info, capture details
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("vision_board_items_board_idx").on(table.boardId),
+  index("vision_board_items_type_idx").on(table.itemType),
+]);
+
+export const visionBoardTemplates = pgTable("vision_board_templates", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  category: varchar("category").notNull(), // financial, health, career, relationships
+  templateData: jsonb("template_data").notNull(), // Layout structure
+  thumbnailUrl: varchar("thumbnail_url"),
+  isOfficial: boolean("is_official").default(false),
+  usageCount: integer("usage_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("vision_board_templates_category_idx").on(table.category),
+]);
+
+export type InsertVisionBoard = typeof visionBoards.$inferInsert;
+export type VisionBoard = typeof visionBoards.$inferSelect;
+export type InsertVisionBoardItem = typeof visionBoardItems.$inferInsert;
+export type VisionBoardItem = typeof visionBoardItems.$inferSelect;
+export type InsertVisionBoardTemplate = typeof visionBoardTemplates.$inferInsert;
+export type VisionBoardTemplate = typeof visionBoardTemplates.$inferSelect;
+
 // Insert schemas
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true });
 export const insertChallengeCompletionSchema = createInsertSchema(challengeCompletions).omit({ id: true });
@@ -409,6 +469,9 @@ export const insertUserAchievementSchema = createInsertSchema(userAchievements).
 export const insertAiChatSessionSchema = createInsertSchema(aiChatSessions).omit({ id: true });
 export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({ id: true });
 export const insertAiResponseHistorySchema = createInsertSchema(aiResponseHistory).omit({ id: true });
+export const insertVisionBoardSchema = createInsertSchema(visionBoards).omit({ id: true });
+export const insertVisionBoardItemSchema = createInsertSchema(visionBoardItems).omit({ id: true });
+export const insertVisionBoardTemplateSchema = createInsertSchema(visionBoardTemplates).omit({ id: true });
 
 // ===================================
 // AI COUCH SYSTEM - INDEPENDENT MODULE
