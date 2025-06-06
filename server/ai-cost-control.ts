@@ -107,7 +107,7 @@ function isRelevantToChallenge(input: string): boolean {
  * Validate user input for AI request
  */
 function validateInput(input: string, userTier: string): { valid: boolean; reason?: string } {
-  const limits = USAGE_LIMITS[userTier as keyof typeof USAGE_LIMITS];
+  const limits = USAGE_LIMITS[userTier as keyof typeof USAGE_LIMITS] || USAGE_LIMITS.free;
   
   if (input.length > limits.maxInputLength) {
     return { 
@@ -137,37 +137,46 @@ function validateInput(input: string, userTier: string): { valid: boolean; reaso
  * Check if user can make AI request based on usage limits
  */
 export async function checkUsageLimit(userId: string, userTier: string = 'free'): Promise<UsageCheckResult> {
-  const limits = USAGE_LIMITS[userTier as keyof typeof USAGE_LIMITS];
-  
-  if (limits.dailyRequests === -1) {
-    return { allowed: true }; // Unlimited
-  }
-  
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  // Check daily usage
-  const dailyUsage = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(aiUsageTracking)
-    .where(and(
-      eq(aiUsageTracking.userId, userId),
-      gte(aiUsageTracking.createdAt, today)
-    ));
-  
-  const dailyCount = dailyUsage[0]?.count || 0;
-  
-  if (dailyCount >= limits.dailyRequests) {
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+  try {
+    // Use user's timezone to calculate start of day
+    const now = new Date();
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     
-    return {
-      allowed: false,
-      reason: `Daily AI limit reached (${limits.dailyRequests} requests). Try again tomorrow.`,
-      remainingRequests: 0,
-      nextAvailableAt: tomorrow
-    };
-  }
+    // Get current date in user's timezone
+    const userDate = new Date(now.toLocaleString("en-US", {timeZone: userTimezone}));
+    const startOfUserDay = new Date(userDate.getFullYear(), userDate.getMonth(), userDate.getDate());
+    
+    // Convert back to UTC for database comparison
+    const startOfDayUTC = new Date(startOfUserDay.getTime() - (startOfUserDay.getTimezoneOffset() * 60000));
+    
+    // Get today's usage based on user's timezone
+    const [todayUsage] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(aiUsageTracking)
+      .where(
+        and(
+          eq(aiUsageTracking.userId, userId),
+          gte(aiUsageTracking.createdAt, startOfDayUTC)
+        )
+      );
+
+    const dailyCount = todayUsage?.count || 0;
+    const limits = USAGE_LIMITS[userTier as keyof typeof USAGE_LIMITS] || USAGE_LIMITS.free;
+    const limit = limits.daily;
+
+    if (dailyCount >= limit) {
+      // Calculate next available time (start of next day in user's timezone)
+      const nextUserDay = new Date(startOfUserDay);
+      nextUserDay.setDate(nextUserDay.getDate() + 1);
+      const nextDayUTC = new Date(nextUserDay.getTime() - (nextUserDay.getTimezoneOffset() * 60000));
+      
+      return {
+        allowed: false,
+        reason: `Daily limit of ${limit} requests reached. Resets at midnight in your timezone.`,
+        remainingRequests: 0,
+        nextAvailableAt: nextDayUTC
+      };
+    }
   
   // Check cooldown
   const lastRequest = await db
@@ -351,56 +360,69 @@ export async function validateAIRequest(request: AIRequest): Promise<{
 export async function getUserAIStats(userId: string): Promise<{
   dailyUsage: number;
   monthlyUsage: number;
-  totalCost: number;
-  cacheHitRate: number;
+  totalUsage: number;
+  dailyLimit: number;
+  monthlyLimit: number;
 }> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const thisMonth = new Date();
-  thisMonth.setDate(1);
-  thisMonth.setHours(0, 0, 0, 0);
-  
-  const [dailyUsage] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(aiUsageTracking)
-    .where(and(
-      eq(aiUsageTracking.userId, userId),
-      gte(aiUsageTracking.createdAt, today)
-    ));
-  
-  const [monthlyUsage] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(aiUsageTracking)
-    .where(and(
-      eq(aiUsageTracking.userId, userId),
-      gte(aiUsageTracking.createdAt, thisMonth)
-    ));
-  
-  const [totalCost] = await db
-    .select({ sum: sql<number>`COALESCE(sum(cost), 0)` })
-    .from(aiUsageTracking)
-    .where(eq(aiUsageTracking.userId, userId));
-  
-  const [cacheStats] = await db
-    .select({ 
-      total: sql<number>`count(*)`,
-      cached: sql<number>`sum(case when is_from_cache then 1 else 0 end)`
-    })
-    .from(aiUsageTracking)
-    .where(and(
-      eq(aiUsageTracking.userId, userId),
-      gte(aiUsageTracking.createdAt, thisMonth)
-    ));
-  
-  const cacheHitRate = cacheStats.total > 0 ? (cacheStats.cached / cacheStats.total) * 100 : 0;
-  
-  return {
-    dailyUsage: dailyUsage.count,
-    monthlyUsage: monthlyUsage.count,
-    totalCost: totalCost.sum,
-    cacheHitRate: Math.round(cacheHitRate)
-  };
+  try {
+    // Use user's timezone to calculate start of day and month
+    const now = new Date();
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    // Create start of day and month in user's timezone
+    const userDate = new Date(now.toLocaleString("en-US", {timeZone: userTimezone}));
+    const startOfUserDay = new Date(userDate.getFullYear(), userDate.getMonth(), userDate.getDate());
+    const startOfUserMonth = new Date(userDate.getFullYear(), userDate.getMonth(), 1);
+    
+    // Convert to UTC for database queries
+    const startOfDayUTC = new Date(startOfUserDay.getTime() - (startOfUserDay.getTimezoneOffset() * 60000));
+    const startOfMonthUTC = new Date(startOfUserMonth.getTime() - (startOfUserMonth.getTimezoneOffset() * 60000));
+
+    // Get daily usage
+    const [dailyUsage] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(aiUsageTracking)
+      .where(
+        and(
+          eq(aiUsageTracking.userId, userId),
+          gte(aiUsageTracking.createdAt, startOfDayUTC)
+        )
+      );
+
+    // Get monthly usage
+    const [monthlyUsage] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(aiUsageTracking)
+      .where(
+        and(
+          eq(aiUsageTracking.userId, userId),
+          gte(aiUsageTracking.createdAt, startOfMonthUTC)
+        )
+      );
+
+    // Get total usage
+    const [totalUsage] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(aiUsageTracking)
+      .where(eq(aiUsageTracking.userId, userId));
+
+    return {
+      dailyUsage: dailyUsage?.count || 0,
+      monthlyUsage: monthlyUsage?.count || 0,
+      totalUsage: totalUsage?.count || 0,
+      dailyLimit: USAGE_LIMITS.free.daily,
+      monthlyLimit: USAGE_LIMITS.free.monthly
+    };
+  } catch (error) {
+    console.error('Error getting user AI stats:', error);
+    return {
+      dailyUsage: 0,
+      monthlyUsage: 0,
+      totalUsage: 0,
+      dailyLimit: USAGE_LIMITS.free.daily,
+      monthlyLimit: USAGE_LIMITS.free.monthly
+    };
+  }
 }
 
 /**
