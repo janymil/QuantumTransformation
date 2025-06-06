@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
@@ -18,7 +19,11 @@ import {
   Heart,
   Settings,
   Play,
-  CheckCircle
+  CheckCircle,
+  Edit3,
+  Save,
+  RotateCcw,
+  Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -26,7 +31,23 @@ export default function AiCouchDashboard() {
   const [chatInput, setChatInput] = useState('');
   const [selectedSessionType, setSelectedSessionType] = useState<'daily_checkin' | 'crisis_support' | 'progress_review'>('daily_checkin');
   const [emotionalState, setEmotionalState] = useState('');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const { toast } = useToast();
+
+  // Profile editing states
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    primaryGoals: [] as string[],
+    currentChallenges: [] as string[],
+    healingReadiness: 5,
+    preferredMode: 'mixed' as 'scientific' | 'spiritual' | 'mixed',
+    communicationStyle: 'gentle' as 'gentle' | 'direct' | 'motivational',
+    learningStyle: 'visual' as 'visual' | 'auditory' | 'kinesthetic' | 'reading',
+    traumaHistory: '',
+    spiritualBackground: '',
+    mentalHealthHistory: '',
+    lifeContext: ''
+  });
 
   // Fetch user profile
   const { data: profile } = useQuery({
@@ -45,6 +66,24 @@ export default function AiCouchDashboard() {
     queryKey: ['/api/ai-couch/sessions'],
     retry: false,
   }) as { data: any[] };
+
+  // Update profile form when profile data loads
+  useEffect(() => {
+    if (profile && !isEditingProfile) {
+      setProfileForm({
+        primaryGoals: Array.isArray(profile?.primaryGoals) ? profile.primaryGoals : [],
+        currentChallenges: Array.isArray(profile?.currentChallenges) ? profile.currentChallenges : [],
+        healingReadiness: profile?.healingReadiness || 5,
+        preferredMode: profile?.preferredMode || 'mixed',
+        communicationStyle: profile?.communicationStyle || 'gentle',
+        learningStyle: profile?.learningStyle || 'visual',
+        traumaHistory: profile?.traumaHistory || '',
+        spiritualBackground: profile?.spiritualBackground || '',
+        mentalHealthHistory: profile?.mentalHealthHistory || '',
+        lifeContext: (typeof profile?.lifeContext === 'string') ? profile.lifeContext : ''
+      });
+    }
+  }, [profile, isEditingProfile]);
 
   // AI Coaching session mutation
   const sessionMutation = useMutation({
@@ -98,6 +137,29 @@ export default function AiCouchDashboard() {
     }
   });
 
+  // Profile update mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updatedProfile: typeof profileForm) => {
+      return apiRequest("PUT", "/api/ai-couch/profile", updatedProfile);
+    },
+    onSuccess: () => {
+      setIsEditingProfile(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/ai-couch/profile'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai-couch/sessions'] });
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated and AI coaching will adapt to your changes.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleChatSubmit = () => {
     if (!chatInput.trim()) return;
 
@@ -149,6 +211,25 @@ export default function AiCouchDashboard() {
           {profile?.preferredMode || 'mixed'} mode
         </Badge>
       </div>
+
+      {/* Navigation Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="dashboard">
+            <Brain className="w-4 h-4 mr-2" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="coaching">
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Coaching
+          </TabsTrigger>
+          <TabsTrigger value="profile">
+            <Settings className="w-4 h-4 mr-2" />
+            Profile Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-6 mt-6">
 
       {/* Profile Summary */}
       <Card>
@@ -380,6 +461,286 @@ export default function AiCouchDashboard() {
           </CardContent>
         </Card>
       </div>
+        </TabsContent>
+
+        <TabsContent value="coaching" className="space-y-6 mt-6">
+          {/* AI Coaching Session Interface */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <MessageSquare className="w-5 h-5 mr-2" />
+                AI Coaching Session
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Session Type Selection */}
+                <div>
+                  <Label htmlFor="sessionType" className="text-sm font-medium">Session Type</Label>
+                  <div className="flex gap-2 mt-2">
+                    {[
+                      { value: 'daily_checkin', label: 'Daily Check-in' },
+                      { value: 'crisis_support', label: 'Crisis Support' },
+                      { value: 'progress_review', label: 'Progress Review' }
+                    ].map((type) => (
+                      <Button
+                        key={type.value}
+                        variant={selectedSessionType === type.value ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedSessionType(type.value as any)}
+                      >
+                        {type.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Emotional State Input */}
+                <div>
+                  <Label htmlFor="emotionalState" className="text-sm font-medium">Current Emotional State (Optional)</Label>
+                  <Input
+                    id="emotionalState"
+                    placeholder="How are you feeling right now?"
+                    value={emotionalState}
+                    onChange={(e) => setEmotionalState(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+
+                {/* Main Input */}
+                <div>
+                  <Label htmlFor="chatInput" className="text-sm font-medium">What would you like to discuss?</Label>
+                  <Textarea
+                    id="chatInput"
+                    placeholder="Share what's on your mind, describe your challenges, or ask for guidance..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    className="mt-2 h-32"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleChatSubmit} 
+                  disabled={sessionMutation.isPending || !chatInput.trim()}
+                  className="w-full"
+                >
+                  {sessionMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Start AI Coaching Session
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="profile" className="space-y-6 mt-6">
+          {/* Profile Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Profile Settings
+                </div>
+                {!isEditingProfile ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingProfile(true)}
+                  >
+                    <Edit3 className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditingProfile(false);
+                        if (profile) {
+                          setProfileForm({
+                            primaryGoals: Array.isArray(profile?.primaryGoals) ? profile.primaryGoals : [],
+                            currentChallenges: Array.isArray(profile?.currentChallenges) ? profile.currentChallenges : [],
+                            healingReadiness: profile?.healingReadiness || 5,
+                            preferredMode: profile?.preferredMode || 'mixed',
+                            communicationStyle: profile?.communicationStyle || 'gentle',
+                            learningStyle: profile?.learningStyle || 'visual',
+                            traumaHistory: profile?.traumaHistory || '',
+                            spiritualBackground: profile?.spiritualBackground || '',
+                            mentalHealthHistory: profile?.mentalHealthHistory || '',
+                            lifeContext: (typeof profile?.lifeContext === 'string') ? profile.lifeContext : ''
+                          });
+                        }
+                      }}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => updateProfileMutation.mutate(profileForm)}
+                      disabled={updateProfileMutation.isPending}
+                    >
+                      {updateProfileMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-1" />
+                      )}
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Primary Goals</Label>
+                    {isEditingProfile ? (
+                      <Textarea
+                        placeholder="What are your main transformation goals?"
+                        value={profileForm.primaryGoals.join(', ')}
+                        onChange={(e) => setProfileForm({
+                          ...profileForm,
+                          primaryGoals: e.target.value.split(',').map(g => g.trim()).filter(Boolean)
+                        })}
+                        className="h-20 text-sm mt-2"
+                      />
+                    ) : (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        {profileForm.primaryGoals.length > 0 ? profileForm.primaryGoals.join(', ') : 'Not specified'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Healing Readiness</Label>
+                    {isEditingProfile ? (
+                      <div className="mt-2">
+                        <div className="text-sm mb-2">{profileForm.healingReadiness}/10</div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          value={profileForm.healingReadiness}
+                          onChange={(e) => setProfileForm({
+                            ...profileForm,
+                            healingReadiness: parseInt(e.target.value)
+                          })}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Level {profileForm.healingReadiness} - Ready for transformation
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Preferred Mode</Label>
+                    {isEditingProfile ? (
+                      <select
+                        value={profileForm.preferredMode}
+                        onChange={(e) => setProfileForm({
+                          ...profileForm,
+                          preferredMode: e.target.value as 'scientific' | 'spiritual' | 'mixed'
+                        })}
+                        className="w-full text-sm border border-gray-300 rounded-md p-2 mt-2"
+                      >
+                        <option value="scientific">Scientific</option>
+                        <option value="spiritual">Spiritual</option>
+                        <option value="mixed">Mixed</option>
+                      </select>
+                    ) : (
+                      <div className="text-sm text-muted-foreground capitalize mt-2">
+                        {profileForm.preferredMode}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Communication Style</Label>
+                    {isEditingProfile ? (
+                      <select
+                        value={profileForm.communicationStyle}
+                        onChange={(e) => setProfileForm({
+                          ...profileForm,
+                          communicationStyle: e.target.value as 'gentle' | 'direct' | 'motivational'
+                        })}
+                        className="w-full text-sm border border-gray-300 rounded-md p-2 mt-2"
+                      >
+                        <option value="gentle">Gentle</option>
+                        <option value="direct">Direct</option>
+                        <option value="motivational">Motivational</option>
+                      </select>
+                    ) : (
+                      <div className="text-sm text-muted-foreground capitalize mt-2">
+                        {profileForm.communicationStyle}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Learning Style</Label>
+                    {isEditingProfile ? (
+                      <select
+                        value={profileForm.learningStyle}
+                        onChange={(e) => setProfileForm({
+                          ...profileForm,
+                          learningStyle: e.target.value as 'visual' | 'auditory' | 'kinesthetic' | 'reading'
+                        })}
+                        className="w-full text-sm border border-gray-300 rounded-md p-2 mt-2"
+                      >
+                        <option value="visual">Visual</option>
+                        <option value="auditory">Auditory</option>
+                        <option value="kinesthetic">Kinesthetic</option>
+                        <option value="reading">Reading/Writing</option>
+                      </select>
+                    ) : (
+                      <div className="text-sm text-muted-foreground capitalize mt-2">
+                        {profileForm.learningStyle}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {isEditingProfile && (
+                  <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-700">
+                    <CardContent className="p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Brain className="w-3 h-3 text-white" />
+                        </div>
+                        <div>
+                          <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                            AI Reassessment
+                          </h5>
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            When you save changes to your profile, the AI coaching system will automatically reassess your needs and adapt all future coaching sessions to your updated preferences and goals.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
