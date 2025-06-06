@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare } from "lucide-react";
+import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
 

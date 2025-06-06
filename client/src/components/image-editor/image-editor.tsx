@@ -57,18 +57,16 @@ export default function ImageEditor({ imageUrl, onSave, onCancel }: ImageEditorP
     const img = new Image();
     img.onload = () => {
       if (canvasRef.current) {
-        drawImage();
+        setLoadedImage(img);
         setIsLoaded(true);
       }
     };
     img.src = imageUrl;
-    // Store reference to image
-    imageRef.current = img;
   }, [imageUrl]);
 
   const drawImage = useCallback(() => {
     const canvas = canvasRef.current;
-    const img = imageRef.current;
+    const img = loadedImage;
     if (!canvas || !img) return;
 
     const ctx = canvas.getContext('2d')!;
@@ -112,7 +110,7 @@ export default function ImageEditor({ imageUrl, onSave, onCancel }: ImageEditorP
         editing.cropArea.height
       );
     }
-  }, [editing, mode]);
+  }, [editing, mode, loadedImage]);
 
   // Redraw when editing state changes
   useEffect(() => {
@@ -178,7 +176,7 @@ export default function ImageEditor({ imageUrl, onSave, onCancel }: ImageEditorP
   };
 
   const applyCrop = () => {
-    if (!editing.cropArea || !canvasRef.current || !imageRef.current) return;
+    if (!editing.cropArea || !canvasRef.current || !loadedImage) return;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d')!;
