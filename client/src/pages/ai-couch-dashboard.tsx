@@ -83,19 +83,26 @@ export default function AiCouchDashboard() {
   // Update profile form when profile data loads
   useEffect(() => {
     if (profile && !isEditingProfile) {
+      // Extract data from JSONB fields and other database columns
+      const extractFromJsonb = (field: any, index: number = 0) => {
+        if (Array.isArray(field) && field.length > index) return field[index];
+        if (typeof field === 'string') return field;
+        return '';
+      };
+
       setProfileForm({
-        preferredApproach: profile?.preferredApproach || profile?.preferredMode || 'mixed',
+        preferredApproach: profile?.preferredMode || 'mixed',
         learningStyle: profile?.learningStyle || 'visual',
-        decisionMaking: profile?.decisionMaking || 'logical',
-        stressResponse: profile?.stressResponse || '',
+        decisionMaking: extractFromJsonb(profile?.motivationTriggers, 0) || 'logical',
+        stressResponse: extractFromJsonb(profile?.resistancePatterns, 0) || '',
         healingReadiness: profile?.healingReadiness || 5,
-        currentChallenges: profile?.currentChallenges || '',
-        resistanceAreas: profile?.resistanceAreas || '',
-        supportNeeds: profile?.supportNeeds || '',
-        primaryGoals: profile?.primaryGoals || '',
-        idealLife: profile?.idealLife || '',
-        motivation: profile?.motivation || '',
-        lifeContext: profile?.lifeContext || '',
+        currentChallenges: extractFromJsonb(profile?.traumaAreas, 0) || '',
+        resistanceAreas: extractFromJsonb(profile?.resistancePatterns, 1) || '',
+        supportNeeds: extractFromJsonb(profile?.supportNeeds, 0) || '',
+        primaryGoals: extractFromJsonb(profile?.primaryGoals, 0) || '',
+        idealLife: extractFromJsonb(profile?.secondaryGoals, 0) || '',
+        motivation: extractFromJsonb(profile?.motivationTriggers, 1) || '',
+        lifeContext: typeof profile?.lifeContext === 'object' ? JSON.stringify(profile.lifeContext) : (profile?.lifeContext || ''),
         communicationStyle: profile?.communicationStyle || 'gentle'
       });
     }
@@ -156,7 +163,29 @@ export default function AiCouchDashboard() {
   // Profile update mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (updatedProfile: typeof profileForm) => {
-      return apiRequest("PUT", "/api/ai-couch/profile", updatedProfile);
+      // Map frontend form fields to database schema fields
+      const dbUpdateData = {
+        preferredMode: updatedProfile.preferredApproach,
+        learningStyle: updatedProfile.learningStyle,
+        communicationStyle: updatedProfile.communicationStyle,
+        healingReadiness: updatedProfile.healingReadiness,
+        
+        // Map to JSONB array fields
+        motivationTriggers: [updatedProfile.decisionMaking, updatedProfile.motivation].filter(Boolean),
+        resistancePatterns: [updatedProfile.stressResponse, updatedProfile.resistanceAreas].filter(Boolean),
+        traumaAreas: [updatedProfile.currentChallenges].filter(Boolean),
+        supportNeeds: [updatedProfile.supportNeeds].filter(Boolean),
+        primaryGoals: [updatedProfile.primaryGoals].filter(Boolean),
+        secondaryGoals: [updatedProfile.idealLife].filter(Boolean),
+        
+        // Parse life context
+        lifeContext: updatedProfile.lifeContext ? 
+          (updatedProfile.lifeContext.startsWith('{') ? 
+            JSON.parse(updatedProfile.lifeContext) : 
+            { description: updatedProfile.lifeContext }) : {}
+      };
+      
+      return apiRequest("PUT", "/api/ai-couch/profile", dbUpdateData);
     },
     onSuccess: () => {
       setIsEditingProfile(false);
@@ -583,19 +612,25 @@ export default function AiCouchDashboard() {
                       onClick={() => {
                         setIsEditingProfile(false);
                         if (profile) {
+                          const extractFromJsonb = (field: any, index: number = 0) => {
+                            if (Array.isArray(field) && field.length > index) return field[index];
+                            if (typeof field === 'string') return field;
+                            return '';
+                          };
+
                           setProfileForm({
-                            preferredApproach: profile?.preferredApproach || profile?.preferredMode || 'mixed',
+                            preferredApproach: profile?.preferredMode || 'mixed',
                             learningStyle: profile?.learningStyle || 'visual',
-                            decisionMaking: profile?.decisionMaking || 'logical',
-                            stressResponse: profile?.stressResponse || '',
+                            decisionMaking: extractFromJsonb(profile?.motivationTriggers, 0) || 'logical',
+                            stressResponse: extractFromJsonb(profile?.resistancePatterns, 0) || '',
                             healingReadiness: profile?.healingReadiness || 5,
-                            currentChallenges: profile?.currentChallenges || '',
-                            resistanceAreas: profile?.resistanceAreas || '',
-                            supportNeeds: profile?.supportNeeds || '',
-                            primaryGoals: profile?.primaryGoals || '',
-                            idealLife: profile?.idealLife || '',
-                            motivation: profile?.motivation || '',
-                            lifeContext: profile?.lifeContext || '',
+                            currentChallenges: extractFromJsonb(profile?.traumaAreas, 0) || '',
+                            resistanceAreas: extractFromJsonb(profile?.resistancePatterns, 1) || '',
+                            supportNeeds: extractFromJsonb(profile?.supportNeeds, 0) || '',
+                            primaryGoals: extractFromJsonb(profile?.primaryGoals, 0) || '',
+                            idealLife: extractFromJsonb(profile?.secondaryGoals, 0) || '',
+                            motivation: extractFromJsonb(profile?.motivationTriggers, 1) || '',
+                            lifeContext: typeof profile?.lifeContext === 'object' ? JSON.stringify(profile.lifeContext) : (profile?.lifeContext || ''),
                             communicationStyle: profile?.communicationStyle || 'gentle'
                           });
                         }
