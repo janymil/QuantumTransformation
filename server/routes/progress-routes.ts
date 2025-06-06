@@ -126,4 +126,55 @@ export function registerProgressRoutes(app: Express) {
       res.status(500).json({ message: "Failed to fetch challenges overview" });
     }
   });
+
+  // Admin endpoint to unlock all days for a specific challenge
+  app.post('/api/admin/progress/unlock-all-days', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { challengeType, targetUserId } = req.body;
+      
+      // Check if current user is admin (your specific ID)
+      if (userId !== "43272767") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const userToUpdate = targetUserId || userId; // Use current user if no target specified
+      
+      if (!challengeType) {
+        return res.status(400).json({ message: "Challenge type is required" });
+      }
+
+      // Get existing progress or create new one
+      let progress = await storage.getUserProgressForChallenge(userToUpdate, challengeType);
+      
+      if (!progress) {
+        // Create new progress if it doesn't exist
+        progress = await storage.createUserProgress({
+          userId: userToUpdate,
+          challengeType,
+          currentDay: 30, // Set to max day
+          completedDays: Array.from({ length: 30 }, (_, i) => i + 1), // All days completed
+          streakCount: 30,
+          lastActivityDate: new Date().toISOString().split('T')[0]
+        });
+      } else {
+        // Update existing progress to unlock all days
+        progress = await storage.updateChallengeProgress(userToUpdate, challengeType, {
+          currentDay: 30, // Set to max day to unlock all
+          completedDays: Array.from({ length: 30 }, (_, i) => i + 1), // Mark all days as completed
+          streakCount: 30,
+          lastActivityDate: new Date().toISOString().split('T')[0]
+        });
+      }
+
+      res.json({ 
+        message: `All days unlocked for ${challengeType} challenge`,
+        progress,
+        unlockedDays: 30
+      });
+    } catch (error) {
+      console.error("Error unlocking all days:", error);
+      res.status(500).json({ message: "Failed to unlock all days" });
+    }
+  });
 }
