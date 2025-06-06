@@ -192,7 +192,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/ai/usage-stats", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const stats = await getUserAIStats(userId);
+      const { unifiedAnalytics } = await import('./unified-analytics');
+      const stats = await unifiedAnalytics.getUsageStats(userId);
       res.json(stats);
     } catch (error) {
       console.error("Usage stats error:", error);
@@ -595,16 +596,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin Analytics endpoint (password protected in frontend)
   app.get('/api/admin/analytics', async (req, res) => {
     try {
-      // Use authentic OpenAI API usage tracker for real cost and model data
-      const { getAuthenticAnalytics } = await import('./authentic-usage-tracker');
+      // Use unified analytics system for consistent data across platform
+      const { unifiedAnalytics } = await import('./unified-analytics');
       
-      // Get authentic analytics data from real OpenAI API responses
-      const analytics = await getAuthenticAnalytics();
+      // Get comprehensive analytics data from single source of truth
+      const analytics = await unifiedAnalytics.getAdminAnalytics();
       
       res.json(analytics);
     } catch (error) {
-      console.error("Error fetching authentic analytics:", error);
-      res.status(500).json({ message: "Failed to fetch authentic analytics" });
+      console.error("Error fetching admin analytics:", error);
+      res.status(500).json({ message: "Failed to fetch admin analytics" });
     }
   });
 
