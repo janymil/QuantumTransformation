@@ -504,7 +504,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analytics = {
         totalResponses: total,
         modelDistribution: modelDistribution.reduce((acc, item) => {
-          acc[item.model] = item.count;
+          if (item.model) {
+            acc[item.model] = item.count;
+          }
           return acc;
         }, {} as Record<string, number>),
         avgQuality: Math.round((avgMetrics[0]?.avgQuality || 0) * 10) / 10,

@@ -32,19 +32,19 @@ export default function AiCouchDashboard() {
   const { data: profile } = useQuery({
     queryKey: ['/api/ai-couch/profile'],
     retry: false,
-  });
+  }) as { data: any };
 
   // Fetch personalized plans
   const { data: plans } = useQuery({
     queryKey: ['/api/ai-couch/plans'],
     retry: false,
-  });
+  }) as { data: any[] };
 
   // Fetch recent sessions
   const { data: recentSessions } = useQuery({
     queryKey: ['/api/ai-couch/sessions'],
     retry: false,
-  });
+  }) as { data: any[] };
 
   // AI Coaching session mutation
   const sessionMutation = useMutation({
@@ -112,11 +112,11 @@ export default function AiCouchDashboard() {
   const handleGeneratePlan = (challengeType: string) => {
     generatePlanMutation.mutate({
       baseChallengeType: challengeType,
-      userSpecificNeeds: profile?.primaryGoals || []
+      userSpecificNeeds: (profile?.primaryGoals || []) as string[]
     });
   };
 
-  const activePlan = plans?.find((plan: any) => plan.status === 'active');
+  const activePlan = (plans || []).find((plan: any) => plan.status === 'active');
 
   if (!profile) {
     return (

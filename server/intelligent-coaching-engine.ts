@@ -275,20 +275,30 @@ Format as JSON:
     response: any,
     analysis: any
   ) {
-    // Get user profile to get profileId
-    const profile = await this.getUserProfile(userId);
-    if (profile) {
-      await db.insert(aiCouchSessions).values({
+    // Get or create user profile
+    let profile = await this.getUserProfile(userId);
+    if (!profile) {
+      // Create basic profile if none exists
+      const [newProfile] = await db.insert(aiCouchProfiles).values({
         userId,
-        profileId: profile.id,
-        sessionType: 'intelligent_coaching',
-        sessionMode: 'multidisciplinary',
-        userInput,
-        aiResponse: JSON.stringify(response),
-        emotionalTone: this.detectEmotionalTone(userInput),
-        followUpNeeded: analysis.urgencyLevel !== 'low'
-      });
+        assessmentCompleted: false,
+        healingReadiness: 5,
+        preferredMode: 'mixed',
+        communicationStyle: 'balanced'
+      }).returning();
+      profile = newProfile;
     }
+
+    await db.insert(aiCouchSessions).values({
+      userId,
+      profileId: profile.id,
+      sessionType: 'intelligent_coaching',
+      sessionMode: 'multidisciplinary',
+      userInput,
+      aiResponse: JSON.stringify(response),
+      emotionalTone: this.detectEmotionalTone(userInput),
+      followUpNeeded: analysis.urgencyLevel !== 'low'
+    });
   }
 
   /**
