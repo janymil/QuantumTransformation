@@ -213,10 +213,10 @@ Provide personalized coaching response that honors their communication style and
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
+    const content = response.choices[0].message.content;
     let aiResponse = '';
-    if (content.type === 'text') {
-      aiResponse = content.text;
+    if (content) {
+      aiResponse = content;
     }
 
     // Analyze session for insights
@@ -291,10 +291,10 @@ Format as JSON with categories: engagement, emotional_progression, resistance_ar
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           engagement: "Active and consistent",
@@ -352,10 +352,10 @@ Format as JSON with detailed block specifications.`;
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           blocks: blockTypes.map(type => ({
@@ -406,10 +406,10 @@ Format as JSON with: adaptation_type, reasoning, specific_changes, new_difficult
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           adaptation_type: "maintain_current_level",
@@ -452,10 +452,10 @@ Format as comprehensive JSON with scores, patterns, and recommendations for each
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           psychological_assessment: "Healthy engagement with growth",
@@ -497,10 +497,10 @@ Format as JSON with: predictions, confidence_levels, suggested_interventions, op
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           predictions: ["Continued growth trajectory"],
@@ -626,10 +626,10 @@ Format as detailed JSON with: expert_assessment, recommended_techniques, practic
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           expert_analysis: `Applied ${expertDomain} principles`,
@@ -682,10 +682,10 @@ Format as JSON with detailed patterns, emotional insights, and predictive indica
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           emotional_patterns: "Stable and improving",
@@ -726,10 +726,10 @@ Format as JSON with: { "greeting": "...", "reflection": "...", "practice": "..."
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           greeting: "Good morning! Today is a new opportunity for growth and transformation.",
@@ -769,10 +769,10 @@ Format as JSON with: { "welcome": "...", "review": "...", "celebration": "...", 
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           welcome: "Thank you for taking time to reflect on your day.",
@@ -822,10 +822,10 @@ Format as comprehensive JSON analysis.`;
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           patterns: ["Consistent engagement with practices"],
@@ -873,10 +873,10 @@ Format as JSON with: { "immediate_response": "...", "grounding_technique": "..."
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           immediate_response: "I hear you and I'm here with you. You're not alone in this moment.",
@@ -924,10 +924,10 @@ Format as detailed JSON intervention guide.`;
       messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
+    const content = response.choices[0].message.content;
+    if (content) {
       try {
-        return JSON.parse(content.text);
+        return JSON.parse(content);
       } catch {
         return {
           intervention_type: interventionType,
