@@ -120,6 +120,7 @@ export default function EnhancedVisionBoard() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [showSvgDialog, setShowSvgDialog] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [currentBoardId, setCurrentBoardId] = useState<number | null>(null);
 
   // Comprehensive SVG elements library
@@ -299,6 +300,42 @@ export default function EnhancedVisionBoard() {
     setShowSvgDialog(false);
     setTimeout(() => drawCanvas(), 100);
   };
+
+  // Background color change functionality
+  const changeBackgroundColor = (color: string) => {
+    setBoard(prev => ({
+      ...prev,
+      canvasData: {
+        ...prev.canvasData,
+        backgroundColor: color
+      }
+    }));
+    setShowColorPicker(false);
+    setTimeout(() => drawCanvas(), 100);
+  };
+
+  const predefinedColors = [
+    '#ffffff', // White
+    '#f8fafc', // Light Gray
+    '#f1f5f9', // Slate
+    '#fef2f2', // Light Red
+    '#fef7ed', // Light Orange
+    '#fffbeb', // Light Yellow
+    '#f0fdf4', // Light Green
+    '#ecfdf5', // Emerald
+    '#f0f9ff', // Light Blue
+    '#eff6ff', // Blue
+    '#f8fafc', // Indigo
+    '#faf5ff', // Purple
+    '#fdf2f8', // Pink
+    '#1f2937', // Dark Gray
+    '#111827', // Almost Black
+    '#7c3aed', // Purple
+    '#3b82f6', // Blue
+    '#10b981', // Green
+    '#f59e0b', // Yellow
+    '#ef4444', // Red
+  ];
 
   // Enhanced functionality
   const duplicateBoard = async () => {
@@ -1266,6 +1303,19 @@ export default function EnhancedVisionBoard() {
             Elements
           </Button>
 
+          <Button
+            onClick={() => setShowColorPicker(true)}
+            variant="outline"
+            size="sm"
+            className="relative"
+          >
+            <div 
+              className="w-4 h-4 mr-1 rounded border border-gray-300" 
+              style={{ backgroundColor: board.canvasData.backgroundColor }}
+            />
+            Background
+          </Button>
+
           <div className="w-px bg-border" />
 
           <Button
@@ -1632,6 +1682,119 @@ export default function EnhancedVisionBoard() {
                 </button>
               ))}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Background Color Picker Dialog */}
+      <Dialog open={showColorPicker} onOpenChange={setShowColorPicker}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Change Background Color</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Choose a background color for your vision board
+            </p>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Current Color Display */}
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium">Current:</span>
+              <div 
+                className="w-16 h-16 rounded-lg border-2 border-gray-300"
+                style={{ backgroundColor: board.canvasData.backgroundColor }}
+              />
+              <span className="text-sm text-muted-foreground">
+                {board.canvasData.backgroundColor}
+              </span>
+            </div>
+
+            {/* Predefined Colors Grid */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Predefined Colors</h4>
+              <div className="grid grid-cols-10 gap-3">
+                {predefinedColors.map((color, index) => (
+                  <button
+                    key={index}
+                    onClick={() => changeBackgroundColor(color)}
+                    className="w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-blue-500 transition-colors relative group"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  >
+                    {board.canvasData.backgroundColor === color && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white" />
+                      </div>
+                    )}
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {color}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Color Input */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Custom Color</h4>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={board.canvasData.backgroundColor}
+                  onChange={(e) => changeBackgroundColor(e.target.value)}
+                  className="w-16 h-12 rounded-lg border-2 border-gray-300 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={board.canvasData.backgroundColor}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^#[0-9A-Fa-f]{0,6}$/.test(value) || value === '') {
+                        changeBackgroundColor(value);
+                      }
+                    }}
+                    placeholder="#ffffff"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter a hex color code (e.g., #ffffff)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Reset Options */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Quick Options</h4>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => changeBackgroundColor('#ffffff')}
+                >
+                  Reset to White
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => changeBackgroundColor('#f8fafc')}
+                >
+                  Light Gray
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => changeBackgroundColor('#1f2937')}
+                >
+                  Dark Theme
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setShowColorPicker(false)}>
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
