@@ -1,6 +1,20 @@
 import { BaseDiscipline } from './base-discipline';
 import { classicalPsychology } from './classical-psychology';
 import { cbtTherapist } from './cbt-therapist';
+import { traumaTherapist } from './trauma-therapist';
+import { somaticTherapist } from './somatic-therapist';
+import { psychodynamicTherapist } from './psychodynamic-therapist';
+import { sleepTherapist } from './sleep-therapist';
+import { meditationInstructor } from './meditation-instructor';
+import { accessConsciousness } from './access-consciousness';
+import { quantumFieldExpert } from './quantum-field-expert';
+import { breathworkFacilitator } from './breathwork-facilitator';
+import { energyHealer } from './energy-healer';
+import { nutritionalTherapist } from './nutritional-therapist';
+import { movementTherapist } from './movement-therapist';
+import { expressiveArtsTherapist } from './expressive-arts-therapist';
+import { relationshipCounselor } from './relationship-counselor';
+import { lifeCoach } from './life-coach';
 
 /**
  * Central Registry for All Therapeutic Disciplines
@@ -10,13 +24,23 @@ export class DisciplineRegistry {
   private disciplines: Map<string, BaseDiscipline> = new Map();
 
   constructor() {
+    // Register all 16 therapeutic disciplines
     this.registerDiscipline('classical_psychologist', classicalPsychology);
     this.registerDiscipline('cbt_therapist', cbtTherapist);
-    
-    // TODO: Add remaining disciplines as they are converted to modular format
-    // this.registerDiscipline('trauma_therapist', traumaTherapist);
-    // this.registerDiscipline('somatic_therapist', somaticTherapist);
-    // ... etc
+    this.registerDiscipline('trauma_therapist', traumaTherapist);
+    this.registerDiscipline('somatic_therapist', somaticTherapist);
+    this.registerDiscipline('psychodynamic_therapist', psychodynamicTherapist);
+    this.registerDiscipline('sleep_therapist', sleepTherapist);
+    this.registerDiscipline('meditation_instructor', meditationInstructor);
+    this.registerDiscipline('access_consciousness', accessConsciousness);
+    this.registerDiscipline('quantum_field_expert', quantumFieldExpert);
+    this.registerDiscipline('breathwork_facilitator', breathworkFacilitator);
+    this.registerDiscipline('energy_healer', energyHealer);
+    this.registerDiscipline('nutritional_therapist', nutritionalTherapist);
+    this.registerDiscipline('movement_therapist', movementTherapist);
+    this.registerDiscipline('expressive_arts_therapist', expressiveArtsTherapist);
+    this.registerDiscipline('relationship_counselor', relationshipCounselor);
+    this.registerDiscipline('life_coach', lifeCoach);
   }
 
   private registerDiscipline(key: string, discipline: BaseDiscipline): void {
@@ -70,7 +94,7 @@ export class DisciplineRegistry {
 
   private combineInterventions(responses: any[]): string[] {
     const allInterventions = responses.flatMap(r => r.interventions);
-    return [...new Set(allInterventions)]; // Remove duplicates
+    return Array.from(new Set(allInterventions)); // Remove duplicates with Array.from for TS compatibility
   }
 
   private generateIntegrationGuidance(responses: any[]): string[] {
