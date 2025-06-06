@@ -1,76 +1,77 @@
 export const day03Content = {
   day: 3,
   title: "Day 3: Emotional Elevation - Cultivating the Feeling State of Abundance",
-  subtitle: "Generate heart coherence and elevated emotions to amplify your abundance frequency",
-  description: "Today we focus on cultivating elevated emotions like gratitude, joy, and love as the carrier frequency for your abundance intentions into the quantum field.",
+  subtitle: "Rewrite your emotional signature with money through heart coherence and financial gratitude",
+  description: "Most money blocks are rooted in emotional history—stress, scarcity, shame. Today we generate feelings of financial gratitude to teach your body that money is safe, abundant, and welcome.",
   duration: "40-50 minutes",
-  topic: "Heart Coherence and Emotional Elevation",
-  science: "HeartMath research shows that generating heart coherence—a harmonious heart rhythm pattern linked to positive emotions—improves cognitive function and emotional regulation. Elevated emotions act as an energetic amplifier for your thoughts and intentions, raising your vibrational frequency to align with desired reality.",
+  topic: "Heart Coherence and Financial Emotional Elevation",
+  science: "HeartMath Institute studies show that positive emotional states like gratitude shift your heart rhythm into coherence, improving focus, decision-making, and neuroplasticity. This coherence helps anchor new subconscious associations to money.",
   
   practice: {
     morning: {
-      title: "Heart Coherence and Gratitude Activation",
+      title: "Heart Coherence and Financial Gratitude",
       steps: [
-        "Upon waking, sit comfortably with your eyes closed and take 5 deep, slow breaths",
-        "Bring to mind a vivid memory that naturally produces deep gratitude, joy, or love",
-        "Allow yourself to fully feel this emotion in your chest area—feel the warmth and expansion",
-        "Imagine your heart glowing with this elevated feeling for 3-5 minutes",
-        "While maintaining this emotional state, mentally repeat your Quantum Intention from Day 1",
-        "Let the emotions amplify your belief in this intention",
-        "Write in your journal about the sensations and insights you experienced"
+        "Upon waking, sit comfortably with your eyes closed. Take 5 deep, slow breaths, focusing on calming your nervous system",
+        "Think of a moment when you felt deep financial relief or received a gift, however small. If no such moment exists, imagine one clearly - receiving money easily, paying off a debt, someone gifting you cash",
+        "Let this feeling of financial gratitude or security expand through your chest. Hold it for 3–5 minutes, as if it were a living force inside you",
+        "While in this elevated emotional state, repeat your Day 1 Quantum Intention about financial abundance. Let the emotion fuel the words",
+        "Journal what emotions you accessed and how your body responded. Were there any resistances? Note them"
       ]
     },
     
     daytime: {
-      title: "Detailed Vision Journaling and Emotional Rehearsal",
+      title: "Journaling a Detailed Vision of Financial Abundance",
       steps: [
-        "Set aside 20-30 minutes in a quiet environment",
-        "Write a detailed journal entry describing a perfect day in your abundant life",
-        "Include all sensory details: what you see, hear, smell, taste, and feel",
-        "Describe your emotions throughout the day—excitement, peace, confidence, joy",
-        "Be as specific and immersive as possible, writing as if it's happening now",
-        "Read your entry aloud slowly at least twice, feeling the emotions as you speak",
-        "Notice how your body responds to this emotional rehearsal"
+        "Block 20–30 minutes in a quiet space. Imagine it's a regular day in your financially abundant life",
+        "Journal a scene with rich sensory detail: What do you see when you check your bank app? How does your morning coffee taste in your dream kitchen? What do you say to your accountant? Write in present tense",
+        "Include income sources, investments, purchases, donations—anything real to your new life",
+        "After writing, read it aloud slowly and try to feel what this version of you feels. Confidence. Calm. Joy"
       ]
     },
     
     evening: {
-      title: "Meditative Emotional Anchoring",
+      title: "Anchoring Abundant Emotions Before Sleep",
       steps: [
-        "Before sleeping, find a comfortable position and close your eyes",
-        "Take deep breaths to relax your entire body",
-        "Recall your morning heart coherence practice or your journaled abundant day",
-        "Slowly re-experience the feelings of gratitude, joy, and abundance",
-        "Imagine these feelings as radiant light expanding from your heart throughout your body",
-        "Silently repeat your Quantum Intention while holding this elevated emotional state",
-        "Allow yourself to drift into sleep immersed in this feeling of abundance"
+        "Before sleep, return to your journaled vision. Reread it slowly with closed eyes",
+        "Focus deeply on the feelings you want to fall asleep with—freedom, safety, ease",
+        "Imagine those feelings as a warm light in your body, expanding as you breathe",
+        "Whisper your Quantum Intention 3× times, feeling it rather than saying it",
+        "Let yourself fall asleep in this emotional state. This primes the subconscious to absorb it"
       ]
     },
     
     tips: [
-      "Elevated emotions are the secret code that aligns you with your desires",
-      "The pre-sleep state is highly receptive to subconscious imprinting",
-      "Detailed mental imagery activates the same neural networks as real experiences",
-      "Emotional engagement strengthens memory consolidation and behavioral change",
-      "Positive emotional states before sleep influence dreams and subconscious learning"
+      "Most money blocks are rooted not in logic, but in emotional history",
+      "Generating feelings of financial gratitude rewrites your emotional signature with money",
+      "The pre-sleep state is a gateway into the subconscious for deep rewiring",
+      "Scripting connects your rational and emotional brain for faster manifestation",
+      "Mental rehearsal, when emotionally charged, activates the same brain regions as real experiences"
     ],
     
     insights: [
       "Elevated emotion is the carrier frequency of thought into the quantum field",
       "Your feelings are the secret code that aligns you with your desires",
       "The mind is a powerful magnet—what you think about, you bring about",
-      "Emotional states during sleep window allow new beliefs to embed deeply",
-      "Heart coherence improves cognitive function and emotional regulation"
+      "Emotions present before sleep strongly influence subconscious processing during REM cycles",
+      "The clearer the inner blueprint, the faster your subconscious can match it externally"
     ]
   },
   
-  affirmation: "I generate elevated emotions of gratitude and abundance that carry my intentions into reality.",
+  affirmation: "I generate elevated emotions of financial gratitude that teach my body money is safe, abundant, and welcome.",
   
   quote: {
     text: "Elevated emotion is the carrier frequency of the thought into the quantum field.",
     author: "Joe Dispenza"
   },
-
+  
+  videoLinks: [
+    {
+      title: "How to Have an Abundance Mindset – 6 Minutes",
+      description: "Practical techniques for developing an abundance mindset and overcoming scarcity thinking",
+      url: "https://www.youtube.com/watch?v=d9qSVKrnbm0"
+    }
+  ],
+  
   expectedResults: [
     "Ability to consciously generate and sustain elevated emotions linked to abundance",
     "Creation of a rich, emotionally charged mental blueprint of your desired life", 
