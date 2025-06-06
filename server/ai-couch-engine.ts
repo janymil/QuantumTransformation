@@ -532,26 +532,29 @@ Format as JSON with: predictions, confidence_levels, suggested_interventions, op
     const profile = await this.getUserProfile(userId);
     if (!profile) throw new Error('User profile not found');
 
-    // Use multidisciplinary engine to assess needs
-    const recommendedDomains = multidisciplinaryEngine.assessExpertDomainNeeds(
-      profile,
+    // Use modular discipline registry to assess needs
+    const context = {
+      userProfile: profile,
       currentIssues,
       goals
-    );
+    };
+    
+    const applicableDisciplines = disciplineRegistry.getApplicableDisciplines(profile, currentIssues, goals);
+    const recommendedDomains = applicableDisciplines.slice(0, 5).map(d => d.expertise.name);
 
-    // Generate integrated intervention plan
-    const interventionPlan = multidisciplinaryEngine.generateIntegratedIntervention(
-      recommendedDomains,
+    // Generate integrated intervention plan using multidisciplinary response
+    const interventionPlan = await disciplineRegistry.generateMultidisciplinaryResponse(
       currentIssues.join(', '),
-      profile
+      context,
+      5
     );
 
     return {
       recommendedExpertDomains: recommendedDomains,
       interventionPlan,
-      multidisciplinaryApproach: interventionPlan.multidisciplinaryApproach,
-      integrationStrategy: interventionPlan.integrationStrategy,
-      contraindications: interventionPlan.contraindications
+      multidisciplinaryApproach: interventionPlan.integratedAssessment,
+      integrationStrategy: interventionPlan.integrationGuidance.join('; '),
+      contraindications: interventionPlan.responses.flatMap(r => r.riskFactors || [])
     };
   }
 
@@ -568,7 +571,11 @@ Format as JSON with: predictions, confidence_levels, suggested_interventions, op
 
     // Get specific expertise from modular discipline registry
     const discipline = disciplineRegistry.getDiscipline(expertDomain) || disciplineRegistry.getDiscipline('cbt_therapist');
-    const expertiseData = discipline?.expertise;
+    if (!discipline) {
+      throw new Error(`Discipline not found: ${expertDomain}`);
+    }
+    
+    const expertiseData = discipline.expertise;
 
     const prompt = `You are acting as a ${expertiseData.name} with comprehensive training and expertise.
 
