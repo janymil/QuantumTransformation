@@ -269,7 +269,7 @@ export default function EnhancedVisionBoard() {
         });
       }
 
-      // Draw selection border and resize handles
+      // Draw selection border and resize handles WITHIN the rotated context
       if (selectedItem === item.id) {
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 2;
@@ -514,20 +514,38 @@ export default function EnhancedVisionBoard() {
       
       // Check if clicking on resize handle or rotation handle for images
       if (clickedItem.type === 'image') {
-        // Check rotation handle first (larger hit area)
+        // Transform mouse coordinates to account for rotation
+        const itemCenterX = clickedItem.x + clickedItem.width / 2;
+        const itemCenterY = clickedItem.y + clickedItem.height / 2;
+        const rotation = (clickedItem.rotation || 0) * Math.PI / 180;
+        
+        // Inverse transform to get coordinates in the item's local space
+        const dx = x - itemCenterX;
+        const dy = y - itemCenterY;
+        const localX = itemCenterX + (dx * Math.cos(-rotation) - dy * Math.sin(-rotation));
+        const localY = itemCenterY + (dx * Math.sin(-rotation) + dy * Math.cos(-rotation));
+        
+        // Check rotation handle first (larger hit area) using original coordinates
         const rotationHandleDistance = 35;
-        const centerX = clickedItem.x + clickedItem.width / 2;
-        const rotationY = clickedItem.y - rotationHandleDistance;
-        const rotationDistance = Math.sqrt((x - centerX) ** 2 + (y - rotationY) ** 2);
+        const rotationHandleX = itemCenterX;
+        const rotationHandleY = clickedItem.y - rotationHandleDistance;
+        
+        // Transform rotation handle position
+        const rhDx = rotationHandleX - itemCenterX;
+        const rhDy = rotationHandleY - itemCenterY;
+        const transformedRhX = itemCenterX + (rhDx * Math.cos(rotation) - rhDy * Math.sin(rotation));
+        const transformedRhY = itemCenterY + (rhDx * Math.sin(rotation) + rhDy * Math.cos(rotation));
+        
+        const rotationDistance = Math.sqrt((x - transformedRhX) ** 2 + (y - transformedRhY) ** 2);
         
         if (rotationDistance <= 18) { // Larger hit area for rotation
           event.preventDefault();
           event.stopPropagation();
           setIsRotating(true);
           setRotationStart({
-            centerX: clickedItem.x + clickedItem.width / 2,
-            centerY: clickedItem.y + clickedItem.height / 2,
-            startAngle: Math.atan2(y - (clickedItem.y + clickedItem.height / 2), x - (clickedItem.x + clickedItem.width / 2)),
+            centerX: itemCenterX,
+            centerY: itemCenterY,
+            startAngle: Math.atan2(y - itemCenterY, x - itemCenterX),
             initialRotation: clickedItem.rotation || 0
           });
           canvas.style.cursor = 'grabbing';

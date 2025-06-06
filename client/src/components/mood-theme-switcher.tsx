@@ -238,20 +238,21 @@ export default function MoodThemeSwitcher({ onThemeChange }: MoodThemeSwitcherPr
     const root = document.documentElement;
     
     if (isDark) {
-      // Use consistent grey colors for dark theme
-      const darkColors = {
-        background: '210 11% 15%',  // Lighter grey instead of very dark
+      // NEVER use black backgrounds in dark mode - always use grey
+      const forcedGreyColors = {
+        background: '210 11% 18%',  // Force grey background
         foreground: '0 0% 95%',
-        muted: '210 11% 25%',      // Lighter muted grey
-        card: '210 11% 15%',       // Lighter card grey
-        border: '210 11% 25%',     // Lighter border grey
+        muted: '210 11% 28%',      
+        card: '210 11% 18%',       
+        border: '210 11% 28%',     
         primary: currentTheme.darkColors.primary,
         secondary: currentTheme.darkColors.secondary,
-        accent: currentTheme.darkColors.accent
+        accent: '210 11% 22%'  // Also force grey accent
       };
       
-      Object.entries(darkColors).forEach(([key, value]) => {
-        root.style.setProperty(`--${key}`, value);
+      // Force apply these with !important equivalent
+      Object.entries(forcedGreyColors).forEach(([key, value]) => {
+        root.style.setProperty(`--${key}`, value, 'important');
       });
       
       document.documentElement.classList.add('dark');
