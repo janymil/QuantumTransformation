@@ -60,11 +60,11 @@ const moodThemes: MoodTheme[] = [
       primary: '25 95% 53%',
       secondary: '45 100% 51%',
       accent: '15 100% 55%',
-      background: '240 10% 9%',
+      background: '210 11% 18%',
       foreground: '0 0% 98%',
-      muted: '240 4% 20%',
-      card: '240 10% 9%',
-      border: '240 4% 20%'
+      muted: '210 11% 28%',
+      card: '210 11% 18%',
+      border: '210 11% 28%'
     }
   },
   {
@@ -88,11 +88,11 @@ const moodThemes: MoodTheme[] = [
       primary: '200 100% 50%',
       secondary: '180 100% 40%',
       accent: '210 100% 60%',
-      background: '240 10% 9%',
+      background: '210 11% 18%',
       foreground: '0 0% 98%',
-      muted: '240 4% 20%',
-      card: '240 10% 9%',
-      border: '240 4% 20%'
+      muted: '210 11% 28%',
+      card: '210 11% 18%',
+      border: '210 11% 28%'
     }
   },
   {
@@ -116,11 +116,11 @@ const moodThemes: MoodTheme[] = [
       primary: '120 60% 40%',
       secondary: '80 50% 50%',
       accent: '35 80% 50%',
-      background: '240 10% 9%',
+      background: '210 11% 18%',
       foreground: '0 0% 98%',
-      muted: '240 4% 20%',
-      card: '240 10% 9%',
-      border: '240 4% 20%'
+      muted: '210 11% 28%',
+      card: '210 11% 18%',
+      border: '210 11% 28%'
     }
   },
   {
@@ -144,11 +144,11 @@ const moodThemes: MoodTheme[] = [
       primary: '340 75% 50%',
       secondary: '270 75% 60%',
       accent: '10 80% 55%',
-      background: '240 10% 9%',
+      background: '210 11% 18%',
       foreground: '0 0% 98%',
-      muted: '240 4% 20%',
-      card: '240 10% 9%',
-      border: '240 4% 20%'
+      muted: '210 11% 28%',
+      card: '210 11% 18%',
+      border: '210 11% 28%'
     }
   },
   {
@@ -172,11 +172,11 @@ const moodThemes: MoodTheme[] = [
       primary: '220 14.3% 41.2%',
       secondary: '210 40% 60%',
       accent: '220 8.9% 46.1%',
-      background: '240 10% 9%',
+      background: '210 11% 18%',
       foreground: '0 0% 98%',
-      muted: '240 4% 20%',
-      card: '240 10% 9%',
-      border: '240 4% 20%'
+      muted: '210 11% 28%',
+      card: '210 11% 18%',
+      border: '210 11% 28%'
     }
   },
   {
