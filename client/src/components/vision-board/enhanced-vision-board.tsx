@@ -102,6 +102,7 @@ export default function EnhancedVisionBoard() {
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [isRotating, setIsRotating] = useState(false);
   const [rotationStart, setRotationStart] = useState<{ centerX: number; centerY: number; startAngle: number; initialRotation: number } | null>(null);
+  const [loadedImages] = useState<Map<string, HTMLImageElement>>(new Map());
 
   // Queries
   const { data: savedBoards } = useQuery({
@@ -214,8 +215,15 @@ export default function EnhancedVisionBoard() {
       ctx.translate(-centerX, -centerY);
 
       if (item.type === 'image') {
-        const img = loadedImages.get(item.content);
-        if (img && img.complete) {
+        let img = loadedImages.get(item.content);
+        if (!img) {
+          img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => drawCanvas();
+          img.src = item.content;
+          loadedImages.set(item.content, img);
+        }
+        if (img.complete && img.naturalWidth > 0) {
           ctx.drawImage(img, item.x, item.y, item.width, item.height);
         }
       } else if (item.type === 'text') {
