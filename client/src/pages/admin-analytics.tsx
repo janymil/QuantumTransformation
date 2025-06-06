@@ -21,10 +21,28 @@ import {
   UserCheck,
   Target,
   Calendar,
-  Award
+  Award,
+  Edit,
+  Ban,
+  Trash2,
+  UserX,
+  Eye,
+  Settings,
+  AlertTriangle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 
 export default function AdminAnalytics() {
   const { toast } = useToast();
@@ -179,6 +197,285 @@ export default function AdminAnalytics() {
                 localStorage.removeItem("admin-auth-quantum");
                 setIsAuthenticated(false);
                 setPassword("");
+                setAuthAttempted(false);
+                toast({
+                  title: "Logged Out",
+                  description: "Admin session ended.",
+                });
+              }}
+              className="flex items-center gap-2"
+            >
+              <Shield className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
+
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="ai-usage" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              AI Usage Analytics
+            </TabsTrigger>
+            <TabsTrigger value="user-stats" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              User Statistics & Metrics
+            </TabsTrigger>
+            <TabsTrigger value="user-management" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              User Management
+            </TabsTrigger>
+          </TabsList>
+  };
+
+  // User management functions
+  const handleEditUser = (user: any) => {
+    setSelectedUser(user);
+    setEditForm({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleBlockUser = (user: any) => {
+    setSelectedUser(user);
+    setBlockReason("");
+    setBlockDialogOpen(true);
+  };
+
+  const handleDeleteUser = (user: any) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const submitEditUser = async () => {
+    try {
+      await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+      
+      setEditDialogOpen(false);
+      refetchUsers();
+      toast({
+        title: "User Updated",
+        description: "User details have been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const submitBlockUser = async () => {
+    try {
+      await fetch(`/api/admin/users/${selectedUser.id}/block`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: blockReason })
+      });
+      
+      setBlockDialogOpen(false);
+      refetchUsers();
+      toast({
+        title: "User Blocked",
+        description: "User access has been blocked.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to block user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const submitUnblockUser = async (userId: string) => {
+    try {
+      await fetch(`/api/admin/users/${userId}/unblock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      refetchUsers();
+      toast({
+        title: "User Unblocked",
+        description: "User access has been restored.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to unblock user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const submitDeleteUser = async () => {
+    try {
+      await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'DELETE'
+      });
+      
+      setDeleteDialogOpen(false);
+      refetchUsers();
+      toast({
+        title: "User Deleted",
+        description: "User and all associated data have been permanently deleted.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete user.",
+        variant: "destructive",
+      });
+    }
+                setAuthAttempted(false);
+                toast({
+                  title: "Logged Out",
+                  description: "Admin session ended.",
+                });
+              }}
+              className="flex items-center gap-2"
+            >
+              <Shield className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
+
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="ai-usage" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              AI Usage Analytics
+            </TabsTrigger>
+            <TabsTrigger value="user-stats" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              User Statistics & Metrics
+            </TabsTrigger>
+            <TabsTrigger value="user-management" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              User Management
+            </TabsTrigger>
+          </TabsList>
+
+  // User management functions
+  const handleEditUser = (user: any) => {
+    setSelectedUser(user);
+    setEditForm({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleBlockUser = (user: any) => {
+    setSelectedUser(user);
+    setBlockReason("");
+    setBlockDialogOpen(true);
+  };
+
+  const handleDeleteUser = (user: any) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const submitEditUser = async () => {
+    try {
+      await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+      
+      setEditDialogOpen(false);
+      refetchUsers();
+      toast({
+        title: "User Updated",
+        description: "User details have been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const submitBlockUser = async () => {
+    try {
+      await fetch(`/api/admin/users/${selectedUser.id}/block`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: blockReason })
+      });
+      
+      setBlockDialogOpen(false);
+      refetchUsers();
+      toast({
+        title: "User Blocked",
+        description: "User access has been blocked.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to block user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const submitUnblockUser = async (userId: string) => {
+    try {
+      await fetch(`/api/admin/users/${userId}/unblock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      refetchUsers();
+      toast({
+        title: "User Unblocked",
+        description: "User access has been restored.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to unblock user.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const submitDeleteUser = async () => {
+    try {
+      await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'DELETE'
+      });
+      
+      setDeleteDialogOpen(false);
+      refetchUsers();
+      toast({
+        title: "User Deleted",
+        description: "User and all associated data have been permanently deleted.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete user.",
+        variant: "destructive",
+      });
+    }
                 setAuthAttempted(false);
                 toast({
                   title: "Logged Out",
