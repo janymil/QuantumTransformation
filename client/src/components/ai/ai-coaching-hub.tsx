@@ -98,6 +98,30 @@ export default function AICoachingHub({
     }
   };
 
+  // Helper function to format AI coaching responses for better readability
+  const formatCoachingMessage = (message: string) => {
+    if (!message) return "No guidance available";
+    
+    // Remove technical formatting markers and improve readability
+    let formatted = message
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-purple-900 dark:text-purple-100">$1</strong>') // Bold text
+      .replace(/### (.*?)(\n|$)/g, '<h4 class="font-semibold text-purple-800 dark:text-purple-200 mt-4 mb-2 text-base">$1</h4>$2') // Headers
+      .replace(/#{2,3} (.*?)(\n|$)/g, '<h4 class="font-semibold text-purple-800 dark:text-purple-200 mt-4 mb-2 text-base">$1</h4>$2') // Headers
+      .replace(/- \*\*(.*?)\*\*/g, '<div class="mt-3 mb-2"><strong class="text-purple-900 dark:text-purple-100">$1</strong></div>') // List items with bold
+      .replace(/\*\*Practice:\*\*/g, '<div class="mt-3 mb-1"><strong class="text-green-700 dark:text-green-300">Practice:</strong></div>')
+      .replace(/\*\*Technique:\*\*/g, '<div class="mt-3 mb-1"><strong class="text-blue-700 dark:text-blue-300">Technique:</strong></div>')
+      .replace(/\*\*Exercise:\*\*/g, '<div class="mt-3 mb-1"><strong class="text-indigo-700 dark:text-indigo-300">Exercise:</strong></div>')
+      .replace(/\*\*Intention:\*\*/g, '<div class="mt-3 mb-1"><strong class="text-orange-700 dark:text-orange-300">Intention:</strong></div>')
+      .replace(/\*\*Awareness:\*\*/g, '<div class="mt-3 mb-1"><strong class="text-teal-700 dark:text-teal-300">Awareness:</strong></div>')
+      .replace(/\n\n/g, '</p><p class="mt-3">') // Paragraph breaks
+      .replace(/\n/g, '<br/>'); // Line breaks
+    
+    // Wrap in paragraph tags
+    formatted = '<p class="leading-relaxed">' + formatted + '</p>';
+    
+    return <div dangerouslySetInnerHTML={{ __html: formatted }} />;
+  };
+
   // Get AI usage stats
   const { data: usageStats } = useQuery({
     queryKey: ["/api/ai/usage-stats"],
@@ -281,9 +305,9 @@ export default function AICoachingHub({
                         <Heart className="w-4 h-4 mr-2" />
                         Personal Message
                       </h4>
-                      <p className="text-sm text-purple-700 dark:text-purple-300">
-                        {(coachingMutation.data || coachingResponse)?.personalizedMessage || "No response available"}
-                      </p>
+                      <div className="text-sm text-purple-700 dark:text-purple-300 prose prose-sm max-w-none">
+                        {formatCoachingMessage((coachingMutation.data || coachingResponse)?.personalizedMessage)}
+                      </div>
                     </div>
                     
                     <div>
@@ -291,9 +315,9 @@ export default function AICoachingHub({
                         <Target className="w-4 h-4 mr-2" />
                         Today's Recommendation
                       </h4>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        {(coachingMutation.data || coachingResponse)?.todaysRecommendation || "No recommendation available"}
-                      </p>
+                      <div className="text-sm text-blue-700 dark:text-blue-300 prose prose-sm max-w-none">
+                        {formatCoachingMessage((coachingMutation.data || coachingResponse)?.todaysRecommendation)}
+                      </div>
                     </div>
 
                     {(coachingMutation.data || coachingResponse)?.practiceAdjustments && (

@@ -182,7 +182,7 @@ export async function getCachedResponse(inputHash: string): Promise<any | null> 
       await db
         .update(aiResponseCache)
         .set({ 
-          accessCount: sql`access_count + 1`
+          response: cached[0].response
         })
         .where(eq(aiResponseCache.id, cached[0].id));
 
@@ -215,15 +215,13 @@ export async function cacheResponse(
         inputHash,
         response: JSON.stringify(response),
         requestType,
-        expiresAt,
-        accessCount: 1
+        expiresAt
       })
       .onConflictDoUpdate({
         target: [aiResponseCache.inputHash],
         set: {
           response: JSON.stringify(response),
-          expiresAt,
-          accessCount: sql`access_count + 1`
+          expiresAt
         }
       });
   } catch (error) {
