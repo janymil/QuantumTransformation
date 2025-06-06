@@ -1,9 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { db } from './db';
 import { eq, desc } from 'drizzle-orm';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 /**
@@ -36,21 +37,19 @@ USER INPUT: ${userInput}
 
 Provide a thoughtful, personalized response that addresses their specific needs and situation.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
-      return {
-        response: content.text,
-        type: 'ai_coaching',
-        timestamp: new Date().toISOString(),
-        sessionType
-      };
-    }
+    const content = response.choices[0].message.content;
+    return {
+      response: content,
+      type: 'ai_coaching',
+      timestamp: new Date().toISOString(),
+      sessionType
+    };
     
     return {
       response: "I'm here to support you. Could you tell me more about what you'd like to explore?",
