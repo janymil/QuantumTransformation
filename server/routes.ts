@@ -283,8 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!validation.allowed) {
         return res.status(429).json({ 
           error: validation.reason,
-          remainingRequests: validation.remainingRequests,
-          nextAvailableAt: validation.nextAvailableAt
+          remainingRequests: validation.remainingRequests
         });
       }
 
