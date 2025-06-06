@@ -72,6 +72,8 @@ export default function Journal() {
   const [filterDay, setFilterDay] = useState<string>("all");
   const [filterChallengeType, setFilterChallengeType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [reflectionFilter, setReflectionFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Add debugging for journal data
   const { data: entries, isLoading: entriesLoading, error: entriesError } = useQuery<JournalEntry[]>({
@@ -93,6 +95,12 @@ export default function Journal() {
 
   const { data: progressData } = useQuery({
     queryKey: ["/api/progress"],
+  });
+
+  // Fetch assessment reflections
+  const { data: reflectionsData = [] } = useQuery({
+    queryKey: ['/api/assessment-reflections'],
+    enabled: !!user?.id,
   });
 
   const saveMutation = useMutation({
@@ -214,6 +222,25 @@ export default function Journal() {
       entry.intention?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   }) || [];
+
+  // Filter reflections by type and search
+  const filteredReflections = reflectionsData.filter((reflection: AssessmentReflection) => {
+    const matchesFilter = reflectionFilter === 'all' || reflection.reflectionType === reflectionFilter;
+    const matchesSearch = searchTerm === '' || 
+      reflection.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reflection.content.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesFilter && matchesSearch;
+  });
+
+  // Group reflections by type
+  const groupedReflections = filteredReflections.reduce((acc: { [key: string]: AssessmentReflection[] }, reflection: AssessmentReflection) => {
+    if (!acc[reflection.reflectionType]) {
+      acc[reflection.reflectionType] = [];
+    }
+    acc[reflection.reflectionType].push(reflection);
+    return acc;
+  }, {});
 
   if (entriesLoading) {
     return (
