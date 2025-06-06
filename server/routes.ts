@@ -595,16 +595,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin Analytics endpoint (password protected in frontend)
   app.get('/api/admin/analytics', async (req, res) => {
     try {
-      // Import the simplified analytics function that works with existing schema
-      const { getSimpleAnalytics } = await import('./simple-analytics');
+      // Use authentic OpenAI API usage tracker for real cost and model data
+      const { getAuthenticAnalytics } = await import('./authentic-usage-tracker');
       
-      // Get analytics data using existing database columns
-      const analytics = await getSimpleAnalytics();
+      // Get authentic analytics data from real OpenAI API responses
+      const analytics = await getAuthenticAnalytics();
       
       res.json(analytics);
     } catch (error) {
-      console.error("Error fetching admin analytics:", error);
-      res.status(500).json({ message: "Failed to fetch admin analytics" });
+      console.error("Error fetching authentic analytics:", error);
+      res.status(500).json({ message: "Failed to fetch authentic analytics" });
     }
   });
 
