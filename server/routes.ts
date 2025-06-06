@@ -595,11 +595,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin Analytics endpoint (password protected in frontend)
   app.get('/api/admin/analytics', async (req, res) => {
     try {
-      // Import the comprehensive analytics function
-      const { getComprehensiveAnalytics } = await import('./simple-usage-tracker');
+      // Import the simplified analytics function that works with existing schema
+      const { getSimpleAnalytics } = await import('./simple-analytics');
       
-      // Get comprehensive analytics that captures all AI requests
-      const analytics = await getComprehensiveAnalytics();
+      // Get analytics data using existing database columns
+      const analytics = await getSimpleAnalytics();
       
       res.json(analytics);
     } catch (error) {
