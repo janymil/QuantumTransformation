@@ -1413,23 +1413,26 @@ Provide personalized, actionable guidance that:
   app.post('/api/ai-couch/session', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { intelligentCoachingEngine } = await import('./intelligent-coaching-engine');
+      const { multidisciplinaryAIEngine } = await import('./multidisciplinary-ai-engine');
       
       const { 
         userInput, 
-        sessionType = 'conversation'
+        sessionType = 'intelligent_coaching'
       } = req.body;
 
-      const session = await intelligentCoachingEngine.processCoachingRequest(
+      const session = await multidisciplinaryAIEngine.processCoachingRequest(
         userId, 
         userInput, 
         sessionType
       );
       
       res.json(session);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error conducting multidisciplinary session:", error);
-      res.status(500).json({ message: "Failed to conduct session", error: (error as Error).message });
+      res.status(500).json({ 
+        message: "Failed to conduct session", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

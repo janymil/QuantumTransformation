@@ -76,7 +76,20 @@ export class MultidisciplinaryAIEngine {
 
     } catch (error) {
       console.error('Error in multidisciplinary coaching:', error);
-      return this.fallbackResponse(userInput);
+      return {
+        multidisciplinaryAssessment: 'I understand you\'re going through something important. Let\'s approach this with care and wisdom.',
+        integratedTechniques: [{
+          technique: 'Mindful awareness',
+          modalities: ['CBT', 'Mindfulness'],
+          dimension: 'cognitive',
+          synergy: 'Creates foundation for other interventions'
+        }],
+        holisticInterventions: ['Gentle self-observation', 'Compassionate self-talk'],
+        integrationStrategy: 'Combine mindfulness with cognitive awareness',
+        expectedOutcomes: 'Gradual improvement in emotional regulation and insight',
+        timeline: '2-4 weeks for initial progress',
+        naturalResponse: `I hear you, and I want you to know that what you're experiencing is valid. While we navigate this together, let's start with some gentle awareness of what's happening right now. Take a moment to breathe and notice what you're feeling. This is a safe space for you to explore and grow.`
+      };
     }
   }
 
