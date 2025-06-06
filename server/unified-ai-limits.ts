@@ -99,9 +99,7 @@ export async function trackAIUsage(
       model,
       cost,
       tokens: metadata.tokens || 0,
-      responseTime: metadata.responseTime || 0,
-      challengeType: metadata.challengeType || null,
-      sessionId: metadata.sessionId || null
+      responseTime: metadata.responseTime || 0
     });
   } catch (error) {
     console.error('Error tracking AI usage:', error);
