@@ -74,6 +74,7 @@ export default function Journal() {
   const [experience, setExperience] = useState("");
   const [insights, setInsights] = useState("");
   const [intention, setIntention] = useState("");
+  const [isFreeJournal, setIsFreeJournal] = useState(false);
   const [filterDay, setFilterDay] = useState<string>("all");
   const [filterChallengeType, setFilterChallengeType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -144,7 +145,7 @@ export default function Journal() {
   }, [reflectionsData, reflectionsLoading, reflectionsError]);
 
   const saveMutation = useMutation({
-    mutationFn: async (data: { day: number; challengeType?: string; experience: string; insights: string; intention: string }) => {
+    mutationFn: async (data: { day?: number; challengeType?: string; experience: string; insights: string; intention: string }) => {
       return await apiRequest("POST", "/api/journal", data);
     },
     onSuccess: () => {
@@ -155,6 +156,7 @@ export default function Journal() {
         description: "Your journal entry has been saved successfully.",
       });
       setSelectedDay(null);
+      setIsFreeJournal(false);
       setExperience("");
       setInsights("");
       setIntention("");
@@ -264,10 +266,11 @@ export default function Journal() {
   };
 
   const handleSave = () => {
-    if (!selectedDay) return;
+    if (!selectedDay && !isFreeJournal) return;
     
     saveMutation.mutate({
-      day: selectedDay,
+      day: isFreeJournal ? undefined : selectedDay,
+      challengeType: isFreeJournal ? "free_journal" : "general_quantum",
       experience,
       insights,
       intention,

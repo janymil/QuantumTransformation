@@ -68,8 +68,8 @@ export const challengeCompletions = pgTable("challenge_completions", {
 export const journalEntries = pgTable("journal_entries", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
-  challengeType: varchar("challenge_type").default("general_quantum").notNull(),
-  day: integer("day").notNull(),
+  challengeType: varchar("challenge_type").default("free_journal").notNull(),
+  day: integer("day"), // Optional - null for free journal entries
   experience: text("experience"),
   insights: text("insights"),
   intention: text("intention"),
