@@ -1407,20 +1407,18 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // AI Couch coaching session
+  // AI Couch intelligent multidisciplinary coaching session
   app.post('/api/ai-couch/session', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
+      const { intelligentCoachingEngine } = await import('./intelligent-coaching-engine');
       
       const { 
         userInput, 
-        sessionType = 'daily_checkin',
-        emotionalState,
-        sessionGoal 
+        sessionType = 'conversation'
       } = req.body;
 
-      const session = await aiCouchEngine.conductCoachingSession(
+      const session = await intelligentCoachingEngine.processCoachingRequest(
         userId, 
         userInput, 
         sessionType
@@ -1428,7 +1426,7 @@ Provide personalized, actionable guidance that:
       
       res.json(session);
     } catch (error) {
-      console.error("Error conducting AI Couch session:", error);
+      console.error("Error conducting multidisciplinary session:", error);
       res.status(500).json({ message: "Failed to conduct session", error: (error as Error).message });
     }
   });

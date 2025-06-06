@@ -29,12 +29,12 @@ export class IntelligentCoachingEngine {
     // Step 1: Intelligent analysis to determine therapeutic needs
     const therapeuticAnalysis = await this.analyzeTherapeuticNeeds(userInput, profile);
     
-    // Step 2: Apply appropriate expertise automatically
-    const expertResponse = await this.applyTherapeuticExpertise(
-      therapeuticAnalysis.primaryApproach,
+    // Step 2: Apply integrated multidisciplinary expertise
+    const expertResponse = await this.applyMultidisciplinaryExpertise(
+      therapeuticAnalysis.integratedApproaches,
       userInput,
       profile,
-      therapeuticAnalysis.supportingApproaches
+      therapeuticAnalysis
     );
 
     // Step 3: Create natural coaching response
@@ -59,10 +59,10 @@ export class IntelligentCoachingEngine {
   }
 
   /**
-   * Intelligent analysis of user input to determine therapeutic needs
+   * Multidisciplinary analysis to create integrated therapeutic approach
    */
   private async analyzeTherapeuticNeeds(userInput: string, profile: any) {
-    const prompt = `You are an expert therapeutic AI that analyzes user communication to determine the most effective therapeutic intervention.
+    const prompt = `You are a multidisciplinary therapeutic AI that creates integrated healing approaches by combining multiple therapeutic modalities for maximum effectiveness.
 
 USER PROFILE:
 - Healing Readiness: ${profile.healingReadiness}/10
@@ -72,28 +72,38 @@ USER PROFILE:
 
 USER INPUT: "${userInput}"
 
-AVAILABLE THERAPEUTIC APPROACHES:
+AVAILABLE THERAPEUTIC MODALITIES:
 ${Object.entries(multidisciplinaryExpertise).map(([key, expert]) => 
-  `${key}: ${expert.name} - Key applications: ${expert.applications.slice(0, 3).join(', ')}`
+  `${key}: ${expert.name} - Applications: ${expert.applications.slice(0, 3).join(', ')}`
 ).join('\n')}
 
-Analyze for:
-1. Emotional urgency and safety concerns
-2. Primary psychological patterns (cognitive, emotional, behavioral, somatic)
-3. Underlying therapeutic needs
-4. Readiness for different intervention levels
-5. Language indicators of specific therapeutic approaches
+MULTIDISCIPLINARY HEALING PRINCIPLE:
+True transformation occurs when multiple therapeutic approaches work synergistically. Analyze this situation to create an integrated treatment approach that combines 3-5 complementary modalities.
 
-Determine the PRIMARY approach and up to 2 SUPPORTING approaches that would be most beneficial.
+Consider integration across:
+1. COGNITIVE LEVEL: Thought patterns, beliefs, mental frameworks
+2. EMOTIONAL LEVEL: Feeling processing, regulation, expression
+3. SOMATIC LEVEL: Body awareness, nervous system, physical integration
+4. BEHAVIORAL LEVEL: Actions, habits, daily practices
+5. SPIRITUAL/CONSCIOUSNESS LEVEL: Meaning, purpose, transcendent awareness
+
+Select modalities that create a comprehensive healing ecosystem addressing multiple dimensions simultaneously.
 
 Respond in JSON:
 {
-  "primaryApproach": "most_appropriate_expert_key",
-  "supportingApproaches": ["expert_key_1", "expert_key_2"],
-  "reasoning": "Clear explanation of therapeutic rationale",
+  "integratedApproaches": [
+    {
+      "modality": "expert_key",
+      "role": "primary|supporting|foundational",
+      "focus": "specific_healing_dimension",
+      "integration_points": ["how_it_connects_with_other_modalities"]
+    }
+  ],
+  "healingStrategy": "Overall integrated approach description",
+  "synergisticEffects": ["benefit_1", "benefit_2", "benefit_3"],
   "urgencyLevel": "low|medium|high",
-  "interventionNeeds": ["specific_need_1", "specific_need_2"],
-  "confidence": 0.85
+  "holisticNeeds": ["mind", "body", "emotion", "spirit", "behavior"],
+  "confidence": 0.9
 }`;
 
     const response = await anthropic.messages.create({
@@ -103,32 +113,43 @@ Respond in JSON:
     });
 
     try {
-      return JSON.parse(response.content[0].text);
+      const content = response.content[0];
+      if (content.type === 'text') {
+        return JSON.parse(content.text);
+      }
+      return this.fallbackAnalysis(userInput);
     } catch (error) {
       return this.fallbackAnalysis(userInput);
     }
   }
 
   /**
-   * Apply therapeutic expertise based on analysis
+   * Apply integrated multidisciplinary therapeutic expertise
    */
-  private async applyTherapeuticExpertise(
-    primaryApproach: string,
+  private async applyMultidisciplinaryExpertise(
+    integratedApproaches: any[],
     userInput: string,
     profile: any,
-    supportingApproaches: string[] = []
+    analysis: any
   ) {
-    const primaryExpert = multidisciplinaryExpertise[primaryApproach];
-    if (!primaryExpert) {
-      throw new Error(`Unknown therapeutic approach: ${primaryApproach}`);
-    }
+    const modalityDescriptions = integratedApproaches.map(approach => {
+      const expert = multidisciplinaryExpertise[approach.modality];
+      return `${expert?.name} (${approach.role}): ${expert?.description}`;
+    }).join('\n');
 
-    const prompt = `You are acting as a ${primaryExpert.name} with comprehensive training and expertise.
+    const allTechniques = integratedApproaches.flatMap(approach => {
+      const expert = multidisciplinaryExpertise[approach.modality];
+      return expert?.techniques.slice(0, 3) || [];
+    });
 
-THERAPEUTIC FRAMEWORK: ${primaryExpert.description}
+    const prompt = `You are a multidisciplinary therapeutic AI integrating multiple healing modalities simultaneously for comprehensive transformation.
 
-AVAILABLE TECHNIQUES:
-${primaryExpert.techniques.join('\n- ')}
+INTEGRATED THERAPEUTIC FRAMEWORK:
+${modalityDescriptions}
+
+HEALING STRATEGY: ${analysis.healingStrategy}
+
+SYNERGISTIC EFFECTS: ${analysis.synergisticEffects?.join(', ')}
 
 USER SITUATION: "${userInput}"
 
@@ -137,24 +158,38 @@ USER PROFILE:
 - Communication Style: ${profile.communicationStyle}
 - Learning Style: ${profile.learningStyle}
 
-SUPPORTING APPROACHES TO INTEGRATE:
-${supportingApproaches.map(key => multidisciplinaryExpertise[key]?.name).join(', ')}
+INTEGRATED APPROACH DETAILS:
+${integratedApproaches.map(approach => {
+  const expert = multidisciplinaryExpertise[approach.modality];
+  return `${expert?.name} (${approach.role}): Focus on ${approach.focus}
+  Integration Points: ${approach.integration_points?.join(', ')}`;
+}).join('\n\n')}
 
-Apply your ${primaryExpert.name} expertise to provide:
-1. Professional assessment of the situation
-2. Specific therapeutic techniques most appropriate for their readiness level
-3. Practical interventions they can implement
-4. Integration with supporting approaches
-5. Expected therapeutic outcomes
+AVAILABLE TECHNIQUES ACROSS ALL MODALITIES:
+${allTechniques.join(', ')}
+
+Create a comprehensive multidisciplinary intervention that:
+1. Integrates all selected therapeutic approaches synergistically
+2. Addresses cognitive, emotional, somatic, behavioral, and spiritual dimensions
+3. Provides techniques that work together rather than in isolation
+4. Creates a holistic healing ecosystem
+5. Maximizes therapeutic effectiveness through modality combination
 
 Format as JSON:
 {
-  "assessment": "Professional therapeutic assessment",
-  "techniques": ["technique_1", "technique_2", "technique_3"],
-  "interventions": ["intervention_1", "intervention_2"],
-  "integration": "How to blend with supporting approaches",
-  "outcomes": "Expected therapeutic benefits",
-  "timeline": "Realistic timeframe for progress"
+  "multidisciplinaryAssessment": "Comprehensive assessment across all dimensions",
+  "integratedTechniques": [
+    {
+      "technique": "specific_technique",
+      "modalities": ["which_approaches_contribute"],
+      "dimension": "cognitive|emotional|somatic|behavioral|spiritual",
+      "synergy": "how_it_enhances_other_techniques"
+    }
+  ],
+  "holisticInterventions": ["intervention_1", "intervention_2", "intervention_3"],
+  "integrationStrategy": "How all approaches work together",
+  "expectedOutcomes": "Comprehensive therapeutic benefits",
+  "timeline": "Realistic progress timeframe"
 }`;
 
     const response = await anthropic.messages.create({
@@ -164,9 +199,13 @@ Format as JSON:
     });
 
     try {
-      return JSON.parse(response.content[0].text);
+      const content = response.content[0];
+      if (content.type === 'text') {
+        return JSON.parse(content.text);
+      }
+      return this.fallbackExpertResponse(integratedApproaches[0]);
     } catch (error) {
-      return this.fallbackExpertResponse(primaryExpert);
+      return this.fallbackExpertResponse(integratedApproaches[0]);
     }
   }
 
@@ -217,7 +256,11 @@ Format as JSON:
     });
 
     try {
-      return JSON.parse(response.content[0].text);
+      const content = response.content[0];
+      if (content.type === 'text') {
+        return JSON.parse(content.text);
+      }
+      return this.fallbackCoachingResponse(userInput, expertResponse);
     } catch (error) {
       return this.fallbackCoachingResponse(userInput, expertResponse);
     }
@@ -239,7 +282,7 @@ Format as JSON:
       aiResponse: JSON.stringify(response),
       emotionalTone: this.detectEmotionalTone(userInput),
       followUpNeeded: analysis.urgencyLevel !== 'low',
-      expertApproach: analysis.primaryApproach,
+      expertApproach: analysis.integratedApproaches?.[0]?.modality || 'multidisciplinary',
       analysisNotes: JSON.stringify(analysis)
     });
   }
