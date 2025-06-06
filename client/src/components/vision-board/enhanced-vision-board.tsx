@@ -100,6 +100,8 @@ export default function EnhancedVisionBoard() {
   const [isResizing, setIsResizing] = useState(false);
   const [resizeHandle, setResizeHandle] = useState<string | null>(null);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const [isRotating, setIsRotating] = useState(false);
+  const [rotationStart, setRotationStart] = useState<{ centerX: number; centerY: number; startAngle: number; initialRotation: number } | null>(null);
 
   // Queries
   const { data: savedBoards } = useQuery({
@@ -287,6 +289,26 @@ export default function EnhancedVisionBoard() {
             ctx.fillRect(handle.x, handle.y, handleSize, handleSize);
             ctx.strokeRect(handle.x, handle.y, handleSize, handleSize);
           });
+          
+          // Rotation handle - circle above the image
+          const rotationHandleDistance = 30;
+          const centerX = item.x + item.width / 2;
+          const rotationY = item.y - rotationHandleDistance;
+          
+          ctx.fillStyle = '#22c55e'; // Green color for rotation
+          ctx.strokeStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(centerX, rotationY, 8, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.stroke();
+          
+          // Draw line connecting rotation handle to image
+          ctx.strokeStyle = '#3b82f6';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(centerX, rotationY + 8);
+          ctx.lineTo(centerX, item.y - 5);
+          ctx.stroke();
         }
       }
 
@@ -482,9 +504,31 @@ export default function EnhancedVisionBoard() {
     if (clickedItem) {
       setSelectedItem(clickedItem.id);
       
-      // Check if clicking on resize handle for images
+      // Check if clicking on resize handle or rotation handle for images
       if (clickedItem.type === 'image') {
-        const handleSize = 12; // Increased handle size for easier clicking
+        // Check rotation handle first
+        const rotationHandleDistance = 30;
+        const centerX = clickedItem.x + clickedItem.width / 2;
+        const rotationY = clickedItem.y - rotationHandleDistance;
+        const rotationDistance = Math.sqrt((x - centerX) ** 2 + (y - rotationY) ** 2);
+        
+        if (rotationDistance <= 12) {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsRotating(true);
+          setRotationStart({
+            centerX: clickedItem.x + clickedItem.width / 2,
+            centerY: clickedItem.y + clickedItem.height / 2,
+            startAngle: Math.atan2(y - (clickedItem.y + clickedItem.height / 2), x - (clickedItem.x + clickedItem.width / 2)),
+            initialRotation: clickedItem.rotation || 0
+          });
+          canvas.style.cursor = 'grab';
+          console.log('Starting rotation');
+          return;
+        }
+        
+        // Check resize handles
+        const handleSize = 12;
         const handles = [
           { id: 'nw', x: clickedItem.x - handleSize/2, y: clickedItem.y - handleSize/2, cursor: 'nw-resize' },
           { id: 'ne', x: clickedItem.x + clickedItem.width - handleSize/2, y: clickedItem.y - handleSize/2, cursor: 'ne-resize' },
@@ -538,6 +582,9 @@ export default function EnhancedVisionBoard() {
     if (isResizing && selectedItem) {
       // Handle resizing
       handleResize(event);
+    } else if (isRotating && selectedItem) {
+      // Handle rotation
+      handleRotation(event);
     } else if (isDragging && draggedItem) {
       // Handle dragging
       handleMouseMove(event);
@@ -676,6 +723,33 @@ export default function EnhancedVisionBoard() {
     }));
   }, [isResizing, selectedItem, resizeHandle, resizeStart]);
 
+  const handleRotation = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isRotating || !selectedItem || !rotationStart) return;
+    
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
+
+    const currentAngle = Math.atan2(y - rotationStart.centerY, x - rotationStart.centerX);
+    const angleDiff = currentAngle - rotationStart.startAngle;
+    const newRotation = rotationStart.initialRotation + (angleDiff * 180 / Math.PI);
+
+    setBoard(prev => ({
+      ...prev,
+      canvasData: {
+        ...prev.canvasData,
+        items: prev.canvasData.items.map(item =>
+          item.id === selectedItem ? { ...item, rotation: newRotation } : item
+        )
+      }
+    }));
+  }, [isRotating, selectedItem, rotationStart]);
+
   const handleMouseUp = () => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -685,6 +759,8 @@ export default function EnhancedVisionBoard() {
     setIsDragging(false);
     setIsResizing(false);
     setResizeHandle(null);
+    setIsRotating(false);
+    setRotationStart(null);
   };
 
   const deleteSelectedItem = () => {

@@ -51,7 +51,7 @@ const moodThemes: MoodTheme[] = [
       secondary: '45 100% 51%', // Golden yellow
       accent: '15 100% 55%', // Red-orange
       background: '0 0% 100%',
-      foreground: '0 0% 3.9%',
+      foreground: '240 10% 15%',
       muted: '0 0% 96.1%',
       card: '0 0% 100%',
       border: '0 0% 89.8%'
@@ -79,7 +79,7 @@ const moodThemes: MoodTheme[] = [
       secondary: '180 100% 40%', // Teal
       accent: '210 100% 60%', // Light blue
       background: '0 0% 100%',
-      foreground: '0 0% 3.9%',
+      foreground: '240 10% 15%',
       muted: '0 0% 96.1%',
       card: '0 0% 100%',
       border: '0 0% 89.8%'
@@ -107,7 +107,7 @@ const moodThemes: MoodTheme[] = [
       secondary: '80 50% 50%', // Lime green
       accent: '35 80% 50%', // Earth brown
       background: '0 0% 100%',
-      foreground: '0 0% 3.9%',
+      foreground: '240 10% 15%',
       muted: '0 0% 96.1%',
       card: '0 0% 100%',
       border: '0 0% 89.8%'
@@ -135,7 +135,7 @@ const moodThemes: MoodTheme[] = [
       secondary: '270 75% 60%', // Purple
       accent: '10 80% 55%', // Red
       background: '0 0% 100%',
-      foreground: '0 0% 3.9%',
+      foreground: '240 10% 15%',
       muted: '0 0% 96.1%',
       card: '0 0% 100%',
       border: '0 0% 89.8%'
@@ -163,7 +163,7 @@ const moodThemes: MoodTheme[] = [
       secondary: '210 40% 60%', // Light blue
       accent: '220 8.9% 46.1%', // Gray blue
       background: '0 0% 100%',
-      foreground: '0 0% 3.9%',
+      foreground: '240 10% 15%',
       muted: '0 0% 96.1%',
       card: '0 0% 100%',
       border: '0 0% 89.8%'
@@ -191,7 +191,7 @@ const moodThemes: MoodTheme[] = [
       secondary: '20 100% 80%', // Peach
       accent: '350 100% 85%', // Light rose
       background: '0 0% 100%',
-      foreground: '0 0% 3.9%',
+      foreground: '240 10% 15%',
       muted: '0 0% 96.1%',
       card: '0 0% 100%',
       border: '0 0% 89.8%'
