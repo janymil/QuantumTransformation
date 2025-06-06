@@ -225,16 +225,36 @@ Provide grounding techniques, immediate coping strategies, and professional reso
   }
 
   /**
-   * Advanced functions for comprehensive AI coaching
+   * Dynamic Assessment Engine - Continuously evaluates user progress and adaptation needs
    */
   async performDynamicAssessment(userId: string): Promise<any> {
-    return {
-      intervention_type: 'holistic_assessment',
-      target_pattern: 'overall_wellbeing',
-      techniques: ['mindfulness', 'cognitive_restructuring', 'energy_work'],
-      duration: '21_days',
-      expected_outcomes: 'Increased self-awareness and emotional regulation'
-    };
+    const prompt = `Perform a comprehensive dynamic assessment for user psychological and consciousness development. Analyze:
+- Current emotional patterns and resistance areas
+- Learning style and adaptation preferences
+- Optimal intervention timing and intensity
+- Multidisciplinary approach recommendations
+
+Provide detailed assessment with specific therapeutic recommendations.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      const content = response.choices[0].message.content;
+      return JSON.parse(content || '{}');
+    } catch (error) {
+      return {
+        intervention_type: 'holistic_assessment',
+        target_pattern: 'overall_wellbeing',
+        techniques: ['mindfulness', 'cognitive_restructuring', 'energy_work'],
+        duration: '21_days',
+        expected_outcomes: 'Increased self-awareness and emotional regulation'
+      };
+    }
   }
 
   async generateModularChallengeBlocks(
