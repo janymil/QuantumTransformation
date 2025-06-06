@@ -117,10 +117,10 @@ Format as detailed JSON plan with daily progression.`;
       baseChallengeType: challengeType,
       totalDays: duration,
       currentDay: 1,
+      personalizedGoals: Array.isArray(profile.primaryGoals) ? profile.primaryGoals : [challengeType],
       difficultyLevel: profile.healingReadiness || 5,
       intensityLevel: profile.healingReadiness || 5,
-      generatedPlan: planData,
-      isActive: true
+      generatedContent: planData
     }).returning();
 
     return plan;
