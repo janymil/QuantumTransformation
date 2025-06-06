@@ -534,7 +534,7 @@ export class DatabaseStorage implements IStorage {
           challengeType: userProgress.challengeType,
           userCount: sql`COUNT(DISTINCT user_id)`,
           avgProgress: sql`AVG(current_day)`,
-          completionRate: sql`AVG(CASE WHEN ARRAY_LENGTH(completed_days, 1) >= 21 THEN 1 ELSE 0 END) * 100`
+          completionRate: sql`AVG(CASE WHEN jsonb_array_length(completed_days) >= 21 THEN 1 ELSE 0 END) * 100`
         })
         .from(userProgress)
         .groupBy(userProgress.challengeType)
@@ -554,8 +554,8 @@ export class DatabaseStorage implements IStorage {
       const dayCompletions = await db
         .select({
           challengeType: userProgress.challengeType,
-          totalDaysCompleted: sql`SUM(ARRAY_LENGTH(completed_days, 1))`,
-          avgCompletedDays: sql`AVG(ARRAY_LENGTH(completed_days, 1))`,
+          totalDaysCompleted: sql`SUM(jsonb_array_length(completed_days))`,
+          avgCompletedDays: sql`AVG(jsonb_array_length(completed_days))`,
           userCount: sql`COUNT(DISTINCT user_id)`
         })
         .from(userProgress)
@@ -564,9 +564,9 @@ export class DatabaseStorage implements IStorage {
       // Get user retention data (users who completed at least 7 days)
       const retentionStats = await db
         .select({
-          sevenDayRetention: sql`COUNT(CASE WHEN ARRAY_LENGTH(completed_days, 1) >= 7 THEN 1 END)`,
-          fourteenDayRetention: sql`COUNT(CASE WHEN ARRAY_LENGTH(completed_days, 1) >= 14 THEN 1 END)`,
-          twentyOneDayRetention: sql`COUNT(CASE WHEN ARRAY_LENGTH(completed_days, 1) >= 21 THEN 1 END)`,
+          sevenDayRetention: sql`COUNT(CASE WHEN jsonb_array_length(completed_days) >= 7 THEN 1 END)`,
+          fourteenDayRetention: sql`COUNT(CASE WHEN jsonb_array_length(completed_days) >= 14 THEN 1 END)`,
+          twentyOneDayRetention: sql`COUNT(CASE WHEN jsonb_array_length(completed_days) >= 21 THEN 1 END)`,
           totalActiveUsers: sql`COUNT(*)`
         })
         .from(userProgress);
@@ -586,7 +586,7 @@ export class DatabaseStorage implements IStorage {
           challengeType: userProgress.challengeType,
           participants: sql`COUNT(DISTINCT user_id)`,
           avgCurrentDay: sql`AVG(current_day)`,
-          totalDaysCompleted: sql`SUM(ARRAY_LENGTH(completed_days, 1))`
+          totalDaysCompleted: sql`SUM(jsonb_array_length(completed_days))`
         })
         .from(userProgress)
         .groupBy(userProgress.challengeType)

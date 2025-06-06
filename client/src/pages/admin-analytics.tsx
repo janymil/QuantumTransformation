@@ -35,6 +35,14 @@ export default function AdminAnalytics() {
 
   const correctPassword = "quantum2025admin";
 
+  // Check for stored authentication on component mount
+  useEffect(() => {
+    const storedAuth = localStorage.getItem("admin-auth-quantum");
+    if (storedAuth === correctPassword) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   // Analytics query - only run if authenticated
   const { data: analytics, isLoading, error } = useQuery({
     queryKey: ['/api/admin/analytics'],
@@ -55,6 +63,7 @@ export default function AdminAnalytics() {
     
     if (password === correctPassword) {
       setIsAuthenticated(true);
+      localStorage.setItem("admin-auth-quantum", correctPassword);
       toast({
         title: "Access Granted",
         description: "Welcome to the admin analytics dashboard.",
@@ -157,12 +166,31 @@ export default function AdminAnalytics() {
             </div>
           </div>
           
-          <Alert>
-            <Shield className="w-4 h-4" />
-            <AlertDescription>
-              This dashboard contains sensitive analytics data. Access is restricted to authorized administrators only.
-            </AlertDescription>
-          </Alert>
+          <div className="flex items-center justify-between">
+            <Alert className="flex-1 mr-4">
+              <Shield className="w-4 h-4" />
+              <AlertDescription>
+                This dashboard contains sensitive analytics data. Access is restricted to authorized administrators only.
+              </AlertDescription>
+            </Alert>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                localStorage.removeItem("admin-auth-quantum");
+                setIsAuthenticated(false);
+                setPassword("");
+                setAuthAttempted(false);
+                toast({
+                  title: "Logged Out",
+                  description: "Admin session ended.",
+                });
+              }}
+              className="flex items-center gap-2"
+            >
+              <Shield className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Tabs Navigation */}
