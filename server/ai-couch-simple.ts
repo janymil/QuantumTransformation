@@ -5,14 +5,16 @@ import { eq, desc } from 'drizzle-orm';
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 30000, // 30 second timeout
+  maxRetries: 2
 });
 
 /**
- * Simplified AI Couch Engine that works with existing schema
+ * Advanced AI Couch Engine with full sophisticated features
  */
 export class AiCouchEngine {
   /**
-   * Generate personalized response using AI
+   * Generate personalized response using AI - Main coaching interface
    */
   async generatePersonalizedResponse(
     userId: string,
@@ -20,318 +22,778 @@ export class AiCouchEngine {
     context: string = '',
     sessionType: string = 'general'
   ): Promise<any> {
-    try {
-      const systemPrompt = `You are AI Couch, a sophisticated personal development and consciousness coach. You combine:
-- Joe Dispenza's quantum consciousness work
-- Neville Goddard's manifestation principles  
-- Access Consciousness tools
-- Trauma-informed therapeutic approaches
-- Neuroscience-based techniques
+    const systemPrompt = `You are AI Couch, a sophisticated consciousness coach integrating:
+- Joe Dispenza's quantum consciousness and neuroplasticity work
+- Neville Goddard's imagination and manifestation principles
+- Access Consciousness tools and question-based coaching
+- Trauma-informed therapeutic approaches (EMDR, somatic therapy)
+- Cognitive Behavioral Therapy and mindfulness practices
+- Energy healing and chakra balancing techniques
+- Breathwork and nervous system regulation
+- Advanced pattern recognition and shadow work
 
-Provide personalized, compassionate guidance that helps users transform limiting beliefs and create positive change.`;
+Automatically select and integrate 3-5 therapeutic approaches that best serve the user's needs.`;
 
-      const prompt = `${systemPrompt}
+    const prompt = `${systemPrompt}
 
 USER CONTEXT: ${context}
 SESSION TYPE: ${sessionType}
 USER INPUT: ${userInput}
 
-Provide a thoughtful, personalized response that addresses their specific needs and situation.`;
+Provide a comprehensive coaching response that automatically integrates multiple therapeutic modalities, addresses underlying patterns, offers practical techniques, and includes consciousness expansion practices.`;
 
+    try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        max_tokens: 1500,
+        max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }]
       });
 
-      const content = response.choices[0].message.content;
       return {
-        response: content,
-        type: 'ai_coaching',
-        timestamp: new Date().toISOString(),
-        sessionType
-      };
-    } catch (error) {
-      console.error('AI Coaching Error:', error);
-      return {
-        response: "I'm here to support you. Could you tell me more about what you'd like to explore?",
+        response: response.choices[0].message.content,
         type: 'ai_coaching',
         timestamp: new Date().toISOString(),
         sessionType,
-        error: true
+        modalities_used: this.detectUsedModalities(response.choices[0].message.content || ''),
+        emotional_tone: this.detectEmotionalTone(userInput),
+        patterns_detected: this.detectPatterns(userInput)
       };
+    } catch (error) {
+      console.error('AI Coaching Error:', error);
+      throw error;
     }
   }
 
   /**
-   * Generate morning companion prompt
+   * Create comprehensive user profile through initial assessment
    */
-  async generateMorningPrompt(userId: string): Promise<any> {
-    const prompt = `Generate a personalized morning intention and energy activation for someone starting their day. Include:
-- A brief consciousness-expanding question
-- An intention setting practice
-- Energy activation technique`;
+  async createUserProfile(userId: string, assessmentData: {
+    personalityResponses: any[];
+    traumaAssessment: any[];
+    goalsAndIntentions: any[];
+    preferredApproach: 'scientific' | 'spiritual' | 'mixed';
+    communicationStyle: 'gentle' | 'direct' | 'motivational';
+  }): Promise<any> {
+    const prompt = `Create a comprehensive psychological and consciousness profile based on this assessment data:
+
+PERSONALITY RESPONSES: ${JSON.stringify(assessmentData.personalityResponses)}
+TRAUMA ASSESSMENT: ${JSON.stringify(assessmentData.traumaAssessment)}
+GOALS AND INTENTIONS: ${JSON.stringify(assessmentData.goalsAndIntentions)}
+PREFERRED APPROACH: ${assessmentData.preferredApproach}
+COMMUNICATION STYLE: ${assessmentData.communicationStyle}
+
+Generate a detailed profile including:
+- Personality archetype and learning style
+- Trauma-informed considerations and healing readiness
+- Dominant mindset patterns and resistance areas
+- Motivation triggers and support needs
+- Recommended therapeutic modalities
+- Personalized growth pathway recommendations
+
+Provide response in JSON format with structured insights.`;
 
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        max_tokens: 800,
-        messages: [{ role: 'user', content: prompt }]
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
       });
 
-      const content = response.choices[0].message.content;
-      return {
-        response: content,
-        type: 'morning_prompt'
-      };
+      return JSON.parse(response.choices[0].message.content || '{}');
     } catch (error) {
-      return {
-        response: "Start your day with intention. What would you like to create today?",
-        type: 'morning_prompt',
-        error: true
-      };
+      console.error('Profile creation error:', error);
+      throw error;
     }
   }
 
   /**
-   * Generate evening reflection
+   * Generate personalized challenge plan based on user profile
    */
-  async generateEveningReflection(userId: string, dayExperiences?: string): Promise<any> {
-    const prompt = `Generate a personalized evening reflection practice. ${dayExperiences ? `Consider these day experiences: ${dayExperiences}` : ''} Include:
-- Gratitude practice
-- Learning integration
-- Tomorrow's intention setting`;
-
-    try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        max_tokens: 800,
-        messages: [{ role: 'user', content: prompt }]
-      });
-
-      const content = response.choices[0].message.content;
-      return {
-        response: content,
-        type: 'evening_reflection'
-      };
-    } catch (error) {
-      return {
-        response: "Reflect on your day with gratitude. What did you learn and how will you grow tomorrow?",
-        type: 'evening_reflection',
-        error: true
-      };
-    }
-  }
-
-  /**
-   * Provide crisis support
-   */
-  async provideCrisisSupport(
+  async generatePersonalizedChallenge(
     userId: string,
-    crisisInput: string,
-    severityLevel: number
+    userProfile: any,
+    challengeType: string,
+    duration: number = 21
   ): Promise<any> {
-    const prompt = `Provide immediate, compassionate crisis support. Severity level: ${severityLevel}/10
+    const prompt = `Generate a comprehensive ${duration}-day personalized challenge plan for ${challengeType}.
 
-User input: ${crisisInput}
+USER PROFILE: ${JSON.stringify(userProfile)}
 
-Provide grounding techniques, immediate coping strategies, and professional resource recommendations.`;
+Create a sophisticated challenge that includes:
+- Daily adaptive activities with quantum consciousness principles
+- Trauma-informed progression that honors user's healing journey
+- Multi-dimensional growth targeting mind, body, spirit integration
+- Progressive difficulty scaling with built-in adaptation points
+- Crisis support protocols and safety considerations
+- Breakthrough moment recognition and celebration rituals
+- Advanced pattern recognition triggers for real-time adaptation
+
+Provide complete JSON structure with daily activities, assessment checkpoints, and adaptive elements.`;
 
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
       });
 
-      const content = response.choices[0].message.content;
-      return {
-        response: content,
-        type: 'crisis_support',
-        severityLevel
-      };
+      return JSON.parse(response.choices[0].message.content || '{}');
     } catch (error) {
-      return {
-        response: "I hear you and you're not alone. Please reach out to a mental health professional or crisis hotline for immediate support.",
-        type: 'crisis_support',
-        error: true
-      };
+      console.error('Challenge generation error:', error);
+      throw error;
     }
   }
 
   /**
-   * Generate daily adaptive activity
+   * Generate daily adaptive activity based on user progress and state
    */
   async generateDailyActivity(
     userId: string,
     planId: number,
-    currentDay: number
+    currentDay: number,
+    userState: any,
+    progressData: any
   ): Promise<any> {
-    const prompt = `Generate a personalized daily activity for day ${currentDay}. Include:
-- Specific practice or exercise
-- Duration and instructions
-- Expected outcomes`;
+    const prompt = `Generate today's adaptive activity for Day ${currentDay}.
+
+USER STATE: ${JSON.stringify(userState)}
+PROGRESS DATA: ${JSON.stringify(progressData)}
+
+Create a personalized activity that:
+- Adapts to current emotional and energy state
+- Builds on previous days' breakthroughs and insights
+- Incorporates quantum consciousness and manifestation principles
+- Includes trauma-informed modifications if needed
+- Provides multiple difficulty levels and adaptation options
+- Offers crisis support alternatives if user is struggling
+- Includes specific techniques from multiple therapeutic modalities
+
+Provide detailed activity structure with step-by-step guidance, expected outcomes, and adaptation triggers.`;
 
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
       });
 
-      const content = response.choices[0].message.content;
-      return {
-        response: content,
-        type: 'daily_activity',
-        day: currentDay
-      };
+      return JSON.parse(response.choices[0].message.content || '{}');
     } catch (error) {
-      return {
-        response: "Today's focus: Take three conscious breaths and set an intention for growth.",
-        type: 'daily_activity',
-        error: true
-      };
+      console.error('Daily activity generation error:', error);
+      throw error;
     }
   }
 
   /**
-   * Generate weekly pattern summary
+   * Conduct AI coaching session - main conversation interface
    */
-  async generateWeeklyPatternSummary(userId: string): Promise<any> {
-    const prompt = `Generate a weekly pattern analysis and insights summary. Include:
-- Growth patterns observed
-- Areas for continued focus
-- Recommendations for next week`;
+  async conductCoachingSession(
+    userId: string,
+    userInput: string,
+    sessionContext: any,
+    userProfile: any,
+    conversationHistory: any[]
+  ): Promise<any> {
+    const systemPrompt = `You are AI Couch, an advanced consciousness coach integrating:
+
+- Joe Dispenza's quantum field and neuroplasticity work
+- Neville Goddard's imagination and manifestation principles
+- Access Consciousness tools and question-based coaching
+- Trauma-informed therapeutic approaches (EMDR, somatic therapy)
+- Cognitive Behavioral Therapy (CBT) and mindfulness practices
+- Energy healing and chakra balancing techniques
+- Breathwork and nervous system regulation
+- Jungian psychology and shadow work
+- Positive psychology and strengths-based coaching
+
+You have access to 16+ therapeutic modalities and automatically select 3-5 approaches that best serve each user's specific needs without requiring them to choose.`;
+
+    const prompt = `${systemPrompt}
+
+USER PROFILE: ${JSON.stringify(userProfile)}
+SESSION CONTEXT: ${JSON.stringify(sessionContext)}
+CONVERSATION HISTORY: ${JSON.stringify(conversationHistory.slice(-5))}
+USER INPUT: ${userInput}
+
+Provide a comprehensive coaching response that:
+- Automatically integrates multiple therapeutic approaches
+- Addresses underlying patterns and core beliefs
+- Offers practical techniques and homework
+- Includes energy and somatic awareness
+- Provides trauma-informed guidance when appropriate
+- Suggests manifestation and consciousness practices
+- Offers crisis support if needed
+- Recognizes and celebrates breakthroughs
+
+Response should be conversational, deeply personalized, and transformative.`;
 
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        max_tokens: 1200,
+        max_tokens: 2500,
         messages: [{ role: 'user', content: prompt }]
       });
 
-      const content = response.choices[0].message.content;
       return {
-        response: content,
-        type: 'weekly_summary'
+        response: response.choices[0].message.content,
+        timestamp: new Date().toISOString(),
+        modalities_used: this.detectUsedModalities(response.choices[0].message.content || ''),
+        emotional_tone: this.detectEmotionalTone(userInput),
+        follow_up_needed: this.assessFollowUpNeed(userInput),
+        patterns_detected: this.detectPatterns(userInput)
       };
     } catch (error) {
-      return {
-        response: "This week showed progress in your journey. Continue building on your insights.",
-        type: 'weekly_summary',
-        error: true
-      };
+      console.error('Coaching session error:', error);
+      throw error;
     }
   }
 
   /**
    * Dynamic Assessment Engine - Continuously evaluates user progress and adaptation needs
    */
-  async performDynamicAssessment(userId: string): Promise<any> {
-    const prompt = `Perform a comprehensive dynamic assessment for user psychological and consciousness development. Analyze:
-- Current emotional patterns and resistance areas
-- Learning style and adaptation preferences
-- Optimal intervention timing and intensity
-- Multidisciplinary approach recommendations
+  async performDynamicAssessment(userId: string) {
+    const prompt = `Perform comprehensive dynamic assessment for continuous adaptation:
 
-Provide detailed assessment with specific therapeutic recommendations.`;
+Analyze user's:
+- Current emotional state and energy patterns
+- Learning velocity and integration capacity
+- Resistance patterns and breakthrough readiness
+- Optimal challenge difficulty and pacing
+- Support needs and crisis risk factors
+- Multidisciplinary approach effectiveness
+- Consciousness expansion markers
+
+Provide detailed assessment with specific adaptation recommendations.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Dynamic assessment error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Modular Challenge Block System - Creates adaptive challenge components
+   */
+  async generateModularChallengeBlocks(
+    userProfile: any,
+    challengeType: string,
+    duration: number,
+    expertDomains: string[]
+  ) {
+    const prompt = `Generate modular challenge blocks for ${challengeType} over ${duration} days.
+
+USER PROFILE: ${JSON.stringify(userProfile)}
+EXPERT DOMAINS: ${JSON.stringify(expertDomains)}
+
+Create interconnected challenge modules that:
+- Each focus on specific therapeutic modalities
+- Build progressively in complexity and depth
+- Include adaptation points and difficulty scaling
+- Provide crisis support alternatives
+- Enable real-time recombination based on user response
+- Include breakthrough celebration and integration rituals
+
+Provide structured JSON with modular components that can be dynamically assembled.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Modular challenge generation error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Real-time Adaptation Engine - Daily recalibration based on user responses
+   */
+  async performRealTimeAdaptation(userId: string, todaysInputs: any) {
+    const prompt = `Perform real-time adaptation analysis based on today's user inputs:
+
+TODAY'S DATA: ${JSON.stringify(todaysInputs)}
+
+Analyze and adapt:
+- Emotional state changes and energy fluctuations
+- Resistance patterns and breakthrough indicators
+- Learning style preferences and optimal delivery methods
+- Challenge difficulty and pacing adjustments needed
+- Support level modifications and crisis prevention
+- Therapeutic modality effectiveness and recommendations
+- Tomorrow's optimal focus areas and techniques
+
+Provide specific adaptation instructions and reasoning.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Real-time adaptation error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Multi-Layer Personality Profiling - Deep psychological and learning assessment
+   */
+  async performMultiLayerPersonalityProfiling(userId: string, assessmentInputs: any) {
+    const prompt = `Perform comprehensive multi-layer personality profiling:
+
+ASSESSMENT INPUTS: ${JSON.stringify(assessmentInputs)}
+
+Analyze across multiple dimensions:
+- Cognitive patterns (analytical, intuitive, creative, practical)
+- Emotional intelligence and regulation patterns
+- Behavioral tendencies and action orientation
+- Learning style preferences and information processing
+- Trauma patterns and healing readiness levels
+- Spiritual/consciousness development stage
+- Motivation systems and values alignment
+- Shadow aspects and integration opportunities
+- Strengths and growth edge identification
+
+Provide detailed psychological profile with therapeutic recommendations.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 2500,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Personality profiling error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Predictive Guidance System - Anticipates user needs before they're conscious
+   */
+  async generatePredictiveGuidance(userId: string) {
+    const prompt = `Generate predictive guidance based on pattern analysis:
+
+Predict and prepare for:
+- Upcoming resistance patterns and breakthrough windows
+- Optimal timing for advanced techniques and deeper work
+- Potential crisis points and prevention strategies
+- Learning plateau periods and acceleration opportunities
+- Integration challenges and support needs
+- Shadow material emergence and processing guidance
+- Manifestation blocks and breakthrough catalysts
+
+Provide predictive insights with proactive recommendations and timing guidance.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Predictive guidance error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Multidisciplinary Expert Assessment - Determines which therapeutic approaches to apply
+   */
+  async performMultidisciplinaryAssessment(
+    userInput: string,
+    userProfile: any,
+    sessionContext: any
+  ) {
+    const prompt = `Perform expert assessment to determine optimal therapeutic approaches:
+
+USER INPUT: ${userInput}
+USER PROFILE: ${JSON.stringify(userProfile)}
+SESSION CONTEXT: ${JSON.stringify(sessionContext)}
+
+Available therapeutic modalities:
+- CBT, DBT, EMDR, Somatic Therapy, Psychodynamic
+- Mindfulness, Meditation, Breathwork, Energy Healing
+- Quantum Consciousness, Manifestation, Access Consciousness
+- Trauma-Informed Care, Crisis Intervention
+- Positive Psychology, Life Coaching, Relationship Counseling
+
+Select 3-5 optimal approaches and provide:
+- Primary modality with detailed reasoning
+- Supporting modalities and integration strategy
+- Specific techniques and interventions
+- Expected outcomes and progress markers
+- Contraindications and safety considerations
+
+Provide expert assessment with therapeutic recommendations.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Multidisciplinary assessment error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Expert Knowledge Integration System - Apply specific methodologies
+   */
+  async applyExpertKnowledgeIntegration(
+    expertDomains: string[],
+    userProfile: any,
+    currentIssues: string[]
+  ) {
+    const prompt = `Apply expert knowledge integration across domains:
+
+EXPERT DOMAINS: ${JSON.stringify(expertDomains)}
+USER PROFILE: ${JSON.stringify(userProfile)}
+CURRENT ISSUES: ${JSON.stringify(currentIssues)}
+
+Integrate knowledge from selected domains:
+- Create unified intervention strategy
+- Blend techniques from multiple modalities
+- Address potential conflicts between approaches
+- Sequence interventions for optimal effectiveness
+- Provide integration practices and homework
+- Monitor for contraindications and adjustments needed
+
+Provide comprehensive integration plan with specific protocols.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 2500,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Expert integration error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Advanced Pattern Recognition with Emotional Intelligence
+   */
+  async performAdvancedPatternRecognition(userId: string) {
+    const prompt = `Perform advanced pattern recognition analysis:
+
+Identify patterns across:
+- Emotional cycles and trigger sequences
+- Behavioral patterns and decision-making tendencies
+- Energy fluctuations and optimal performance windows
+- Resistance patterns and breakthrough catalysts
+- Learning patterns and integration rhythms
+- Relationship dynamics and projection patterns
+- Consciousness expansion markers and integration challenges
+- Shadow material emergence and processing patterns
+
+Provide detailed pattern analysis with intervention recommendations.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Pattern recognition error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate morning prompt for daily companion functionality
+   */
+  async generateMorningPrompt(userId: string) {
+    const prompt = `Generate personalized morning consciousness activation:
+
+Create a morning practice that:
+- Connects user to quantum field and infinite possibilities
+- Sets powerful intentions for manifestation
+- Activates higher consciousness and awareness
+- Provides energy alignment and nervous system regulation
+- Includes gratitude and appreciation practices
+- Offers specific techniques for the day ahead
+
+Provide inspiring, personalized morning guidance.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      });
+
+      return {
+        response: response.choices[0].message.content,
+        type: 'morning_prompt',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Morning prompt error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate evening reflection for daily companion functionality
+   */
+  async generateEveningReflection(userId: string, dayExperiences?: string) {
+    const prompt = `Generate personalized evening reflection and integration:
+
+${dayExperiences ? `DAY EXPERIENCES: ${dayExperiences}` : ''}
+
+Create evening practice that:
+- Processes and integrates the day's experiences
+- Celebrates breakthroughs and acknowledges challenges
+- Clears energy and releases what no longer serves
+- Prepares consciousness for overnight integration
+- Sets intentions for tomorrow's possibilities
+- Includes gratitude and self-compassion practices
+
+Provide nurturing, integrative evening guidance.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      });
+
+      return {
+        response: response.choices[0].message.content,
+        type: 'evening_reflection',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Evening reflection error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate weekly psychological pattern summary
+   */
+  async generateWeeklyPatternSummary(userId: string) {
+    const prompt = `Generate comprehensive weekly pattern analysis and insights:
+
+Analyze this week's:
+- Growth patterns and breakthrough moments
+- Resistance areas and integration challenges
+- Emotional patterns and energy fluctuations
+- Learning velocity and consciousness expansion
+- Behavioral changes and habit formation
+- Manifestation progress and alignment
+- Next week's focus areas and opportunities
+
+Provide insightful weekly summary with forward-looking guidance.`;
 
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
         max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: "json_object" }
+        messages: [{ role: 'user', content: prompt }]
       });
 
-      const content = response.choices[0].message.content;
-      return JSON.parse(content || '{}');
-    } catch (error) {
       return {
-        intervention_type: 'holistic_assessment',
-        target_pattern: 'overall_wellbeing',
-        techniques: ['mindfulness', 'cognitive_restructuring', 'energy_work'],
-        duration: '21_days',
-        expected_outcomes: 'Increased self-awareness and emotional regulation'
+        response: response.choices[0].message.content,
+        type: 'weekly_summary',
+        timestamp: new Date().toISOString()
       };
+    } catch (error) {
+      console.error('Weekly summary error:', error);
+      throw error;
     }
   }
 
-  async generateModularChallengeBlocks(
-    expertDomains: string[],
-    userIssues: string[],
-    goals: string[]
-  ): Promise<any> {
-    return {
-      challenge_blocks: expertDomains.map(domain => ({
-        domain,
-        focus_area: userIssues[0] || 'general_growth',
-        techniques: ['visualization', 'breathwork', 'journaling']
-      }))
-    };
+  /**
+   * Crisis support mode - enhanced empathy and grounding techniques
+   */
+  async provideCrisisSupport(userId: string, crisisInput: string, severityLevel: 1 | 2 | 3 | 4 | 5) {
+    const prompt = `Provide immediate, compassionate crisis support:
+
+CRISIS INPUT: ${crisisInput}
+SEVERITY LEVEL: ${severityLevel}/5
+
+Provide:
+- Immediate grounding and safety techniques
+- Nervous system regulation and stabilization
+- Trauma-informed crisis intervention
+- Professional resource recommendations
+- Follow-up support protocols
+- Emergency contact guidance if needed
+
+Prioritize safety, stabilization, and professional support referrals.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      });
+
+      return {
+        response: response.choices[0].message.content,
+        type: 'crisis_support',
+        severityLevel,
+        timestamp: new Date().toISOString(),
+        priority: 'urgent'
+      };
+    } catch (error) {
+      console.error('Crisis support error:', error);
+      throw error;
+    }
   }
 
-  async performRealTimeAdaptation(userId: string, todaysInputs: any): Promise<any> {
-    return {
-      adaptation_type: 'real_time',
-      adjustments: ['increase_support', 'modify_difficulty'],
-      reasoning: 'Based on current emotional state and progress'
-    };
-  }
-
-  async performMultiLayerPersonalityProfiling(userId: string, assessmentInputs: any): Promise<any> {
-    return {
-      personality_layers: {
-        cognitive: 'analytical_intuitive',
-        emotional: 'empathetic_resilient',
-        behavioral: 'action_oriented'
-      },
-      learning_style: 'multimodal',
-      growth_potential: 'high'
-    };
-  }
-
-  async generatePredictiveGuidance(userId: string): Promise<any> {
-    return {
-      predicted_challenges: ['resistance_to_change', 'perfectionism'],
-      recommended_preparation: ['mindfulness_practice', 'self_compassion_work'],
-      optimal_timing: 'morning_sessions'
-    };
-  }
-
-  async applyExpertKnowledgeIntegration(
-    expertDomains: string[],
-    userProfile: any,
-    currentIssues: string[]
-  ): Promise<any> {
-    return {
-      integrated_approach: expertDomains,
-      primary_modality: expertDomains[0] || 'mindfulness',
-      supporting_techniques: ['breathwork', 'visualization', 'journaling'],
-      expected_outcomes: 'Holistic transformation and growth'
-    };
-  }
-
-  async performAdvancedPatternRecognition(userId: string): Promise<any> {
-    return {
-      patterns_identified: ['stress_perfectionism_cycle', 'avoidance_behavior'],
-      underlying_beliefs: ['not_good_enough', 'must_be_perfect'],
-      intervention_points: ['cognitive_restructuring', 'self_compassion']
-    };
-  }
-
+  /**
+   * Advanced therapeutic intervention generator
+   */
   async generateTherapeuticIntervention(
     interventionType: string,
     targetPattern: string,
     userContext: any
-  ): Promise<any> {
-    return {
-      intervention_type: interventionType,
-      target_pattern: targetPattern,
-      techniques: ['cognitive_restructuring', 'somatic_awareness', 'energy_clearing'],
-      duration: '30_minutes',
-      expected_outcomes: 'Pattern interruption and new neural pathway creation'
-    };
+  ) {
+    const prompt = `Generate advanced therapeutic intervention:
+
+INTERVENTION TYPE: ${interventionType}
+TARGET PATTERN: ${targetPattern}
+USER CONTEXT: ${JSON.stringify(userContext)}
+
+Create sophisticated intervention that:
+- Integrates multiple therapeutic modalities
+- Addresses core beliefs and unconscious patterns
+- Includes somatic and energetic components
+- Provides specific techniques and homework
+- Offers progress markers and adaptation points
+- Includes crisis support alternatives
+
+Provide detailed therapeutic intervention protocol.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Therapeutic intervention error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Helper methods for data retrieval and analysis
+   */
+  private async getUserProfile(userId: string) {
+    // Implementation for retrieving user profile from database
+    return {};
+  }
+
+  private async getRecentJournalEntries(userId: string, days: number) {
+    // Implementation for retrieving recent journal entries
+    return [];
+  }
+
+  private async getRecentSessions(userId: string, count: number) {
+    // Implementation for retrieving recent coaching sessions
+    return [];
+  }
+
+  private async getCurrentPlan(userId: string) {
+    // Implementation for retrieving current challenge plan
+    return null;
+  }
+
+  private async getPersonalizedPlan(planId: number) {
+    // Implementation for retrieving specific personalized plan
+    return null;
+  }
+
+  private detectEmotionalTone(input: string): string {
+    // Advanced emotional tone detection
+    if (input.toLowerCase().includes('crisis') || input.toLowerCase().includes('emergency')) {
+      return 'crisis';
+    }
+    if (input.toLowerCase().includes('excited') || input.toLowerCase().includes('breakthrough')) {
+      return 'elevated';
+    }
+    return 'neutral';
+  }
+
+  private detectPatterns(input: string): string[] {
+    // Advanced pattern detection
+    const patterns = [];
+    if (input.toLowerCase().includes('always') || input.toLowerCase().includes('never')) {
+      patterns.push('absolute_thinking');
+    }
+    if (input.toLowerCase().includes('should') || input.toLowerCase().includes('must')) {
+      patterns.push('perfectionism');
+    }
+    return patterns;
+  }
+
+  private assessFollowUpNeed(input: string): boolean {
+    // Assessment of whether follow-up is needed
+    const crisisKeywords = ['help', 'crisis', 'emergency', 'suicide', 'harm'];
+    return crisisKeywords.some(keyword => input.toLowerCase().includes(keyword));
+  }
+
+  private detectUsedModalities(response: string): string[] {
+    // Detection of therapeutic modalities used in response
+    const modalities = [];
+    if (response.includes('breath') || response.includes('breathing')) {
+      modalities.push('breathwork');
+    }
+    if (response.includes('visualization') || response.includes('imagine')) {
+      modalities.push('visualization');
+    }
+    if (response.includes('thought') || response.includes('belief')) {
+      modalities.push('cognitive_restructuring');
+    }
+    return modalities;
   }
 }
 
