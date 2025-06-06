@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import { aiResponseHistory, journalEntries, userProgress } from "@shared/schema";
+import { trackAuthenticUsage } from "./authentic-usage-tracker";
 
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"

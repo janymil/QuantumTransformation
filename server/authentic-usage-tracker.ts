@@ -56,7 +56,7 @@ export async function trackAuthenticUsage(data: AuthenticUsageData): Promise<voi
   try {
     const cost = calculateAuthenticCost(data.model, data.usage);
     
-    // Store in aiResponseHistory with complete authentic data
+    // Store in aiResponseHistory with complete authentic data using correct column names
     await db.insert(aiResponseHistory).values({
       userId: data.userId,
       sessionType: data.requestType,
@@ -64,12 +64,11 @@ export async function trackAuthenticUsage(data: AuthenticUsageData): Promise<voi
       aiResponse: data.response,
       challengeType: data.challengeType,
       day: data.day,
-      model: data.model,
+      modelUsed: data.model,
       tokenCount: data.usage.total_tokens,
       cost: cost,
       responseTime: data.responseTime,
-      qualityScore: data.model.includes('gpt-4o') ? 9 : 8,
-      wasFromCache: data.wasFromCache,
+      responseQuality: data.model.includes('gpt-4o') ? 9 : 8,
       createdAt: new Date(),
       updatedAt: new Date()
     });
@@ -89,48 +88,48 @@ export async function getAuthenticAnalytics() {
     const totalUsage = await db
       .select({
         totalRequests: sql`count(*)`,
-        totalTokens: sql`sum(${aiResponseHistory.tokenCount})`,
-        totalCost: sql`sum(${aiResponseHistory.cost})`,
-        avgResponseTime: sql`avg(${aiResponseHistory.responseTime})`,
-        avgQuality: sql`avg(${aiResponseHistory.qualityScore})`
+        totalTokens: sql`sum(COALESCE(${aiResponseHistory.tokenCount}, 0))`,
+        totalCost: sql`sum(COALESCE(${aiResponseHistory.cost}, 0))`,
+        avgResponseTime: sql`avg(COALESCE(${aiResponseHistory.responseTime}, 0))`,
+        avgQuality: sql`avg(COALESCE(${aiResponseHistory.responseQuality}, 0))`
       })
       .from(aiResponseHistory)
-      .where(sql`${aiResponseHistory.tokenCount} > 0`);
+      .where(sql`COALESCE(${aiResponseHistory.tokenCount}, 0) > 0`);
 
     // Get model distribution from authentic usage
     const modelStats = await db
       .select({
-        model: aiResponseHistory.model,
+        model: aiResponseHistory.modelUsed,
         count: sql`count(*)`,
-        totalTokens: sql`sum(${aiResponseHistory.tokenCount})`,
-        totalCost: sql`sum(${aiResponseHistory.cost})`,
-        avgResponseTime: sql`avg(${aiResponseHistory.responseTime})`
+        totalTokens: sql`sum(COALESCE(${aiResponseHistory.tokenCount}, 0))`,
+        totalCost: sql`sum(COALESCE(${aiResponseHistory.cost}, 0))`,
+        avgResponseTime: sql`avg(COALESCE(${aiResponseHistory.responseTime}, 0))`
       })
       .from(aiResponseHistory)
-      .where(sql`${aiResponseHistory.tokenCount} > 0`)
-      .groupBy(aiResponseHistory.model);
+      .where(sql`COALESCE(${aiResponseHistory.tokenCount}, 0) > 0`)
+      .groupBy(aiResponseHistory.modelUsed);
 
     // Get challenge type usage
     const challengeStats = await db
       .select({
         challengeType: aiResponseHistory.challengeType,
         count: sql`count(*)`,
-        totalCost: sql`sum(${aiResponseHistory.cost})`,
-        avgQuality: sql`avg(${aiResponseHistory.qualityScore})`
+        totalCost: sql`sum(COALESCE(${aiResponseHistory.cost}, 0))`,
+        avgQuality: sql`avg(COALESCE(${aiResponseHistory.responseQuality}, 0))`
       })
       .from(aiResponseHistory)
-      .where(sql`${aiResponseHistory.challengeType} IS NOT NULL AND ${aiResponseHistory.tokenCount} > 0`)
+      .where(sql`${aiResponseHistory.challengeType} IS NOT NULL AND COALESCE(${aiResponseHistory.tokenCount}, 0) > 0`)
       .groupBy(aiResponseHistory.challengeType);
 
-    // Calculate cached vs fresh request savings
+    // Calculate cached vs fresh request savings (using session type to identify cached responses)
     const cacheStats = await db
       .select({
-        cached: sql`count(*) filter (where ${aiResponseHistory.wasFromCache} = true)`,
-        fresh: sql`count(*) filter (where ${aiResponseHistory.wasFromCache} = false)`,
-        cacheSavings: sql`sum(${aiResponseHistory.cost}) filter (where ${aiResponseHistory.wasFromCache} = false)`
+        cached: sql`count(*) filter (where ${aiResponseHistory.sessionType} LIKE '%_cache%')`,
+        fresh: sql`count(*) filter (where ${aiResponseHistory.sessionType} NOT LIKE '%_cache%')`,
+        cacheSavings: sql`sum(COALESCE(${aiResponseHistory.cost}, 0)) filter (where ${aiResponseHistory.sessionType} NOT LIKE '%_cache%')`
       })
       .from(aiResponseHistory)
-      .where(sql`${aiResponseHistory.tokenCount} > 0`);
+      .where(sql`COALESCE(${aiResponseHistory.tokenCount}, 0) > 0`);
 
     const stats = totalUsage[0] || {};
     const models = modelStats || [];
