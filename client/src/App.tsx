@@ -98,6 +98,7 @@ function Router() {
         <Route path="/saved-affirmations" component={SavedAffirmations} />
         
         {/* AI Couch Premium System */}
+        <Route path="/ai-couch" component={AICoaching} />
         <Route path="/ai-couch-onboarding" component={AiCouchOnboarding} />
         <Route path="/ai-couch-dashboard" component={AiCouchDashboard} />
         

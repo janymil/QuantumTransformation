@@ -18,6 +18,7 @@ import {
   getUserAIStats 
 } from "./ai-cost-control";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
+import { aiCouchEngine } from "./ai-couch-simple";
 import { db } from "./db";
 import { eq, desc, and, ilike, or, gte, count, avg, sum } from "drizzle-orm";
 import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
@@ -1193,42 +1194,67 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // AI personalized coaching endpoint
+  // AI personalized coaching endpoint - Advanced AI Couch Engine
   app.post('/api/ai/coaching', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const coachingRequest = { ...req.body, userId };
+      const { userGoals, currentChallenges, mood, challengeType, currentDay } = req.body;
       
-      console.log("Generating personalized coaching with request:", coachingRequest);
+      console.log("Generating advanced AI coaching with sophisticated engine:", { userId, challengeType, currentDay });
       
       // Track AI usage
       await trackUsage(
         userId,
-        'coaching',
-        JSON.stringify(coachingRequest),
+        'advanced_coaching',
+        JSON.stringify({ userGoals, currentChallenges, mood, challengeType }),
         0,
         0
       );
       
-      const coaching = await generatePersonalizedCoaching(coachingRequest);
+      // Use advanced AI coaching engine with multidisciplinary approach
+      const userInput = `Goals: ${userGoals}. Challenges: ${Array.isArray(currentChallenges) ? currentChallenges.join(', ') : currentChallenges}. Energy level: ${mood}/10.`;
+      const context = `Day ${currentDay} of ${challengeType} challenge. User seeking personalized coaching and guidance.`;
       
-      console.log("Generated coaching response:", coaching);
+      const advancedCoaching = await aiCouchEngine.generatePersonalizedResponse(
+        userId,
+        userInput,
+        context,
+        'advanced_coaching'
+      );
+      
+      // Parse the AI response and structure it for the frontend
+      const structuredResponse = {
+        personalizedMessage: advancedCoaching.response || "Your personalized guidance is ready.",
+        todaysRecommendation: `Based on your goals and current energy level (${mood}/10), focus on integrating multiple therapeutic approaches that support your growth today.`,
+        practiceAdjustments: [
+          "Apply consciousness expansion techniques suited to your current state",
+          "Integrate trauma-informed practices with manifestation work", 
+          "Use breathwork and energy healing as foundational support",
+          "Practice quantum consciousness techniques for deeper transformation"
+        ],
+        modalities_used: advancedCoaching.modalities_used || [],
+        emotional_tone: advancedCoaching.emotional_tone || 'supportive',
+        patterns_detected: advancedCoaching.patterns_detected || [],
+        timestamp: advancedCoaching.timestamp
+      };
+      
+      console.log("Generated advanced coaching response with modalities:", structuredResponse.modalities_used);
       
       // Save to response history
       await db.insert(aiResponseHistory).values({
         userId,
-        sessionType: 'coaching',
-        userInput: JSON.stringify(coachingRequest),
-        aiResponse: coaching,
-        challengeType: coachingRequest.challengeType,
-        day: coachingRequest.currentDay,
-        tags: ['coaching', 'personalized', coachingRequest.challengeType || 'general']
+        sessionType: 'advanced_coaching',
+        userInput: userInput,
+        aiResponse: structuredResponse,
+        challengeType: challengeType,
+        day: currentDay,
+        tags: ['advanced_coaching', 'multidisciplinary', 'ai_couch', challengeType || 'general']
       });
       
-      res.json(coaching);
+      res.json(structuredResponse);
     } catch (error) {
-      console.error("Error generating personalized coaching:", error);
-      res.status(500).json({ message: "Failed to generate coaching", error: (error as Error).message });
+      console.error("Error generating advanced AI coaching:", error);
+      res.status(500).json({ message: "Failed to generate advanced coaching", error: (error as Error).message });
     }
   });
 
