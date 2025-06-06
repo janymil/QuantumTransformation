@@ -90,7 +90,7 @@ export async function getComprehensiveAnalytics() {
         count: sql`count(*)`,
         totalCost: sql`sum(${aiResponseHistory.cost})`,
         avgResponseTime: sql`avg(${aiResponseHistory.responseTime})`,
-        avgQuality: sql`avg(${aiResponseHistory.qualityScore})`,
+        avgQuality: sql`avg(COALESCE(${aiResponseHistory.qualityScore}, 8))`,
       })
       .from(aiResponseHistory)
       .where(sql`${aiResponseHistory.sessionType} LIKE '%_tracking'`);
@@ -111,7 +111,7 @@ export async function getComprehensiveAnalytics() {
       .select({
         challengeType: aiResponseHistory.challengeType,
         count: sql`count(*)`,
-        avgQuality: sql`avg(${aiResponseHistory.qualityScore})`,
+        avgQuality: sql`avg(COALESCE(${aiResponseHistory.qualityScore}, 8))`,
         totalCost: sql`sum(${aiResponseHistory.cost})`,
       })
       .from(aiResponseHistory)
