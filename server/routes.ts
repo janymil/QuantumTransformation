@@ -1556,7 +1556,6 @@ Provide personalized, actionable guidance that:
           updatedAt: new Date()
         })
         .where(eq(aiCouchDailyAssessments.id, parseInt(assessmentId)))
-        .where(eq(aiCouchDailyAssessments.userId, userId))
         .returning();
 
       if (!updatedAssessment) {

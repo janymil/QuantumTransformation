@@ -1214,6 +1214,7 @@ Respond in JSON format:
   private async getUserProgressContext(userId: string): Promise<any> {
     try {
       // Get user profile
+      const { storage } = await import('./storage');
       const profile = await storage.getAICouchProfile(userId);
 
       // Get recent sessions (last 7 days)
