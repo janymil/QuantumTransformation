@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { db } from './db';
 import { 
   aiCouchProfiles, 
@@ -9,8 +9,8 @@ import {
 import { eq, desc } from 'drizzle-orm';
 import { disciplineRegistry } from './disciplines/discipline-registry';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export class AiCouchEngine {
@@ -38,20 +38,19 @@ Analyze this user across multiple dimensions and provide detailed psychological 
 
 Format as JSON with detailed analysis and recommendations.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" },
+      response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
+    const content = response.choices[0].message.content;
     let analysisResult = {};
-    if (content.type === 'text') {
-      try {
-        analysisResult = JSON.parse(content.text);
-      } catch {
-        analysisResult = {};
-      }
+    try {
+      analysisResult = JSON.parse(content || '{}');
+    } catch {
+      analysisResult = {};
     }
 
     const [profile] = await db.insert(aiCouchProfiles).values({
@@ -95,20 +94,19 @@ USER PROFILE:
 Design a comprehensive plan that adapts to this user's specific profile and needs.
 Format as detailed JSON plan with daily progression.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" },
+      response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
+    const content = response.choices[0].message.content;
     let planData = {};
-    if (content.type === 'text') {
-      try {
-        planData = JSON.parse(content.text);
-      } catch {
-        planData = {};
-      }
+    try {
+      planData = JSON.parse(content || '{}');
+    } catch {
+      planData = {};
     }
 
     const [plan] = await db.insert(personalizedChallengePlans).values({
@@ -154,24 +152,23 @@ CHALLENGE CONTEXT:
 Consider their progress and ensure appropriate progression.
 Format as JSON with specific daily guidance.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" },
+      response_format: { type: "json_object" }
     });
 
-    const content = response.content[0];
-    if (content.type === 'text') {
-      try {
-        return JSON.parse(content.text);
-      } catch {
-        return {
-          title: `Day ${currentDay}: Deepening Your Practice`,
-          description: "Today we focus on building awareness and creating positive change.",
-          practices: ["Morning meditation", "Intention setting", "Evening reflection"],
-          reflection: "How did today's practices feel for you?"
-        };
-      }
+    const content = response.choices[0].message.content;
+    try {
+      return JSON.parse(content || '{}');
+    } catch {
+      return {
+        title: `Day ${currentDay}: Deepening Your Practice`,
+        description: "Today we focus on building awareness and creating positive change.",
+        practices: ["Morning meditation", "Intention setting", "Evening reflection"],
+        reflection: "How did today's practices feel for you?"
+      };
     }
     return {
       title: `Day ${currentDay}: Deepening Your Practice`,
@@ -210,10 +207,10 @@ User Input: ${userInput}
 
 Provide personalized coaching response that honors their communication style and current needs.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -288,10 +285,10 @@ ASSESSMENT AREAS:
 
 Format as JSON with categories: engagement, emotional_progression, resistance_areas, breakthroughs, adaptation_recommendations, next_phase_readiness.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -349,10 +346,10 @@ BLOCK TYPE SPECIFICATIONS:
 
 Format as JSON with detailed block specifications.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 2500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -403,10 +400,10 @@ CURRENT CHALLENGE: ${currentPlan ? currentPlan.planName : 'None'}
 Provide specific adaptation recommendations with reasoning.
 Format as JSON with: adaptation_type, reasoning, specific_changes, new_difficulty_level, new_intensity_level.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -449,10 +446,10 @@ ${JSON.stringify(assessmentInputs, null, 2)}
 
 Format as comprehensive JSON with scores, patterns, and recommendations for each layer.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 2500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -494,10 +491,10 @@ USER PROFILE:
 Provide specific predictions with suggested proactive interventions.
 Format as JSON with: predictions, confidence_levels, suggested_interventions, optimal_timing.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -623,10 +620,10 @@ Apply your ${expertiseData.name} expertise to provide:
 Provide comprehensive, professional guidance as a licensed practitioner in this field.
 Format as detailed JSON with: expert_assessment, recommended_techniques, practice_protocol, expected_outcomes, progress_markers, integration_notes, safety_considerations.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -679,10 +676,10 @@ PATTERN ANALYSIS CATEGORIES:
 
 Format as JSON with detailed patterns, emotional insights, and predictive indicators.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 3000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -723,10 +720,10 @@ USER PROFILE:
 
 Format as JSON with: { "greeting": "...", "reflection": "...", "practice": "...", "intention": "..." }`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -766,10 +763,10 @@ USER PROFILE:
 
 Format as JSON with: { "welcome": "...", "review": "...", "celebration": "...", "insight": "...", "gratitude": "...", "preparation": "..." }`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -819,10 +816,10 @@ WEEKLY DATA:
 Analyze for emotional patterns, energy fluctuations, growth areas, and recommendations.
 Format as comprehensive JSON analysis.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -870,10 +867,10 @@ IMMEDIATE PRIORITIES:
 
 Format as JSON with: { "immediate_response": "...", "grounding_technique": "...", "safety_check": "...", "next_steps": "...", "professional_resources": "..." }`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
@@ -921,10 +918,10 @@ USER PROFILE:
 
 Format as detailed JSON intervention guide.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }], response_format: { type: "json_object" }
     });
 
     const content = response.content[0];
