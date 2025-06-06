@@ -199,6 +199,17 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   index("ai_response_history_created_at_idx").on(table.createdAt),
 ]);
 
+// AI Response Cache for performance optimization
+export const aiResponseCache = pgTable("ai_response_cache", {
+  id: serial("id").primaryKey(),
+  inputHash: varchar("input_hash").notNull().unique(),
+  response: text("response").notNull(),
+  requestType: varchar("request_type").notNull(),
+  expiresAt: timestamp("expires_at"),
+  accessCount: integer("access_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // AI Usage Tracking - Independent tracking for all AI requests (analytics-focused)
 export const aiUsageTracking = pgTable("ai_usage_tracking", {
   id: serial("id").primaryKey(),

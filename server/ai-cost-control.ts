@@ -1,31 +1,6 @@
-import { pgTable, text, integer, timestamp, boolean, serial } from 'drizzle-orm/pg-core';
 import { db } from './db';
 import { eq, and, gte, sql } from 'drizzle-orm';
-
-// Database tables for AI usage tracking and caching
-export const aiUsageTracking = pgTable("ai_usage_tracking", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  requestType: text("request_type").notNull(),
-  inputHash: text("input_hash").notNull(),
-  inputLength: integer("input_length").notNull(),
-  outputLength: integer("output_length"),
-  cost: integer("cost"), // in microdollars
-  isFromCache: boolean("is_from_cache").default(false),
-  model: text("model"),
-  tokens: integer("tokens"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const aiResponseCache = pgTable("ai_response_cache", {
-  id: serial("id").primaryKey(),
-  inputHash: text("input_hash").notNull().unique(),
-  response: text("response").notNull(),
-  requestType: text("request_type").notNull(),
-  expiresAt: timestamp("expires_at"),
-  accessCount: integer("access_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+import { aiUsageTracking, aiResponseCache } from '@shared/schema';
 
 // Usage limits configuration
 export const USAGE_LIMITS = {
