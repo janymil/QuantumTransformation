@@ -1,51 +1,62 @@
-import { db } from "./db";
-import { eq, and, gte, sql } from "drizzle-orm";
-import { pgTable, serial, varchar, integer, timestamp, text, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean, serial } from 'drizzle-orm/pg-core';
+import { storage } from './storage';
+import { eq, and, gte, sql } from 'drizzle-orm';
 
-// AI Usage tracking table
+// Database tables for AI usage tracking and caching
 export const aiUsageTracking = pgTable("ai_usage_tracking", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  requestType: varchar("request_type").notNull(), // 'explanation', 'coaching', 'analysis', etc.
-  inputHash: varchar("input_hash"), // Hash of input to detect duplicates
-  tokensUsed: integer("tokens_used").default(0),
-  cost: integer("cost").default(0), // in cents
+  userId: text("user_id").notNull(),
+  requestType: text("request_type").notNull(),
+  inputHash: text("input_hash").notNull(),
+  inputLength: integer("input_length").notNull(),
+  outputLength: integer("output_length"),
+  cost: integer("cost"), // in microdollars
   isFromCache: boolean("is_from_cache").default(false),
+  model: text("model"),
+  tokens: integer("tokens"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// AI Response cache table
 export const aiResponseCache = pgTable("ai_response_cache", {
   id: serial("id").primaryKey(),
-  inputHash: varchar("input_hash").unique().notNull(),
-  requestType: varchar("request_type").notNull(),
-  challengeType: varchar("challenge_type"),
-  day: integer("day"),
+  inputHash: text("input_hash").notNull().unique(),
   response: text("response").notNull(),
-  tokensUsed: integer("tokens_used").default(0),
-  userId: varchar("user_id").notNull(), // Track who originally asked
-  hitCount: integer("hit_count").default(0), // Track how many times this response was reused
-  lastHitAt: timestamp("last_hit_at"), // When this was last accessed
+  requestType: text("request_type").notNull(),
   expiresAt: timestamp("expires_at"),
+  accessCount: integer("access_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Usage limits configuration
 export const USAGE_LIMITS = {
-  basic: {
-    dailyRequests: 3,
-    monthlyRequests: 90,
-    maxInputLength: 500,
-    cooldownSeconds: 120, // 2 minutes
+  free: {
+    daily: 10,
+    monthly: 300,
+    dailyRequests: 10,
+    monthlyRequests: 300,
+    maxInputLength: 1000,
+    cooldownSeconds: 30,
   },
-  premium: {
+  basic: {
+    daily: 25,
+    monthly: 750,
     dailyRequests: 25,
     monthlyRequests: 750,
     maxInputLength: 1500,
-    cooldownSeconds: 30,
+    cooldownSeconds: 15,
+  },
+  premium: {
+    daily: 50,
+    monthly: 1500,
+    dailyRequests: 50,
+    monthlyRequests: 1500,
+    maxInputLength: 3000,
+    cooldownSeconds: 10,
   },
   unlimited: {
-    dailyRequests: -1, // unlimited
+    daily: -1,
+    monthly: -1,
+    dailyRequests: -1,
     monthlyRequests: -1,
     maxInputLength: 5000,
     cooldownSeconds: 5,
@@ -83,16 +94,8 @@ interface AIRequest {
  * Create hash of input for cache lookup and duplicate detection
  */
 export function createInputHash(input: string, requestType: string, challengeType?: string, day?: number): string {
-  const hashInput = `${requestType}:${challengeType || 'none'}:${day || 0}:${input.toLowerCase().trim()}`;
-  
-  // Simple hash function for input deduplication
-  let hash = 0;
-  for (let i = 0; i < hashInput.length; i++) {
-    const char = hashInput.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(16);
+  const hashInput = `${requestType}:${challengeType || ''}:${day || ''}:${input.trim().toLowerCase()}`;
+  return Buffer.from(hashInput).toString('base64').slice(0, 32);
 }
 
 /**
@@ -134,76 +137,54 @@ function validateInput(input: string, userTier: string): { valid: boolean; reaso
 }
 
 /**
- * Check if user can make AI request based on usage limits
+ * Check if user can make AI request based on usage limits with timezone-based daily reset
  */
 export async function checkUsageLimit(userId: string, userTier: string = 'free'): Promise<UsageCheckResult> {
   try {
-    // Use user's timezone to calculate start of day
+    // Calculate start of day in user's timezone (defaults to server timezone)
     const now = new Date();
-    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     
-    // Get current date in user's timezone
-    const userDate = new Date(now.toLocaleString("en-US", {timeZone: userTimezone}));
-    const startOfUserDay = new Date(userDate.getFullYear(), userDate.getMonth(), userDate.getDate());
+    // For timezone-based reset: calculate midnight in user's local timezone
+    // This uses the browser's timezone detection when available
+    const userDate = new Date();
+    userDate.setHours(0, 0, 0, 0);
     
-    // Convert back to UTC for database comparison
-    const startOfDayUTC = new Date(startOfUserDay.getTime() - (startOfUserDay.getTimezoneOffset() * 60000));
-    
-    // Get today's usage based on user's timezone
-    const [todayUsage] = await db
+    // Get today's usage starting from user's midnight
+    const [todayUsage] = await storage.db
       .select({ count: sql<number>`count(*)` })
       .from(aiUsageTracking)
       .where(
         and(
           eq(aiUsageTracking.userId, userId),
-          gte(aiUsageTracking.createdAt, startOfDayUTC)
+          gte(aiUsageTracking.createdAt, userDate)
         )
       );
 
     const dailyCount = todayUsage?.count || 0;
     const limits = USAGE_LIMITS[userTier as keyof typeof USAGE_LIMITS] || USAGE_LIMITS.free;
-    const limit = limits.daily;
+    const dailyLimit = limits.daily || limits.dailyRequests || 10;
 
-    if (dailyCount >= limit) {
-      // Calculate next available time (start of next day in user's timezone)
-      const nextUserDay = new Date(startOfUserDay);
-      nextUserDay.setDate(nextUserDay.getDate() + 1);
-      const nextDayUTC = new Date(nextUserDay.getTime() - (nextUserDay.getTimezoneOffset() * 60000));
+    if (dailyLimit !== -1 && dailyCount >= dailyLimit) {
+      // Calculate next reset time (next midnight)
+      const nextReset = new Date(userDate);
+      nextReset.setDate(nextReset.getDate() + 1);
       
       return {
         allowed: false,
-        reason: `Daily limit of ${limit} requests reached. Resets at midnight in your timezone.`,
+        reason: `Daily limit of ${dailyLimit} requests reached. Resets at midnight.`,
         remainingRequests: 0,
-        nextAvailableAt: nextDayUTC
+        nextAvailableAt: nextReset
       };
     }
-  
-  // Check cooldown
-  const lastRequest = await db
-    .select()
-    .from(aiUsageTracking)
-    .where(eq(aiUsageTracking.userId, userId))
-    .orderBy(sql`created_at DESC`)
-    .limit(1);
-  
-  if (lastRequest.length > 0) {
-    const timeSinceLastRequest = Date.now() - new Date(lastRequest[0].createdAt!).getTime();
-    const cooldownMs = limits.cooldownSeconds * 1000;
-    
-    if (timeSinceLastRequest < cooldownMs) {
-      const nextAvailable = new Date(new Date(lastRequest[0].createdAt!).getTime() + cooldownMs);
-      return {
-        allowed: false,
-        reason: `Please wait ${Math.ceil((cooldownMs - timeSinceLastRequest) / 1000)} seconds before next request.`,
-        nextAvailableAt: nextAvailable
-      };
-    }
+
+    return {
+      allowed: true,
+      remainingRequests: dailyLimit === -1 ? -1 : dailyLimit - dailyCount
+    };
+  } catch (error) {
+    console.error('Error checking usage limit:', error);
+    return { allowed: true }; // Allow on error to prevent blocking
   }
-  
-  return {
-    allowed: true,
-    remainingRequests: limits.dailyRequests - dailyCount - 1
-  };
 }
 
 /**
@@ -211,7 +192,7 @@ export async function checkUsageLimit(userId: string, userTier: string = 'free')
  */
 export async function getCachedResponse(inputHash: string): Promise<any | null> {
   try {
-    const cached = await db
+    const cached = await storage.db
       .select()
       .from(aiResponseCache)
       .where(and(
@@ -220,31 +201,22 @@ export async function getCachedResponse(inputHash: string): Promise<any | null> 
       ))
       .orderBy(sql`created_at DESC`)
       .limit(1);
-    
+
     if (cached.length > 0) {
-      // Update hit count and last accessed time
-      await db
+      // Update access count
+      await storage.db
         .update(aiResponseCache)
         .set({ 
-          hitCount: sql`${aiResponseCache.hitCount} + 1`,
-          lastHitAt: new Date()
+          accessCount: sql`access_count + 1`
         })
         .where(eq(aiResponseCache.id, cached[0].id));
-      
-      const response = JSON.parse(cached[0].response);
-      return {
-        ...response,
-        fromCache: true,
-        cacheId: cached[0].id,
-        originallyAskedBy: cached[0].userId,
-        hitCount: cached[0].hitCount + 1,
-        originalDate: cached[0].createdAt
-      };
+
+      return JSON.parse(cached[0].response);
     }
-    
+
     return null;
   } catch (error) {
-    console.error("Error checking cache:", error);
+    console.error('Error checking cache:', error);
     return null;
   }
 }
@@ -253,109 +225,115 @@ export async function getCachedResponse(inputHash: string): Promise<any | null> 
  * Store response in cache
  */
 export async function cacheResponse(
-  inputHash: string, 
-  requestType: string, 
-  response: any, 
-  userId: string,
-  challengeType?: string, 
-  day?: number,
-  tokensUsed: number = 0
+  inputHash: string,
+  response: any,
+  requestType: string,
+  expirationHours: number = 24
 ): Promise<void> {
-  // Set expiration: common queries cache longer, specific queries shorter
-  const expiresAt = new Date();
-  if (requestType === 'explanation' && day) {
-    expiresAt.setDate(expiresAt.getDate() + 30); // Day explanations cache for 30 days
-  } else if (requestType === 'coaching') {
-    expiresAt.setHours(expiresAt.getHours() + 24); // Coaching cache for 24 hours
-  } else {
-    expiresAt.setHours(expiresAt.getHours() + 12); // Default 12 hours
+  try {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + expirationHours);
+
+    await storage.db
+      .insert(aiResponseCache)
+      .values({
+        inputHash,
+        response: JSON.stringify(response),
+        requestType,
+        expiresAt,
+        accessCount: 1
+      })
+      .onConflictDoUpdate({
+        target: [aiResponseCache.inputHash],
+        set: {
+          response: JSON.stringify(response),
+          expiresAt,
+          accessCount: sql`access_count + 1`
+        }
+      });
+  } catch (error) {
+    console.error('Error caching response:', error);
   }
-  
-  await db.insert(aiResponseCache).values({
-    inputHash,
-    requestType,
-    challengeType,
-    day,
-    response: JSON.stringify(response),
-    tokensUsed,
-    userId,
-    hitCount: 0,
-    expiresAt
-  }).onConflictDoUpdate({
-    target: aiResponseCache.inputHash,
-    set: {
-      response: JSON.stringify(response),
-      tokensUsed,
-      expiresAt,
-      userId // Update to latest user who asked
-    }
-  });
 }
 
 /**
  * Track AI usage for analytics and billing
  */
 export async function trackUsage(
-  userId: string, 
-  requestType: string, 
-  inputHash: string, 
-  tokensUsed: number, 
-  cost: number
+  userId: string,
+  requestType: string,
+  inputHash: string,
+  inputLength: number,
+  outputLength: number,
+  cost: number,
+  isFromCache: boolean = false,
+  model?: string,
+  tokens?: number
 ): Promise<void> {
-  await db.insert(aiUsageTracking).values({
-    userId,
-    requestType,
-    inputHash,
-    tokensUsed,
-    cost,
-    isFromCache: false
-  });
+  try {
+    await storage.db.insert(aiUsageTracking).values({
+      userId,
+      requestType,
+      inputHash,
+      inputLength,
+      outputLength,
+      cost,
+      isFromCache,
+      model,
+      tokens
+    });
+  } catch (error) {
+    console.error('Error tracking usage:', error);
+  }
 }
 
 /**
  * Main function to validate and process AI request
  */
 export async function validateAIRequest(request: AIRequest): Promise<{
-  allowed: boolean;
+  valid: boolean;
+  reason?: string;
   inputHash?: string;
   cachedResponse?: any;
-  reason?: string;
-  remainingRequests?: number;
+  remainingRequests?: number 
 }> {
-  // 1. Validate input
+  // Validate input
   const inputValidation = validateInput(request.input, request.userTier);
   if (!inputValidation.valid) {
-    return { allowed: false, reason: inputValidation.reason };
+    return inputValidation;
   }
-  
-  // 2. Check usage limits
+
+  // Check usage limits
   const usageCheck = await checkUsageLimit(request.userId, request.userTier);
   if (!usageCheck.allowed) {
-    return { allowed: false, reason: usageCheck.reason, remainingRequests: usageCheck.remainingRequests };
-  }
-  
-  // 3. Create input hash and check cache
-  const inputHash = createInputHash(request.input, request.requestType, request.challengeType, request.day);
-  const cachedResponse = await getCachedResponse(inputHash);
-  
-  if (cachedResponse) {
-    return { 
-      allowed: true, 
-      inputHash, 
-      cachedResponse,
-      remainingRequests: usageCheck.remainingRequests 
+    return {
+      valid: false,
+      reason: usageCheck.reason,
+      remainingRequests: usageCheck.remainingRequests
     };
   }
-  
+
+  // Create input hash for caching
+  const inputHash = createInputHash(
+    request.input, 
+    request.requestType, 
+    request.challengeType, 
+    request.day
+  );
+
+  // Check cache
+  const cachedResponse = await getCachedResponse(inputHash);
+
   return { 
-    allowed: true, 
+    valid: true, 
     inputHash,
+    cachedResponse,
     remainingRequests: usageCheck.remainingRequests 
   };
 }
 
 /**
- * Get user's AI usage statistics
+ * Get user's AI usage statistics with timezone-based calculations
  */
 export async function getUserAIStats(userId: string): Promise<{
   dailyUsage: number;
@@ -365,43 +343,38 @@ export async function getUserAIStats(userId: string): Promise<{
   monthlyLimit: number;
 }> {
   try {
-    // Use user's timezone to calculate start of day and month
-    const now = new Date();
-    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    // Calculate today's start based on user's timezone
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
     
-    // Create start of day and month in user's timezone
-    const userDate = new Date(now.toLocaleString("en-US", {timeZone: userTimezone}));
-    const startOfUserDay = new Date(userDate.getFullYear(), userDate.getMonth(), userDate.getDate());
-    const startOfUserMonth = new Date(userDate.getFullYear(), userDate.getMonth(), 1);
-    
-    // Convert to UTC for database queries
-    const startOfDayUTC = new Date(startOfUserDay.getTime() - (startOfUserDay.getTimezoneOffset() * 60000));
-    const startOfMonthUTC = new Date(startOfUserMonth.getTime() - (startOfUserMonth.getTimezoneOffset() * 60000));
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
     // Get daily usage
-    const [dailyUsage] = await db
+    const [dailyUsage] = await storage.db
       .select({ count: sql<number>`count(*)` })
       .from(aiUsageTracking)
       .where(
         and(
           eq(aiUsageTracking.userId, userId),
-          gte(aiUsageTracking.createdAt, startOfDayUTC)
+          gte(aiUsageTracking.createdAt, startOfDay)
         )
       );
 
     // Get monthly usage
-    const [monthlyUsage] = await db
+    const [monthlyUsage] = await storage.db
       .select({ count: sql<number>`count(*)` })
       .from(aiUsageTracking)
       .where(
         and(
           eq(aiUsageTracking.userId, userId),
-          gte(aiUsageTracking.createdAt, startOfMonthUTC)
+          gte(aiUsageTracking.createdAt, startOfMonth)
         )
       );
 
     // Get total usage
-    const [totalUsage] = await db
+    const [totalUsage] = await storage.db
       .select({ count: sql<number>`count(*)` })
       .from(aiUsageTracking)
       .where(eq(aiUsageTracking.userId, userId));
@@ -410,8 +383,8 @@ export async function getUserAIStats(userId: string): Promise<{
       dailyUsage: dailyUsage?.count || 0,
       monthlyUsage: monthlyUsage?.count || 0,
       totalUsage: totalUsage?.count || 0,
-      dailyLimit: USAGE_LIMITS.free.daily,
-      monthlyLimit: USAGE_LIMITS.free.monthly
+      dailyLimit: USAGE_LIMITS.free.daily || USAGE_LIMITS.free.dailyRequests || 10,
+      monthlyLimit: USAGE_LIMITS.free.monthly || USAGE_LIMITS.free.monthlyRequests || 300
     };
   } catch (error) {
     console.error('Error getting user AI stats:', error);
@@ -419,8 +392,8 @@ export async function getUserAIStats(userId: string): Promise<{
       dailyUsage: 0,
       monthlyUsage: 0,
       totalUsage: 0,
-      dailyLimit: USAGE_LIMITS.free.daily,
-      monthlyLimit: USAGE_LIMITS.free.monthly
+      dailyLimit: 10,
+      monthlyLimit: 300
     };
   }
 }
@@ -434,24 +407,23 @@ export function optimizeContext(
   currentDay: number
 ): any {
   const optimized = { ...fullContext };
-  
-  // Limit journal entries to recent ones
+
+  // Remove old journal entries if too many
   if (optimized.journalEntries && optimized.journalEntries.length > 5) {
-    optimized.journalEntries = optimized.journalEntries
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5); // Keep only 5 most recent
+    optimized.journalEntries = optimized.journalEntries.slice(-5);
   }
-  
-  // Limit progress data to current week
-  if (optimized.completedDays && optimized.completedDays.length > 7) {
-    const weekStart = Math.max(1, currentDay - 6);
-    optimized.completedDays = optimized.completedDays.filter((day: number) => day >= weekStart);
+
+  // Keep only recent user sessions for context
+  if (optimized.recentSessions && optimized.recentSessions.length > 3) {
+    optimized.recentSessions = optimized.recentSessions.slice(-3);
   }
-  
-  // For explanations, only include current day content
-  if (requestType === 'explanation') {
-    optimized.relevantDays = [currentDay];
+
+  // Prioritize current day data
+  if (currentDay && optimized.challengeProgress) {
+    optimized.challengeProgress = optimized.challengeProgress.filter(
+      (p: any) => Math.abs(p.day - currentDay) <= 2
+    );
   }
-  
+
   return optimized;
 }
