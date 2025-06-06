@@ -412,7 +412,7 @@ export default function AdminAnalytics() {
               </Alert>
             </CardContent>
           </Card>
-            </div>
+        </div>
           </TabsContent>
 
           {/* User Statistics & Metrics Tab */}
