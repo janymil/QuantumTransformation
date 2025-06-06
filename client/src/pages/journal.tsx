@@ -231,9 +231,8 @@ export default function Journal() {
     });
   };
 
-  const completedDays = (progressData?.progress?.completedDays as number[]) || [];
-  const availableDays = Array.from({ length: 30 }, (_, i) => i + 1)
-    .filter(day => day <= (progressData?.progress?.currentDay || 1) || completedDays.includes(day));
+  const completedDays = [];
+  const availableDays = Array.from({ length: 30 }, (_, i) => i + 1);
 
   const filteredEntries = entries?.filter(entry => {
     const matchesFilter = filterDay === "all" || entry.day.toString() === filterDay;
