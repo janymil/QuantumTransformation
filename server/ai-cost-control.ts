@@ -230,30 +230,32 @@ export async function cacheResponse(
 }
 
 /**
- * Track AI usage for analytics and billing
+ * Track AI usage for analytics and billing - ALL AI systems count towards daily limits
  */
 export async function trackUsage(
   userId: string,
   requestType: string,
-  inputHash: string,
-  inputLength: number,
-  outputLength: number,
-  cost: number,
-  isFromCache: boolean = false,
-  model?: string,
-  tokens?: number
+  input: string,
+  output: string,
+  model: string,
+  tokens: number = 0,
+  cost: string = '0',
+  responseTime: number = 0,
+  challengeType: string | null = null,
+  sessionId: string | null = null
 ): Promise<void> {
   try {
     await db.insert(aiUsageTracking).values({
       userId,
       requestType,
-      inputHash,
-      inputLength,
-      outputLength,
-      cost,
-      isFromCache,
+      input,
+      output,
       model,
-      tokens
+      tokens,
+      cost,
+      responseTime,
+      challengeType,
+      sessionId
     });
   } catch (error) {
     console.error('Error tracking usage:', error);

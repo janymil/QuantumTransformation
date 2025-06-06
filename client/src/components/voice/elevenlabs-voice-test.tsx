@@ -24,12 +24,23 @@ export function ElevenLabsVoiceTest() {
   const loadVoices = async () => {
     setIsLoadingVoices(true);
     try {
-      const response = await apiRequest('/api/elevenlabs/voices');
-      setVoices(response.voices || []);
+      const response = await fetch('/api/elevenlabs/voices', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch voices');
+      }
+      
+      const data = await response.json();
+      setVoices(data.voices || []);
       
       // Set default voice if available
-      if (response.voices && response.voices.length > 0) {
-        setSelectedVoice(response.voices[0].voice_id);
+      if (data.voices && data.voices.length > 0) {
+        setSelectedVoice(data.voices[0].voice_id);
       }
     } catch (error) {
       toast({
@@ -45,8 +56,17 @@ export function ElevenLabsVoiceTest() {
   // Load usage statistics
   const loadUsageStats = async () => {
     try {
-      const stats = await apiRequest('/api/elevenlabs/usage-stats');
-      setUsageStats(stats);
+      const response = await fetch('/api/elevenlabs/usage-stats', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const stats = await response.json();
+        setUsageStats(stats);
+      }
     } catch (error) {
       console.error('Error loading usage stats:', error);
     }
@@ -57,15 +77,22 @@ export function ElevenLabsVoiceTest() {
     if (!text.trim()) return;
     
     try {
-      const estimate = await apiRequest('/api/elevenlabs/cost-estimate', {
+      const response = await fetch('/api/elevenlabs/cost-estimate', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           text: text.trim(),
           voice_id: selectedVoice,
           subscription_tier: 'free'
         }),
       });
-      setCostEstimate(estimate);
+      
+      if (response.ok) {
+        const estimate = await response.json();
+        setCostEstimate(estimate);
+      }
     } catch (error) {
       console.error('Error estimating cost:', error);
     }
@@ -93,19 +120,29 @@ export function ElevenLabsVoiceTest() {
 
     setIsGenerating(true);
     try {
-      const response = await apiRequest('/api/elevenlabs/generate-affirmation', {
+      const response = await fetch('/api/elevenlabs/generate-affirmation', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           text: text.trim(),
           voice_id: selectedVoice
         }),
       });
 
-      if (response.success) {
-        setGeneratedAudio(response.audioData);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate audio');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setGeneratedAudio(data.audioData);
         toast({
           title: "Success",
-          description: `Audio generated! Cost: $${response.cost.toFixed(4)}, Characters: ${response.charactersUsed}`,
+          description: `Audio generated! Cost: $${data.cost.toFixed(4)}, Characters: ${data.charactersUsed}`,
         });
         
         // Refresh usage stats

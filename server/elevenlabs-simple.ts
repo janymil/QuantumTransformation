@@ -4,6 +4,7 @@
  */
 
 import { storage } from './storage';
+import { trackUsage } from './ai-cost-control';
 import fs from 'fs';
 import path from 'path';
 
@@ -111,6 +112,8 @@ export class ElevenLabsService {
     voiceId?: string
   ): Promise<{ audioBuffer: Buffer; audioUrl?: string; cost: number; charactersUsed: number }> {
     try {
+      const startTime = Date.now();
+      
       // Use user's cloned voice if available, otherwise use default
       let selectedVoiceId = voiceId;
       
@@ -131,6 +134,21 @@ export class ElevenLabsService {
         style: 0.2, // Slight style for warmth
         use_speaker_boost: true
       });
+
+      // Track usage for AI limits (ElevenLabs doesn't count towards daily standard AI limits)
+      const responseTime = Date.now() - startTime;
+      await trackUsage(
+        userId,
+        'text_to_speech',
+        affirmationText,
+        JSON.stringify({ audioGenerated: true, voiceId: selectedVoiceId }),
+        'elevenlabs-tts',
+        0, // No tokens for TTS
+        result.cost.toString(),
+        responseTime,
+        null, // No challenge type
+        'voice_generation'
+      );
 
       return {
         audioBuffer: result.audioBuffer,
@@ -176,27 +194,29 @@ export class ElevenLabsService {
    */
   async getUsageStats(userId: string) {
     try {
+      // Get affirmation audio usage directly from database
+      const audioHistory = await storage.getUserAffirmationAudio(userId);
+      
+      // Calculate stats from the last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const usage = await storage.getUserAIUsage(userId, thirtyDaysAgo);
-      const elevenlabsUsage = usage.filter((u: any) => 
-        u.model?.includes('elevenlabs') || u.requestType === 'text_to_speech'
+      const recentAudio = audioHistory.filter(audio => 
+        audio.createdAt && new Date(audio.createdAt) >= thirtyDaysAgo
       );
       
-      const totalCharacters = elevenlabsUsage.reduce((sum: number, u: any) => {
-        const metadata = u.metadata ? JSON.parse(u.metadata) : {};
-        return sum + (metadata.charactersUsed || 0);
-      }, 0);
+      const totalCharacters = recentAudio.reduce((sum: number, audio: any) => 
+        sum + (audio.charactersUsed || 0), 0
+      );
       
-      const totalCost = elevenlabsUsage.reduce((sum: number, u: any) => 
-        sum + parseFloat(u.cost || '0'), 0
+      const totalCost = recentAudio.reduce((sum: number, audio: any) => 
+        sum + parseFloat(audio.cost || '0'), 0
       );
       
       return {
         charactersUsed: totalCharacters,
         totalCost,
-        requestCount: elevenlabsUsage.length,
+        requestCount: recentAudio.length,
         period: '30 days'
       };
     } catch (error) {
