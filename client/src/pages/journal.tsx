@@ -95,6 +95,11 @@ export default function Journal() {
   const [editInsights, setEditInsights] = useState("");
   const [editIntention, setEditIntention] = useState("");
   const [selectedInsightType, setSelectedInsightType] = useState<string | null>(null);
+  const [insightPopup, setInsightPopup] = useState<{
+    isOpen: boolean;
+    type: 'progress' | 'patterns' | 'recommendations' | 'emotional' | null;
+    content: string | string[];
+  }>({ isOpen: false, type: null, content: '' });
   
   // Free-form entry mode
   const [entryMode, setEntryMode] = useState<"free" | "challenge">("challenge");
@@ -774,69 +779,160 @@ export default function Journal() {
         <TabsContent value="insights" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              {/* AI Analysis */}
+              {/* AI Analysis - 3-Box Layout */}
               {analysisData && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Brain className="w-5 h-5 mr-2" />
-                      Journal Analysis
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h4 className="font-medium text-foreground mb-2 flex items-center">
-                        <TrendingUp className="w-4 h-4 mr-2" />
-                        Overall Progress
-                      </h4>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{analysisData.overallProgress}</p>
-                    </div>
-                    
-                    {analysisData.patterns && analysisData.patterns.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-foreground mb-2 flex items-center">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center">
+                    <Brain className="w-5 h-5 mr-2" />
+                    Journal Analysis
+                  </h3>
+                  
+                  {/* First Row - 3 Boxes */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Overall Progress Box */}
+                    <Card className="h-full">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm flex items-center">
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          Overall Progress
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
+                          {analysisData.overallProgress}
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setInsightPopup({
+                            isOpen: true,
+                            type: 'progress',
+                            content: analysisData.overallProgress
+                          })}
+                        >
+                          Read All
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Patterns Box */}
+                    <Card className="h-full">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm flex items-center">
                           <Target className="w-4 h-4 mr-2" />
                           Patterns Identified
-                        </h4>
-                        <ul className="space-y-2">
-                          {analysisData.patterns.map((pattern: string, index: number) => (
-                            <li key={index} className="text-muted-foreground text-sm leading-relaxed flex items-start">
-                              <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                              {pattern}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {analysisData.patterns && analysisData.patterns.length > 0 ? (
+                          <>
+                            <ul className="space-y-1">
+                              {analysisData.patterns.slice(0, 2).map((pattern: string, index: number) => (
+                                <li key={index} className="text-muted-foreground text-sm leading-relaxed flex items-start">
+                                  <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                  <span className="line-clamp-2">{pattern}</span>
+                                </li>
+                              ))}
+                              {analysisData.patterns.length > 2 && (
+                                <li className="text-muted-foreground text-xs">
+                                  +{analysisData.patterns.length - 2} more patterns
+                                </li>
+                              )}
+                            </ul>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setInsightPopup({
+                                isOpen: true,
+                                type: 'patterns',
+                                content: analysisData.patterns
+                              })}
+                            >
+                              Read All
+                            </Button>
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground text-sm">No patterns identified yet</p>
+                        )}
+                      </CardContent>
+                    </Card>
 
-                    {analysisData.recommendations && analysisData.recommendations.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-foreground mb-2 flex items-center">
+                    {/* Recommendations Box */}
+                    <Card className="h-full">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm flex items-center">
                           <Lightbulb className="w-4 h-4 mr-2" />
                           Recommendations
-                        </h4>
-                        <ul className="space-y-2">
-                          {analysisData.recommendations.map((rec: string, index: number) => (
-                            <li key={index} className="text-muted-foreground text-sm leading-relaxed flex items-start">
-                              <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                              {rec}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {analysisData.recommendations && analysisData.recommendations.length > 0 ? (
+                          <>
+                            <ul className="space-y-1">
+                              {analysisData.recommendations.slice(0, 2).map((rec: string, index: number) => (
+                                <li key={index} className="text-muted-foreground text-sm leading-relaxed flex items-start">
+                                  <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                  <span className="line-clamp-2">{rec}</span>
+                                </li>
+                              ))}
+                              {analysisData.recommendations.length > 2 && (
+                                <li className="text-muted-foreground text-xs">
+                                  +{analysisData.recommendations.length - 2} more recommendations
+                                </li>
+                              )}
+                            </ul>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setInsightPopup({
+                                isOpen: true,
+                                type: 'recommendations',
+                                content: analysisData.recommendations
+                              })}
+                            >
+                              Read All
+                            </Button>
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground text-sm">No recommendations available yet</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
 
-                    {analysisData.emotionalTrends && (
-                      <div>
-                        <h4 className="font-medium text-foreground mb-2 flex items-center">
-                          <Heart className="w-4 h-4 mr-2" />
-                          Emotional Trends
-                        </h4>
-                        <p className="text-muted-foreground text-sm leading-relaxed">{analysisData.emotionalTrends}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  {/* Second Row - Emotional Trends (if available) */}
+                  {analysisData.emotionalTrends && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card className="h-full">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm flex items-center">
+                            <Heart className="w-4 h-4 mr-2" />
+                            Emotional Trends
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
+                            {analysisData.emotionalTrends}
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setInsightPopup({
+                              isOpen: true,
+                              type: 'emotional',
+                              content: analysisData.emotionalTrends
+                            })}
+                          >
+                            Read All
+                          </Button>
+                        </CardContent>
+                      </Card>
+                      {/* Empty boxes to maintain grid layout */}
+                      <div></div>
+                      <div></div>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* AI Coaching Responses */}
@@ -952,6 +1048,56 @@ export default function Journal() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Insights Popup Modal */}
+      <Dialog open={insightPopup.isOpen} onOpenChange={(open) => setInsightPopup(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              {insightPopup.type === 'progress' && (
+                <>
+                  <TrendingUp className="w-5 h-5 mr-2" />
+                  Overall Progress
+                </>
+              )}
+              {insightPopup.type === 'patterns' && (
+                <>
+                  <Target className="w-5 h-5 mr-2" />
+                  Patterns Identified
+                </>
+              )}
+              {insightPopup.type === 'recommendations' && (
+                <>
+                  <Lightbulb className="w-5 h-5 mr-2" />
+                  Recommendations
+                </>
+              )}
+              {insightPopup.type === 'emotional' && (
+                <>
+                  <Heart className="w-5 h-5 mr-2" />
+                  Emotional Trends
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {typeof insightPopup.content === 'string' ? (
+              <p className="text-muted-foreground leading-relaxed">{insightPopup.content}</p>
+            ) : Array.isArray(insightPopup.content) ? (
+              <ul className="space-y-3">
+                {insightPopup.content.map((item: string, index: number) => (
+                  <li key={index} className="text-muted-foreground leading-relaxed flex items-start">
+                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No content available</p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
