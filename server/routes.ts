@@ -699,13 +699,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/assessment-reflections', async (req, res) => {
+  // Assessment reflections endpoints
+  app.post('/api/assessment-reflections', isAuthenticated, async (req: any, res) => {
     try {
-      if (!req.user?.id) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
+      const userId = req.user.claims.sub;
+      const reflectionData = {
+        ...req.body,
+        userId,
+        wordCount: req.body.content ? req.body.content.split(' ').length : 0,
+        characterCount: req.body.content ? req.body.content.length : 0
+      };
 
-      const reflections = await storage.getUserAssessmentReflections(req.user.id);
+      const reflection = await storage.createAssessmentReflection(reflectionData);
+      res.json(reflection);
+    } catch (error) {
+      console.error('Create assessment reflection error:', error);
+      res.status(500).json({ error: 'Failed to create reflection' });
+    }
+  });
+
+  app.get('/api/assessment-reflections', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const reflections = await storage.getUserAssessmentReflections(userId);
       res.json(reflections);
     } catch (error) {
       console.error('Get assessment reflections error:', error);
@@ -713,14 +729,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/assessment-reflections/:type', async (req, res) => {
+  app.get('/api/assessment-reflections/:type', isAuthenticated, async (req: any, res) => {
     try {
-      if (!req.user?.id) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
+      const userId = req.user.claims.sub;
       const { type } = req.params;
-      const reflections = await storage.getAssessmentReflectionsByType(req.user.id, type);
+      const reflections = await storage.getAssessmentReflectionsByType(userId, type);
       res.json(reflections);
     } catch (error) {
       console.error('Get assessment reflections by type error:', error);
