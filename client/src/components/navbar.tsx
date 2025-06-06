@@ -29,7 +29,7 @@ export default function Navbar() {
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
   ];
 
-  const getUserInitials = (user: any) => {
+  const getUserInitials = (user: User | undefined | null) => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     }
@@ -39,7 +39,7 @@ export default function Navbar() {
     return "U";
   };
 
-  const getUserDisplayName = (user: any) => {
+  const getUserDisplayName = (user: User | null) => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
     }
@@ -122,7 +122,7 @@ export default function Navbar() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/profile">
-                    <User className="mr-2 h-4 w-4" />
+                    <UserIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
@@ -130,7 +130,10 @@ export default function Navbar() {
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.querySelector('[data-start-tour]')?.click()}>
+                <DropdownMenuItem onClick={() => {
+                  const tourElement = document.querySelector('[data-start-tour]') as HTMLElement;
+                  tourElement?.click();
+                }}>
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Tour Guide</span>
                 </DropdownMenuItem>
