@@ -1595,7 +1595,16 @@ Provide personalized, actionable guidance that:
         .limit(30);
 
       const completedCount = assessments.filter(a => a.isCompleted).length;
-      const currentStreak = calculateStreak(assessments);
+      
+      // Calculate current streak of completed assessments
+      let currentStreak = 0;
+      for (const assessment of assessments) {
+        if (assessment.isCompleted) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
 
       res.json({
         assessments,
