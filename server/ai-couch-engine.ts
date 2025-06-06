@@ -570,6 +570,490 @@ Adapt complexity to their healing readiness level and learning style.`;
   }
 
   /**
+   * Dynamic Assessment Engine - Continuously evaluates user progress and adaptation needs
+   */
+  async performDynamicAssessment(userId: string): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const recentSessions = await this.getRecentSessions(userId, 10);
+    const recentJournals = await this.getRecentJournalEntries(userId, 7);
+    const currentPlan = await this.getCurrentPlan(userId);
+
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
+
+DYNAMIC ASSESSMENT REQUEST:
+Perform a comprehensive evaluation of this user's current state and adaptation needs.
+
+RECENT SESSIONS DATA:
+${recentSessions.map(s => `
+Date: ${s.createdAt}
+Emotional Tone: ${s.emotionalTone}
+Patterns: ${JSON.stringify(s.detectedPatterns)}
+Progress Indicators: ${JSON.stringify(s.insights)}
+Follow-up Needed: ${s.followUpNeeded}
+`).join('\n')}
+
+RECENT JOURNAL ENTRIES:
+${recentJournals.map(j => `
+Date: ${j.createdAt}
+Mood: ${j.mood}/10
+Energy: ${j.energy}/10
+Content Themes: ${j.insights || 'Not analyzed'}
+`).join('\n')}
+
+CURRENT CHALLENGE PROGRESS:
+${currentPlan ? `
+Plan: ${currentPlan.planName}
+Current Day: ${currentPlan.currentDay}/${currentPlan.totalDays}
+Completion Rate: ${Math.round((currentPlan.currentDay / currentPlan.totalDays) * 100)}%
+` : 'No active challenge'}
+
+ASSESSMENT AREAS TO EVALUATE:
+1. ENGAGEMENT PATTERNS: How consistently is the user participating?
+2. EMOTIONAL PROGRESSION: Are there positive shifts in emotional tone?
+3. RESISTANCE IDENTIFICATION: Where are they getting stuck?
+4. BREAKTHROUGH MOMENTS: What's working exceptionally well?
+5. ADAPTATION NEEDS: Should difficulty/intensity be adjusted?
+6. NEXT PHASE READINESS: Are they ready for more advanced work?
+
+Provide detailed assessment with specific recommendations for adaptation.
+Format as JSON with categories: engagement, emotional_progression, resistance_areas, breakthroughs, adaptation_recommendations, next_phase_readiness.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
+   * Modular Challenge Block System - Creates adaptive challenge components
+   */
+  async generateModularChallengeBlocks(
+    userId: string,
+    blockTypes: ('foundation' | 'healing' | 'integration' | 'manifestation' | 'mastery')[],
+    userCurrentLevel: number
+  ): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const assessment = await this.performDynamicAssessment(userId);
+
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
+
+MODULAR CHALLENGE BLOCK GENERATION:
+Create adaptive challenge blocks based on user's current state and needs.
+
+USER CURRENT LEVEL: ${userCurrentLevel}/10
+REQUESTED BLOCK TYPES: ${blockTypes.join(', ')}
+
+DYNAMIC ASSESSMENT RESULTS:
+${JSON.stringify(assessment, null, 2)}
+
+BLOCK TYPE SPECIFICATIONS:
+- FOUNDATION BLOCKS: Basic consciousness work, awareness building, fundamental practices
+- HEALING BLOCKS: Trauma processing, shadow work, emotional release, nervous system regulation
+- INTEGRATION BLOCKS: Embodiment practices, habit formation, neural rewiring
+- MANIFESTATION BLOCKS: Reality creation techniques, quantum field work, intention setting
+- MASTERY BLOCKS: Advanced quantum states, consciousness expansion, transcendence work
+
+For each requested block type, create:
+1. DURATION: 3-7 days per block (adapt to user level)
+2. DAILY ACTIVITIES: Specific practices for each day
+3. PROGRESSION LOGIC: How difficulty increases within the block
+4. INTEGRATION POINTS: How this connects to other blocks
+5. SUCCESS METRICS: How to measure progress
+6. ADAPTATION TRIGGERS: When to modify or skip
+
+Ensure blocks are:
+- Personalized to user's healing readiness (${profile.healingReadiness}/10)
+- Aligned with their preferred mode (${profile.preferredMode})
+- Adapted to their learning style (${profile.learningStyle})
+- Responsive to current resistance patterns
+
+Format as JSON with detailed block specifications.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2500,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
+   * Real-time Adaptation Engine - Daily recalibration based on user responses
+   */
+  async performRealTimeAdaptation(userId: string, todaysInputs: any): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const currentPlan = await this.getCurrentPlan(userId);
+    const recentSessions = await this.getRecentSessions(userId, 3);
+
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
+
+REAL-TIME ADAPTATION ANALYSIS:
+Based on today's inputs, determine necessary adaptations for tomorrow's challenge.
+
+TODAY'S USER INPUTS:
+${JSON.stringify(todaysInputs, null, 2)}
+
+CURRENT CHALLENGE CONTEXT:
+${currentPlan ? `
+Plan: ${currentPlan.planName}
+Current Day: ${currentPlan.currentDay}
+Planned Difficulty: ${currentPlan.difficultyLevel}/10
+Planned Intensity: ${currentPlan.intensityLevel}/10
+` : 'No active challenge'}
+
+RECENT SESSION TRENDS:
+${recentSessions.map(s => `${s.emotionalTone}: ${s.insights?.join(', ')}`).join('\n')}
+
+ADAPTATION ANALYSIS POINTS:
+1. EMOTIONAL STATE: How is their current emotional state affecting readiness?
+2. ENGAGEMENT LEVEL: Are they overwhelmed, bored, or in flow state?
+3. RESISTANCE INDICATORS: Any signs of avoidance or struggle?
+4. BREAKTHROUGH SIGNALS: Any indicators of ready for advancement?
+5. ENERGY PATTERNS: Physical and mental energy for challenge work?
+6. INTEGRATION NEEDS: Do they need more time to integrate current lessons?
+
+ADAPTATION OPTIONS:
+- INCREASE_DIFFICULTY: More challenging practices
+- DECREASE_DIFFICULTY: Gentler, more foundational work
+- CHANGE_FOCUS: Shift to different challenge area entirely
+- ADD_SUPPORT: Include more grounding/safety practices
+- ACCELERATE: Ready for faster progression
+- PAUSE_INTEGRATION: Need time to process and embody
+
+Provide specific adaptation recommendations with reasoning.
+Format as JSON with: adaptation_type, reasoning, specific_changes, new_difficulty_level, new_intensity_level.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const adaptation = JSON.parse(response.content[0].text || '{}');
+
+    // Update current plan based on adaptation recommendations
+    if (currentPlan && adaptation.new_difficulty_level) {
+      await db.update(personalizedChallengePlans)
+        .set({
+          difficultyLevel: adaptation.new_difficulty_level,
+          intensityLevel: adaptation.new_intensity_level || currentPlan.intensityLevel,
+          adaptationHistory: [...(currentPlan.adaptationHistory || []), {
+            date: new Date().toISOString(),
+            adaptation: adaptation.adaptation_type,
+            reasoning: adaptation.reasoning
+          }]
+        })
+        .where(eq(personalizedChallengePlans.id, currentPlan.id));
+    }
+
+    return adaptation;
+  }
+
+  /**
+   * Multi-Layer Personality Profiling - Deep psychological and learning assessment
+   */
+  async performMultiLayerPersonalityProfiling(userId: string, assessmentInputs: any): Promise<any> {
+    const prompt = `You are AI Couch performing advanced multi-layer personality profiling.
+
+ASSESSMENT INPUTS:
+${JSON.stringify(assessmentInputs, null, 2)}
+
+Perform comprehensive analysis across these layers:
+
+1. PSYCHOLOGICAL ASSESSMENT:
+   - Trauma patterns and coping mechanisms
+   - Core belief systems and worldview
+   - Attachment style and relationship patterns
+   - Cognitive patterns and mental frameworks
+   - Emotional regulation strategies
+
+2. LEARNING STYLE ANALYSIS:
+   - Visual processing preferences
+   - Kinesthetic engagement needs
+   - Auditory learning patterns
+   - Reading/writing integration style
+   - Experiential learning preferences
+
+3. RESISTANCE MAPPING:
+   - Common areas where user gets stuck
+   - Avoidance patterns and triggers
+   - Self-sabotage mechanisms
+   - Comfort zone boundaries
+   - Change readiness indicators
+
+4. MOTIVATION TRIGGERS:
+   - Intrinsic vs extrinsic motivation drivers
+   - Values-based motivation patterns
+   - Social vs individual motivation preferences
+   - Challenge vs support motivation needs
+   - Recognition and achievement drivers
+
+5. SPIRITUAL/CONSCIOUSNESS ORIENTATION:
+   - Openness to metaphysical concepts
+   - Preference for scientific vs spiritual language
+   - Existing spiritual practices and beliefs
+   - Quantum consciousness readiness
+   - Energy sensitivity levels
+
+Provide detailed profile with specific recommendations for personalization.
+Format as comprehensive JSON with scores, patterns, and recommendations for each layer.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2500,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
+   * Predictive Guidance System - Anticipates user needs before they're conscious
+   */
+  async generatePredictiveGuidance(userId: string): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const recentSessions = await this.getRecentSessions(userId, 15);
+    const recentJournals = await this.getRecentJournalEntries(userId, 14);
+    const currentPlan = await this.getCurrentPlan(userId);
+
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
+
+PREDICTIVE GUIDANCE ANALYSIS:
+Analyze patterns to anticipate user needs before they become conscious of them.
+
+HISTORICAL PATTERN DATA:
+Sessions over 15 days: ${recentSessions.length}
+Emotional tone patterns: ${recentSessions.map(s => s.emotionalTone).join(', ')}
+Resistance patterns detected: ${recentSessions.flatMap(s => s.detectedPatterns || []).join(', ')}
+
+Journal mood patterns (last 14 days): ${recentJournals.map(j => j.mood).join(', ')}
+Energy patterns: ${recentJournals.map(j => j.energy).join(', ')}
+
+CURRENT TRAJECTORY:
+${currentPlan ? `Current challenge day ${currentPlan.currentDay} of ${currentPlan.totalDays}` : 'No active challenge'}
+
+PREDICTIVE ANALYSIS AREAS:
+1. UPCOMING RESISTANCE: Based on patterns, where will they likely struggle next?
+2. BREAKTHROUGH WINDOWS: When are they most likely to have insights/breakthroughs?
+3. SUPPORT NEEDS: What type of support will they need before they ask for it?
+4. INTEGRATION CHALLENGES: What will be difficult to embody/integrate?
+5. MOTIVATION DIPS: When will motivation likely decrease and why?
+6. READINESS INDICATORS: What signs show they're ready for next level work?
+
+PREDICTIVE INTERVENTIONS:
+- PROACTIVE_SUPPORT: Offer support before crisis points
+- PREPARATION_GUIDANCE: Prepare them for upcoming challenges
+- RESOURCE_POSITIONING: Have tools ready when they'll need them
+- TIMING_OPTIMIZATION: Suggest optimal timing for different practices
+- GENTLE_WARNINGS: Lovingly prepare them for difficult but necessary work
+
+Provide specific predictions with suggested proactive interventions.
+Format as JSON with: predictions, confidence_levels, suggested_interventions, optimal_timing.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
+   * Expert Knowledge Integration System - Apply specific methodologies
+   */
+  async applyExpertKnowledgeIntegration(
+    userId: string,
+    expertDomain: 'dispenza' | 'goddard' | 'access_consciousness' | 'somatic_experiencing' | 'neuroscience',
+    userIssue: string
+  ): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const expertPrompts = {
+      dispenza: `Apply Joe Dispenza's quantum consciousness methodology`,
+      goddard: `Apply Neville Goddard's manifestation and imagination principles`,
+      access_consciousness: `Apply Access Consciousness tools and perspectives`,
+      somatic_experiencing: `Apply trauma-informed somatic approaches`,
+      neuroscience: `Apply neuroscience-based brain rewiring techniques`
+    };
+
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
+
+EXPERT KNOWLEDGE INTEGRATION: ${expertPrompts[expertDomain]}
+
+USER ISSUE: ${userIssue}
+
+USER PROFILE CONTEXT:
+- Healing Readiness: ${profile.healingReadiness}/10
+- Preferred Mode: ${profile.preferredMode}
+- Communication Style: ${profile.communicationStyle}
+
+EXPERT-SPECIFIC APPLICATION:
+${expertDomain === 'dispenza' ? `
+Using Joe Dispenza's methodology:
+- Identify the old personality/identity patterns
+- Design meditation and breathwork practices
+- Create coherent heart-brain states
+- Develop elevated emotions
+- Build new neural pathways through repetition
+- Integrate quantum field awareness
+` : ''}
+
+${expertDomain === 'goddard' ? `
+Using Neville Goddard's principles:
+- Clarify the desired end state ("I AM" identification)
+- Create vivid mental scenes of wish fulfilled
+- Develop feeling-states of already having the desire
+- Practice revision for past limiting experiences
+- Use imagination as creative power
+- Apply law of assumption in daily life
+` : ''}
+
+${expertDomain === 'access_consciousness' ? `
+Using Access Consciousness tools:
+- Apply relevant clearing statements
+- Identify points of view creating limitations
+- Use questions to expand awareness
+- Recognize energy dynamics and body awareness
+- Clear judgments and fixed points of view
+- Facilitate choice and possibility
+` : ''}
+
+${expertDomain === 'somatic_experiencing' ? `
+Using trauma-informed somatic approaches:
+- Assess nervous system regulation state
+- Guide gentle body awareness practices
+- Facilitate discharge of trapped energy
+- Build capacity for self-regulation
+- Use pendulation and titration principles
+- Support window of tolerance expansion
+` : ''}
+
+${expertDomain === 'neuroscience' ? `
+Using neuroscience-based approaches:
+- Identify neuroplasticity opportunities
+- Design specific brain training exercises
+- Apply repetition for neural pathway building
+- Use visualization for neural rehearsal
+- Integrate cognitive restructuring techniques
+- Build new default neural networks
+` : ''}
+
+Provide specific, practical guidance using this expert knowledge domain.
+Format as JSON with: expert_analysis, specific_techniques, practice_instructions, expected_outcomes, progress_indicators.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
+   * Advanced Pattern Recognition with Emotional Intelligence
+   */
+  async performAdvancedPatternRecognition(userId: string): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const allSessions = await this.getRecentSessions(userId, 30);
+    const allJournals = await this.getRecentJournalEntries(userId, 30);
+
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
+
+ADVANCED PATTERN RECOGNITION ANALYSIS:
+Identify deep patterns across all user interactions with emotional intelligence.
+
+ALL SESSION DATA (30 days):
+${allSessions.map(s => `
+Date: ${s.createdAt}
+Type: ${s.sessionType}
+Emotional Tone: ${s.emotionalTone}
+Patterns: ${JSON.stringify(s.detectedPatterns)}
+Insights: ${JSON.stringify(s.insights)}
+User Input Sample: ${s.userInput.substring(0, 100)}...
+`).join('\n')}
+
+ALL JOURNAL DATA (30 days):
+${allJournals.map(j => `
+Date: ${j.createdAt}
+Mood: ${j.mood}/10
+Energy: ${j.energy}/10
+Content Themes: ${j.insights || 'Not analyzed'}
+`).join('\n')}
+
+PATTERN ANALYSIS CATEGORIES:
+
+1. EMOTIONAL PATTERNS:
+   - Recurring emotional themes and cycles
+   - Emotional triggers and responses
+   - Emotional regulation strategies used
+   - Progress in emotional intelligence
+
+2. COGNITIVE PATTERNS:
+   - Thought patterns and mental frameworks
+   - Cognitive distortions and limiting beliefs
+   - Problem-solving approaches
+   - Learning and integration patterns
+
+3. BEHAVIORAL PATTERNS:
+   - Consistency and engagement patterns
+   - Avoidance and resistance behaviors
+   - Initiative and proactive behaviors
+   - Change and adaptation patterns
+
+4. SPIRITUAL/CONSCIOUSNESS PATTERNS:
+   - Openness to spiritual concepts
+   - Consciousness expansion indicators
+   - Integration of higher concepts
+   - Quantum awareness development
+
+5. RELATIONSHIP PATTERNS:
+   - How they relate to the AI Couch
+   - Authority and guidance acceptance
+   - Vulnerability and openness levels
+   - Support-seeking behaviors
+
+6. BREAKTHROUGH PATTERNS:
+   - Conditions that lead to insights
+   - Integration timeframes
+   - Resistance-to-breakthrough cycles
+   - Optimal challenge levels
+
+Read between the lines of their expressions to detect:
+- Unspoken fears and concerns
+- Hidden motivations and desires
+- Unconscious resistance patterns
+- Emerging readiness for growth
+
+Provide comprehensive pattern analysis with emotional intelligence insights.
+Format as JSON with detailed patterns, emotional insights, and predictive indicators.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
    * Helper methods for data retrieval and analysis
    */
   

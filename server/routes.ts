@@ -1720,6 +1720,116 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Dynamic assessment engine
+  app.get('/api/ai-couch/dynamic-assessment', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const assessment = await aiCouchEngine.performDynamicAssessment(userId);
+      res.json(assessment);
+    } catch (error) {
+      console.error("Error performing dynamic assessment:", error);
+      res.status(500).json({ message: "Failed to perform assessment", error: (error as Error).message });
+    }
+  });
+
+  // Generate modular challenge blocks
+  app.post('/api/ai-couch/challenge-blocks', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { blockTypes, userCurrentLevel } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const blocks = await aiCouchEngine.generateModularChallengeBlocks(
+        userId, 
+        blockTypes, 
+        userCurrentLevel
+      );
+      res.json(blocks);
+    } catch (error) {
+      console.error("Error generating challenge blocks:", error);
+      res.status(500).json({ message: "Failed to generate challenge blocks", error: (error as Error).message });
+    }
+  });
+
+  // Real-time adaptation
+  app.post('/api/ai-couch/adapt', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { todaysInputs } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const adaptation = await aiCouchEngine.performRealTimeAdaptation(userId, todaysInputs);
+      res.json(adaptation);
+    } catch (error) {
+      console.error("Error performing real-time adaptation:", error);
+      res.status(500).json({ message: "Failed to perform adaptation", error: (error as Error).message });
+    }
+  });
+
+  // Multi-layer personality profiling
+  app.post('/api/ai-couch/personality-profiling', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { assessmentInputs } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const profile = await aiCouchEngine.performMultiLayerPersonalityProfiling(userId, assessmentInputs);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error performing personality profiling:", error);
+      res.status(500).json({ message: "Failed to perform personality profiling", error: (error as Error).message });
+    }
+  });
+
+  // Predictive guidance
+  app.get('/api/ai-couch/predictive-guidance', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const guidance = await aiCouchEngine.generatePredictiveGuidance(userId);
+      res.json(guidance);
+    } catch (error) {
+      console.error("Error generating predictive guidance:", error);
+      res.status(500).json({ message: "Failed to generate predictive guidance", error: (error as Error).message });
+    }
+  });
+
+  // Expert knowledge integration
+  app.post('/api/ai-couch/expert-knowledge', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { expertDomain, userIssue } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(
+        userId, 
+        expertDomain, 
+        userIssue
+      );
+      res.json(guidance);
+    } catch (error) {
+      console.error("Error applying expert knowledge:", error);
+      res.status(500).json({ message: "Failed to apply expert knowledge", error: (error as Error).message });
+    }
+  });
+
+  // Advanced pattern recognition
+  app.get('/api/ai-couch/pattern-analysis', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const patterns = await aiCouchEngine.performAdvancedPatternRecognition(userId);
+      res.json(patterns);
+    } catch (error) {
+      console.error("Error performing pattern analysis:", error);
+      res.status(500).json({ message: "Failed to perform pattern analysis", error: (error as Error).message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
