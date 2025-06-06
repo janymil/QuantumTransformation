@@ -1,13 +1,6 @@
-import OpenAI from 'openai';
+import { openaiClient } from './openai-http-client';
 import { db } from './db';
 import { eq, desc } from 'drizzle-orm';
-
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  timeout: 30000, // 30 second timeout
-  maxRetries: 2
-});
 
 /**
  * Advanced AI Couch Engine with full sophisticated features
@@ -43,7 +36,7 @@ USER INPUT: ${userInput}
 Provide a comprehensive coaching response that automatically integrates multiple therapeutic modalities, addresses underlying patterns, offers practical techniques, and includes consciousness expansion practices.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }]
@@ -93,7 +86,7 @@ Generate a detailed profile including:
 Provide response in JSON format with structured insights.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
@@ -132,7 +125,7 @@ Create a sophisticated challenge that includes:
 Provide complete JSON structure with daily activities, assessment checkpoints, and adaptive elements.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 3000,
         messages: [{ role: 'user', content: prompt }],
@@ -173,7 +166,7 @@ Create a personalized activity that:
 Provide detailed activity structure with step-by-step guidance, expected outcomes, and adaptation triggers.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
@@ -231,7 +224,7 @@ Provide a comprehensive coaching response that:
 Response should be conversational, deeply personalized, and transformative.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2500,
         messages: [{ role: 'user', content: prompt }]
@@ -269,7 +262,7 @@ Analyze user's:
 Provide detailed assessment with specific adaptation recommendations.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
@@ -308,7 +301,7 @@ Create interconnected challenge modules that:
 Provide structured JSON with modular components that can be dynamically assembled.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 3000,
         messages: [{ role: 'user', content: prompt }],
@@ -342,7 +335,7 @@ Analyze and adapt:
 Provide specific adaptation instructions and reasoning.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
@@ -378,7 +371,7 @@ Analyze across multiple dimensions:
 Provide detailed psychological profile with therapeutic recommendations.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2500,
         messages: [{ role: 'user', content: prompt }],
@@ -410,7 +403,7 @@ Predict and prepare for:
 Provide predictive insights with proactive recommendations and timing guidance.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
@@ -455,7 +448,7 @@ Select 3-5 optimal approaches and provide:
 Provide expert assessment with therapeutic recommendations.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
@@ -494,7 +487,7 @@ Integrate knowledge from selected domains:
 Provide comprehensive integration plan with specific protocols.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2500,
         messages: [{ role: 'user', content: prompt }],
@@ -527,7 +520,7 @@ Identify patterns across:
 Provide detailed pattern analysis with intervention recommendations.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
@@ -558,7 +551,7 @@ Create a morning practice that:
 Provide inspiring, personalized morning guidance.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
@@ -594,7 +587,7 @@ Create evening practice that:
 Provide nurturing, integrative evening guidance.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
@@ -629,7 +622,7 @@ Analyze this week's:
 Provide insightful weekly summary with forward-looking guidance.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }]
@@ -666,7 +659,7 @@ Provide:
 Prioritize safety, stabilization, and professional support referrals.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }]
@@ -710,7 +703,7 @@ Create sophisticated intervention that:
 Provide detailed therapeutic intervention protocol.`;
 
     try {
-      const response = await openai.chat.completions.create({
+      const response = await openaiClient.createChatCompletion({
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
