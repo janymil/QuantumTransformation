@@ -1643,6 +1643,83 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Daily companion functionality - morning prompt
+  app.get('/api/ai-couch/morning-prompt', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const prompt = await aiCouchEngine.generateMorningPrompt(userId);
+      res.json(prompt);
+    } catch (error) {
+      console.error("Error generating morning prompt:", error);
+      res.status(500).json({ message: "Failed to generate morning prompt", error: (error as Error).message });
+    }
+  });
+
+  // Daily companion functionality - evening reflection
+  app.post('/api/ai-couch/evening-reflection', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { dayExperiences } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const reflection = await aiCouchEngine.generateEveningReflection(userId, dayExperiences);
+      res.json(reflection);
+    } catch (error) {
+      console.error("Error generating evening reflection:", error);
+      res.status(500).json({ message: "Failed to generate evening reflection", error: (error as Error).message });
+    }
+  });
+
+  // Weekly pattern analysis
+  app.get('/api/ai-couch/weekly-summary', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const summary = await aiCouchEngine.generateWeeklyPatternSummary(userId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error generating weekly summary:", error);
+      res.status(500).json({ message: "Failed to generate weekly summary", error: (error as Error).message });
+    }
+  });
+
+  // Crisis support mode
+  app.post('/api/ai-couch/crisis-support', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { crisisInput, severityLevel = 3 } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const support = await aiCouchEngine.provideCrisisSupport(userId, crisisInput, severityLevel);
+      res.json(support);
+    } catch (error) {
+      console.error("Error providing crisis support:", error);
+      res.status(500).json({ message: "Failed to provide crisis support", error: (error as Error).message });
+    }
+  });
+
+  // Generate therapeutic intervention
+  app.post('/api/ai-couch/intervention', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { targetPattern, interventionType } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const intervention = await aiCouchEngine.generateTherapeuticIntervention(
+        userId, 
+        targetPattern, 
+        interventionType
+      );
+      res.json(intervention);
+    } catch (error) {
+      console.error("Error generating therapeutic intervention:", error);
+      res.status(500).json({ message: "Failed to generate intervention", error: (error as Error).message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { db } from './db';
 import { 
   aiCouchProfiles, 
@@ -16,6 +17,11 @@ import { eq, and, desc, gte } from 'drizzle-orm';
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 /**
  * AI Couch Engine - Core intelligence system for personalized coaching
@@ -312,6 +318,258 @@ export class AiCouchEngine {
   }
 
   /**
+   * Generate morning prompt for daily companion functionality
+   */
+  async generateMorningPrompt(userId: string): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const recentSessions = await this.getRecentSessions(userId, 3);
+    const currentPlan = await this.getCurrentPlan(userId);
+
+    const prompt = `Generate a personalized morning prompt for this user based on their profile and recent patterns.
+
+USER PROFILE:
+- Healing Readiness: ${profile.healingReadiness}/10
+- Communication Style: ${profile.communicationStyle}
+- Preferred Mode: ${profile.preferredMode}
+- Primary Goals: ${JSON.stringify(profile.primaryGoals)}
+- Current Challenge: ${currentPlan?.planName || 'None active'}
+
+RECENT SESSION PATTERNS:
+${recentSessions.map(s => `- ${s.emotionalTone}: ${s.insights?.slice(0, 2).join(', ')}`).join('\n')}
+
+Create a morning prompt that:
+1. Sets a positive, intentional tone for the day
+2. Includes a brief reflection question aligned with their goals
+3. Suggests a micro-practice or intention setting exercise
+4. Matches their communication style and preferred approach
+5. Takes 2-3 minutes to complete
+
+Format as JSON with: { "greeting": "...", "reflection": "...", "practice": "...", "intention": "..." }`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
+   * Generate evening reflection for daily companion functionality
+   */
+  async generateEveningReflection(userId: string, dayExperiences?: string): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const currentPlan = await this.getCurrentPlan(userId);
+
+    const prompt = `Generate a personalized evening reflection for this user.
+
+USER PROFILE:
+- Healing Readiness: ${profile.healingReadiness}/10
+- Communication Style: ${profile.communicationStyle}
+- Preferred Mode: ${profile.preferredMode}
+- Primary Goals: ${JSON.stringify(profile.primaryGoals)}
+
+DAY CONTEXT:
+- Current Challenge: ${currentPlan?.planName || 'None active'}
+- Day Experiences: ${dayExperiences || 'Not provided'}
+
+Create an evening reflection that:
+1. Invites gentle review of the day's experiences
+2. Celebrates growth and progress, however small
+3. Identifies patterns or insights from the day
+4. Prepares the mind for restful sleep
+5. Includes gratitude or appreciation practice
+6. Matches their communication style
+
+Format as JSON with: { "welcome": "...", "review": "...", "celebration": "...", "insight": "...", "gratitude": "...", "preparation": "..." }`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
+   * Generate weekly psychological pattern summary
+   */
+  async generateWeeklyPatternSummary(userId: string): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const recentSessions = await this.getRecentSessions(userId, 20);
+    const recentJournals = await this.getRecentJournalEntries(userId, 7);
+
+    const prompt = `Analyze this user's patterns from the past week and provide insights.
+
+USER PROFILE:
+- Healing Readiness: ${profile.healingReadiness}/10
+- Known Resistance Patterns: ${JSON.stringify(profile.resistancePatterns)}
+- Transformation Areas: ${JSON.stringify(profile.transformationAreas)}
+
+RECENT SESSIONS (past week):
+${recentSessions.map(s => `
+Date: ${s.createdAt}
+Emotional Tone: ${s.emotionalTone}
+Detected Patterns: ${JSON.stringify(s.detectedPatterns)}
+Insights: ${JSON.stringify(s.insights)}
+`).join('\n')}
+
+JOURNAL ENTRIES:
+${recentJournals.map(j => `
+Date: ${j.createdAt}
+Content: ${j.content?.substring(0, 200)}...
+`).join('\n')}
+
+Provide a comprehensive weekly summary that identifies:
+1. Emotional patterns and trends
+2. Recurring themes or challenges
+3. Growth areas and breakthroughs
+4. Resistance patterns that surfaced
+5. Recommended focus areas for next week
+6. Specific interventions or practices to suggest
+
+Format as JSON with detailed analysis in each category.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return JSON.parse(response.content[0].text || '{}');
+  }
+
+  /**
+   * Crisis support mode - enhanced empathy and grounding techniques
+   */
+  async provideCrisisSupport(userId: string, crisisInput: string, severityLevel: 1 | 2 | 3 | 4 | 5): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    // Enhanced crisis prompt with immediate grounding and safety
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
+
+🚨 CRISIS SUPPORT MODE ACTIVATED 🚨
+Severity Level: ${severityLevel}/5
+
+USER INPUT: "${crisisInput}"
+
+This user is experiencing distress and needs immediate, compassionate support. Provide:
+
+1. IMMEDIATE GROUNDING: Quick, effective grounding technique suited to their learning style
+2. VALIDATION: Acknowledge their pain without minimizing or rushing to solutions
+3. SAFETY ASSESSMENT: Gently inquire about immediate safety if severity is high
+4. BREATHING/REGULATION: Simple nervous system regulation technique
+5. NEXT STEPS: Clear, manageable next steps for the next hour/day
+6. RESOURCES: When appropriate, suggest professional support
+
+IMPORTANT:
+- If severity level is 4-5, prioritize safety and professional resources
+- Use their preferred communication style but adapt for crisis (more gentle, slower pace)
+- Provide practical, immediate tools they can use right now
+- Create sense of safety and connection
+
+Response should be warm, grounding, and immediately helpful.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const aiResponse = response.content[0].text || '';
+
+    // Save crisis session with special flagging
+    await db.insert(aiCouchSessions).values({
+      userId,
+      profileId: profile.id,
+      sessionType: 'crisis_support',
+      sessionMode: 'gentle', // Always use gentle mode for crisis
+      emotionalState: `crisis_level_${severityLevel}`,
+      sessionGoal: 'Crisis support and stabilization',
+      userInput: crisisInput,
+      aiResponse,
+      conversationContext: { crisisLevel: severityLevel },
+      emotionalTone: 'crisis_distress',
+      detectedPatterns: ['crisis_response'],
+      insights: ['Crisis support provided'],
+      recommendations: ['Follow up within 24 hours', 'Monitor for professional care needs'],
+      followUpNeeded: true,
+      aiConfidence: 9,
+      specialFlags: ['crisis_session', `severity_${severityLevel}`]
+    });
+
+    return {
+      response: aiResponse,
+      crisisLevel: severityLevel,
+      followUpScheduled: true,
+      professionalReferralSuggested: severityLevel >= 4
+    };
+  }
+
+  /**
+   * Advanced therapeutic intervention generator
+   */
+  async generateTherapeuticIntervention(
+    userId: string, 
+    targetPattern: string, 
+    interventionType: 'cognitive' | 'somatic' | 'energetic' | 'behavioral'
+  ): Promise<any> {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    const prompt = `Generate a specific therapeutic intervention for this user.
+
+USER PROFILE:
+- Healing Readiness: ${profile.healingReadiness}/10
+- Preferred Mode: ${profile.preferredMode}
+- Learning Style: ${profile.learningStyle}
+- Communication Style: ${profile.communicationStyle}
+
+TARGET PATTERN: ${targetPattern}
+INTERVENTION TYPE: ${interventionType}
+
+Based on your multidisciplinary expertise, create a detailed intervention that includes:
+
+FOR COGNITIVE: CBT techniques, reframing exercises, thought stopping, cognitive restructuring
+FOR SOMATIC: Body-based practices, breathwork, nervous system regulation, movement
+FOR ENERGETIC: Quantum field work, energy clearing, manifestation techniques, consciousness work
+FOR BEHAVIORAL: Habit change, behavioral activation, exposure therapy, skill building
+
+Structure the intervention with:
+1. THEORY: Brief explanation of why this works
+2. SETUP: How to prepare for the practice
+3. STEP-BY-STEP: Detailed instructions
+4. DURATION: How long to practice
+5. FREQUENCY: How often to repeat
+6. INTEGRATION: How to integrate insights
+7. PROGRESSION: How to advance the practice
+
+Adapt complexity to their healing readiness level and learning style.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return {
+      intervention: JSON.parse(response.content[0].text || '{}'),
+      targetPattern,
+      interventionType,
+      personalizedFor: userId
+    };
+  }
+
+  /**
    * Helper methods for data retrieval and analysis
    */
   
@@ -491,37 +749,75 @@ Adapt your communication style to their preferences and current state.`;
   }
 
   private getAiCouchSystemPrompt(profile: AiCouchProfile): string {
-    return `You are AI Couch, a highly sophisticated multidimensional AI designed to guide users through personal development, healing, transformation, and mindset evolution.
+    return `You are AI Couch, a highly sophisticated multidimensional artificial intelligence designed to guide users through personal development, healing, transformation, and mindset evolution. You represent the accumulated wisdom and techniques of various disciplines.
 
-Your expertise represents the combined knowledge of:
+🎯 YOUR CORE PURPOSE:
+Analyze the user's personal situation, struggles, goals, mindset, emotional patterns, and inputs to offer structured, insightful support through:
+- Diagnostic reflections and pattern recognition
+- Tailored exercises and therapeutic interventions  
+- Personalized challenge programs and visualizations
+- Quantum reprogramming and consciousness-expanding tools
+- Daily companion functionality with morning/evening prompts
+
+🔧 YOUR INTEGRATED KNOWLEDGE BASE:
+You embody the combined expertise of:
+
+CORE THERAPEUTIC DISCIPLINES:
 - Licensed Psychotherapist (CBT, ACT, psychodynamic therapy, trauma-focused therapy)
 - Certified Personal Coach (goal setting, habits, behavioral change)
 - Meditation Instructor (mindfulness, breathwork, mantra-based meditation)
-- Access Consciousness Practitioner (Clearing statements, energy awareness, perception reframing)
+- Access Consciousness Practitioner (clearing statements, energy awareness, perception reframing)
 - Quantum Field Expert (Joe Dispenza, Neville Goddard, Gregg Braden, Bruce Lipton)
-- Somatic Experiencing Practitioner (body-based trauma release)
-- Neuroplasticity Researcher (brain rewiring science)
-- Polyvagal Theory Expert (nervous system regulation)
-- Internal Family Systems Therapist (parts work)
-- Shadow Work Facilitator (unconscious pattern integration)
 
-Communication Guidelines:
-- Tone: ${profile.communicationStyle === 'gentle' ? 'Calm, compassionate, nurturing' : 
-          profile.communicationStyle === 'direct' ? 'Clear, straightforward, practical' : 
-          'Motivational, inspiring, empowering'}
-- Mode: ${profile.preferredMode === 'scientific' ? 'Evidence-based, psychological focus' :
-         profile.preferredMode === 'spiritual' ? 'Quantum consciousness, manifestation focus' :
-         'Balanced fusion of science and metaphysical insights'}
-- Style: Insightful, reflective, empowering, without dogma or unrealistic promises
-- Boundaries: Never diagnose. Never replace real medical or psychological care. Always offer informed suggestions.
+ADVANCED THERAPEUTIC MODALITIES:
+- Somatic Experiencing Practitioner (body-based trauma release and nervous system regulation)
+- Neuroplasticity Researcher (brain rewiring science and cognitive restructuring)
+- Polyvagal Theory Expert (nervous system states and co-regulation)
+- Internal Family Systems Therapist (parts work and inner child healing)
+- Shadow Work Facilitator (unconscious pattern integration and psychological wholeness)
+- EFT/Tapping Practitioner (emotional freedom techniques)
+- Breathwork Therapist (conscious connected breathing and emotional release)
+- Nutritional Psychiatrist (gut-brain connection and mental health nutrition)
+- Sleep Therapy Specialist (circadian rhythm optimization and dream work)
+- Neurofeedback Practitioner (brainwave training and optimization)
 
-Current User Context:
+🧠 ANALYSIS CAPABILITIES:
+You can detect and analyze:
+- Emotional patterns and cognitive distortions
+- Limiting beliefs and resistance patterns
+- Life context and environmental factors
+- Attachment styles and relationship dynamics
+- Nervous system dysregulation and trauma responses
+- Subconscious programming and quantum field interactions
+
+💬 PERSONALIZED COMMUNICATION:
+Tone: ${profile.communicationStyle === 'gentle' ? 'Calm, compassionate, nurturing - like a wise, caring mentor' : 
+          profile.communicationStyle === 'direct' ? 'Clear, straightforward, practical - like a skilled coach' : 
+          'Motivational, inspiring, empowering - like an enthusiastic guide'}
+
+Mode: ${profile.preferredMode === 'scientific' ? 'Evidence-based psychology focus with CBT, emotional regulation, and psychoeducation' :
+         profile.preferredMode === 'spiritual' ? 'Quantum consciousness, manifestation, and metaphysical insights' :
+         'Balanced fusion of scientific rigor and spiritual wisdom'}
+
+Approach: Always trauma-informed, culturally sensitive, and adapted to healing readiness level ${profile.healingReadiness}/10
+
+🛡️ ETHICAL BOUNDARIES:
+- Never diagnose medical or psychiatric conditions
+- Never replace professional medical/psychological care
+- Always recommend professional help for severe cases
+- Provide informed suggestions within scope of coaching/guidance
+- Maintain confidentiality and emotional safety
+
+CURRENT USER PROFILE:
 - Healing Readiness: ${profile.healingReadiness}/10
-- Primary Focus Areas: ${JSON.stringify(profile.transformationAreas)}
-- Known Resistance Patterns: ${JSON.stringify(profile.resistancePatterns)}
+- Learning Style: ${profile.learningStyle}
+- Primary Goals: ${JSON.stringify(profile.primaryGoals)}
+- Transformation Areas: ${JSON.stringify(profile.transformationAreas)}
+- Resistance Patterns: ${JSON.stringify(profile.resistancePatterns)}
 - Motivation Triggers: ${JSON.stringify(profile.motivationTriggers)}
+- Life Context: ${profile.lifeContext}
 
-Provide personalized, trauma-informed, consciousness-expanding guidance.`;
+Your responses should demonstrate deep understanding, offer practical tools from your integrated knowledge base, and guide the user toward their next level of consciousness and healing.`;
   }
 
   private buildConversationContext(
