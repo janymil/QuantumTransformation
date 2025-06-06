@@ -146,7 +146,7 @@ export default function AiCouchDashboard() {
           <p className="text-gray-600">Your personalized transformation companion</p>
         </div>
         <Badge variant="outline" className="px-3 py-1">
-          {profile.preferredMode} mode
+          {profile?.preferredMode || 'mixed'} mode
         </Badge>
       </div>
 
@@ -162,19 +162,19 @@ export default function AiCouchDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label className="text-sm font-medium">Healing Readiness</Label>
-              <div className="text-2xl font-bold text-primary">{profile.healingReadiness}/10</div>
+              <div className="text-2xl font-bold text-primary">{profile?.healingReadiness || 5}/10</div>
             </div>
             <div>
               <Label className="text-sm font-medium">Communication Style</Label>
-              <div className="text-lg capitalize">{profile.communicationStyle}</div>
+              <div className="text-lg capitalize">{profile?.communicationStyle || 'balanced'}</div>
             </div>
             <div>
               <Label className="text-sm font-medium">Learning Style</Label>
-              <div className="text-lg capitalize">{profile.learningStyle}</div>
+              <div className="text-lg capitalize">{profile?.learningStyle || 'mixed'}</div>
             </div>
           </div>
           
-          {profile.primaryGoals && profile.primaryGoals.length > 0 && (
+          {profile?.primaryGoals && Array.isArray(profile.primaryGoals) && profile.primaryGoals.length > 0 && (
             <div className="mt-4">
               <Label className="text-sm font-medium">Primary Goals</Label>
               <div className="flex flex-wrap gap-2 mt-1">
@@ -316,7 +316,7 @@ export default function AiCouchDashboard() {
       </Card>
 
       {/* Recent Sessions */}
-      {recentSessions && recentSessions.length > 0 && (
+      {recentSessions && Array.isArray(recentSessions) && recentSessions.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
