@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard-simple";
 import ChallengeDay from "@/pages/challenge-day";
-import Journal from "@/pages/journal-new";
+import Journal from "@/pages/journal";
 import Progress from "@/pages/progress";
 import Challenges from "@/pages/challenges";
 import ChallengeProgress from "@/pages/challenge-progress";

@@ -99,10 +99,17 @@ export default function Journal() {
   });
 
   // Fetch assessment reflections
-  const { data: reflectionsData = [] } = useQuery({
+  const { data: reflectionsData = [], isLoading: reflectionsLoading, error: reflectionsError } = useQuery<AssessmentReflection[]>({
     queryKey: ['/api/assessment-reflections'],
-    enabled: !!user?.id,
+    enabled: isAuthenticated && !!user,
+    retry: 1,
   });
+
+  useEffect(() => {
+    console.log("Assessment Reflections - Data:", reflectionsData);
+    console.log("Assessment Reflections - Loading:", reflectionsLoading);
+    console.log("Assessment Reflections - Error:", reflectionsError);
+  }, [reflectionsData, reflectionsLoading, reflectionsError]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: { day: number; experience: string; insights: string; intention: string }) => {
@@ -226,10 +233,12 @@ export default function Journal() {
 
   // Filter reflections by type and search
   const filteredReflections = Array.isArray(reflectionsData) ? reflectionsData.filter((reflection: AssessmentReflection) => {
-    const matchesFilter = reflectionFilter === 'all' || reflection.reflectionType === reflectionFilter;
-    const matchesSearch = searchQuery === '' || 
-      reflection.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reflection.content.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = reflectionFilter === 'all' || 
+                         reflectionFilter === 'reflections_only' ||
+                         reflection.reflectionType === reflectionFilter;
+    const matchesSearch = searchTerm === '' || 
+      reflection.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reflection.content.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesFilter && matchesSearch;
   }) : [];
