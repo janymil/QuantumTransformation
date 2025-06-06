@@ -2317,6 +2317,96 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Vision Board API Routes
+  app.get('/api/vision-boards', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const visionBoards = await storage.getVisionBoards(userId);
+      res.json(visionBoards);
+    } catch (error) {
+      console.error("Error fetching vision boards:", error);
+      res.status(500).json({ message: "Failed to fetch vision boards" });
+    }
+  });
+
+  app.post('/api/vision-boards', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { title, description, canvasData, templateCategory } = req.body;
+
+      const visionBoard = await storage.createVisionBoard({
+        userId,
+        title: title || "My Vision Board",
+        description: description || "",
+        canvasData,
+        templateCategory: templateCategory || "general"
+      });
+
+      res.json(visionBoard);
+    } catch (error) {
+      console.error("Error saving vision board:", error);
+      res.status(500).json({ message: "Failed to save vision board" });
+    }
+  });
+
+  app.get('/api/vision-boards/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const boardId = parseInt(req.params.id);
+      
+      const visionBoard = await storage.getVisionBoard(boardId, userId);
+      if (!visionBoard) {
+        return res.status(404).json({ message: "Vision board not found" });
+      }
+
+      res.json(visionBoard);
+    } catch (error) {
+      console.error("Error fetching vision board:", error);
+      res.status(500).json({ message: "Failed to fetch vision board" });
+    }
+  });
+
+  app.put('/api/vision-boards/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const boardId = parseInt(req.params.id);
+      const { title, description, canvasData, templateCategory } = req.body;
+
+      const updatedBoard = await storage.updateVisionBoard(boardId, userId, {
+        title,
+        description,
+        canvasData,
+        templateCategory
+      });
+
+      if (!updatedBoard) {
+        return res.status(404).json({ message: "Vision board not found" });
+      }
+
+      res.json(updatedBoard);
+    } catch (error) {
+      console.error("Error updating vision board:", error);
+      res.status(500).json({ message: "Failed to update vision board" });
+    }
+  });
+
+  app.delete('/api/vision-boards/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const boardId = parseInt(req.params.id);
+
+      const deleted = await storage.deleteVisionBoard(boardId, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Vision board not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting vision board:", error);
+      res.status(500).json({ message: "Failed to delete vision board" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

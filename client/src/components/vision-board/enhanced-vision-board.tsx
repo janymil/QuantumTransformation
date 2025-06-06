@@ -87,6 +87,7 @@ export default function EnhancedVisionBoard() {
   });
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureMode, setCaptureMode] = useState<'screen' | 'webcam' | 'upload'>('screen');
   const [editingImage, setEditingImage] = useState<string | null>(null);
@@ -332,7 +333,7 @@ export default function EnhancedVisionBoard() {
     toast({ title: "Text added to vision board!" });
   };
 
-  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -345,7 +346,41 @@ export default function EnhancedVisionBoard() {
       y >= item.y && y <= item.y + item.height
     );
 
-    setSelectedItem(clickedItem?.id || null);
+    if (clickedItem) {
+      setSelectedItem(clickedItem.id);
+      setDraggedItem(clickedItem.id);
+      setDragStart({ x: x - clickedItem.x, y: y - clickedItem.y });
+      setIsDragging(true);
+    } else {
+      setSelectedItem(null);
+    }
+  };
+
+  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!draggedItem || !isDragging) return;
+    
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const newX = Math.max(0, x - dragStart.x);
+    const newY = Math.max(0, y - dragStart.y);
+
+    setBoard(prev => ({
+      ...prev,
+      canvasData: {
+        ...prev.canvasData,
+        items: prev.canvasData.items.map(item =>
+          item.id === draggedItem ? { ...item, x: newX, y: newY } : item
+        )
+      }
+    }));
+  }, [draggedItem, isDragging, dragStart]);
+
+  const handleMouseUp = () => {
+    setDraggedItem(null);
+    setIsDragging(false);
   };
 
   const deleteSelectedItem = () => {
@@ -467,7 +502,10 @@ export default function EnhancedVisionBoard() {
           <canvas
             ref={canvasRef}
             className="border rounded-lg cursor-pointer max-w-full"
-            onClick={handleCanvasClick}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
             style={{ maxHeight: '600px' }}
           />
         </div>

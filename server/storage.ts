@@ -12,6 +12,7 @@ import {
   spacedRepetitionReviews,
   spacedRepetitionSchedule,
   aiUsageTracking,
+  visionBoards,
   type User,
   type UpsertUser,
   type UserProgress,
@@ -30,6 +31,8 @@ import {
   type InsertAiChatSession,
   type UserSettings,
   type InsertUserSettings,
+  type VisionBoard,
+  type InsertVisionBoard,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, count } from "drizzle-orm";
