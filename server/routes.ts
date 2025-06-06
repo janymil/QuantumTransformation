@@ -611,6 +611,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin get all users endpoint
+  app.get('/api/admin/users', async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error('Admin get all users error:', error);
+      res.status(500).json({ error: 'Failed to get users' });
+    }
+  });
+
+  // Admin update user endpoint
+  app.put('/api/admin/users/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const updates = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, updates);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Admin update user error:', error);
+      res.status(500).json({ error: 'Failed to update user' });
+    }
+  });
+
+  // Admin block user endpoint
+  app.post('/api/admin/users/:userId/block', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { reason } = req.body;
+      const adminId = req.user?.id || 'admin';
+      
+      await storage.blockUser(userId, reason, adminId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Admin block user error:', error);
+      res.status(500).json({ error: 'Failed to block user' });
+    }
+  });
+
+  // Admin unblock user endpoint
+  app.post('/api/admin/users/:userId/unblock', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      await storage.unblockUser(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Admin unblock user error:', error);
+      res.status(500).json({ error: 'Failed to unblock user' });
+    }
+  });
+
+  // Admin delete user endpoint
+  app.delete('/api/admin/users/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      await storage.deleteUser(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Admin delete user error:', error);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  });
+
   // Admin User Statistics endpoint (password protected in frontend)
   app.get('/api/admin/user-statistics', async (req, res) => {
     try {

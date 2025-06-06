@@ -505,6 +505,115 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Get all users for admin management
+  async getAllUsers(): Promise<any[]> {
+    try {
+      const users = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          isBlocked: sql<boolean>`false`,
+          blockReason: sql<string>`null`,
+          blockedAt: sql<Date>`null`,
+          // User activity metrics
+          totalChallenges: sql<number>`COUNT(DISTINCT user_progress.challenge_type)`,
+          totalJournalEntries: sql<number>`COUNT(DISTINCT journal_entries.id)`,
+          totalAffirmations: sql<number>`COUNT(DISTINCT affirmations.id)`,
+          totalAIInteractions: sql<number>`COUNT(DISTINCT ai_usage_tracking.id)`,
+          lastActivity: sql<Date>`MAX(GREATEST(
+            COALESCE(user_progress.updated_at, '1970-01-01'::timestamp),
+            COALESCE(journal_entries.created_at, '1970-01-01'::timestamp),
+            COALESCE(ai_usage_tracking.created_at, '1970-01-01'::timestamp)
+          ))`
+        })
+        .from(users)
+        .leftJoin(userProgress, eq(userProgress.userId, users.id))
+        .leftJoin(journalEntries, eq(journalEntries.userId, users.id))
+        .leftJoin(affirmations, eq(affirmations.userId, users.id))
+        .leftJoin(aiUsageTracking, eq(aiUsageTracking.userId, users.id))
+        .groupBy(
+          users.id,
+          users.email,
+          users.firstName,
+          users.lastName,
+          users.profileImageUrl,
+          users.createdAt,
+          users.updatedAt
+        )
+        .orderBy(desc(users.createdAt));
+
+      return users;
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      throw error;
+    }
+  }
+
+  // Update user details
+  async updateUser(userId: string, updates: Partial<{
+    firstName: string;
+    lastName: string;
+    email: string;
+  }>): Promise<any> {
+    try {
+      const updatedUser = await db
+        .update(users)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId))
+        .returning();
+
+      return updatedUser[0];
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  }
+
+  // Block user access (simplified without blocked_users table)
+  async blockUser(userId: string, reason: string, adminId: string): Promise<void> {
+    try {
+      // For now, we'll just log the block action
+      console.log(`User ${userId} blocked by ${adminId} for reason: ${reason}`);
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      throw error;
+    }
+  }
+
+  // Unblock user access
+  async unblockUser(userId: string): Promise<void> {
+    try {
+      // For now, we'll just log the unblock action
+      console.log(`User ${userId} unblocked`);
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      throw error;
+    }
+  }
+
+  // Delete user and all associated data
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      // Delete in order due to foreign key constraints
+      await db.delete(aiUsageTracking).where(eq(aiUsageTracking.userId, userId));
+      await db.delete(affirmations).where(eq(affirmations.userId, userId));
+      await db.delete(journalEntries).where(eq(journalEntries.userId, userId));
+      await db.delete(userProgress).where(eq(userProgress.userId, userId));
+      await db.delete(users).where(eq(users.id, userId));
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+
   async getUserStatistics(): Promise<any> {
     try {
       // Get total users count
