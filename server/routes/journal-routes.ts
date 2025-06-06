@@ -13,30 +13,47 @@ export function registerJournalRoutes(app: Express) {
   app.post('/api/journal', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { day, experience, insights, intention, challengeType, mood, challenges } = req.body;
+      const { day, experience, insights, intention, challengeType = "free_journal", mood, challenges } = req.body;
       
-      if (!day || !challengeType) {
-        return res.status(400).json({ message: "Day and challenge type are required" });
+      // For day-specific entries, require both day and challengeType
+      if (day && !challengeType) {
+        return res.status(400).json({ message: "Challenge type is required for day-specific entries" });
       }
 
-      // Check if entry already exists
-      const existingEntry = await storage.getJournalEntry(userId, day, challengeType);
-      
-      if (existingEntry) {
-        // Update existing entry
-        const updatedEntry = await storage.updateJournalEntry(userId, day, {
-          experience,
-          insights,
-          intention,
-          mood,
-          challenges
-        }, challengeType);
-        res.json(updatedEntry);
+      // For day-specific entries, check if entry already exists and update it
+      if (day) {
+        const existingEntry = await storage.getJournalEntry(userId, day, challengeType);
+        
+        if (existingEntry) {
+          // Update existing entry
+          const updatedEntry = await storage.updateJournalEntry(userId, day, {
+            experience,
+            insights,
+            intention,
+            mood,
+            challenges
+          }, challengeType);
+          res.json(updatedEntry);
+        } else {
+          // Create new day-specific entry
+          const newEntry = await storage.createJournalEntry({
+            userId,
+            day,
+            challengeType,
+            experience,
+            insights,
+            intention,
+            mood,
+            challenges,
+            createdAt: new Date()
+          });
+          res.json(newEntry);
+        }
       } else {
-        // Create new entry
+        // Create new free journal entry (no day requirement)
         const newEntry = await storage.createJournalEntry({
           userId,
-          day,
+          day: null,
           challengeType,
           experience,
           insights,

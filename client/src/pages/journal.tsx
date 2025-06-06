@@ -269,7 +269,7 @@ export default function Journal() {
     if (!selectedDay && !isFreeJournal) return;
     
     saveMutation.mutate({
-      day: isFreeJournal ? undefined : selectedDay,
+      day: isFreeJournal ? undefined : (selectedDay ?? undefined),
       challengeType: isFreeJournal ? "free_journal" : "general_quantum",
       experience,
       insights,
@@ -348,6 +348,13 @@ export default function Journal() {
           </div>
           
           <div className="flex items-center space-x-3">
+            <Button 
+              onClick={() => setIsFreeJournal(true)}
+              className="flex items-center gap-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              New Free Entry
+            </Button>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               <input
@@ -405,31 +412,41 @@ export default function Journal() {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <span>
-                        {selectedDay ? (
+                        {isFreeJournal ? (
+                          <>
+                            <BookOpen className="w-5 h-5 mr-2 inline" />
+                            Free Journal Entry
+                          </>
+                        ) : selectedDay ? (
                           <>
                             <Calendar className="w-5 h-5 mr-2 inline" />
                             Day {selectedDay} Journal Entry
                           </>
                         ) : (
-                          "Select a Day to Begin"
+                          "Start Your Journal Entry"
                         )}
                       </span>
-                      {selectedDay && (
+                      {selectedDay && !isFreeJournal && (
                         <Badge variant="outline">
                           {challengeContent.find(c => c.day === selectedDay)?.title || `Day ${selectedDay}`}
+                        </Badge>
+                      )}
+                      {isFreeJournal && (
+                        <Badge variant="secondary">
+                          Free Writing
                         </Badge>
                       )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {selectedDay ? (
+                    {selectedDay || isFreeJournal ? (
                       <>
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-2">
-                            How did today's practice feel?
+                            {isFreeJournal ? "How are you feeling today?" : "How did today's practice feel?"}
                           </label>
                           <Textarea
-                            placeholder="Describe your experience with today's practice..."
+                            placeholder={isFreeJournal ? "Write about your day, thoughts, or experiences..." : "Describe your experience with today's practice..."}
                             value={experience}
                             onChange={(e) => setExperience(e.target.value)}
                             rows={4}
@@ -439,10 +456,10 @@ export default function Journal() {
 
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-2">
-                            What insights did you gain?
+                            {isFreeJournal ? "What insights or reflections do you have?" : "What insights did you gain?"}
                           </label>
                           <Textarea
-                            placeholder="Share your realizations and breakthroughs..."
+                            placeholder={isFreeJournal ? "Share your thoughts, realizations, or observations..." : "Share your realizations and breakthroughs..."}
                             value={insights}
                             onChange={(e) => setInsights(e.target.value)}
                             rows={4}
@@ -452,10 +469,10 @@ export default function Journal() {
 
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-2">
-                            Intention for tomorrow
+                            {isFreeJournal ? "What are you grateful for or looking forward to?" : "Intention for tomorrow"}
                           </label>
                           <Textarea
-                            placeholder="What do you want to focus on in your next practice?"
+                            placeholder={isFreeJournal ? "Express gratitude or set intentions for the future..." : "What do you want to focus on in your next practice?"}
                             value={intention}
                             onChange={(e) => setIntention(e.target.value)}
                             rows={3}
@@ -466,7 +483,10 @@ export default function Journal() {
                         <div className="flex justify-end space-x-3">
                           <Button 
                             variant="outline" 
-                            onClick={() => setSelectedDay(null)}
+                            onClick={() => {
+                              setSelectedDay(null);
+                              setIsFreeJournal(false);
+                            }}
                           >
                             Cancel
                           </Button>
@@ -493,8 +513,15 @@ export default function Journal() {
                         <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-foreground mb-2">Ready to Journal?</h3>
                         <p className="text-muted-foreground mb-6">
-                          Select a day from the sidebar to start writing your journal entry.
+                          Select a challenge day from the sidebar, or start a free journal entry.
                         </p>
+                        <Button 
+                          onClick={() => setIsFreeJournal(true)}
+                          className="mr-3"
+                        >
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Start Free Journal Entry
+                        </Button>
                       </div>
                     )}
                   </CardContent>
@@ -592,9 +619,10 @@ export default function Journal() {
               {/* Show filtered journal entries */}
               {(reflectionFilter === 'all' || reflectionFilter === 'journal_only') && filteredEntries.length > 0 && 
                 filteredEntries
-                  .sort((a, b) => b.day - a.day)
+                  .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
                   .map((entry) => {
                     const content = challengeContent.find(c => c.day === entry.day);
+                    const isFreeEntry = entry.challengeType === 'free_journal' || !entry.day;
                     return (
                       <Card key={`journal-${entry.id}`} className="hover:shadow-lg transition-shadow duration-300 cursor-pointer" onClick={() => toggleEntryExpansion(entry.id)}>
                         <CardHeader>
@@ -608,10 +636,21 @@ export default function Journal() {
                                 )}
                               </div>
                               <CardTitle className="flex items-center truncate">
-                                <Calendar className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-                                <span className="truncate">
-                                  Day {entry.day}: {content?.title || `Challenge Day ${entry.day}`}
-                                </span>
+                                {isFreeEntry ? (
+                                  <>
+                                    <BookOpen className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" />
+                                    <span className="truncate">
+                                      Free Journal Entry
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Calendar className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                                    <span className="truncate">
+                                      Day {entry.day}: {content?.title || `Challenge Day ${entry.day}`}
+                                    </span>
+                                  </>
+                                )}
                               </CardTitle>
                             </div>
                             <div className="flex items-center space-x-2 flex-shrink-0">
