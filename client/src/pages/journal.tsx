@@ -935,57 +935,81 @@ export default function Journal() {
                 </div>
               )}
 
-              {/* AI Coaching Responses */}
+              {/* AI Coaching Insights - 3-Box Layout */}
               {filteredAIResponses.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <MessageSquare className="w-5 h-5 mr-2" />
-                      AI Coaching Insights
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {filteredAIResponses.map((response: any, index: number) => (
-                      <div key={index} className="border-l-4 border-primary pl-4 py-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            {response.sessionType?.replace(/_/g, ' ') || 'General'}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(response.createdAt), "MMM d, yyyy")}
-                          </span>
-                        </div>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          {response.aiResponse?.personalizedMessage?.substring(0, 300)}
-                          {response.aiResponse?.personalizedMessage?.length > 300 && "..."}
-                        </p>
-                      </div>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center">
+                    <MessageSquare className="w-5 h-5 mr-2" />
+                    AI Coaching Insights
+                  </h3>
+                  
+                  {/* Grid of coaching response boxes */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {filteredAIResponses.slice(0, 3).map((response: any, index: number) => {
+                      const isAdvancedCoaching = response.sessionType === 'advanced_coaching';
+                      const aiResponseData = typeof response.aiResponse === 'string' 
+                        ? JSON.parse(response.aiResponse) 
+                        : response.aiResponse;
+                      
+                      const content = isAdvancedCoaching 
+                        ? aiResponseData?.personalizedMessage 
+                        : response.aiResponse;
+                      
+                      const title = isAdvancedCoaching 
+                        ? 'Advanced Coaching Session'
+                        : response.sessionType?.replace(/_/g, ' ') || 'General Coaching';
+                      
+                      return (
+                        <Card key={index} className="h-full">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm flex items-center justify-between">
+                              <span>{title}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {format(new Date(response.createdAt), "MMM d")}
+                              </Badge>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <p className="text-muted-foreground text-sm leading-relaxed line-clamp-4">
+                              {typeof content === 'string' 
+                                ? content.substring(0, 200) + (content.length > 200 ? '...' : '')
+                                : 'AI coaching insight available'
+                              }
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setInsightPopup({
+                                isOpen: true,
+                                type: 'progress',
+                                content: typeof content === 'string' ? content : JSON.stringify(content, null, 2)
+                              })}
+                            >
+                              Read All
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    
+                    {/* Fill remaining slots if less than 3 responses */}
+                    {filteredAIResponses.length < 3 && Array.from({ length: 3 - filteredAIResponses.length }).map((_, index) => (
+                      <Card key={`empty-${index}`} className="h-full opacity-50">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm">No More Insights</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-muted-foreground text-sm">Complete more challenges to unlock additional AI insights</p>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Sidebar for insights */}
             <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Filter Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Select value={selectedInsightType} onValueChange={setSelectedInsightType}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Insights</SelectItem>
-                      <SelectItem value="advanced_coaching">Advanced Coaching</SelectItem>
-                      <SelectItem value="general_coaching">General Coaching</SelectItem>
-                      <SelectItem value="daily_assessment">Daily Assessment</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </TabsContent>
