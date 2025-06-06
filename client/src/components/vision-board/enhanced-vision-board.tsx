@@ -122,8 +122,9 @@ export default function EnhancedVisionBoard() {
   const [showSvgDialog, setShowSvgDialog] = useState(false);
   const [currentBoardId, setCurrentBoardId] = useState<number | null>(null);
 
-  // Predefined SVG elements library
+  // Comprehensive SVG elements library
   const predefinedSvgs = [
+    // Nature Elements
     {
       name: "Star",
       category: "Shapes",
@@ -137,42 +138,135 @@ export default function EnhancedVisionBoard() {
     {
       name: "Flower",
       category: "Nature",
-      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a10 10 0 0 1-10-10 10 10 0 0 1 10-10 10 10 0 0 1 10 10 10 10 0 0 1-10 10zm0-18a8 8 0 0 0-8 8 8 8 0 0 0 8 8 8 8 0 0 0 8-8 8 8 0 0 0-8-8zm-4 8a4 4 0 1 1 8 0 4 4 0 0 1-8 0z"/></svg>`
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/></svg>`
     },
     {
       name: "Sun",
       category: "Nature",
-      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2"/><line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2"/><line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2"/></svg>`
     },
     {
-      name: "Rainbow",
+      name: "Moon",
       category: "Nature",
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17a10 10 0 0 0-20 0"/><path d="M6 17a6 6 0 0 1 12 0"/><path d="M10 17a2 2 0 0 1 4 0"/></svg>`
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
     },
+    {
+      name: "Tree",
+      category: "Nature",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L8 8h8l-4-6zm0 8L8 16h8l-4-6zm-1 8h2v4h-2v-4z"/></svg>`
+    },
+    {
+      name: "Leaf",
+      category: "Nature",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66L5 22a10 10 0 0 0 14.63-7c2.33-4.29.56-9.15-2.63-10z"/></svg>`
+    },
+    {
+      name: "Mountain",
+      category: "Nature",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 22l-4-8 8-12 3 4.5L18 2l4 20H8z"/></svg>`
+    },
+    
+    // Emotions & Feelings
     {
       name: "Smiley",
       category: "Emotions",
-      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>`
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2" stroke="white" stroke-width="2" fill="none"/><circle cx="9" cy="9" r="1" fill="white"/><circle cx="15" cy="9" r="1" fill="white"/></svg>`
     },
     {
-      name: "Lightning",
-      category: "Energy",
-      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/></svg>`
+      name: "Peace",
+      category: "Emotions",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M6.34 6.34l11.32 11.32M17.66 6.34L6.34 17.66" stroke="white" stroke-width="2"/></svg>`
     },
+    {
+      name: "Love",
+      category: "Emotions",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`
+    },
+    {
+      name: "Gratitude",
+      category: "Emotions",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.09 6.26L20 9.27l-5 4.87 1.18 6.88L12 17.77l-4.18 3.25L9 14.14 4 9.27l5.91-1.01L12 2z"/></svg>`
+    },
+    
+    // Symbols & Icons
     {
       name: "Crown",
       category: "Symbols",
       svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 7l3.5 3L12 4l5.5 6L21 7l-2 9H5z"/></svg>`
     },
     {
+      name: "Infinity",
+      category: "Symbols",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.178 8C15.739 8 14.778 10.622 13.2 12c1.578 1.378 2.539 4 4.978 4 2.926 0 4.822-2.074 4.822-4S21.104 8 18.178 8zM5.822 8C2.896 8 1 10.074 1 12s1.896 4 4.822 4c2.439 0 3.4-2.622 4.978-4C9.222 10.622 8.261 8 5.822 8z"/></svg>`
+    },
+    {
+      name: "Key",
+      category: "Symbols",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.65 10A6 6 0 1 1 22 7a6 6 0 0 1-6 6c-1 0-1.73-.73-2.35-1.35L9.3 16H7v2H5v2H2v-3l7.65-7.65Z"/><circle cx="15.5" cy="7.5" r="1.5"/></svg>`
+    },
+    {
+      name: "Trophy",
+      category: "Symbols",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4V2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v2h1a3 3 0 0 1 3 3v2a5 5 0 0 1-5 5v3a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3v-3a5 5 0 0 1-5-5V7a3 3 0 0 1 3-3h1zM6 7v2a3 3 0 0 0 3 3V7H6zm9 5a3 3 0 0 0 3-3V7h-3v5z"/></svg>`
+    },
+    {
+      name: "Target",
+      category: "Symbols",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6" fill="white"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>`
+    },
+    
+    // Energy & Power
+    {
+      name: "Lightning",
+      category: "Energy",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/></svg>`
+    },
+    {
+      name: "Fire",
+      category: "Energy",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 17.5A4.5 4.5 0 1 0 4 13c0-1.5.5-3 1.5-4C7 7.5 9 6 12 6s5 1.5 6.5 3c1 1 1.5 2.5 1.5 4a4.5 4.5 0 1 0-4.5 4.5c-1.5 0-3-.5-4-1.5s-1.5-2.5-2.5-3.5z"/></svg>`
+    },
+    {
+      name: "Energy Wave",
+      category: "Energy",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 12h3l2-4 4 8 4-12 2 4h5M12 2v20" stroke="currentColor" stroke-width="2" fill="none"/></svg>`
+    },
+    {
+      name: "Spiral",
+      category: "Energy",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c5.5 0 10 4.5 10 10s-4.5 10-10 10S2 17.5 2 12 6.5 2 12 2zm0 4c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>`
+    },
+    
+    // Geometric Shapes
+    {
       name: "Diamond",
       category: "Shapes",
       svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9z"/></svg>`
     },
     {
-      name: "Tree",
-      category: "Nature",
-      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L8 8h8l-4-6zm0 8L8 16h8l-4-6zm-1 8h2v4h-2v-4z"/></svg>`
+      name: "Circle",
+      category: "Shapes",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>`
+    },
+    {
+      name: "Triangle",
+      category: "Shapes",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22h20L12 2z"/></svg>`
+    },
+    {
+      name: "Square",
+      category: "Shapes",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`
+    },
+    {
+      name: "Hexagon",
+      category: "Shapes",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l5.196 3v6L12 14l-5.196-3V5L12 2z"/></svg>`
+    },
+    {
+      name: "Arrow Up",
+      category: "Shapes",
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 8h-6v12h-4V10H4l8-8z"/></svg>`
     }
   ];
 
@@ -188,16 +282,22 @@ export default function EnhancedVisionBoard() {
       height: 80,
       rotation: 0,
       opacity: 1,
-      zIndex: items.length,
+      zIndex: board.canvasData.items.length,
       styling: {
         fill: '#3b82f6',
         stroke: '#1d4ed8',
         strokeWidth: 1
       }
     };
-    setItems(prev => [...prev, newItem]);
+    setBoard(prev => ({
+      ...prev,
+      canvasData: {
+        ...prev.canvasData,
+        items: [...prev.canvasData.items, newItem]
+      }
+    }));
     setShowSvgDialog(false);
-    drawCanvas();
+    setTimeout(() => drawCanvas(), 100);
   };
 
   // Enhanced functionality
@@ -1396,7 +1496,7 @@ export default function EnhancedVisionBoard() {
             <DialogTitle>Load Vision Board</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {savedBoards.length === 0 ? (
+            {(savedBoards as any[]).length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>No saved vision boards found.</p>
@@ -1404,7 +1504,7 @@ export default function EnhancedVisionBoard() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {savedBoards.map((savedBoard: any) => (
+                {(savedBoards as any[]).map((savedBoard: any) => (
                   <div 
                     key={savedBoard.id} 
                     className="border rounded-lg p-4 hover:bg-accent cursor-pointer transition-colors"
@@ -1425,8 +1525,43 @@ export default function EnhancedVisionBoard() {
                           </span>
                         </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {savedBoard.canvasData?.items?.length || 0} items
+                      <div className="flex flex-col gap-2">
+                        <div className="text-sm text-muted-foreground">
+                          {savedBoard.canvasData?.items?.length || 0} items
+                        </div>
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => loadVisionBoard(savedBoard.id)}
+                          >
+                            Load
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              loadVisionBoard(savedBoard.id);
+                              setTimeout(() => duplicateBoard(), 100);
+                            }}
+                          >
+                            Duplicate
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => exportBoard('png')}
+                          >
+                            Export
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteBoard(savedBoard.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1437,6 +1572,65 @@ export default function EnhancedVisionBoard() {
               <Button onClick={() => setShowLoadDialog(false)} variant="outline">
                 Close
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* SVG Elements Dialog */}
+      <Dialog open={showSvgDialog} onOpenChange={setShowSvgDialog}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Add SVG Elements</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Choose from our collection of predefined elements to enhance your vision board
+            </p>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Category Navigation */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {['Nature', 'Shapes', 'Emotions', 'Symbols', 'Energy'].map(category => (
+                <Button
+                  key={category}
+                  variant="outline"
+                  className="h-auto p-4 flex flex-col items-center gap-2"
+                  onClick={() => {
+                    const categoryElements = predefinedSvgs.filter(svg => svg.category === category);
+                    if (categoryElements.length > 0) {
+                      addSvgElement(categoryElements[0]);
+                    }
+                  }}
+                >
+                  <div className="w-8 h-8 flex items-center justify-center">
+                    {category === 'Nature' && '🌿'}
+                    {category === 'Shapes' && '⭐'}
+                    {category === 'Emotions' && '😊'}
+                    {category === 'Symbols' && '👑'}
+                    {category === 'Energy' && '⚡'}
+                  </div>
+                  <span className="text-sm">{category}</span>
+                </Button>
+              ))}
+            </div>
+
+            {/* SVG Elements Grid */}
+            <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 max-h-96 overflow-y-auto">
+              {predefinedSvgs.map((svgElement, index) => (
+                <button
+                  key={index}
+                  onClick={() => addSvgElement(svgElement)}
+                  className="p-4 border rounded-lg hover:bg-accent transition-colors group"
+                  title={svgElement.name}
+                >
+                  <div 
+                    className="w-12 h-12 mx-auto text-blue-500 group-hover:text-blue-600"
+                    dangerouslySetInnerHTML={{ __html: svgElement.svg }}
+                  />
+                  <p className="text-xs mt-2 text-center text-muted-foreground">
+                    {svgElement.name}
+                  </p>
+                </button>
+              ))}
             </div>
           </div>
         </DialogContent>
