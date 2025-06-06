@@ -15,7 +15,7 @@ export default function AdminUnlockDays() {
     try {
       setIsUnlocking(true);
       
-      const response = await apiRequest("/api/admin/progress/unlock-all-days", {
+      const response = await fetch("/api/admin/progress/unlock-all-days", {
         method: "POST",
         body: JSON.stringify({
           challengeType: "money_blocks_clearing"
@@ -24,6 +24,12 @@ export default function AdminUnlockDays() {
           "Content-Type": "application/json"
         }
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
 
       setUnlocked(true);
       toast({
