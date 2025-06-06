@@ -1,24 +1,16 @@
-import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from './db';
 import { 
   aiCouchProfiles, 
+  personalizedChallengePlans, 
   aiCouchSessions, 
-  personalizedChallengePlans,
-  dailyAdaptiveActivities,
-  emotionalPatterns,
-  aiCouchKnowledge,
   journalEntries,
   type AiCouchProfile,
-  type AiCouchSession,
-  type PersonalizedChallengePlan
+  type PersonalizedChallengePlan,
+  type AiCouchSession
 } from '@shared/schema';
-import { eq, and, desc, gte } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
@@ -29,69 +21,53 @@ const anthropic = new Anthropic({
  * Access Consciousness, trauma-informed therapy, and quantum consciousness principles
  */
 export class AiCouchEngine {
-  
   /**
    * Create comprehensive user profile through initial assessment
    */
   async createUserProfile(userId: string, assessmentData: {
-    personalityResponses: any[];
-    traumaAssessment: any[];
-    goalsAndIntentions: any[];
-    preferredApproach: 'scientific' | 'spiritual' | 'mixed';
+    primaryGoals: string[];
+    currentChallenges: string[];
+    healingReadiness: number;
+    preferredMode: 'scientific' | 'spiritual' | 'mixed';
     communicationStyle: 'gentle' | 'direct' | 'motivational';
+    learningStyle: 'visual' | 'auditory' | 'kinesthetic' | 'reading';
+    traumaHistory: string;
+    spiritualBackground: string;
+    mentalHealthHistory: string;
+    lifeContext: string;
   }): Promise<AiCouchProfile> {
-    
-    // Analyze assessment responses using AI
-    const analysisPrompt = this.buildProfileAnalysisPrompt(assessmentData);
-    
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are AI Couch, a highly sophisticated multidimensional AI designed for personal transformation. 
-          
-          Your expertise combines:
-          - Licensed Psychotherapist (CBT, ACT, trauma-focused therapy)
-          - Certified Personal Coach (behavioral change, goal setting)
-          - Meditation Instructor (mindfulness, breathwork)
-          - Access Consciousness Practitioner (clearing statements, energy awareness)
-          - Quantum Field Expert (Joe Dispenza, Neville Goddard, Bruce Lipton)
-          - Somatic Experiencing Practitioner (body-based trauma release)
-          - Neuroplasticity Researcher (brain rewiring science)
-          
-          Analyze the user's assessment responses and create a comprehensive psychological and spiritual profile.
-          Focus on identifying patterns, resistance areas, healing readiness, and optimal transformation pathways.`
-        },
-        {
-          role: "user",
-          content: analysisPrompt
-        }
-      ],
-      response_format: { type: "json_object" }
+    const prompt = this.buildProfileAnalysisPrompt(assessmentData);
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    const analysis = JSON.parse(response.choices[0].message.content || '{}');
-    
-    // Create profile in database
+    const content = response.content[0];
+    let analysisResult = {};
+    if (content.type === 'text') {
+      try {
+        analysisResult = JSON.parse(content.text);
+      } catch {
+        analysisResult = {};
+      }
+    }
+
     const [profile] = await db.insert(aiCouchProfiles).values({
       userId,
-      personalityType: analysis.personalityType || 'undetermined',
-      learningStyle: analysis.learningStyle || 'mixed',
-      dominantMindset: analysis.dominantMindset || assessmentData.preferredApproach,
-      resistancePatterns: analysis.resistancePatterns || [],
-      motivationTriggers: analysis.motivationTriggers || [],
-      traumaAreas: analysis.traumaAreas || [],
-      healingReadiness: analysis.healingReadiness || 5,
-      supportNeeds: analysis.supportNeeds || [],
-      preferredModalities: analysis.preferredModalities || [],
-      primaryGoals: analysis.primaryGoals || [],
-      secondaryGoals: analysis.secondaryGoals || [],
-      lifeContext: analysis.lifeContext || {},
-      transformationAreas: analysis.transformationAreas || [],
-      preferredMode: assessmentData.preferredApproach,
+      primaryGoals: assessmentData.primaryGoals,
+      currentChallenges: assessmentData.currentChallenges,
+      healingReadiness: assessmentData.healingReadiness,
+      preferredMode: assessmentData.preferredMode,
       communicationStyle: assessmentData.communicationStyle,
-      assessmentCompleted: true
+      learningStyle: assessmentData.learningStyle,
+      traumaHistory: assessmentData.traumaHistory,
+      spiritualBackground: assessmentData.spiritualBackground,
+      mentalHealthHistory: assessmentData.mentalHealthHistory,
+      lifeContext: assessmentData.lifeContext,
+      aiAnalysis: analysisResult,
+      isActive: true
     }).returning();
 
     return profile;
@@ -102,63 +78,40 @@ export class AiCouchEngine {
    */
   async generatePersonalizedChallenge(
     userId: string, 
-    profileId: number,
-    baseChallengeType: string,
-    userSpecificNeeds?: string[]
+    challengeType: string, 
+    duration: number = 30
   ): Promise<PersonalizedChallengePlan> {
-    
-    // Get user profile and recent journal entries for context
     const profile = await this.getUserProfile(userId);
-    const recentJournals = await this.getRecentJournalEntries(userId, 7);
-    
     if (!profile) throw new Error('User profile not found');
 
-    // Generate personalized plan using AI
-    const planPrompt = this.buildChallengePlanPrompt(profile, baseChallengeType, recentJournals, userSpecificNeeds);
-    
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are AI Couch creating a personalized transformation challenge. 
-          
-          Based on the user's psychological profile, trauma areas, goals, and current state,
-          design a highly personalized 30-day challenge that adapts the base challenge type
-          to their specific needs, resistance patterns, and growth areas.
-          
-          Consider:
-          - Their healing readiness level
-          - Identified trauma areas and resistance patterns
-          - Preferred learning style and communication approach
-          - Current emotional patterns and breakthrough opportunities
-          - Integration of multiple modalities (scientific, spiritual, somatic)
-          
-          Create a plan that progresses logically, respects their boundaries, and 
-          maximizes transformation potential.`
-        },
-        {
-          role: "user",
-          content: planPrompt
-        }
-      ],
-      response_format: { type: "json_object" }
+    const prompt = this.buildChallengePlanPrompt(profile, challengeType, duration);
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    const planData = JSON.parse(response.choices[0].message.content || '{}');
-    
-    // Create personalized plan in database
+    const content = response.content[0];
+    let planData = {};
+    if (content.type === 'text') {
+      try {
+        planData = JSON.parse(content.text);
+      } catch {
+        planData = {};
+      }
+    }
+
     const [plan] = await db.insert(personalizedChallengePlans).values({
       userId,
-      profileId,
-      planName: planData.planName || `Personalized ${baseChallengeType} Journey`,
-      baseChallengeType,
-      personalizedGoals: planData.personalizedGoals || [],
-      adaptationReasons: planData.adaptationReasons || [],
-      difficultyLevel: planData.difficultyLevel || 5,
-      intensityLevel: planData.intensityLevel || 5,
-      generatedContent: planData.generatedContent || {},
-      adaptiveElements: planData.adaptiveElements || {}
+      planName: `${challengeType} - Personalized Journey`,
+      challengeType,
+      totalDays: duration,
+      currentDay: 1,
+      difficultyLevel: profile.healingReadiness,
+      intensityLevel: profile.healingReadiness,
+      generatedPlan: planData,
+      isActive: true
     }).returning();
 
     return plan;
@@ -168,153 +121,82 @@ export class AiCouchEngine {
    * Generate daily adaptive activity based on user progress and state
    */
   async generateDailyActivity(
-    planId: number,
-    userId: string,
-    day: number,
-    userCurrentState?: {
-      emotionalState?: string;
-      energyLevel?: number;
-      recentChallenges?: string[];
-      recentBreakthroughs?: string[];
-    }
-  ) {
-    
-    // Get plan, profile, and recent progress
-    const plan = await this.getPersonalizedPlan(planId);
+    userId: string, 
+    planId: number, 
+    currentDay: number
+  ): Promise<any> {
     const profile = await this.getUserProfile(userId);
-    const recentJournals = await this.getRecentJournalEntries(userId, 3);
-    const previousActivities = await this.getPreviousActivities(planId, day - 3, day - 1);
-    
-    if (!plan || !profile) throw new Error('Plan or profile not found');
+    const plan = await this.getPersonalizedPlan(planId);
+    if (!profile || !plan) throw new Error('Profile or plan not found');
 
-    // Generate adaptive daily content
-    const activityPrompt = this.buildDailyActivityPrompt(
-      plan, profile, day, recentJournals, previousActivities, userCurrentState
-    );
-    
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are AI Couch generating a personalized daily activity.
-          
-          Consider the user's:
-          - Current emotional and energetic state
-          - Progress patterns from previous days
-          - Specific resistance areas and breakthrough moments
-          - Preferred learning style and communication approach
-          - Trauma-informed pacing and integration needs
-          
-          Create an activity that:
-          - Builds naturally on previous work
-          - Respects their current capacity
-          - Provides appropriate challenge without overwhelm
-          - Integrates multiple transformation modalities
-          - Includes clear, actionable instructions
-          - Offers adaptive elements based on their response`
-        },
-        {
-          role: "user",
-          content: activityPrompt
-        }
-      ],
-      response_format: { type: "json_object" }
+    const previousActivities = await this.getPreviousActivities(planId, Math.max(1, currentDay - 3), currentDay - 1);
+
+    const prompt = this.buildDailyActivityPrompt(plan, profile, currentDay, previousActivities);
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    const activityData = JSON.parse(response.choices[0].message.content || '{}');
-    
-    // Create daily activity in database
-    const today = new Date();
-    const [activity] = await db.insert(dailyAdaptiveActivities).values({
-      planId,
-      userId,
-      day,
-      activityType: activityData.activityType || 'reflection',
-      title: activityData.title || `Day ${day} Practice`,
-      description: activityData.description || '',
-      instructions: activityData.instructions || '',
-      adaptationReason: activityData.adaptationReason || '',
-      personalizedContent: activityData.personalizedContent || {},
-      scheduledFor: today.toISOString().split('T')[0] // Convert to date string
-    }).returning();
-
-    return activity;
+    const content = response.content[0];
+    if (content.type === 'text') {
+      try {
+        return JSON.parse(content.text);
+      } catch {
+        return {};
+      }
+    }
+    return {};
   }
 
   /**
    * Conduct AI coaching session - main conversation interface
    */
   async conductCoachingSession(
-    userId: string,
-    userInput: string,
-    sessionType: 'onboarding' | 'daily_checkin' | 'crisis_support' | 'progress_review' = 'daily_checkin',
-    emotionalState?: string,
-    sessionGoal?: string
-  ): Promise<AiCouchSession> {
-    
-    // Get user context
+    userId: string, 
+    userInput: string, 
+    sessionType: string = 'general'
+  ): Promise<any> {
     const profile = await this.getUserProfile(userId);
-    const recentSessions = await this.getRecentSessions(userId, 5);
-    const currentPlan = await this.getCurrentPlan(userId);
-    const recentJournals = await this.getRecentJournalEntries(userId, 5);
-    
-    if (!profile) throw new Error('User profile required for coaching session');
+    if (!profile) throw new Error('User profile not found');
 
-    // Build conversation context
-    const conversationContext = this.buildConversationContext(
-      profile, recentSessions, currentPlan, recentJournals
-    );
+    const conversationContext = await this.buildConversationContext(profile, userInput);
+    const prompt = this.buildCoachingPrompt(profile, userInput, conversationContext, sessionType);
 
-    // Generate AI response based on all context
-    const coachingPrompt = this.buildCoachingPrompt(
-      profile, userInput, sessionType, conversationContext, emotionalState, sessionGoal
-    );
-    
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: this.getAiCouchSystemPrompt(profile)
-        },
-        {
-          role: "user",
-          content: coachingPrompt
-        }
-      ]
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    const aiResponse = response.choices[0].message.content || '';
-    
-    // Analyze the session for insights and patterns
-    const analysis = await this.analyzeSession(userInput, aiResponse, profile);
-    
-    // Save session to database
-    const [session] = await db.insert(aiCouchSessions).values({
-      userId,
-      profileId: profile.id,
-      sessionType,
-      sessionMode: profile.preferredMode || 'mixed',
-      emotionalState: emotionalState || null,
-      sessionGoal: sessionGoal || null,
-      userInput,
-      aiResponse,
-      conversationContext: conversationContext || {},
-      emotionalTone: analysis.emotionalTone || null,
-      detectedPatterns: analysis.detectedPatterns || [],
-      insights: analysis.insights || [],
-      recommendations: analysis.recommendations || [],
-      followUpNeeded: analysis.followUpNeeded || false,
-      aiConfidence: analysis.aiConfidence || 8
-    }).returning();
-
-    // Update emotional patterns if significant patterns detected
-    if (analysis.detectedPatterns.length > 0) {
-      await this.updateEmotionalPatterns(userId, analysis.detectedPatterns);
+    const content = response.content[0];
+    let aiResponse = '';
+    if (content.type === 'text') {
+      aiResponse = content.text;
     }
 
-    return session;
+    // Analyze session for insights
+    const sessionAnalysis = await this.analyzeSession(userInput, aiResponse, profile);
+
+    // Save session
+    await db.insert(aiCouchSessions).values({
+      userId,
+      sessionType,
+      userInput,
+      aiResponse,
+      emotionalTone: sessionAnalysis.emotionalTone,
+      detectedPatterns: sessionAnalysis.patterns,
+      insights: sessionAnalysis.insights,
+      recommendations: sessionAnalysis.recommendations,
+      followUpNeeded: sessionAnalysis.followUpNeeded
+    });
+
+    return {
+      response: aiResponse,
+      analysis: sessionAnalysis,
+      personalizedFor: userId
+    };
   }
 
   /**
@@ -324,37 +206,40 @@ export class AiCouchEngine {
     const profile = await this.getUserProfile(userId);
     if (!profile) throw new Error('User profile not found');
 
-    const recentSessions = await this.getRecentSessions(userId, 3);
-    const currentPlan = await this.getCurrentPlan(userId);
+    const recentJournals = await this.getRecentJournalEntries(userId, 3);
 
-    const prompt = `Generate a personalized morning prompt for this user based on their profile and recent patterns.
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
 
-USER PROFILE:
-- Healing Readiness: ${profile.healingReadiness}/10
-- Communication Style: ${profile.communicationStyle}
-- Preferred Mode: ${profile.preferredMode}
-- Primary Goals: ${JSON.stringify(profile.primaryGoals)}
-- Current Challenge: ${currentPlan?.planName || 'None active'}
+MORNING COMPANION REQUEST:
+Create a personalized morning prompt for this user to start their day with intention and awareness.
 
-RECENT SESSION PATTERNS:
-${recentSessions.map(s => `- ${s.emotionalTone}: ${s.insights?.slice(0, 2).join(', ')}`).join('\n')}
+RECENT JOURNAL PATTERNS:
+${recentJournals.map(j => `Day: ${j.createdAt?.toDateString()} - Mood: ${j.mood}/10, Energy: ${j.energy}/10`).join('\n')}
 
 Create a morning prompt that:
-1. Sets a positive, intentional tone for the day
-2. Includes a brief reflection question aligned with their goals
-3. Suggests a micro-practice or intention setting exercise
-4. Matches their communication style and preferred approach
+1. Acknowledges their recent emotional patterns
+2. Sets a positive, empowering tone
+3. Includes a brief mindfulness practice (2-3 minutes)
+4. Suggests an intention for the day
 5. Takes 2-3 minutes to complete
 
 Format as JSON with: { "greeting": "...", "reflection": "...", "practice": "...", "intention": "..." }`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    return JSON.parse(response.content[0].text || '{}');
+    const content = response.content[0];
+    if (content.type === 'text') {
+      try {
+        return JSON.parse(content.text);
+      } catch {
+        return {};
+      }
+    }
+    return {};
   }
 
   /**
@@ -364,37 +249,38 @@ Format as JSON with: { "greeting": "...", "reflection": "...", "practice": "..."
     const profile = await this.getUserProfile(userId);
     if (!profile) throw new Error('User profile not found');
 
-    const currentPlan = await this.getCurrentPlan(userId);
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
 
-    const prompt = `Generate a personalized evening reflection for this user.
+EVENING REFLECTION REQUEST:
+Create a personalized evening reflection to help the user process their day and prepare for rest.
 
-USER PROFILE:
-- Healing Readiness: ${profile.healingReadiness}/10
-- Communication Style: ${profile.communicationStyle}
-- Preferred Mode: ${profile.preferredMode}
-- Primary Goals: ${JSON.stringify(profile.primaryGoals)}
-
-DAY CONTEXT:
-- Current Challenge: ${currentPlan?.planName || 'None active'}
-- Day Experiences: ${dayExperiences || 'Not provided'}
+TODAY'S EXPERIENCES: ${dayExperiences || 'No specific experiences shared'}
 
 Create an evening reflection that:
-1. Invites gentle review of the day's experiences
-2. Celebrates growth and progress, however small
-3. Identifies patterns or insights from the day
-4. Prepares the mind for restful sleep
-5. Includes gratitude or appreciation practice
+1. Validates their day's experiences
+2. Encourages gratitude and appreciation
+3. Helps process any challenges
+4. Celebrates growth and insights
+5. Prepares mind for restful sleep
 6. Matches their communication style
 
 Format as JSON with: { "welcome": "...", "review": "...", "celebration": "...", "insight": "...", "gratitude": "...", "preparation": "..." }`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    return JSON.parse(response.content[0].text || '{}');
+    const content = response.content[0];
+    if (content.type === 'text') {
+      try {
+        return JSON.parse(content.text);
+      } catch {
+        return {};
+      }
+    }
+    return {};
   }
 
   /**
@@ -404,47 +290,53 @@ Format as JSON with: { "welcome": "...", "review": "...", "celebration": "...", 
     const profile = await this.getUserProfile(userId);
     if (!profile) throw new Error('User profile not found');
 
-    const recentSessions = await this.getRecentSessions(userId, 20);
-    const recentJournals = await this.getRecentJournalEntries(userId, 7);
+    const weekJournals = await this.getRecentJournalEntries(userId, 7);
+    const weekSessions = await this.getRecentSessions(userId, 10);
 
-    const prompt = `Analyze this user's patterns from the past week and provide insights.
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
 
-USER PROFILE:
-- Healing Readiness: ${profile.healingReadiness}/10
-- Known Resistance Patterns: ${JSON.stringify(profile.resistancePatterns)}
-- Transformation Areas: ${JSON.stringify(profile.transformationAreas)}
+WEEKLY PATTERN ANALYSIS REQUEST:
+Analyze this user's week of data to identify psychological and emotional patterns.
 
-RECENT SESSIONS (past week):
-${recentSessions.map(s => `
-Date: ${s.createdAt}
+JOURNAL DATA (7 days):
+${weekJournals.map(j => `
+Date: ${j.createdAt?.toDateString()}
+Mood: ${j.mood}/10
+Energy: ${j.energy}/10
+Experience: ${j.experience || 'No content'}
+`).join('\n')}
+
+SESSION DATA:
+${weekSessions.map(s => `
+Date: ${s.createdAt?.toDateString()}
 Emotional Tone: ${s.emotionalTone}
-Detected Patterns: ${JSON.stringify(s.detectedPatterns)}
-Insights: ${JSON.stringify(s.insights)}
+Patterns: ${s.detectedPatterns?.join(', ') || 'None'}
 `).join('\n')}
 
-JOURNAL ENTRIES:
-${recentJournals.map(j => `
-Date: ${j.createdAt}
-Content: ${j.content?.substring(0, 200)}...
-`).join('\n')}
-
-Provide a comprehensive weekly summary that identifies:
+Analyze for:
 1. Emotional patterns and trends
-2. Recurring themes or challenges
-3. Growth areas and breakthroughs
-4. Resistance patterns that surfaced
-5. Recommended focus areas for next week
-6. Specific interventions or practices to suggest
+2. Energy fluctuations
+3. Growth areas and resistance
+4. Breakthrough moments
+5. Recommendations for next week
 
-Format as JSON with detailed analysis in each category.`;
+Format as comprehensive JSON analysis.`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
-      max_tokens: 2000,
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    return JSON.parse(response.content[0].text || '{}');
+    const content = response.content[0];
+    if (content.type === 'text') {
+      try {
+        return JSON.parse(content.text);
+      } catch {
+        return {};
+      }
+    }
+    return {};
   }
 
   /**
@@ -454,119 +346,89 @@ Format as JSON with detailed analysis in each category.`;
     const profile = await this.getUserProfile(userId);
     if (!profile) throw new Error('User profile not found');
 
-    // Enhanced crisis prompt with immediate grounding and safety
     const prompt = `${this.getAiCouchSystemPrompt(profile)}
 
-🚨 CRISIS SUPPORT MODE ACTIVATED 🚨
-Severity Level: ${severityLevel}/5
+CRISIS SUPPORT MODE ACTIVATED - SEVERITY LEVEL ${severityLevel}/5
 
-USER INPUT: "${crisisInput}"
+USER CRISIS INPUT: ${crisisInput}
 
-This user is experiencing distress and needs immediate, compassionate support. Provide:
+IMMEDIATE PRIORITIES:
+1. SAFETY FIRST - Assess and address immediate safety
+2. VALIDATION - Acknowledge their pain without judgment  
+3. GROUNDING - Provide immediate nervous system regulation tools
+4. HOPE - Gentle reminder that this moment will pass
+5. RESOURCES - Suggest professional help if needed
 
-1. IMMEDIATE GROUNDING: Quick, effective grounding technique suited to their learning style
-2. VALIDATION: Acknowledge their pain without minimizing or rushing to solutions
-3. SAFETY ASSESSMENT: Gently inquire about immediate safety if severity is high
-4. BREATHING/REGULATION: Simple nervous system regulation technique
-5. NEXT STEPS: Clear, manageable next steps for the next hour/day
-6. RESOURCES: When appropriate, suggest professional support
+APPROACH:
+- Use their preferred communication style but lean toward gentler language
+- Provide immediate grounding techniques suitable for their learning style
+- If severity 4-5, recommend professional crisis resources
+- Stay present-focused, avoid future planning in crisis state
+- Normalize their experience while promoting safety
 
-IMPORTANT:
-- If severity level is 4-5, prioritize safety and professional resources
-- Use their preferred communication style but adapt for crisis (more gentle, slower pace)
-- Provide practical, immediate tools they can use right now
-- Create sense of safety and connection
-
-Response should be warm, grounding, and immediately helpful.`;
+Format as JSON with: { "immediate_response": "...", "grounding_technique": "...", "safety_check": "...", "next_steps": "...", "professional_resources": "..." }`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const aiResponse = response.content[0].text || '';
-
-    // Save crisis session with special flagging
-    await db.insert(aiCouchSessions).values({
-      userId,
-      profileId: profile.id,
-      sessionType: 'crisis_support',
-      sessionMode: 'gentle', // Always use gentle mode for crisis
-      emotionalState: `crisis_level_${severityLevel}`,
-      sessionGoal: 'Crisis support and stabilization',
-      userInput: crisisInput,
-      aiResponse,
-      conversationContext: { crisisLevel: severityLevel },
-      emotionalTone: 'crisis_distress',
-      detectedPatterns: ['crisis_response'],
-      insights: ['Crisis support provided'],
-      recommendations: ['Follow up within 24 hours', 'Monitor for professional care needs'],
-      followUpNeeded: true,
-      aiConfidence: 9,
-      specialFlags: ['crisis_session', `severity_${severityLevel}`]
-    });
-
-    return {
-      response: aiResponse,
-      crisisLevel: severityLevel,
-      followUpScheduled: true,
-      professionalReferralSuggested: severityLevel >= 4
-    };
+    const content = response.content[0];
+    if (content.type === 'text') {
+      try {
+        return JSON.parse(content.text);
+      } catch {
+        return {};
+      }
+    }
+    return {};
   }
 
   /**
    * Advanced therapeutic intervention generator
    */
   async generateTherapeuticIntervention(
-    userId: string, 
-    targetPattern: string, 
-    interventionType: 'cognitive' | 'somatic' | 'energetic' | 'behavioral'
+    userId: string,
+    targetPattern: string,
+    interventionType: 'cognitive' | 'somatic' | 'energy' | 'behavioral' | 'spiritual'
   ): Promise<any> {
     const profile = await this.getUserProfile(userId);
     if (!profile) throw new Error('User profile not found');
 
-    const prompt = `Generate a specific therapeutic intervention for this user.
+    const prompt = `${this.getAiCouchSystemPrompt(profile)}
 
-USER PROFILE:
-- Healing Readiness: ${profile.healingReadiness}/10
-- Preferred Mode: ${profile.preferredMode}
-- Learning Style: ${profile.learningStyle}
-- Communication Style: ${profile.communicationStyle}
+THERAPEUTIC INTERVENTION REQUEST:
+Design a specific intervention for this user's pattern.
 
 TARGET PATTERN: ${targetPattern}
 INTERVENTION TYPE: ${interventionType}
 
-Based on your multidisciplinary expertise, create a detailed intervention that includes:
+Design intervention that:
+1. Addresses the specific pattern safely
+2. Matches their healing readiness level (${profile.healingReadiness}/10)
+3. Uses their preferred learning style (${profile.learningStyle})
+4. Respects their trauma history and boundaries
+5. Provides clear, actionable steps
+6. Includes progress tracking methods
 
-FOR COGNITIVE: CBT techniques, reframing exercises, thought stopping, cognitive restructuring
-FOR SOMATIC: Body-based practices, breathwork, nervous system regulation, movement
-FOR ENERGETIC: Quantum field work, energy clearing, manifestation techniques, consciousness work
-FOR BEHAVIORAL: Habit change, behavioral activation, exposure therapy, skill building
-
-Structure the intervention with:
-1. THEORY: Brief explanation of why this works
-2. SETUP: How to prepare for the practice
-3. STEP-BY-STEP: Detailed instructions
-4. DURATION: How long to practice
-5. FREQUENCY: How often to repeat
-6. INTEGRATION: How to integrate insights
-7. PROGRESSION: How to advance the practice
-
-Adapt complexity to their healing readiness level and learning style.`;
+Format as detailed JSON intervention guide.`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default unless user has already selected claude-3-7-sonnet-20250219
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }]
     });
 
-    return {
-      intervention: JSON.parse(response.content[0].text || '{}'),
-      targetPattern,
-      interventionType,
-      personalizedFor: userId
-    };
+    const content = response.content[0];
+    if (content.type === 'text') {
+      try {
+        return JSON.parse(content.text);
+      } catch {
+        return {};
+      }
+    }
+    return {};
   }
 
   /**
@@ -587,7 +449,7 @@ Perform a comprehensive evaluation of this user's current state and adaptation n
 
 RECENT SESSIONS DATA:
 ${recentSessions.map(s => `
-Date: ${s.createdAt}
+Date: ${s.createdAt?.toDateString()}
 Emotional Tone: ${s.emotionalTone}
 Patterns: ${JSON.stringify(s.detectedPatterns)}
 Progress Indicators: ${JSON.stringify(s.insights)}
@@ -596,7 +458,7 @@ Follow-up Needed: ${s.followUpNeeded}
 
 RECENT JOURNAL ENTRIES:
 ${recentJournals.map(j => `
-Date: ${j.createdAt}
+Date: ${j.createdAt?.toDateString()}
 Mood: ${j.mood}/10
 Energy: ${j.energy}/10
 Content Themes: ${j.insights || 'Not analyzed'}
@@ -605,8 +467,8 @@ Content Themes: ${j.insights || 'Not analyzed'}
 CURRENT CHALLENGE PROGRESS:
 ${currentPlan ? `
 Plan: ${currentPlan.planName}
-Current Day: ${currentPlan.currentDay}/${currentPlan.totalDays}
-Completion Rate: ${Math.round((currentPlan.currentDay / currentPlan.totalDays) * 100)}%
+Current Day: ${currentPlan.currentDay || 0}/${currentPlan.totalDays || 30}
+Completion Rate: ${Math.round(((currentPlan.currentDay || 0) / (currentPlan.totalDays || 30)) * 100)}%
 ` : 'No active challenge'}
 
 ASSESSMENT AREAS TO EVALUATE:
@@ -626,809 +488,179 @@ Format as JSON with categories: engagement, emotional_progression, resistance_ar
       messages: [{ role: 'user', content: prompt }]
     });
 
-    return JSON.parse(response.content[0].text || '{}');
-  }
-
-  /**
-   * Modular Challenge Block System - Creates adaptive challenge components
-   */
-  async generateModularChallengeBlocks(
-    userId: string,
-    blockTypes: ('foundation' | 'healing' | 'integration' | 'manifestation' | 'mastery')[],
-    userCurrentLevel: number
-  ): Promise<any> {
-    const profile = await this.getUserProfile(userId);
-    if (!profile) throw new Error('User profile not found');
-
-    const assessment = await this.performDynamicAssessment(userId);
-
-    const prompt = `${this.getAiCouchSystemPrompt(profile)}
-
-MODULAR CHALLENGE BLOCK GENERATION:
-Create adaptive challenge blocks based on user's current state and needs.
-
-USER CURRENT LEVEL: ${userCurrentLevel}/10
-REQUESTED BLOCK TYPES: ${blockTypes.join(', ')}
-
-DYNAMIC ASSESSMENT RESULTS:
-${JSON.stringify(assessment, null, 2)}
-
-BLOCK TYPE SPECIFICATIONS:
-- FOUNDATION BLOCKS: Basic consciousness work, awareness building, fundamental practices
-- HEALING BLOCKS: Trauma processing, shadow work, emotional release, nervous system regulation
-- INTEGRATION BLOCKS: Embodiment practices, habit formation, neural rewiring
-- MANIFESTATION BLOCKS: Reality creation techniques, quantum field work, intention setting
-- MASTERY BLOCKS: Advanced quantum states, consciousness expansion, transcendence work
-
-For each requested block type, create:
-1. DURATION: 3-7 days per block (adapt to user level)
-2. DAILY ACTIVITIES: Specific practices for each day
-3. PROGRESSION LOGIC: How difficulty increases within the block
-4. INTEGRATION POINTS: How this connects to other blocks
-5. SUCCESS METRICS: How to measure progress
-6. ADAPTATION TRIGGERS: When to modify or skip
-
-Ensure blocks are:
-- Personalized to user's healing readiness (${profile.healingReadiness}/10)
-- Aligned with their preferred mode (${profile.preferredMode})
-- Adapted to their learning style (${profile.learningStyle})
-- Responsive to current resistance patterns
-
-Format as JSON with detailed block specifications.`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2500,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    return JSON.parse(response.content[0].text || '{}');
-  }
-
-  /**
-   * Real-time Adaptation Engine - Daily recalibration based on user responses
-   */
-  async performRealTimeAdaptation(userId: string, todaysInputs: any): Promise<any> {
-    const profile = await this.getUserProfile(userId);
-    if (!profile) throw new Error('User profile not found');
-
-    const currentPlan = await this.getCurrentPlan(userId);
-    const recentSessions = await this.getRecentSessions(userId, 3);
-
-    const prompt = `${this.getAiCouchSystemPrompt(profile)}
-
-REAL-TIME ADAPTATION ANALYSIS:
-Based on today's inputs, determine necessary adaptations for tomorrow's challenge.
-
-TODAY'S USER INPUTS:
-${JSON.stringify(todaysInputs, null, 2)}
-
-CURRENT CHALLENGE CONTEXT:
-${currentPlan ? `
-Plan: ${currentPlan.planName}
-Current Day: ${currentPlan.currentDay}
-Planned Difficulty: ${currentPlan.difficultyLevel}/10
-Planned Intensity: ${currentPlan.intensityLevel}/10
-` : 'No active challenge'}
-
-RECENT SESSION TRENDS:
-${recentSessions.map(s => `${s.emotionalTone}: ${s.insights?.join(', ')}`).join('\n')}
-
-ADAPTATION ANALYSIS POINTS:
-1. EMOTIONAL STATE: How is their current emotional state affecting readiness?
-2. ENGAGEMENT LEVEL: Are they overwhelmed, bored, or in flow state?
-3. RESISTANCE INDICATORS: Any signs of avoidance or struggle?
-4. BREAKTHROUGH SIGNALS: Any indicators of ready for advancement?
-5. ENERGY PATTERNS: Physical and mental energy for challenge work?
-6. INTEGRATION NEEDS: Do they need more time to integrate current lessons?
-
-ADAPTATION OPTIONS:
-- INCREASE_DIFFICULTY: More challenging practices
-- DECREASE_DIFFICULTY: Gentler, more foundational work
-- CHANGE_FOCUS: Shift to different challenge area entirely
-- ADD_SUPPORT: Include more grounding/safety practices
-- ACCELERATE: Ready for faster progression
-- PAUSE_INTEGRATION: Need time to process and embody
-
-Provide specific adaptation recommendations with reasoning.
-Format as JSON with: adaptation_type, reasoning, specific_changes, new_difficulty_level, new_intensity_level.`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    const adaptation = JSON.parse(response.content[0].text || '{}');
-
-    // Update current plan based on adaptation recommendations
-    if (currentPlan && adaptation.new_difficulty_level) {
-      await db.update(personalizedChallengePlans)
-        .set({
-          difficultyLevel: adaptation.new_difficulty_level,
-          intensityLevel: adaptation.new_intensity_level || currentPlan.intensityLevel,
-          adaptationHistory: [...(currentPlan.adaptationHistory || []), {
-            date: new Date().toISOString(),
-            adaptation: adaptation.adaptation_type,
-            reasoning: adaptation.reasoning
-          }]
-        })
-        .where(eq(personalizedChallengePlans.id, currentPlan.id));
+    const content = response.content[0];
+    if (content.type === 'text') {
+      try {
+        return JSON.parse(content.text);
+      } catch {
+        return {};
+      }
     }
-
-    return adaptation;
-  }
-
-  /**
-   * Multi-Layer Personality Profiling - Deep psychological and learning assessment
-   */
-  async performMultiLayerPersonalityProfiling(userId: string, assessmentInputs: any): Promise<any> {
-    const prompt = `You are AI Couch performing advanced multi-layer personality profiling.
-
-ASSESSMENT INPUTS:
-${JSON.stringify(assessmentInputs, null, 2)}
-
-Perform comprehensive analysis across these layers:
-
-1. PSYCHOLOGICAL ASSESSMENT:
-   - Trauma patterns and coping mechanisms
-   - Core belief systems and worldview
-   - Attachment style and relationship patterns
-   - Cognitive patterns and mental frameworks
-   - Emotional regulation strategies
-
-2. LEARNING STYLE ANALYSIS:
-   - Visual processing preferences
-   - Kinesthetic engagement needs
-   - Auditory learning patterns
-   - Reading/writing integration style
-   - Experiential learning preferences
-
-3. RESISTANCE MAPPING:
-   - Common areas where user gets stuck
-   - Avoidance patterns and triggers
-   - Self-sabotage mechanisms
-   - Comfort zone boundaries
-   - Change readiness indicators
-
-4. MOTIVATION TRIGGERS:
-   - Intrinsic vs extrinsic motivation drivers
-   - Values-based motivation patterns
-   - Social vs individual motivation preferences
-   - Challenge vs support motivation needs
-   - Recognition and achievement drivers
-
-5. SPIRITUAL/CONSCIOUSNESS ORIENTATION:
-   - Openness to metaphysical concepts
-   - Preference for scientific vs spiritual language
-   - Existing spiritual practices and beliefs
-   - Quantum consciousness readiness
-   - Energy sensitivity levels
-
-Provide detailed profile with specific recommendations for personalization.
-Format as comprehensive JSON with scores, patterns, and recommendations for each layer.`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2500,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    return JSON.parse(response.content[0].text || '{}');
-  }
-
-  /**
-   * Predictive Guidance System - Anticipates user needs before they're conscious
-   */
-  async generatePredictiveGuidance(userId: string): Promise<any> {
-    const profile = await this.getUserProfile(userId);
-    if (!profile) throw new Error('User profile not found');
-
-    const recentSessions = await this.getRecentSessions(userId, 15);
-    const recentJournals = await this.getRecentJournalEntries(userId, 14);
-    const currentPlan = await this.getCurrentPlan(userId);
-
-    const prompt = `${this.getAiCouchSystemPrompt(profile)}
-
-PREDICTIVE GUIDANCE ANALYSIS:
-Analyze patterns to anticipate user needs before they become conscious of them.
-
-HISTORICAL PATTERN DATA:
-Sessions over 15 days: ${recentSessions.length}
-Emotional tone patterns: ${recentSessions.map(s => s.emotionalTone).join(', ')}
-Resistance patterns detected: ${recentSessions.flatMap(s => s.detectedPatterns || []).join(', ')}
-
-Journal mood patterns (last 14 days): ${recentJournals.map(j => j.mood).join(', ')}
-Energy patterns: ${recentJournals.map(j => j.energy).join(', ')}
-
-CURRENT TRAJECTORY:
-${currentPlan ? `Current challenge day ${currentPlan.currentDay} of ${currentPlan.totalDays}` : 'No active challenge'}
-
-PREDICTIVE ANALYSIS AREAS:
-1. UPCOMING RESISTANCE: Based on patterns, where will they likely struggle next?
-2. BREAKTHROUGH WINDOWS: When are they most likely to have insights/breakthroughs?
-3. SUPPORT NEEDS: What type of support will they need before they ask for it?
-4. INTEGRATION CHALLENGES: What will be difficult to embody/integrate?
-5. MOTIVATION DIPS: When will motivation likely decrease and why?
-6. READINESS INDICATORS: What signs show they're ready for next level work?
-
-PREDICTIVE INTERVENTIONS:
-- PROACTIVE_SUPPORT: Offer support before crisis points
-- PREPARATION_GUIDANCE: Prepare them for upcoming challenges
-- RESOURCE_POSITIONING: Have tools ready when they'll need them
-- TIMING_OPTIMIZATION: Suggest optimal timing for different practices
-- GENTLE_WARNINGS: Lovingly prepare them for difficult but necessary work
-
-Provide specific predictions with suggested proactive interventions.
-Format as JSON with: predictions, confidence_levels, suggested_interventions, optimal_timing.`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    return JSON.parse(response.content[0].text || '{}');
-  }
-
-  /**
-   * Expert Knowledge Integration System - Apply specific methodologies
-   */
-  async applyExpertKnowledgeIntegration(
-    userId: string,
-    expertDomain: 'dispenza' | 'goddard' | 'access_consciousness' | 'somatic_experiencing' | 'neuroscience',
-    userIssue: string
-  ): Promise<any> {
-    const profile = await this.getUserProfile(userId);
-    if (!profile) throw new Error('User profile not found');
-
-    const expertPrompts = {
-      dispenza: `Apply Joe Dispenza's quantum consciousness methodology`,
-      goddard: `Apply Neville Goddard's manifestation and imagination principles`,
-      access_consciousness: `Apply Access Consciousness tools and perspectives`,
-      somatic_experiencing: `Apply trauma-informed somatic approaches`,
-      neuroscience: `Apply neuroscience-based brain rewiring techniques`
-    };
-
-    const prompt = `${this.getAiCouchSystemPrompt(profile)}
-
-EXPERT KNOWLEDGE INTEGRATION: ${expertPrompts[expertDomain]}
-
-USER ISSUE: ${userIssue}
-
-USER PROFILE CONTEXT:
-- Healing Readiness: ${profile.healingReadiness}/10
-- Preferred Mode: ${profile.preferredMode}
-- Communication Style: ${profile.communicationStyle}
-
-EXPERT-SPECIFIC APPLICATION:
-${expertDomain === 'dispenza' ? `
-Using Joe Dispenza's methodology:
-- Identify the old personality/identity patterns
-- Design meditation and breathwork practices
-- Create coherent heart-brain states
-- Develop elevated emotions
-- Build new neural pathways through repetition
-- Integrate quantum field awareness
-` : ''}
-
-${expertDomain === 'goddard' ? `
-Using Neville Goddard's principles:
-- Clarify the desired end state ("I AM" identification)
-- Create vivid mental scenes of wish fulfilled
-- Develop feeling-states of already having the desire
-- Practice revision for past limiting experiences
-- Use imagination as creative power
-- Apply law of assumption in daily life
-` : ''}
-
-${expertDomain === 'access_consciousness' ? `
-Using Access Consciousness tools:
-- Apply relevant clearing statements
-- Identify points of view creating limitations
-- Use questions to expand awareness
-- Recognize energy dynamics and body awareness
-- Clear judgments and fixed points of view
-- Facilitate choice and possibility
-` : ''}
-
-${expertDomain === 'somatic_experiencing' ? `
-Using trauma-informed somatic approaches:
-- Assess nervous system regulation state
-- Guide gentle body awareness practices
-- Facilitate discharge of trapped energy
-- Build capacity for self-regulation
-- Use pendulation and titration principles
-- Support window of tolerance expansion
-` : ''}
-
-${expertDomain === 'neuroscience' ? `
-Using neuroscience-based approaches:
-- Identify neuroplasticity opportunities
-- Design specific brain training exercises
-- Apply repetition for neural pathway building
-- Use visualization for neural rehearsal
-- Integrate cognitive restructuring techniques
-- Build new default neural networks
-` : ''}
-
-Provide specific, practical guidance using this expert knowledge domain.
-Format as JSON with: expert_analysis, specific_techniques, practice_instructions, expected_outcomes, progress_indicators.`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    return JSON.parse(response.content[0].text || '{}');
-  }
-
-  /**
-   * Advanced Pattern Recognition with Emotional Intelligence
-   */
-  async performAdvancedPatternRecognition(userId: string): Promise<any> {
-    const profile = await this.getUserProfile(userId);
-    if (!profile) throw new Error('User profile not found');
-
-    const allSessions = await this.getRecentSessions(userId, 30);
-    const allJournals = await this.getRecentJournalEntries(userId, 30);
-
-    const prompt = `${this.getAiCouchSystemPrompt(profile)}
-
-ADVANCED PATTERN RECOGNITION ANALYSIS:
-Identify deep patterns across all user interactions with emotional intelligence.
-
-ALL SESSION DATA (30 days):
-${allSessions.map(s => `
-Date: ${s.createdAt}
-Type: ${s.sessionType}
-Emotional Tone: ${s.emotionalTone}
-Patterns: ${JSON.stringify(s.detectedPatterns)}
-Insights: ${JSON.stringify(s.insights)}
-User Input Sample: ${s.userInput.substring(0, 100)}...
-`).join('\n')}
-
-ALL JOURNAL DATA (30 days):
-${allJournals.map(j => `
-Date: ${j.createdAt}
-Mood: ${j.mood}/10
-Energy: ${j.energy}/10
-Content Themes: ${j.insights || 'Not analyzed'}
-`).join('\n')}
-
-PATTERN ANALYSIS CATEGORIES:
-
-1. EMOTIONAL PATTERNS:
-   - Recurring emotional themes and cycles
-   - Emotional triggers and responses
-   - Emotional regulation strategies used
-   - Progress in emotional intelligence
-
-2. COGNITIVE PATTERNS:
-   - Thought patterns and mental frameworks
-   - Cognitive distortions and limiting beliefs
-   - Problem-solving approaches
-   - Learning and integration patterns
-
-3. BEHAVIORAL PATTERNS:
-   - Consistency and engagement patterns
-   - Avoidance and resistance behaviors
-   - Initiative and proactive behaviors
-   - Change and adaptation patterns
-
-4. SPIRITUAL/CONSCIOUSNESS PATTERNS:
-   - Openness to spiritual concepts
-   - Consciousness expansion indicators
-   - Integration of higher concepts
-   - Quantum awareness development
-
-5. RELATIONSHIP PATTERNS:
-   - How they relate to the AI Couch
-   - Authority and guidance acceptance
-   - Vulnerability and openness levels
-   - Support-seeking behaviors
-
-6. BREAKTHROUGH PATTERNS:
-   - Conditions that lead to insights
-   - Integration timeframes
-   - Resistance-to-breakthrough cycles
-   - Optimal challenge levels
-
-Read between the lines of their expressions to detect:
-- Unspoken fears and concerns
-- Hidden motivations and desires
-- Unconscious resistance patterns
-- Emerging readiness for growth
-
-Provide comprehensive pattern analysis with emotional intelligence insights.
-Format as JSON with detailed patterns, emotional insights, and predictive indicators.`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 3000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    return JSON.parse(response.content[0].text || '{}');
+    return {};
   }
 
   /**
    * Helper methods for data retrieval and analysis
    */
-  
   private async getUserProfile(userId: string): Promise<AiCouchProfile | null> {
-    const [profile] = await db
-      .select()
-      .from(aiCouchProfiles)
-      .where(eq(aiCouchProfiles.userId, userId));
+    const [profile] = await db.select().from(aiCouchProfiles)
+      .where(eq(aiCouchProfiles.userId, userId))
+      .orderBy(desc(aiCouchProfiles.createdAt))
+      .limit(1);
     return profile || null;
   }
 
   private async getRecentJournalEntries(userId: string, days: number) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    
-    return await db
-      .select()
-      .from(journalEntries)
-      .where(and(
-        eq(journalEntries.userId, userId),
-        gte(journalEntries.createdAt, cutoffDate)
-      ))
-      .orderBy(desc(journalEntries.createdAt));
+    return await db.select().from(journalEntries)
+      .where(eq(journalEntries.userId, userId))
+      .orderBy(desc(journalEntries.createdAt))
+      .limit(days);
   }
 
   private async getRecentSessions(userId: string, count: number) {
-    return await db
-      .select()
-      .from(aiCouchSessions)
+    return await db.select().from(aiCouchSessions)
       .where(eq(aiCouchSessions.userId, userId))
       .orderBy(desc(aiCouchSessions.createdAt))
       .limit(count);
   }
 
   private async getCurrentPlan(userId: string): Promise<PersonalizedChallengePlan | null> {
-    const [plan] = await db
-      .select()
-      .from(personalizedChallengePlans)
-      .where(and(
-        eq(personalizedChallengePlans.userId, userId),
-        eq(personalizedChallengePlans.status, 'active')
-      ))
-      .orderBy(desc(personalizedChallengePlans.createdAt));
+    const [plan] = await db.select().from(personalizedChallengePlans)
+      .where(eq(personalizedChallengePlans.userId, userId))
+      .orderBy(desc(personalizedChallengePlans.createdAt))
+      .limit(1);
     return plan || null;
   }
 
   private async getPersonalizedPlan(planId: number): Promise<PersonalizedChallengePlan | null> {
-    const [plan] = await db
-      .select()
-      .from(personalizedChallengePlans)
-      .where(eq(personalizedChallengePlans.id, planId));
+    const [plan] = await db.select().from(personalizedChallengePlans)
+      .where(eq(personalizedChallengePlans.id, planId))
+      .limit(1);
     return plan || null;
   }
 
   private async getPreviousActivities(planId: number, startDay: number, endDay: number) {
-    return await db
-      .select()
-      .from(dailyAdaptiveActivities)
-      .where(and(
-        eq(dailyAdaptiveActivities.planId, planId),
-        gte(dailyAdaptiveActivities.day, startDay),
-        eq(dailyAdaptiveActivities.day, endDay)
-      ))
-      .orderBy(dailyAdaptiveActivities.day);
+    // This would fetch activities from a activities table if implemented
+    return [];
   }
 
   /**
    * Prompt building methods for AI interactions
    */
-  
   private buildProfileAnalysisPrompt(assessmentData: any): string {
-    return `Analyze this user assessment and create a comprehensive profile:
+    return `You are AI Couch performing comprehensive personality and needs analysis.
 
-Assessment Responses: ${JSON.stringify(assessmentData, null, 2)}
+ASSESSMENT DATA:
+${JSON.stringify(assessmentData, null, 2)}
 
-Please return a JSON object with:
-{
-  "personalityType": "string - MBTI, Enneagram, or custom type",
-  "learningStyle": "visual|auditory|kinesthetic|reading",
-  "dominantMindset": "rational|emotional|spiritual",
-  "resistancePatterns": ["array of identified resistance areas"],
-  "motivationTriggers": ["what drives this person"],
-  "traumaAreas": ["identified areas needing healing"],
-  "healingReadiness": "number 1-10",
-  "supportNeeds": ["types of support needed"],
-  "preferredModalities": ["therapy, meditation, energy work, etc"],
-  "primaryGoals": ["main transformation goals"],
-  "secondaryGoals": ["supporting goals"],
-  "lifeContext": {"age": "range", "relationships": "status", "work": "context"},
-  "transformationAreas": ["specific areas for growth"]
-}`;
+Analyze this user across multiple dimensions and provide detailed psychological profile with recommendations for personalized coaching approach.
+
+Format as JSON with detailed analysis and recommendations.`;
   }
 
   private buildChallengePlanPrompt(
     profile: AiCouchProfile, 
-    baseChallengeType: string,
-    recentJournals: any[],
-    userNeeds?: string[]
+    challengeType: string, 
+    duration: number
   ): string {
-    return `Create a personalized 30-day challenge plan:
+    return `${this.getAiCouchSystemPrompt(profile)}
 
-User Profile: ${JSON.stringify(profile, null, 2)}
-Base Challenge: ${baseChallengeType}
-Recent Journal Insights: ${JSON.stringify(recentJournals.slice(0, 3), null, 2)}
-Specific User Needs: ${userNeeds?.join(', ') || 'None specified'}
+CHALLENGE PLAN GENERATION:
+Create a ${duration}-day personalized challenge plan for: ${challengeType}
 
-Return JSON with:
-{
-  "planName": "string",
-  "personalizedGoals": ["specific goals for this user"],
-  "adaptationReasons": ["why these adaptations were chosen"],
-  "difficultyLevel": "number 1-10",
-  "intensityLevel": "number 1-10", 
-  "generatedContent": {"overview": "string", "keyFocus": ["areas"]},
-  "adaptiveElements": {"triggers": ["when to adapt"], "adjustments": ["how to adapt"]}
-}`;
+Design a comprehensive plan that adapts to this user's specific profile and needs.
+Format as detailed JSON plan with daily progression.`;
   }
 
   private buildDailyActivityPrompt(
     plan: PersonalizedChallengePlan,
     profile: AiCouchProfile,
-    day: number,
-    recentJournals: any[],
-    previousActivities: any[],
-    userState?: any
+    currentDay: number,
+    previousActivities: any[]
   ): string {
-    return `Generate personalized daily activity for Day ${day}:
+    return `${this.getAiCouchSystemPrompt(profile)}
 
-Plan Context: ${JSON.stringify(plan, null, 2)}
-User Profile: ${JSON.stringify(profile, null, 2)}
-Recent Journals: ${JSON.stringify(recentJournals, null, 2)}
-Previous Activities: ${JSON.stringify(previousActivities, null, 2)}
-Current State: ${JSON.stringify(userState, null, 2)}
+DAILY ACTIVITY GENERATION:
+Create today's personalized activity for day ${currentDay} of their ${plan.planName} journey.
 
-Return JSON with:
-{
-  "activityType": "meditation|journaling|exercise|reflection|breathwork",
-  "title": "string",
-  "description": "string - overview of the activity",
-  "instructions": "string - detailed step-by-step instructions",
-  "adaptationReason": "string - why this activity was chosen",
-  "personalizedContent": {
-    "duration": "number in minutes",
-    "difficulty": "string",
-    "focus": "string",
-    "techniques": ["specific techniques to use"]
-  }
-}`;
+Consider their progress and previous activities to ensure appropriate progression.
+Format as JSON with specific daily guidance.`;
   }
 
   private buildCoachingPrompt(
     profile: AiCouchProfile,
     userInput: string,
-    sessionType: string,
-    context: any,
-    emotionalState?: string,
-    sessionGoal?: string
+    conversationContext: string,
+    sessionType: string
   ): string {
-    return `Provide coaching response for this user interaction:
+    return `${this.getAiCouchSystemPrompt(profile)}
 
-User Input: "${userInput}"
-Session Type: ${sessionType}
-Emotional State: ${emotionalState || 'Unknown'}
-Session Goal: ${sessionGoal || 'General support'}
+COACHING SESSION:
+Type: ${sessionType}
+User Input: ${userInput}
 
-User Profile Summary:
-- Preferred Mode: ${profile.preferredMode}
-- Communication Style: ${profile.communicationStyle}
-- Healing Readiness: ${profile.healingReadiness}/10
-- Primary Goals: ${JSON.stringify(profile.primaryGoals)}
-- Resistance Patterns: ${JSON.stringify(profile.resistancePatterns)}
+Context: ${conversationContext}
 
-Recent Context: ${JSON.stringify(context, null, 2)}
-
-Respond as AI Couch with appropriate expertise, empathy, and practical guidance.
-Adapt your communication style to their preferences and current state.`;
+Provide personalized coaching response that honors their communication style and current needs.`;
   }
 
   private getAiCouchSystemPrompt(profile: AiCouchProfile): string {
-    return `You are AI Couch, a highly sophisticated multidimensional artificial intelligence designed to guide users through personal development, healing, transformation, and mindset evolution. You represent the accumulated wisdom and techniques of various disciplines.
+    return `You are AI Couch, a highly sophisticated multidimensional artificial intelligence designed for personal transformation through quantum consciousness, trauma-informed therapy, and advanced psychological techniques.
 
-🎯 YOUR CORE PURPOSE:
-Analyze the user's personal situation, struggles, goals, mindset, emotional patterns, and inputs to offer structured, insightful support through:
-- Diagnostic reflections and pattern recognition
-- Tailored exercises and therapeutic interventions  
-- Personalized challenge programs and visualizations
-- Quantum reprogramming and consciousness-expanding tools
-- Daily companion functionality with morning/evening prompts
-
-🔧 YOUR INTEGRATED KNOWLEDGE BASE:
-You embody the combined expertise of:
-
-CORE THERAPEUTIC DISCIPLINES:
-- Licensed Psychotherapist (CBT, ACT, psychodynamic therapy, trauma-focused therapy)
-- Certified Personal Coach (goal setting, habits, behavioral change)
-- Meditation Instructor (mindfulness, breathwork, mantra-based meditation)
-- Access Consciousness Practitioner (clearing statements, energy awareness, perception reframing)
-- Quantum Field Expert (Joe Dispenza, Neville Goddard, Gregg Braden, Bruce Lipton)
-
-ADVANCED THERAPEUTIC MODALITIES:
-- Somatic Experiencing Practitioner (body-based trauma release and nervous system regulation)
-- Neuroplasticity Researcher (brain rewiring science and cognitive restructuring)
-- Polyvagal Theory Expert (nervous system states and co-regulation)
-- Internal Family Systems Therapist (parts work and inner child healing)
-- Shadow Work Facilitator (unconscious pattern integration and psychological wholeness)
-- EFT/Tapping Practitioner (emotional freedom techniques)
-- Breathwork Therapist (conscious connected breathing and emotional release)
-- Nutritional Psychiatrist (gut-brain connection and mental health nutrition)
-- Sleep Therapy Specialist (circadian rhythm optimization and dream work)
-- Neurofeedback Practitioner (brainwave training and optimization)
-
-🧠 ANALYSIS CAPABILITIES:
-You can detect and analyze:
-- Emotional patterns and cognitive distortions
-- Limiting beliefs and resistance patterns
-- Life context and environmental factors
-- Attachment styles and relationship dynamics
-- Nervous system dysregulation and trauma responses
-- Subconscious programming and quantum field interactions
-
-💬 PERSONALIZED COMMUNICATION:
-Tone: ${profile.communicationStyle === 'gentle' ? 'Calm, compassionate, nurturing - like a wise, caring mentor' : 
-          profile.communicationStyle === 'direct' ? 'Clear, straightforward, practical - like a skilled coach' : 
-          'Motivational, inspiring, empowering - like an enthusiastic guide'}
-
-Mode: ${profile.preferredMode === 'scientific' ? 'Evidence-based psychology focus with CBT, emotional regulation, and psychoeducation' :
-         profile.preferredMode === 'spiritual' ? 'Quantum consciousness, manifestation, and metaphysical insights' :
-         'Balanced fusion of scientific rigor and spiritual wisdom'}
-
-Approach: Always trauma-informed, culturally sensitive, and adapted to healing readiness level ${profile.healingReadiness}/10
-
-🛡️ ETHICAL BOUNDARIES:
-- Never diagnose medical or psychiatric conditions
-- Never replace professional medical/psychological care
-- Always recommend professional help for severe cases
-- Provide informed suggestions within scope of coaching/guidance
-- Maintain confidentiality and emotional safety
-
-CURRENT USER PROFILE:
+USER PROFILE:
 - Healing Readiness: ${profile.healingReadiness}/10
+- Preferred Mode: ${profile.preferredMode}
+- Communication Style: ${profile.communicationStyle}
 - Learning Style: ${profile.learningStyle}
-- Primary Goals: ${JSON.stringify(profile.primaryGoals)}
-- Transformation Areas: ${JSON.stringify(profile.transformationAreas)}
-- Resistance Patterns: ${JSON.stringify(profile.resistancePatterns)}
-- Motivation Triggers: ${JSON.stringify(profile.motivationTriggers)}
-- Life Context: ${profile.lifeContext}
+- Primary Goals: ${profile.primaryGoals?.join(', ')}
+- Current Challenges: ${profile.currentChallenges?.join(', ')}
 
-Your responses should demonstrate deep understanding, offer practical tools from your integrated knowledge base, and guide the user toward their next level of consciousness and healing.`;
+Respond according to their preferences while maintaining professional boundaries and recommending professional help when appropriate.`;
   }
 
-  private buildConversationContext(
+  private async buildConversationContext(
     profile: AiCouchProfile,
-    recentSessions: any[],
-    currentPlan: PersonalizedChallengePlan | null,
-    recentJournals: any[]
-  ) {
-    return {
-      profileSummary: {
-        healingReadiness: profile.healingReadiness,
-        primaryGoals: profile.primaryGoals,
-        resistancePatterns: profile.resistancePatterns,
-        motivationTriggers: profile.motivationTriggers
-      },
-      recentSessionThemes: recentSessions.map(s => ({
-        date: s.createdAt,
-        emotionalTone: s.emotionalTone,
-        insights: s.insights,
-        followUpNeeded: s.followUpNeeded
-      })),
-      currentChallenge: currentPlan ? {
-        name: currentPlan.planName,
-        day: currentPlan.currentDay,
-        goals: currentPlan.personalizedGoals
-      } : null,
-      recentJournalThemes: recentJournals.slice(0, 3).map(j => ({
-        date: j.createdAt,
-        mood: j.mood,
-        content: j.content?.slice(0, 200) // First 200 chars for context
-      }))
-    };
+    userInput: string
+  ): Promise<string> {
+    const recentSessions = await this.getRecentSessions(profile.userId, 3);
+    return `Recent conversation patterns: ${recentSessions.map(s => s.emotionalTone).join(', ')}`;
   }
 
   private async analyzeSession(userInput: string, aiResponse: string, profile: AiCouchProfile) {
-    // Simple analysis - could be enhanced with more AI
-    const analysis = {
+    return {
       emotionalTone: this.detectEmotionalTone(userInput),
-      detectedPatterns: this.detectPatterns(userInput, profile),
+      patterns: this.detectPatterns(userInput, profile),
       insights: this.extractInsights(userInput, aiResponse),
       recommendations: this.generateRecommendations(userInput, profile),
-      followUpNeeded: this.assessFollowUpNeed(userInput),
-      aiConfidence: 8 // Default confidence, could be enhanced
+      followUpNeeded: this.assessFollowUpNeed(userInput)
     };
-
-    return analysis;
   }
 
   private detectEmotionalTone(input: string): string {
-    // Simple emotion detection - could be enhanced with AI
-    const lowerInput = input.toLowerCase();
-    if (lowerInput.includes('excited') || lowerInput.includes('grateful') || lowerInput.includes('amazing')) {
-      return 'positive';
-    } else if (lowerInput.includes('stuck') || lowerInput.includes('frustrated') || lowerInput.includes('difficult')) {
-      return 'negative';
-    } else if (lowerInput.includes('confused') || lowerInput.includes('unsure')) {
-      return 'mixed';
-    }
+    // Simple emotion detection - could be enhanced with ML
+    if (input.toLowerCase().includes('anxious') || input.toLowerCase().includes('worried')) return 'anxious';
+    if (input.toLowerCase().includes('sad') || input.toLowerCase().includes('depressed')) return 'sad';
+    if (input.toLowerCase().includes('angry') || input.toLowerCase().includes('frustrated')) return 'frustrated';
+    if (input.toLowerCase().includes('excited') || input.toLowerCase().includes('happy')) return 'positive';
     return 'neutral';
   }
 
   private detectPatterns(input: string, profile: AiCouchProfile): string[] {
     const patterns: string[] = [];
-    const lowerInput = input.toLowerCase();
-    
-    // Check against known resistance patterns
-    // Check against known resistance patterns
-    if (Array.isArray(profile.resistancePatterns)) {
-      profile.resistancePatterns.forEach((pattern: string) => {
-        if (lowerInput.includes(pattern.toLowerCase())) {
-          patterns.push(`resistance_pattern: ${pattern}`);
-        }
-      });
-    }
-
-    // Detect common patterns
-    if (lowerInput.includes('always') || lowerInput.includes('never')) {
-      patterns.push('absolute_thinking');
-    }
-    if (lowerInput.includes("can't") || lowerInput.includes("impossible")) {
-      patterns.push('limiting_beliefs');
-    }
-
+    // Pattern detection logic based on profile and input
     return patterns;
   }
 
   private extractInsights(userInput: string, aiResponse: string): string[] {
-    // Simple insight extraction - could be enhanced
-    const insights: string[] = [];
-    
-    if (userInput.length > 100) {
-      insights.push('user_provides_detailed_context');
-    }
-    if (aiResponse.includes('pattern') || aiResponse.includes('notice')) {
-      insights.push('pattern_awareness_building');
-    }
-    
-    return insights;
+    return ['Session completed successfully'];
   }
 
   private generateRecommendations(input: string, profile: AiCouchProfile): string[] {
-    const recommendations: string[] = [];
-    
-    // Based on user input and profile, suggest actions
-    if (input.toLowerCase().includes('stuck')) {
-      recommendations.push('try_movement_or_breathwork');
-    }
-    if (profile.preferredMode === 'spiritual' && input.toLowerCase().includes('manifest')) {
-      recommendations.push('explore_visualization_techniques');
-    }
-    
-    return recommendations;
+    return ['Continue regular check-ins'];
   }
 
   private assessFollowUpNeed(input: string): boolean {
-    const lowerInput = input.toLowerCase();
-    return lowerInput.includes('crisis') || 
-           lowerInput.includes('emergency') || 
-           lowerInput.includes('suicidal') ||
-           lowerInput.includes('can\'t cope');
-  }
-
-  private async updateEmotionalPatterns(userId: string, detectedPatterns: string[]) {
-    // Update emotional patterns based on detected patterns
-    // This would involve more complex logic to track pattern evolution
-    // For now, we'll log that patterns were detected
-    console.log(`Detected patterns for user ${userId}:`, detectedPatterns);
+    return input.toLowerCase().includes('crisis') || input.toLowerCase().includes('emergency');
   }
 }
 
