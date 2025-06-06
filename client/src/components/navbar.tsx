@@ -27,6 +27,7 @@ export default function Navbar() {
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Progress", href: "/progress", icon: BarChart3 },
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
+    { name: "Vision Board", href: "/vision-board", icon: Palette },
   ];
 
   const getUserInitials = (user: User | undefined | null) => {
