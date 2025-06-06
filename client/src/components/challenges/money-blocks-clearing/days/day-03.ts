@@ -73,9 +73,9 @@ export const day03Content = {
   ],
   
   expectedResults: [
-    "Ability to consciously generate and sustain elevated emotions linked to abundance",
-    "Creation of a rich, emotionally charged mental blueprint of your desired life", 
-    "Deepening emotional connection with your Quantum Intention, enhancing subconscious alignment"
+    "Strengthened emotional association between gratitude and financial flow",
+    "A scripted, emotionally anchored version of your abundant financial life",
+    "Increased emotional access to the feelings of wealth, safety, and confidence"
   ]
   
 };
