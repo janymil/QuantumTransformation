@@ -234,7 +234,7 @@ export async function cacheResponse(
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expirationHours);
 
-    await storage.db
+    await db
       .insert(aiResponseCache)
       .values({
         inputHash,
@@ -292,6 +292,7 @@ export async function trackUsage(
  */
 export async function validateAIRequest(request: AIRequest): Promise<{
   valid: boolean;
+  allowed?: boolean;
   reason?: string;
   inputHash?: string;
   cachedResponse?: any;
@@ -308,6 +309,7 @@ export async function validateAIRequest(request: AIRequest): Promise<{
   if (!usageCheck.allowed) {
     return {
       valid: false,
+      allowed: false,
       reason: usageCheck.reason,
       remainingRequests: usageCheck.remainingRequests
     };
@@ -325,7 +327,8 @@ export async function validateAIRequest(request: AIRequest): Promise<{
   const cachedResponse = await getCachedResponse(inputHash);
 
   return { 
-    valid: true, 
+    valid: true,
+    allowed: true,
     inputHash,
     cachedResponse,
     remainingRequests: usageCheck.remainingRequests 
