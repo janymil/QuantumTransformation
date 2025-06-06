@@ -398,6 +398,42 @@ export type KnowledgeQuiz = typeof knowledgeQuizzes.$inferSelect;
 export type InsertUserQuizResult = typeof userQuizResults.$inferInsert;
 export type UserQuizResult = typeof userQuizResults.$inferSelect;
 
+// Voice Clones Schema for ElevenLabs integration
+export const voiceClones = pgTable("voice_clones", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  voiceId: varchar("voice_id").notNull().unique(), // ElevenLabs voice ID
+  voiceName: varchar("voice_name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("voice_clones_user_idx").on(table.userId),
+  index("voice_clones_voice_id_idx").on(table.voiceId),
+]);
+
+// Affirmation Audio Schema for storing generated voice files
+export const affirmationAudio = pgTable("affirmation_audio", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  affirmationId: integer("affirmation_id").references(() => savedPhrases.id),
+  voiceId: varchar("voice_id").notNull(), // ElevenLabs voice ID used
+  audioUrl: varchar("audio_url"), // CDN URL for the audio file
+  charactersUsed: integer("characters_used").notNull(),
+  cost: decimal("cost", { precision: 8, scale: 6 }).notNull(),
+  duration: integer("duration"), // Audio duration in seconds
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("affirmation_audio_user_idx").on(table.userId),
+  index("affirmation_audio_affirmation_idx").on(table.affirmationId),
+]);
+
+export type InsertVoiceClone = typeof voiceClones.$inferInsert;
+export type VoiceClone = typeof voiceClones.$inferSelect;
+export type InsertAffirmationAudio = typeof affirmationAudio.$inferInsert;
+export type AffirmationAudio = typeof affirmationAudio.$inferSelect;
+
 export type InsertAiResponseCache = typeof aiResponseCache.$inferInsert;
 export type AiResponseCache = typeof aiResponseCache.$inferSelect;
 
