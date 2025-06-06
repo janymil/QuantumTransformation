@@ -7,7 +7,7 @@ import {
   journalEntries
 } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
-import { multidisciplinaryExpertise, multidisciplinaryEngine } from './multidisciplinary-expertise';
+import { disciplineRegistry } from './disciplines/discipline-registry';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -566,15 +566,16 @@ Format as JSON with: predictions, confidence_levels, suggested_interventions, op
     const profile = await this.getUserProfile(userId);
     if (!profile) throw new Error('User profile not found');
 
-    // Get specific expertise from multidisciplinary knowledge base
-    const expertiseData = multidisciplinaryExpertise[expertDomain] || multidisciplinaryExpertise['cbt_therapist'];
+    // Get specific expertise from modular discipline registry
+    const discipline = disciplineRegistry.getDiscipline(expertDomain) || disciplineRegistry.getDiscipline('cbt_therapist');
+    const expertiseData = discipline?.expertise;
 
     const prompt = `You are acting as a ${expertiseData.name} with comprehensive training and expertise.
 
 EXPERT DOMAIN: ${expertiseData.description}
 
 AVAILABLE TECHNIQUES:
-${expertiseData.techniques.join('\n- ')}
+${expertiseData.expertise.join('\n- ')}
 
 USER ISSUE: ${userIssue}
 

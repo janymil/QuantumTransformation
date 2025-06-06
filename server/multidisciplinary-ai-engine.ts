@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { aiCouchProfiles, aiCouchSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { multidisciplinaryExpertise } from "./multidisciplinary-expertise";
+import { disciplineRegistry } from "./disciplines/discipline-registry";
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({
@@ -126,7 +126,7 @@ Analyze and respond in JSON format with:
   "confidence": 0.8
 }
 
-Available therapeutic approaches: ${Object.keys(multidisciplinaryExpertise).join(', ')}
+Available therapeutic approaches: ${disciplineRegistry.getAllDisciplines().map(d => d.expertise.name).join(', ')}
       `;
 
       const response = await anthropic.messages.create({
@@ -153,12 +153,20 @@ Available therapeutic approaches: ${Object.keys(multidisciplinaryExpertise).join
     profile: any
   ): Promise<Omit<MultidisciplinaryResponse, 'naturalResponse'>> {
     try {
-      // Select 3-5 complementary therapeutic approaches
-      const selectedApproaches = analysis.therapeuticApproaches.slice(0, 5);
-      const expertiseContext = selectedApproaches.map(approach => {
-        const expert = multidisciplinaryExpertise[approach];
-        return expert ? `${expert.name}: ${expert.description}` : '';
-      }).filter(Boolean).join('\n\n');
+      // Use new modular discipline registry to get multidisciplinary response
+      const context = {
+        userProfile: profile,
+        currentIssues: analysis.primaryNeeds,
+        goals: profile?.goals || []
+      };
+
+      const multidisciplinaryResult = await disciplineRegistry.generateMultidisciplinaryResponse(
+        userInput,
+        context,
+        Math.min(5, analysis.therapeuticApproaches.length)
+      );
+
+      const expertiseContext = multidisciplinaryResult.primaryDisciplines.join(', ');
 
       const prompt = `
 As a multidisciplinary therapeutic AI, integrate expertise from these approaches:
