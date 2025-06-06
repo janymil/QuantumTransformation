@@ -77,7 +77,17 @@ export default function Journal() {
   const [searchQuery, setSearchQuery] = useState("");
   const [reflectionFilter, setReflectionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [expandedEntries, setExpandedEntries] = useState<Set<number>>(new Set());
+  const [expandedEntries, setExpandedEntries] = useState<Set<string | number>>(new Set());
+
+  const toggleEntryExpansion = (entryId: string | number) => {
+    const newExpanded = new Set(expandedEntries);
+    if (newExpanded.has(entryId)) {
+      newExpanded.delete(entryId);
+    } else {
+      newExpanded.add(entryId);
+    }
+    setExpandedEntries(newExpanded);
+  };
 
   // Add debugging for journal data
   const { data: entries, isLoading: entriesLoading, error: entriesError } = useQuery<JournalEntry[]>({
@@ -208,16 +218,6 @@ export default function Journal() {
     setExperience("");
     setInsights("");
     setIntention("");
-  };
-
-  const toggleEntryExpansion = (entryId: number) => {
-    const newExpandedEntries = new Set(expandedEntries);
-    if (newExpandedEntries.has(entryId)) {
-      newExpandedEntries.delete(entryId);
-    } else {
-      newExpandedEntries.add(entryId);
-    }
-    setExpandedEntries(newExpandedEntries);
   };
 
   const handleSave = () => {
@@ -551,22 +551,17 @@ export default function Journal() {
                   .map((entry) => {
                     const content = challengeContent.find(c => c.day === entry.day);
                     return (
-                      <Card key={`journal-${entry.id}`} className="hover:shadow-lg transition-shadow duration-300">
+                      <Card key={`journal-${entry.id}`} className="hover:shadow-lg transition-shadow duration-300 cursor-pointer" onClick={() => toggleEntryExpansion(entry.id)}>
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2 flex-1 min-w-0">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleEntryExpansion(entry.id)}
-                                className="p-1 h-auto"
-                              >
+                              <div className="p-1 h-auto">
                                 {expandedEntries.has(entry.id) ? (
                                   <ChevronDown className="w-4 h-4" />
                                 ) : (
                                   <ChevronRight className="w-4 h-4" />
                                 )}
-                              </Button>
+                              </div>
                               <CardTitle className="flex items-center truncate">
                                 <Calendar className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
                                 <span className="truncate">
@@ -581,7 +576,10 @@ export default function Journal() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleSelectEntry(entry)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectEntry(entry);
+                                }}
                               >
                                 <Edit className="w-4 h-4 mr-1" />
                                 Edit
@@ -589,7 +587,8 @@ export default function Journal() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   if (window.confirm('Are you sure you want to delete this journal entry? This action cannot be undone.')) {
                                     deleteMutation.mutate(entry.id);
                                   }
@@ -634,14 +633,23 @@ export default function Journal() {
                 reflectionFilter === 'exercise_reflection' || reflectionFilter === 'daily_assessment') && 
                 filteredReflections.length > 0 && 
                 filteredReflections.map((reflection) => (
-                  <Card key={`reflection-${reflection.id}`} className="hover:shadow-lg transition-shadow duration-300">
+                  <Card key={`reflection-${reflection.id}`} className="hover:shadow-lg transition-shadow duration-300 cursor-pointer" onClick={() => toggleEntryExpansion(`reflection-${reflection.id}`)}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center">
-                          <FileText className="w-5 h-5 mr-2 text-primary" />
-                          {reflection.title}
-                        </CardTitle>
-                        <Badge variant="outline">
+                        <div className="flex items-center space-x-2 flex-1 min-w-0">
+                          <div className="p-1 h-auto">
+                            {expandedEntries.has(`reflection-${reflection.id}`) ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </div>
+                          <CardTitle className="flex items-center truncate">
+                            <FileText className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                            <span className="truncate">{reflection.title}</span>
+                          </CardTitle>
+                        </div>
+                        <Badge variant="outline" className="whitespace-nowrap">
                           {reflection.reflectionType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Badge>
                       </div>
@@ -649,17 +657,19 @@ export default function Journal() {
                         <p className="text-sm text-muted-foreground">Day {reflection.day}</p>
                       )}
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-muted-foreground leading-relaxed">{reflection.content}</p>
+                    {expandedEntries.has(`reflection-${reflection.id}`) && (
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-muted-foreground leading-relaxed">{reflection.content}</p>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{reflection.wordCount} words</span>
+                            <span>{format(new Date(reflection.createdAt), 'MMM d, yyyy')}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{reflection.wordCount} words</span>
-                          <span>{format(new Date(reflection.createdAt), 'MMM d, yyyy')}</span>
-                        </div>
-                      </div>
-                    </CardContent>
+                      </CardContent>
+                    )}
                   </Card>
                 ))}
 
