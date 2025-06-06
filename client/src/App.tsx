@@ -15,6 +15,8 @@ import SavedAffirmations from "@/pages/saved-affirmations";
 import AICoaching from "@/pages/ai-coaching";
 import AIConversationHistory from "@/pages/ai-conversation-history";
 import AdminAnalytics from "@/pages/admin-analytics";
+import AiCouchOnboarding from "@/pages/ai-couch-onboarding";
+import AiCouchDashboard from "@/pages/ai-couch-dashboard";
 
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
@@ -94,6 +96,10 @@ function Router() {
         <Route path="/journal" component={() => <Journal />} />
         <Route path="/progress" component={Progress} />
         <Route path="/saved-affirmations" component={SavedAffirmations} />
+        
+        {/* AI Couch Premium System */}
+        <Route path="/ai-couch-onboarding" component={AiCouchOnboarding} />
+        <Route path="/ai-couch-dashboard" component={AiCouchDashboard} />
         
         {/* Legacy challenge routes - keep for backwards compatibility */}
         <Route path="/challenge/:day" component={(props) => <ChallengeDay {...props} />} />
