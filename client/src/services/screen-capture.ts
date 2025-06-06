@@ -27,7 +27,6 @@ class ScreenCaptureService {
       // Request screen capture permission
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          mediaSource: 'screen',
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         }
