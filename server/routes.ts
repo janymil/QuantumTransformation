@@ -595,101 +595,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin Analytics endpoint (password protected in frontend)
   app.get('/api/admin/analytics', async (req, res) => {
     try {
-      // Get total responses across all users
-      const totalResponses = await db
-        .select({ count: count() })
-        .from(aiResponseHistory);
-
-      // Get total unique users
-      const totalUsers = await db
-        .select({ count: count() })
-        .from(db.selectDistinct({ userId: aiResponseHistory.userId }).from(aiResponseHistory));
-
-      // Get model distribution
-      const modelDistribution = await db
-        .select({
-          model: aiResponseHistory.modelUsed,
-          count: count(),
-          totalCost: sum(aiResponseHistory.cost)
-        })
-        .from(aiResponseHistory)
-        .groupBy(aiResponseHistory.modelUsed);
-
-      // Get average metrics
-      const avgMetrics = await db
-        .select({
-          avgQuality: avg(aiResponseHistory.responseQuality),
-          avgCost: avg(aiResponseHistory.cost),
-          avgResponseTime: avg(aiResponseHistory.responseTime),
-          totalCost: sum(aiResponseHistory.cost)
-        })
-        .from(aiResponseHistory);
-
-      // Get high quality percentage (8+ rating)
-      const highQuality = await db
-        .select({ count: count() })
-        .from(aiResponseHistory)
-        .where(gte(aiResponseHistory.responseQuality, 8));
-
-      // Get challenge type distribution
-      const challengeTypes = await db
-        .select({
-          challengeType: aiResponseHistory.challengeType,
-          count: count(),
-          avgQuality: avg(aiResponseHistory.responseQuality)
-        })
-        .from(aiResponseHistory)
-        .groupBy(aiResponseHistory.challengeType)
-        .orderBy(desc(count()));
-
-      // Calculate cost savings and format data
-      const total = Number(totalResponses[0]?.count) || 0;
-      const gpt4oMiniCount = modelDistribution.find(m => m.model === 'gpt-4o-mini')?.count || 0;
-      const costSavings = total > 0 ? Math.round(Number(gpt4oMiniCount) / total * 75) : 0;
-
-      const formattedModelDistribution = modelDistribution.map(item => ({
-        model: item.model || 'gpt-4o',
-        count: Number(item.count) || 0,
-        percentage: total > 0 ? Math.round((Number(item.count) || 0) / total * 100) : 0,
-        cost: Number(item.totalCost) || 0
-      }));
-
-      const formattedChallengeTypes = challengeTypes.slice(0, 10).map(item => ({
-        challengeType: item.challengeType || 'general',
-        count: Number(item.count) || 0,
-        avgQuality: Number(item.avgQuality) || 8
-      }));
-
-      // Generate daily usage for last 7 days
-      const dailyUsage = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - i));
-        return {
-          date: date.toISOString().split('T')[0],
-          responses: Math.floor(total / 30),
-          cost: Number(avgMetrics[0]?.totalCost || 0) / 30,
-          users: Math.floor(Number(totalUsers[0]?.count || 0) / 30)
-        };
-      });
-
-      const analytics = {
-        totalResponses: total,
-        totalUsers: Number(totalUsers[0]?.count) || 0,
-        totalCost: Number(avgMetrics[0]?.totalCost) || 0,
-        averageQuality: Number(avgMetrics[0]?.avgQuality) || 8,
-        averageResponseTime: Number(avgMetrics[0]?.avgResponseTime) || 1500,
-        modelDistribution: formattedModelDistribution,
-        costSavings,
-        highQualityPercentage: total > 0 ? Math.round((Number(highQuality[0]?.count) || 0) / total * 100) : 0,
-        dailyUsage,
-        topChallengeTypes: formattedChallengeTypes,
-        userEngagement: {
-          activeUsers: Number(totalUsers[0]?.count) || 0,
-          avgResponsesPerUser: total > 0 ? Number((total / (Number(totalUsers[0]?.count) || 1)).toFixed(1)) : 0,
-          returnRate: 85
-        }
-      };
-
+      // Import the comprehensive analytics function
+      const { getComprehensiveAnalytics } = await import('./simple-usage-tracker');
+      
+      // Get comprehensive analytics that captures all AI requests
+      const analytics = await getComprehensiveAnalytics();
+      
       res.json(analytics);
     } catch (error) {
       console.error("Error fetching admin analytics:", error);
