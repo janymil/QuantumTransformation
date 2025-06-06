@@ -135,7 +135,7 @@ export default function AiCouchExpertSelector() {
               <CardContent>
                 <ScrollArea className="h-96">
                   <div className="space-y-4">
-                    {expertDomains?.map((domain: ExpertDomain) => {
+                    {(expertDomains || []).map((domain: ExpertDomain) => {
                       const IconComponent = expertIcons[domain.id] || Brain;
                       const isSelected = selectedExpert === domain.id;
                       

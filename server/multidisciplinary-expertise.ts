@@ -7,6 +7,7 @@ export interface ExpertDomain {
   name: string;
   description: string;
   techniques: string[];
+  approach?: string;
   applications: string[];
   assessmentMethods: string[];
   interventions: string[];
@@ -29,6 +30,7 @@ export const multidisciplinaryExpertise: Record<string, ExpertDomain> = {
       "Graded task assignment",
       "Relapse prevention"
     ],
+    approach: "Uses systematic, evidence-based cognitive and behavioral interventions to modify maladaptive thinking and behavior patterns",
     applications: [
       "Depression and anxiety disorders",
       "Negative thought patterns",
