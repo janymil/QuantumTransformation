@@ -312,9 +312,6 @@ export type InsertAiResponseHistory = typeof aiResponseHistory.$inferInsert;
 export type AiResponseHistory = typeof aiResponseHistory.$inferSelect;
 export type SpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferSelect;
 
-export type InsertVisionBoard = typeof visionBoards.$inferInsert;
-export type VisionBoard = typeof visionBoards.$inferSelect;
-
 // Gamification and Micro-Learning System
 export const userLevels = pgTable("user_levels", {
   id: serial("id").primaryKey(),
@@ -457,12 +454,7 @@ export const visionBoardTemplates = pgTable("vision_board_templates", {
   index("vision_board_templates_category_idx").on(table.category),
 ]);
 
-export type InsertVisionBoard = typeof visionBoards.$inferInsert;
-export type VisionBoard = typeof visionBoards.$inferSelect;
-export type InsertVisionBoardItem = typeof visionBoardItems.$inferInsert;
-export type VisionBoardItem = typeof visionBoardItems.$inferSelect;
-export type InsertVisionBoardTemplate = typeof visionBoardTemplates.$inferInsert;
-export type VisionBoardTemplate = typeof visionBoardTemplates.$inferSelect;
+
 
 // Insert schemas
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true });
@@ -477,6 +469,11 @@ export const insertAiResponseHistorySchema = createInsertSchema(aiResponseHistor
 export const insertVisionBoardSchema = createInsertSchema(visionBoards).omit({ id: true });
 export const insertVisionBoardItemSchema = createInsertSchema(visionBoardItems).omit({ id: true });
 export const insertVisionBoardTemplateSchema = createInsertSchema(visionBoardTemplates).omit({ id: true });
+
+export type InsertVisionBoard = typeof visionBoards.$inferInsert;
+export type VisionBoard = typeof visionBoards.$inferSelect;
+export type InsertVisionBoardItem = typeof visionBoardItems.$inferInsert;
+export type VisionBoardItem = typeof visionBoardItems.$inferSelect;
 
 // ===================================
 // AI COUCH SYSTEM - INDEPENDENT MODULE
