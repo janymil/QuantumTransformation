@@ -13,7 +13,7 @@
 - Insert operations failing due to missing required fields
 - Database push timing out due to connection issues
 
-### ✅ Implemented Multidisciplinary Expertise (15+ Disciplines)
+### ✅ Implemented Multidisciplinary Expertise (16 Disciplines)
 1. **CBT Therapist** - Cognitive restructuring, behavioral activation
 2. **Trauma Therapist** - EMDR, somatic experiencing, trauma-informed care
 3. **Somatic Therapist** - Body awareness, nervous system regulation
@@ -29,6 +29,7 @@
 13. **NLP Master** - Language patterns, subconscious programming
 14. **Energy Healer** - Chakra balancing, energy field work
 15. **Breathwork Facilitator** - Conscious breathing, nervous system regulation
+16. **Classical Psychologist** - Evidence-based assessment, behavioral modification, research-validated interventions
 
 ### ✅ Core Architecture Implemented
 - Multidisciplinary expertise framework with detailed therapeutic modalities

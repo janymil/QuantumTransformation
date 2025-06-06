@@ -630,6 +630,69 @@ export const multidisciplinaryExpertise: Record<string, ExpertDomain> = {
       "Supports somatic approaches",
       "Enhances emotional regulation capacity"
     ]
+  },
+
+  classical_psychologist: {
+    name: "Classical Psychologist",
+    description: "Expert in foundational psychological theories and evidence-based therapeutic approaches",
+    expertise: [
+      "Behavioral psychology principles",
+      "Learning theory and conditioning",
+      "Personality assessment and theory",
+      "Developmental psychology",
+      "Social psychology dynamics",
+      "Cognitive processes and biases",
+      "Psychological assessment tools",
+      "Research-based interventions",
+      "Diagnostic evaluation",
+      "Psychological testing and measurement",
+      "Individual differences analysis",
+      "Psychoeducation and skill building"
+    ],
+    approach: "Applies scientifically validated psychological principles and methodologies for comprehensive assessment and treatment",
+    applications: [
+      "Mental health diagnosis and treatment",
+      "Behavioral modification",
+      "Personality disorders",
+      "Learning difficulties",
+      "Cognitive assessment",
+      "Psychological evaluation",
+      "Treatment planning",
+      "Progress monitoring",
+      "Skill development",
+      "Psychoeducation"
+    ],
+    assessmentMethods: [
+      "Standardized psychological tests",
+      "Clinical interviews",
+      "Behavioral observation",
+      "Cognitive assessment batteries",
+      "Personality inventories",
+      "Functional analysis",
+      "Risk assessment protocols",
+      "Progress measurement scales"
+    ],
+    interventions: [
+      "Evidence-based therapy protocols",
+      "Behavioral modification programs",
+      "Cognitive skill training",
+      "Psychoeducational interventions",
+      "Assessment-guided treatment planning",
+      "Progress monitoring systems",
+      "Relapse prevention strategies"
+    ],
+    contraindications: [
+      "Active psychosis requiring medical intervention",
+      "Severe substance intoxication",
+      "Medical emergencies",
+      "Court-ordered evaluations (require specific credentials)"
+    ],
+    integration: [
+      "Provides scientific foundation for other approaches",
+      "Enhances diagnostic accuracy",
+      "Supports evidence-based treatment decisions",
+      "Complements therapeutic modalities with research backing"
+    ]
   }
 };
 
@@ -651,11 +714,15 @@ export class MultidisciplinaryExpertiseEngine {
     }
     
     if (currentIssues.some(issue => issue.includes('anxiety') || issue.includes('depression'))) {
-      recommendedDomains.push('cbt_therapist', 'eft_practitioner');
+      recommendedDomains.push('cbt_therapist', 'eft_practitioner', 'classical_psychologist');
     }
     
     if (currentIssues.some(issue => issue.includes('pattern') || issue.includes('relationship'))) {
-      recommendedDomains.push('psychodynamic_therapist');
+      recommendedDomains.push('psychodynamic_therapist', 'classical_psychologist');
+    }
+    
+    if (currentIssues.some(issue => issue.includes('behavior') || issue.includes('habit') || issue.includes('learning'))) {
+      recommendedDomains.push('classical_psychologist');
     }
     
     if (currentIssues.some(issue => issue.includes('sleep') || issue.includes('insomnia'))) {
