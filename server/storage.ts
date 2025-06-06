@@ -81,6 +81,10 @@ export interface IStorage {
   
   // Quit challenge operations
   quitChallenge(userId: string, challengeType: string): Promise<void>;
+  
+  // AI Couch profile operations
+  getAICouchProfile(userId: string): Promise<any>;
+  updateAICouchProfile(userId: string, updates: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -459,6 +463,46 @@ export class DatabaseStorage implements IStorage {
           eq(spacedRepetitionConcepts.challengeType, challengeType)
         ));
     });
+  }
+
+  // AI Couch profile operations
+  async getAICouchProfile(userId: string): Promise<any> {
+    try {
+      // Import schema on demand to avoid circular dependencies
+      const { aiCouchProfiles } = await import("@shared/schema");
+      
+      const [profile] = await db
+        .select()
+        .from(aiCouchProfiles)
+        .where(eq(aiCouchProfiles.userId, userId))
+        .limit(1);
+      
+      return profile;
+    } catch (error) {
+      console.error("Error getting AI Couch profile:", error);
+      return null;
+    }
+  }
+
+  async updateAICouchProfile(userId: string, updates: any): Promise<any> {
+    try {
+      // Import schema on demand to avoid circular dependencies
+      const { aiCouchProfiles } = await import("@shared/schema");
+      
+      const [profile] = await db
+        .update(aiCouchProfiles)
+        .set({
+          ...updates,
+          lastUpdated: new Date()
+        })
+        .where(eq(aiCouchProfiles.userId, userId))
+        .returning();
+      
+      return profile;
+    } catch (error) {
+      console.error("Error updating AI Couch profile:", error);
+      throw error;
+    }
   }
 }
 

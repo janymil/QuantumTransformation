@@ -1436,6 +1436,50 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Get AI Couch profile
+  app.get('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Get existing profile from database
+      const profile = await storage.getAICouchProfile(userId);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error getting AI Couch profile:", error);
+      res.status(500).json({ message: "Failed to get profile", error: (error as Error).message });
+    }
+  });
+
+  // Update AI Couch profile
+  app.put('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const updatedData = req.body;
+      
+      // Update profile in database
+      const profile = await storage.updateAICouchProfile(userId, updatedData);
+      
+      // Trigger AI reassessment based on updated profile
+      await aiCouchEngine.performDynamicAssessment(userId);
+      
+      res.json({ 
+        success: true, 
+        profile,
+        message: "Profile updated and AI coaching adapted to your changes" 
+      });
+    } catch (error) {
+      console.error("Error updating AI Couch profile:", error);
+      res.status(500).json({ message: "Failed to update profile", error: (error as Error).message });
+    }
+  });
+
   // AI Couch intelligent multidisciplinary coaching session
   app.post('/api/ai-couch/session', isAuthenticated, async (req: any, res) => {
     try {
