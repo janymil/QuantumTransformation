@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import type { User } from "@shared/schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   DropdownMenu,
@@ -10,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare } from "lucide-react";
+import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
 
@@ -102,7 +103,7 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.profileImageUrl} alt={getUserDisplayName(user)} />
+                    <AvatarImage src={user?.profileImageUrl || undefined} alt={getUserDisplayName(user)} />
                     <AvatarFallback className="bg-gradient-primary text-white text-sm">
                       {getUserInitials(user)}
                     </AvatarFallback>
