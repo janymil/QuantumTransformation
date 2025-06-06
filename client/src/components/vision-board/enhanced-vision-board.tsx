@@ -15,6 +15,7 @@ import { ImageCompressor, ExternalHostingUploader } from "@/lib/image-compressio
 import { getActiveHostingConfig } from "@/lib/hosting-config";
 import VisionBoardTour from "./vision-board-tour";
 import AIVisionGuide from "./ai-vision-guide";
+import AISuggestionEngine from "./ai-suggestion-engine";
 import {
   Monitor,
   Camera,
@@ -122,6 +123,7 @@ export default function EnhancedVisionBoard() {
   const [showSvgDialog, setShowSvgDialog] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [currentBoardId, setCurrentBoardId] = useState<number | null>(null);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
 
   // Comprehensive SVG elements library
   const predefinedSvgs = [
@@ -896,6 +898,72 @@ export default function EnhancedVisionBoard() {
     setNewText({ content: '', fontSize: 24, color: '#000000' });
     setShowTextDialog(false);
     toast({ title: "Text added to vision board!" });
+  };
+
+  // AI Suggestion Handler
+  const handleAISuggestion = (suggestion: any) => {
+    if (suggestion.type === 'text') {
+      const dimensions = calculateTextDimensions(suggestion.content, 24);
+      const textItem: VisionBoardItem = {
+        id: Date.now().toString(),
+        type: 'text',
+        content: suggestion.content,
+        x: Math.random() * (board.canvasData.canvasWidth - dimensions.width),
+        y: Math.random() * (board.canvasData.canvasHeight - dimensions.height),
+        width: dimensions.width,
+        height: dimensions.height,
+        rotation: 0,
+        opacity: 1,
+        zIndex: board.canvasData.items.length,
+        styling: {
+          fontSize: 24,
+          color: '#333333',
+          fontFamily: 'Arial',
+          textAlign: 'left',
+          fontWeight: 'bold',
+          fontStyle: 'normal'
+        }
+      };
+
+      setBoard(prev => ({
+        ...prev,
+        canvasData: {
+          ...prev.canvasData,
+          items: [...prev.canvasData.items, textItem]
+        }
+      }));
+    } else if (suggestion.type === 'color') {
+      setBoard(prev => ({
+        ...prev,
+        canvasData: {
+          ...prev.canvasData,
+          backgroundColor: suggestion.content
+        }
+      }));
+    } else if (suggestion.type === 'element') {
+      // Add SVG element based on suggestion
+      const svgItem: VisionBoardItem = {
+        id: Date.now().toString(),
+        type: 'svg',
+        content: suggestion.content,
+        x: Math.random() * (board.canvasData.canvasWidth - 100),
+        y: Math.random() * (board.canvasData.canvasHeight - 100),
+        width: 80,
+        height: 80,
+        rotation: 0,
+        opacity: 1,
+        zIndex: board.canvasData.items.length,
+        styling: { color: '#6366f1' }
+      };
+
+      setBoard(prev => ({
+        ...prev,
+        canvasData: {
+          ...prev.canvasData,
+          items: [...prev.canvasData.items, svgItem]
+        }
+      }));
+    }
   };
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {

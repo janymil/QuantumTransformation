@@ -2405,6 +2405,88 @@ Make recommendations specific to their exact goals, timeline, and aspirations. F
     }
   });
 
+  // AI Vision Board Suggestions - Contextual board analysis and improvements
+  app.post('/api/ai/vision-board-suggestions', isAuthenticated, async (req: any, res) => {
+    try {
+      const { boardData, userGoals, focusArea, currentContent } = req.body;
+      
+      if (!boardData || !userGoals || !focusArea) {
+        return res.status(400).json({ error: 'Board data, user goals, and focus area are required' });
+      }
+
+      const { OpenAI } = await import('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const analysisPrompt = `You are an expert vision board consultant specializing in contextual analysis and improvement recommendations. 
+
+CURRENT VISION BOARD ANALYSIS:
+- Title: ${boardData.title}
+- Description: ${boardData.description}
+- Total items on board: ${boardData.items?.length || 0}
+- Background color: ${boardData.backgroundColor}
+- Focus area: ${focusArea}
+- User goals: ${userGoals}
+
+CURRENT BOARD CONTENT:
+${boardData.items?.map(item => `- ${item.type}: ${item.content || 'visual element'}`).join('\n') || 'Empty board'}
+
+TASK: Analyze this vision board and provide 5-8 specific, actionable suggestions to enhance its effectiveness for manifestation and goal achievement.
+
+For each suggestion, consider:
+1. What's missing that would strengthen the vision
+2. How current elements could be enhanced
+3. Specific text phrases that would be powerful
+4. Visual elements that would support the goals
+5. Layout improvements for better flow
+6. Color psychology for the chosen focus area
+
+Respond with a JSON object containing an array of suggestions. Each suggestion should have:
+- type: 'text', 'image', 'element', 'color', or 'layout'
+- title: Brief descriptive title
+- description: Clear explanation of what to add/change
+- content: Specific content to add (if applicable)
+- reasoning: Why this suggestion enhances manifestation
+- confidence: 0.0-1.0 confidence score
+- category: Category like 'motivation', 'visual', 'affirmation', etc.
+- preview: Short preview of the suggested content (if applicable)
+
+Focus on practical, implementable suggestions that directly support their ${focusArea} goals.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert vision board consultant who analyzes existing boards and provides specific, actionable improvement suggestions for better manifestation results."
+          },
+          {
+            role: "user",
+            content: analysisPrompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.8,
+        max_tokens: 3000
+      });
+
+      const aiResponse = JSON.parse(response.choices[0].message.content);
+
+      res.json({ 
+        success: true, 
+        suggestions: aiResponse.suggestions || [],
+        analysis: aiResponse.analysis || "Analysis complete",
+        message: "Vision board suggestions generated successfully"
+      });
+
+    } catch (error) {
+      console.error('Vision board suggestions error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate vision board suggestions',
+        details: error.message 
+      });
+    }
+  });
+
   // Vision Board API Routes
   app.get('/api/vision-boards', isAuthenticated, async (req: any, res) => {
     try {
