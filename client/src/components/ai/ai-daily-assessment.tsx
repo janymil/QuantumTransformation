@@ -7,6 +7,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Brain, Lightbulb, Target, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface Exercise {
   id: string;
@@ -40,6 +42,7 @@ export function AiDailyAssessment({ assessment, onComplete, isSubmitting }: AiDa
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [exerciseResponses, setExerciseResponses] = useState<Record<string, any>>({});
   const [reflectionResponses, setReflectionResponses] = useState<Record<string, string>>({});
+  const { toast } = useToast();
 
   const currentExercise = assessment.exercises[currentExerciseIndex];
   const isLastExercise = currentExerciseIndex === assessment.exercises.length - 1;
@@ -65,14 +68,110 @@ export function AiDailyAssessment({ assessment, onComplete, isSubmitting }: AiDa
     }
   };
 
-  const handleComplete = () => {
-    const responses = {
-      exercises: exerciseResponses,
-      reflections: reflectionResponses,
-      overallExperience: reflectionResponses.overall || '',
-      completedAt: new Date().toISOString()
-    };
-    onComplete(responses);
+  const handleComplete = async () => {
+    try {
+      // Save assessment reflections to database
+      const reflectionsToSave = [];
+      
+      // Save reflection question responses
+      Object.entries(reflectionResponses).forEach(([key, value]) => {
+        if (value.trim()) {
+          if (key.startsWith('question_')) {
+            const questionIndex = parseInt(key.replace('question_', ''));
+            reflectionsToSave.push({
+              assessmentId: assessment.id,
+              reflectionType: 'daily_assessment',
+              title: `Daily Assessment Reflection - Question ${questionIndex + 1}`,
+              content: value,
+              questionPrompt: assessment.reflectionQuestions[questionIndex],
+              challengeType: assessment.currentFocus,
+              metadata: {
+                exerciseCount: assessment.exercises.length,
+                assessmentType: 'daily',
+                questionIndex
+              }
+            });
+          } else if (key === 'overall') {
+            reflectionsToSave.push({
+              assessmentId: assessment.id,
+              reflectionType: 'daily_assessment',
+              title: 'Overall Daily Experience',
+              content: value,
+              questionPrompt: 'How was your overall experience with today\'s exercises?',
+              challengeType: assessment.currentFocus,
+              metadata: {
+                exerciseCount: assessment.exercises.length,
+                assessmentType: 'daily',
+                isOverallReflection: true
+              }
+            });
+          }
+        }
+      });
+
+      // Save exercise reflections
+      Object.entries(exerciseResponses).forEach(([exerciseId, responses]) => {
+        if (responses.reflection && responses.reflection.trim()) {
+          const exercise = assessment.exercises.find(ex => ex.id === exerciseId);
+          reflectionsToSave.push({
+            assessmentId: assessment.id,
+            reflectionType: 'exercise_reflection',
+            title: `Exercise Reflection: ${exercise?.title || exerciseId}`,
+            content: responses.reflection,
+            questionPrompt: `Reflection on ${exercise?.title || 'exercise'} - ${exercise?.description || ''}`,
+            challengeType: assessment.currentFocus,
+            metadata: {
+              exerciseId,
+              exerciseType: exercise?.type,
+              exerciseDuration: exercise?.duration,
+              therapeuticBasis: exercise?.therapeuticBasis,
+              feeling: responses.feeling,
+              intensity: responses.intensity
+            }
+          });
+        }
+      });
+
+      // Save all reflections to database
+      for (const reflection of reflectionsToSave) {
+        try {
+          await apiRequest('/api/assessment-reflections', {
+            method: 'POST',
+            body: JSON.stringify(reflection)
+          });
+        } catch (error) {
+          console.error('Error saving reflection:', error);
+          toast({
+            title: "Warning",
+            description: "Some reflections couldn't be saved, but your assessment was completed.",
+            variant: "destructive"
+          });
+        }
+      }
+
+      if (reflectionsToSave.length > 0) {
+        toast({
+          title: "Assessment Complete",
+          description: `Saved ${reflectionsToSave.length} reflections to your journal.`
+        });
+      }
+
+      const responses = {
+        exercises: exerciseResponses,
+        reflections: reflectionResponses,
+        overallExperience: reflectionResponses.overall || '',
+        completedAt: new Date().toISOString()
+      };
+      
+      onComplete(responses);
+    } catch (error) {
+      console.error('Error completing assessment:', error);
+      toast({
+        title: "Error",
+        description: "There was an issue saving your reflections. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (assessment.isCompleted) {
