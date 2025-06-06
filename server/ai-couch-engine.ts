@@ -7,6 +7,7 @@ import {
   journalEntries
 } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { multidisciplinaryExpertise, multidisciplinaryEngine } from './multidisciplinary-expertise';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -521,25 +522,93 @@ Format as JSON with: predictions, confidence_levels, suggested_interventions, op
   }
 
   /**
+   * Multidisciplinary Expert Assessment - Determines which therapeutic approaches to apply
+   */
+  async performMultidisciplinaryAssessment(
+    userId: string,
+    currentIssues: string[],
+    goals: string[]
+  ) {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    // Use multidisciplinary engine to assess needs
+    const recommendedDomains = multidisciplinaryEngine.assessExpertDomainNeeds(
+      profile,
+      currentIssues,
+      goals
+    );
+
+    // Generate integrated intervention plan
+    const interventionPlan = multidisciplinaryEngine.generateIntegratedIntervention(
+      recommendedDomains,
+      currentIssues.join(', '),
+      profile
+    );
+
+    return {
+      recommendedExpertDomains: recommendedDomains,
+      interventionPlan,
+      multidisciplinaryApproach: interventionPlan.multidisciplinaryApproach,
+      integrationStrategy: interventionPlan.integrationStrategy,
+      contraindications: interventionPlan.contraindications
+    };
+  }
+
+  /**
    * Expert Knowledge Integration System - Apply specific methodologies
    */
   async applyExpertKnowledgeIntegration(
     userId: string,
-    expertDomain: 'dispenza' | 'goddard' | 'access_consciousness' | 'somatic_experiencing' | 'neuroscience',
+    expertDomain: 'dispenza' | 'goddard' | 'access_consciousness' | 'somatic_experiencing' | 'neuroscience' | 'cbt_therapist' | 'trauma_therapist' | 'eft_practitioner' | 'nutritional_psychiatrist',
     userIssue: string
   ) {
     const profile = await this.getUserProfile(userId);
     if (!profile) throw new Error('User profile not found');
 
-    const prompt = `Apply ${expertDomain} methodology to address: ${userIssue}
+    // Get specific expertise from multidisciplinary knowledge base
+    const expertiseData = multidisciplinaryExpertise[expertDomain] || multidisciplinaryExpertise['cbt_therapist'];
+
+    const prompt = `You are acting as a ${expertiseData.name} with comprehensive training and expertise.
+
+EXPERT DOMAIN: ${expertiseData.description}
+
+AVAILABLE TECHNIQUES:
+${expertiseData.techniques.join('\n- ')}
+
+USER ISSUE: ${userIssue}
 
 USER PROFILE:
 - Healing Readiness: ${profile.healingReadiness}/10
 - Preferred Mode: ${profile.preferredMode}
 - Communication Style: ${profile.communicationStyle}
+- Learning Style: ${profile.learningStyle}
 
-Provide specific, practical guidance using this expert knowledge domain.
-Format as JSON with: expert_analysis, specific_techniques, practice_instructions, expected_outcomes, progress_indicators.`;
+EXPERT APPLICATIONS:
+${expertiseData.applications.join('\n- ')}
+
+ASSESSMENT METHODS AVAILABLE:
+${expertiseData.assessmentMethods.join('\n- ')}
+
+INTERVENTION OPTIONS:
+${expertiseData.interventions.join('\n- ')}
+
+CONTRAINDICATIONS TO CONSIDER:
+${expertiseData.contraindications.join('\n- ')}
+
+INTEGRATION OPPORTUNITIES:
+${expertiseData.integration.join('\n- ')}
+
+Apply your ${expertiseData.name} expertise to provide:
+1. Professional assessment of the user's issue from this discipline's perspective
+2. Specific techniques and interventions appropriate for their readiness level
+3. Step-by-step practice instructions adapted to their learning style
+4. Expected outcomes and timeline
+5. Progress indicators to track improvement
+6. Integration recommendations with other therapeutic modalities
+
+Provide comprehensive, professional guidance as a licensed practitioner in this field.
+Format as detailed JSON with: expert_assessment, recommended_techniques, practice_protocol, expected_outcomes, progress_markers, integration_notes, safety_considerations.`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',

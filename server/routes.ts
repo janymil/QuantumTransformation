@@ -1423,9 +1423,7 @@ Provide personalized, actionable guidance that:
       const session = await aiCouchEngine.conductCoachingSession(
         userId, 
         userInput, 
-        sessionType,
-        emotionalState,
-        sessionGoal
+        sessionType
       );
       
       res.json(session);
@@ -1459,9 +1457,8 @@ Provide personalized, actionable guidance that:
 
       const plan = await aiCouchEngine.generatePersonalizedChallenge(
         userId,
-        profile.id,
         baseChallengeType,
-        userSpecificNeeds
+        30
       );
       
       res.json(plan);
@@ -1484,10 +1481,9 @@ Provide personalized, actionable guidance that:
       } = req.body;
 
       const activity = await aiCouchEngine.generateDailyActivity(
-        planId,
         userId,
-        day,
-        userCurrentState
+        planId,
+        day
       );
       
       res.json(activity);
