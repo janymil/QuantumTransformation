@@ -3,22 +3,19 @@
  * Handles voice cloning and affirmation audio generation
  */
 
-import { ElevenLabs, ElevenLabsError } from '@elevenlabs/elevenlabs-js';
 import { storage } from './storage';
-import { trackUsage } from './ai-cost-control';
 import fs from 'fs';
 import path from 'path';
+import FormData from 'form-data';
 
 const ELEVENLABS_API_KEY = 'sk_1fa30a342618cb1fcfee56db845ce36ed49ab8ec92926a4d';
 
 export class ElevenLabsService {
-  private client: ElevenLabs;
+  private apiKey: string;
   private maxCharactersPerRequest = 5000; // ElevenLabs limit
   
   constructor() {
-    this.client = new ElevenLabs({
-      apiKey: ELEVENLABS_API_KEY
-    });
+    this.apiKey = ELEVENLABS_API_KEY;
   }
 
   /**
@@ -26,8 +23,18 @@ export class ElevenLabsService {
    */
   async getAvailableVoices() {
     try {
-      const voices = await this.client.voices.getAll();
-      return voices.voices.map(voice => ({
+      const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+        headers: {
+          'xi-api-key': this.apiKey
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`ElevenLabs API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.voices.map((voice: any) => ({
         voice_id: voice.voice_id,
         name: voice.name,
         category: voice.category,

@@ -13,6 +13,8 @@ import {
   spacedRepetitionSchedule,
   aiUsageTracking,
   visionBoards,
+  voiceClones,
+  affirmationAudio,
   type User,
   type UpsertUser,
   type UserProgress,
@@ -33,6 +35,10 @@ import {
   type InsertUserSettings,
   type VisionBoard,
   type InsertVisionBoard,
+  type VoiceClone,
+  type InsertVoiceClone,
+  type AffirmationAudio,
+  type InsertAffirmationAudio,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, count } from "drizzle-orm";
@@ -104,6 +110,16 @@ export interface IStorage {
   getVisionBoard(id: number, userId: string): Promise<VisionBoard | undefined>;
   updateVisionBoard(id: number, userId: string, updates: Partial<InsertVisionBoard>): Promise<VisionBoard | undefined>;
   deleteVisionBoard(id: number, userId: string): Promise<boolean>;
+  
+  // Voice cloning operations
+  createVoiceClone(voiceClone: InsertVoiceClone): Promise<VoiceClone>;
+  getUserVoiceClones(userId: string): Promise<VoiceClone[]>;
+  deleteVoiceClone(userId: string, voiceId: string): Promise<boolean>;
+  
+  // Affirmation audio operations
+  createAffirmationAudio(audio: InsertAffirmationAudio): Promise<AffirmationAudio>;
+  getUserAffirmationAudio(userId: string): Promise<AffirmationAudio[]>;
+  getUserAIUsage(userId: string, since?: Date): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -862,6 +878,61 @@ export class DatabaseStorage implements IStorage {
       .delete(visionBoards)
       .where(and(eq(visionBoards.id, id), eq(visionBoards.userId, userId)));
     return result.rowCount > 0;
+  }
+
+  // Voice cloning operations
+  async createVoiceClone(voiceClone: InsertVoiceClone): Promise<VoiceClone> {
+    const [created] = await db
+      .insert(voiceClones)
+      .values(voiceClone)
+      .returning();
+    return created;
+  }
+
+  async getUserVoiceClones(userId: string): Promise<VoiceClone[]> {
+    return await db
+      .select()
+      .from(voiceClones)
+      .where(and(eq(voiceClones.userId, userId), eq(voiceClones.isActive, true)))
+      .orderBy(desc(voiceClones.createdAt));
+  }
+
+  async deleteVoiceClone(userId: string, voiceId: string): Promise<boolean> {
+    const result = await db
+      .update(voiceClones)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(eq(voiceClones.userId, userId), eq(voiceClones.voiceId, voiceId)));
+    return result.rowCount > 0;
+  }
+
+  // Affirmation audio operations
+  async createAffirmationAudio(audio: InsertAffirmationAudio): Promise<AffirmationAudio> {
+    const [created] = await db
+      .insert(affirmationAudio)
+      .values(audio)
+      .returning();
+    return created;
+  }
+
+  async getUserAffirmationAudio(userId: string): Promise<AffirmationAudio[]> {
+    return await db
+      .select()
+      .from(affirmationAudio)
+      .where(eq(affirmationAudio.userId, userId))
+      .orderBy(desc(affirmationAudio.createdAt));
+  }
+
+  async getUserAIUsage(userId: string, since?: Date): Promise<any[]> {
+    let query = db
+      .select()
+      .from(aiUsageTracking)
+      .where(eq(aiUsageTracking.userId, userId));
+    
+    if (since) {
+      query = query.where(and(eq(aiUsageTracking.userId, userId), sql`${aiUsageTracking.createdAt} >= ${since}`));
+    }
+    
+    return await query.orderBy(desc(aiUsageTracking.createdAt));
   }
 }
 
