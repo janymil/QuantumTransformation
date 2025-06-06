@@ -551,7 +551,12 @@ Format as JSON with: predictions, confidence_levels, suggested_interventions, op
 
     return {
       recommendedExpertDomains: recommendedDomains,
-      interventionPlan,
+      interventionPlan: {
+        integratedAssessment: interventionPlan.integratedAssessment,
+        combinedInterventions: interventionPlan.combinedInterventions,
+        integrationGuidance: interventionPlan.integrationGuidance,
+        primaryDisciplines: interventionPlan.primaryDisciplines
+      },
       multidisciplinaryApproach: interventionPlan.integratedAssessment,
       integrationStrategy: interventionPlan.integrationGuidance.join('; '),
       contraindications: interventionPlan.responses.flatMap(r => r.riskFactors || [])

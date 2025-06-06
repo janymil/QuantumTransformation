@@ -472,7 +472,10 @@ export default function AiCouchOnboarding() {
       case 'welcome':
         return true;
       case 'approach':
-        return assessmentData.preferredApproach !== '';
+        return assessmentData.preferredApproach !== '' && 
+               (assessmentData.preferredApproach === 'mixed' || 
+                assessmentData.preferredApproach === 'scientific' || 
+                assessmentData.preferredApproach === 'spiritual');
       case 'personality':
         return assessmentData.personalityResponses.length >= 3 && 
                assessmentData.personalityResponses.every(r => r !== '');
@@ -483,7 +486,10 @@ export default function AiCouchOnboarding() {
         return assessmentData.goalsAndIntentions.length >= 4 && 
                assessmentData.goalsAndIntentions.every(r => r !== '');
       case 'communication':
-        return assessmentData.communicationStyle !== '';
+        return assessmentData.communicationStyle !== '' && 
+               (assessmentData.communicationStyle === 'gentle' || 
+                assessmentData.communicationStyle === 'direct' || 
+                assessmentData.communicationStyle === 'motivational');
       case 'complete':
         return true;
       default:

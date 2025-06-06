@@ -102,7 +102,7 @@ function Router() {
         <Route path="/ai-couch-dashboard" component={AiCouchDashboard} />
         
         {/* Legacy challenge routes - keep for backwards compatibility */}
-        <Route path="/challenge/:day" component={(props) => <ChallengeDay {...props} />} />
+        <Route path="/challenge/:day" component={() => <ChallengeDay />} />
         <Route path="/challenge-day" component={() => <ChallengeDay />} />
         <Route path="/challenge-progress" component={() => <ChallengeProgress />} />
         

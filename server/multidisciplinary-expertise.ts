@@ -635,7 +635,7 @@ export const multidisciplinaryExpertise: Record<string, ExpertDomain> = {
   classical_psychologist: {
     name: "Classical Psychologist",
     description: "Expert in foundational psychological theories and evidence-based therapeutic approaches",
-    expertise: [
+    techniques: [
       "Behavioral psychology principles",
       "Learning theory and conditioning",
       "Personality assessment and theory",
