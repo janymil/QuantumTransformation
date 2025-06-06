@@ -1,5 +1,5 @@
 import { pgTable, text, integer, timestamp, boolean, serial } from 'drizzle-orm/pg-core';
-import { storage } from './storage';
+import { db } from './db';
 import { eq, and, gte, sql } from 'drizzle-orm';
 
 // Database tables for AI usage tracking and caching
@@ -150,7 +150,7 @@ export async function checkUsageLimit(userId: string, userTier: string = 'free')
     userDate.setHours(0, 0, 0, 0);
     
     // Get today's usage starting from user's midnight
-    const [todayUsage] = await storage.db
+    const [todayUsage] = await db
       .select({ count: sql<number>`count(*)` })
       .from(aiUsageTracking)
       .where(
@@ -192,7 +192,7 @@ export async function checkUsageLimit(userId: string, userTier: string = 'free')
  */
 export async function getCachedResponse(inputHash: string): Promise<any | null> {
   try {
-    const cached = await storage.db
+    const cached = await db
       .select()
       .from(aiResponseCache)
       .where(and(
@@ -204,7 +204,7 @@ export async function getCachedResponse(inputHash: string): Promise<any | null> 
 
     if (cached.length > 0) {
       // Update access count
-      await storage.db
+      await db
         .update(aiResponseCache)
         .set({ 
           accessCount: sql`access_count + 1`
@@ -271,7 +271,7 @@ export async function trackUsage(
   tokens?: number
 ): Promise<void> {
   try {
-    await storage.db.insert(aiUsageTracking).values({
+    await db.insert(aiUsageTracking).values({
       userId,
       requestType,
       inputHash,
@@ -352,7 +352,7 @@ export async function getUserAIStats(userId: string): Promise<{
     startOfMonth.setHours(0, 0, 0, 0);
 
     // Get daily usage
-    const [dailyUsage] = await storage.db
+    const [dailyUsage] = await db
       .select({ count: sql<number>`count(*)` })
       .from(aiUsageTracking)
       .where(
@@ -363,7 +363,7 @@ export async function getUserAIStats(userId: string): Promise<{
       );
 
     // Get monthly usage
-    const [monthlyUsage] = await storage.db
+    const [monthlyUsage] = await db
       .select({ count: sql<number>`count(*)` })
       .from(aiUsageTracking)
       .where(
@@ -374,7 +374,7 @@ export async function getUserAIStats(userId: string): Promise<{
       );
 
     // Get total usage
-    const [totalUsage] = await storage.db
+    const [totalUsage] = await db
       .select({ count: sql<number>`count(*)` })
       .from(aiUsageTracking)
       .where(eq(aiUsageTracking.userId, userId));
