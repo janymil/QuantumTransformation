@@ -146,9 +146,9 @@ const moodThemes: MoodTheme[] = [
       accent: '10 80% 55%',
       background: '240 10% 9%',
       foreground: '0 0% 98%',
-      muted: '0 0% 14.9%',
-      card: '0 0% 3.9%',
-      border: '0 0% 14.9%'
+      muted: '240 4% 20%',
+      card: '240 10% 9%',
+      border: '240 4% 20%'
     }
   },
   {
@@ -174,9 +174,9 @@ const moodThemes: MoodTheme[] = [
       accent: '220 8.9% 46.1%',
       background: '240 10% 9%',
       foreground: '0 0% 98%',
-      muted: '0 0% 14.9%',
-      card: '0 0% 3.9%',
-      border: '0 0% 14.9%'
+      muted: '240 4% 20%',
+      card: '240 10% 9%',
+      border: '240 4% 20%'
     }
   },
   {
@@ -202,9 +202,9 @@ const moodThemes: MoodTheme[] = [
       accent: '350 100% 85%',
       background: '240 10% 9%',
       foreground: '0 0% 98%',
-      muted: '0 0% 14.9%',
-      card: '0 0% 3.9%',
-      border: '0 0% 14.9%'
+      muted: '240 4% 20%',
+      card: '240 10% 9%',
+      border: '240 4% 20%'
     }
   }
 ];
