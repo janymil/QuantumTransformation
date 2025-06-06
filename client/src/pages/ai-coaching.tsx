@@ -53,9 +53,9 @@ export default function AICoaching() {
   const challengeOptions = [
     { id: "money_blocks_clearing", title: "Money Blocks Clearing", icon: Target },
     { id: "general_quantum", title: "Quantum Consciousness", icon: Brain },
-    { id: "relationships", title: "Relationships", icon: Heart },
-    { id: "health_vitality", title: "Health & Vitality", icon: Sparkles },
-    { id: "career_purpose", title: "Career & Purpose", icon: Star }
+    { id: "quantum_relationships", title: "Relationships", icon: Heart },
+    { id: "quantum_health", title: "Health & Vitality", icon: Sparkles },
+    { id: "money_manifestation", title: "Money Manifestation", icon: Star }
   ];
 
   const currentDay = userChallenges?.find((c: any) => c.challengeType === selectedChallenge)?.currentDay || 1;
