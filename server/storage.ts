@@ -97,6 +97,13 @@ export interface IStorage {
   createAssessmentReflection(reflection: InsertAssessmentReflection): Promise<AssessmentReflection>;
   getUserAssessmentReflections(userId: string): Promise<AssessmentReflection[]>;
   getAssessmentReflectionsByType(userId: string, reflectionType: string): Promise<AssessmentReflection[]>;
+  
+  // Vision board operations
+  createVisionBoard(visionBoard: InsertVisionBoard): Promise<VisionBoard>;
+  getVisionBoards(userId: string): Promise<VisionBoard[]>;
+  getVisionBoard(id: number, userId: string): Promise<VisionBoard | undefined>;
+  updateVisionBoard(id: number, userId: string, updates: Partial<InsertVisionBoard>): Promise<VisionBoard | undefined>;
+  deleteVisionBoard(id: number, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {

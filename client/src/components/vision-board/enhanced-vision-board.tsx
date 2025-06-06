@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { screenCaptureService, CaptureResult } from "@/services/screen-capture";
 import ImageEditor from "@/components/image-editor/image-editor";
 import { apiRequest } from "@/lib/queryClient";
+import { ImageCompressor, ExternalHostingUploader } from "@/lib/image-compression";
 import {
   Monitor,
   Camera,
@@ -104,20 +105,44 @@ export default function EnhancedVisionBoard() {
 
   const saveBoardMutation = useMutation({
     mutationFn: async (boardData: VisionBoard) => {
-      const response = await fetch('/api/vision-boards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(boardData)
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save vision board');
-      }
-      return response.json();
+      // Compress all images before saving
+      const compressedItems = await ImageCompressor.compressVisionBoardImages(
+        boardData.canvasData.items
+      );
+      
+      const compressedBoard = {
+        ...boardData,
+        canvasData: {
+          ...boardData.canvasData,
+          items: compressedItems
+        }
+      };
+
+      // Calculate total size
+      const totalSize = compressedItems
+        .filter(item => item.type === 'image' && item.content.startsWith('data:'))
+        .reduce((sum, item) => sum + ImageCompressor.getImageSizeKB(item.content), 0);
+
+      console.log(`Vision board total size: ${totalSize.toFixed(1)}KB`);
+
+      // For now, save to localStorage until external hosting is configured
+      const savedBoards = JSON.parse(localStorage.getItem('visionBoards') || '[]');
+      const newBoard = { 
+        ...compressedBoard, 
+        id: Date.now(),
+        createdAt: new Date().toISOString(),
+        totalSizeKB: totalSize 
+      };
+      savedBoards.push(newBoard);
+      localStorage.setItem('visionBoards', JSON.stringify(savedBoards));
+
+      return newBoard;
     },
-    onSuccess: () => {
-      toast({ title: "Vision board saved successfully!" });
+    onSuccess: (data) => {
+      toast({ 
+        title: "Vision board saved successfully!", 
+        description: `Size: ${data.totalSizeKB.toFixed(1)}KB (compressed)`
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/vision-boards'] });
     },
     onError: () => {
@@ -268,32 +293,53 @@ export default function EnhancedVisionBoard() {
     }
   };
 
-  const handleImageEdit = (editedImageUrl: string) => {
-    // Add image to board
-    const newItem: VisionBoardItem = {
-      id: Date.now().toString(),
-      type: 'image',
-      content: editedImageUrl,
-      x: 50,
-      y: 50,
-      width: 200,
-      height: 150,
-      rotation: 0,
-      opacity: 1,
-      zIndex: board.canvasData.items.length,
-      styling: {}
-    };
+  const handleImageEdit = async (editedImageUrl: string) => {
+    try {
+      // Compress image before adding to board
+      const compressedImage = await ImageCompressor.compressImage(editedImageUrl, {
+        maxWidth: 800,
+        maxHeight: 600,
+        quality: 0.75,
+        format: 'jpeg'
+      });
 
-    setBoard(prev => ({
-      ...prev,
-      canvasData: {
-        ...prev.canvasData,
-        items: [...prev.canvasData.items, newItem]
-      }
-    }));
+      const originalSize = ImageCompressor.getImageSizeKB(editedImageUrl);
+      const compressedSize = ImageCompressor.getImageSizeKB(compressedImage);
+      
+      console.log(`Image compressed: ${originalSize.toFixed(1)}KB → ${compressedSize.toFixed(1)}KB`);
 
-    setEditingImage(null);
-    toast({ title: "Image added to vision board!" });
+      // Add compressed image to board
+      const newItem: VisionBoardItem = {
+        id: Date.now().toString(),
+        type: 'image',
+        content: compressedImage,
+        x: 50,
+        y: 50,
+        width: 200,
+        height: 150,
+        rotation: 0,
+        opacity: 1,
+        zIndex: board.canvasData.items.length,
+        styling: {}
+      };
+
+      setBoard(prev => ({
+        ...prev,
+        canvasData: {
+          ...prev.canvasData,
+          items: [...prev.canvasData.items, newItem]
+        }
+      }));
+
+      setEditingImage(null);
+      toast({ 
+        title: "Image added to vision board!", 
+        description: `Compressed from ${originalSize.toFixed(1)}KB to ${compressedSize.toFixed(1)}KB`
+      });
+    } catch (error) {
+      console.error('Image compression failed:', error);
+      toast({ title: "Failed to add image", variant: "destructive" });
+    }
   };
 
   const handleAddText = () => {
