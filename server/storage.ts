@@ -508,7 +508,7 @@ export class DatabaseStorage implements IStorage {
   // Get all users for admin management
   async getAllUsers(): Promise<any[]> {
     try {
-      const users = await db
+      const allUsers = await db
         .select({
           id: users.id,
           email: users.email,
@@ -523,7 +523,7 @@ export class DatabaseStorage implements IStorage {
           // User activity metrics
           totalChallenges: sql<number>`COUNT(DISTINCT user_progress.challenge_type)`,
           totalJournalEntries: sql<number>`COUNT(DISTINCT journal_entries.id)`,
-          totalAffirmations: sql<number>`COUNT(DISTINCT affirmations.id)`,
+          totalAffirmations: sql<number>`COUNT(DISTINCT saved_phrases.id)`,
           totalAIInteractions: sql<number>`COUNT(DISTINCT ai_usage_tracking.id)`,
           lastActivity: sql<Date>`MAX(GREATEST(
             COALESCE(user_progress.updated_at, '1970-01-01'::timestamp),
@@ -534,7 +534,7 @@ export class DatabaseStorage implements IStorage {
         .from(users)
         .leftJoin(userProgress, eq(userProgress.userId, users.id))
         .leftJoin(journalEntries, eq(journalEntries.userId, users.id))
-        .leftJoin(affirmations, eq(affirmations.userId, users.id))
+        .leftJoin(savedPhrases, eq(savedPhrases.userId, users.id))
         .leftJoin(aiUsageTracking, eq(aiUsageTracking.userId, users.id))
         .groupBy(
           users.id,
@@ -547,7 +547,7 @@ export class DatabaseStorage implements IStorage {
         )
         .orderBy(desc(users.createdAt));
 
-      return users;
+      return allUsers;
     } catch (error) {
       console.error('Error getting all users:', error);
       throw error;
@@ -604,7 +604,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Delete in order due to foreign key constraints
       await db.delete(aiUsageTracking).where(eq(aiUsageTracking.userId, userId));
-      await db.delete(affirmations).where(eq(affirmations.userId, userId));
+      await db.delete(savedPhrases).where(eq(savedPhrases.userId, userId));
       await db.delete(journalEntries).where(eq(journalEntries.userId, userId));
       await db.delete(userProgress).where(eq(userProgress.userId, userId));
       await db.delete(users).where(eq(users.id, userId));
