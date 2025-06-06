@@ -560,7 +560,7 @@ Format as JSON with: predictions, confidence_levels, suggested_interventions, op
    */
   async applyExpertKnowledgeIntegration(
     userId: string,
-    expertDomain: 'dispenza' | 'goddard' | 'access_consciousness' | 'somatic_experiencing' | 'neuroscience' | 'cbt_therapist' | 'trauma_therapist' | 'eft_practitioner' | 'nutritional_psychiatrist',
+    expertDomain: 'dispenza' | 'goddard' | 'access_consciousness' | 'somatic_experiencing' | 'neuroscience' | 'cbt_therapist' | 'trauma_therapist' | 'eft_practitioner' | 'nutritional_psychiatrist' | 'meditation_instructor' | 'act_therapist' | 'psychodynamic_therapist' | 'personal_coach' | 'quantum_field_expert' | 'somatic_therapist' | 'neuroscience_coach' | 'sleep_therapist',
     userIssue: string
   ) {
     const profile = await this.getUserProfile(userId);

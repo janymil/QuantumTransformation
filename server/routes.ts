@@ -1825,6 +1825,131 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Multidisciplinary Expert Assessment
+  app.post('/api/ai-couch/multidisciplinary-assessment', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { currentIssues, goals } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const assessment = await aiCouchEngine.performMultidisciplinaryAssessment(userId, currentIssues, goals);
+      res.json(assessment);
+    } catch (error) {
+      console.error("Error in multidisciplinary assessment:", error);
+      res.status(500).json({ message: "Failed to perform assessment" });
+    }
+  });
+
+  // Expert Domain Guidance
+  app.post('/api/ai-couch/expert-guidance', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { expertDomain, userIssue } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, expertDomain, userIssue);
+      res.json(guidance);
+    } catch (error) {
+      console.error("Error in expert guidance:", error);
+      res.status(500).json({ message: "Failed to provide expert guidance" });
+    }
+  });
+
+  // CBT Therapist Session
+  app.post('/api/ai-couch/cbt-session', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userIssue } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'cbt_therapist', userIssue);
+      res.json(guidance);
+    } catch (error) {
+      console.error("Error in CBT session:", error);
+      res.status(500).json({ message: "Failed to provide CBT guidance" });
+    }
+  });
+
+  // Trauma Therapy Session
+  app.post('/api/ai-couch/trauma-session', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userIssue } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'trauma_therapist', userIssue);
+      res.json(guidance);
+    } catch (error) {
+      console.error("Error in trauma therapy session:", error);
+      res.status(500).json({ message: "Failed to provide trauma therapy guidance" });
+    }
+  });
+
+  // EFT Tapping Session
+  app.post('/api/ai-couch/eft-session', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userIssue } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'eft_practitioner', userIssue);
+      res.json(guidance);
+    } catch (error) {
+      console.error("Error in EFT session:", error);
+      res.status(500).json({ message: "Failed to provide EFT guidance" });
+    }
+  });
+
+  // Meditation Instruction Session
+  app.post('/api/ai-couch/meditation-session', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userIssue } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'meditation_instructor', userIssue);
+      res.json(guidance);
+    } catch (error) {
+      console.error("Error in meditation session:", error);
+      res.status(500).json({ message: "Failed to provide meditation guidance" });
+    }
+  });
+
+  // Nutritional Psychiatry Session
+  app.post('/api/ai-couch/nutrition-session', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userIssue } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'nutritional_psychiatrist', userIssue);
+      res.json(guidance);
+    } catch (error) {
+      console.error("Error in nutrition session:", error);
+      res.status(500).json({ message: "Failed to provide nutritional guidance" });
+    }
+  });
+
+  // Get Available Expert Domains
+  app.get('/api/ai-couch/expert-domains', isAuthenticated, async (req: any, res) => {
+    try {
+      const { multidisciplinaryExpertise } = await import('./multidisciplinary-expertise');
+      
+      const domains = Object.keys(multidisciplinaryExpertise).map(key => ({
+        id: key,
+        name: multidisciplinaryExpertise[key].name,
+        description: multidisciplinaryExpertise[key].description,
+        applications: multidisciplinaryExpertise[key].applications,
+        techniques: multidisciplinaryExpertise[key].techniques.slice(0, 3) // First 3 techniques
+      }));
+      
+      res.json(domains);
+    } catch (error) {
+      console.error("Error fetching expert domains:", error);
+      res.status(500).json({ message: "Failed to fetch expert domains" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
