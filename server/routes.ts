@@ -3198,6 +3198,27 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
+  // Get unified daily AI usage statistics across ALL AI systems
+  app.get('/api/ai/daily-usage-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { checkDailyAILimit, getDailyAIStats, getUserTier } = await import('./unified-ai-limits');
+      
+      const userTier = getUserTier(userId);
+      const limitInfo = await checkDailyAILimit(userId, userTier);
+      const stats = await getDailyAIStats(userId);
+      
+      res.json({
+        ...limitInfo,
+        breakdown: stats,
+        userTier
+      });
+    } catch (error) {
+      console.error('Error fetching daily AI usage stats:', error);
+      res.status(500).json({ message: 'Failed to fetch AI usage statistics' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

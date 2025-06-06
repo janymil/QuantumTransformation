@@ -4,7 +4,7 @@
  */
 
 import { storage } from './storage';
-import { trackUsage } from './ai-cost-control';
+import { trackAIUsage, validateAIRequest, getUserTier } from './unified-ai-limits';
 import fs from 'fs';
 import path from 'path';
 
@@ -62,6 +62,14 @@ export class ElevenLabsService {
     } = {}
   ): Promise<{ audioBuffer: Buffer; cost: number; charactersUsed: number }> {
     try {
+      // Check daily AI limits first - ALL AI systems count towards limits
+      const userTier = getUserTier(userId);
+      const limitCheck = await validateAIRequest(userId, userTier);
+      
+      if (!limitCheck.allowed) {
+        throw new Error(limitCheck.reason || 'Daily AI limit reached');
+      }
+
       const charactersUsed = text.length;
       const cost = this.calculateCost(charactersUsed);
 
@@ -76,6 +84,7 @@ export class ElevenLabsService {
         }
       };
 
+      const startTime = Date.now();
       const response = await fetch(`${this.baseUrl}/text-to-speech/${voiceId}`, {
         method: 'POST',
         headers: {
@@ -90,6 +99,24 @@ export class ElevenLabsService {
       }
 
       const audioBuffer = Buffer.from(await response.arrayBuffer());
+      const responseTime = Date.now() - startTime;
+
+      // Track this as AI usage - counts towards daily limits
+      await trackAIUsage(
+        userId,
+        'elevenlabs-tts',
+        'text_to_speech',
+        text,
+        `Audio generated (${charactersUsed} chars)`,
+        'eleven_multilingual_v2',
+        cost.toString(),
+        { 
+          charactersUsed, 
+          voiceId, 
+          responseTime,
+          costCents: Math.round(cost * 100)
+        }
+      );
 
       return {
         audioBuffer,
@@ -135,19 +162,21 @@ export class ElevenLabsService {
         use_speaker_boost: true
       });
 
-      // Track usage for AI limits (ElevenLabs doesn't count towards daily standard AI limits)
-      const responseTime = Date.now() - startTime;
-      await trackUsage(
+      // Track this as AI usage - counts towards daily limits
+      await trackAIUsage(
         userId,
-        'text_to_speech',
-        affirmationText,
-        JSON.stringify({ audioGenerated: true, voiceId: selectedVoiceId }),
         'elevenlabs-tts',
-        0, // No tokens for TTS
+        'affirmation_audio',
+        affirmationText,
+        `Affirmation audio generated (${result.charactersUsed} chars)`,
+        'eleven_multilingual_v2',
         result.cost.toString(),
-        responseTime,
-        null, // No challenge type
-        'voice_generation'
+        { 
+          charactersUsed: result.charactersUsed, 
+          voiceId: selectedVoiceId, 
+          responseTime: Date.now() - startTime,
+          costCents: Math.round(result.cost * 100)
+        }
       );
 
       return {
