@@ -15,29 +15,46 @@ export function registerJournalRoutes(app: Express) {
       const userId = req.user.claims.sub;
       const { day, experience, insights, intention, challengeType, mood, challenges } = req.body;
       
-      if (!day || !challengeType) {
-        return res.status(400).json({ message: "Day and challenge type are required" });
+      // Validate that at least one content field is provided
+      if (!experience && !insights && !intention) {
+        return res.status(400).json({ message: "At least one content field (experience, insights, or intention) is required" });
       }
 
-      // Check if entry already exists
-      const existingEntry = await storage.getJournalEntry(userId, day, challengeType);
-      
-      if (existingEntry) {
-        // Update existing entry
-        const updatedEntry = await storage.updateJournalEntry(userId, day, {
-          experience,
-          insights,
-          intention,
-          mood,
-          challenges
-        }, challengeType);
-        res.json(updatedEntry);
+      // If day and challengeType are provided, check for existing entry and update
+      if (day && challengeType) {
+        const existingEntry = await storage.getJournalEntry(userId, day, challengeType);
+        
+        if (existingEntry) {
+          // Update existing entry
+          const updatedEntry = await storage.updateJournalEntry(userId, day, {
+            experience,
+            insights,
+            intention,
+            mood,
+            challenges
+          }, challengeType);
+          res.json(updatedEntry);
+        } else {
+          // Create new entry with day and challenge
+          const newEntry = await storage.createJournalEntry({
+            userId,
+            day,
+            challengeType,
+            experience,
+            insights,
+            intention,
+            mood,
+            challenges,
+            createdAt: new Date()
+          });
+          res.json(newEntry);
+        }
       } else {
-        // Create new entry
+        // Create free-form journal entry without day/challenge constraints
         const newEntry = await storage.createJournalEntry({
           userId,
-          day,
-          challengeType,
+          day: day || null,
+          challengeType: challengeType || null,
           experience,
           insights,
           intention,
@@ -142,7 +159,7 @@ export function registerJournalRoutes(app: Express) {
       const { analyzeJournalEntries } = await import('../openai');
       const analysis = await analyzeJournalEntries({
         entries: entries.map(entry => ({
-          day: entry.day,
+          day: entry.day || 0,
           experience: entry.experience || "",
           insights: entry.insights || "",
           intention: entry.intention || "",

@@ -34,8 +34,8 @@ import { challengeContent } from "@/data/challenge-content";
 
 interface JournalEntry {
   id: number;
-  day: number;
-  challengeType: string;
+  day: number | null;
+  challengeType: string | null;
   experience: string;
   insights: string;
   intention: string;
