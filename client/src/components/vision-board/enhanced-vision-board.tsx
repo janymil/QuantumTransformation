@@ -440,8 +440,13 @@ export default function EnhancedVisionBoard() {
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    
+    // Account for canvas scaling
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
 
     // Find clicked item (from top to bottom)
     const sortedItems = [...board.canvasData.items].sort((a, b) => b.zIndex - a.zIndex);
@@ -455,8 +460,6 @@ export default function EnhancedVisionBoard() {
       setDraggedItem(clickedItem.id);
       setDragStart({ x: x - clickedItem.x, y: y - clickedItem.y });
       setIsDragging(true);
-      
-      // Change cursor to grabbing
       canvas.style.cursor = 'grabbing';
     } else {
       setSelectedItem(null);
@@ -466,8 +469,13 @@ export default function EnhancedVisionBoard() {
   const handleCanvasMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    
+    // Account for canvas scaling
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
 
     if (isDragging && draggedItem) {
       // Handle dragging
@@ -490,8 +498,13 @@ export default function EnhancedVisionBoard() {
     
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    
+    // Account for canvas scaling
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
 
     const newX = Math.max(0, x - dragStart.x);
     const newY = Math.max(0, y - dragStart.y);
