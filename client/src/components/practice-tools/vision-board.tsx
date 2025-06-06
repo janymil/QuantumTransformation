@@ -1,10 +1,12 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Download, Trash2, Plus, Type, Image as ImageIcon } from "lucide-react";
+import { Upload, Download, Trash2, Plus, Type, Image as ImageIcon, Save, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface VisionBoardItem {
   id: string;
@@ -22,15 +24,92 @@ interface VisionBoardProps {
   onSave?: (items: VisionBoardItem[]) => void;
   initialItems?: VisionBoardItem[];
   onClose?: () => void;
+  boardId?: string;
 }
 
-export default function VisionBoard({ onSave, initialItems = [], onClose }: VisionBoardProps) {
+export default function VisionBoard({ onSave, initialItems = [], onClose, boardId }: VisionBoardProps) {
   const [items, setItems] = useState<VisionBoardItem[]>(initialItems);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [newText, setNewText] = useState("");
+  const [boardTitle, setBoardTitle] = useState("");
+  const [boardDescription, setBoardDescription] = useState("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch existing vision boards
+  const { data: visionBoards, isLoading: boardsLoading } = useQuery({
+    queryKey: ['/api/vision-boards'],
+    enabled: !boardId
+  });
+
+  // Fetch specific board if boardId provided
+  const { data: currentBoard, isLoading: currentBoardLoading } = useQuery({
+    queryKey: ['/api/vision-boards', boardId],
+    enabled: !!boardId
+  });
+
+  // Save vision board mutation
+  const saveVisionBoardMutation = useMutation({
+    mutationFn: async (boardData: any) => {
+      const response = await fetch('/api/vision-boards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(boardData)
+      });
+      if (!response.ok) throw new Error('Failed to save vision board');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Vision board saved successfully!" });
+      queryClient.invalidateQueries({ queryKey: ['/api/vision-boards'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to save vision board", 
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Update vision board mutation
+  const updateVisionBoardMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: any }) => {
+      const response = await fetch(`/api/vision-boards/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update vision board');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Vision board updated successfully!" });
+      queryClient.invalidateQueries({ queryKey: ['/api/vision-boards'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to update vision board", 
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Load board data when currentBoard changes
+  useEffect(() => {
+    if (currentBoard) {
+      setBoardTitle(currentBoard.title || "");
+      setBoardDescription(currentBoard.description || "");
+      if (currentBoard.canvasData?.elements) {
+        setItems(currentBoard.canvasData.elements);
+      }
+    }
+  }, [currentBoard]);
 
   const addTextItem = () => {
     if (!newText.trim()) return;
