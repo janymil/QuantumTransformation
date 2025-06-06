@@ -79,7 +79,7 @@ export default function Journal() {
   const [reflectionFilter, setReflectionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedEntries, setExpandedEntries] = useState<Set<string | number>>(new Set());
-  const [activeTab, setActiveTab] = useState("write");
+  const [activeTab, setActiveTab] = useState("insights");
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [editExperience, setEditExperience] = useState("");
   const [editInsights, setEditInsights] = useState("");
@@ -131,7 +131,7 @@ export default function Journal() {
   }, [reflectionsData, reflectionsLoading, reflectionsError]);
 
   const saveMutation = useMutation({
-    mutationFn: async (data: { day: number; experience: string; insights: string; intention: string }) => {
+    mutationFn: async (data: { day: number; challengeType?: string; experience: string; insights: string; intention: string }) => {
       return await apiRequest("POST", "/api/journal", data);
     },
     onSuccess: () => {
@@ -373,7 +373,7 @@ export default function Journal() {
           </div>
         </div>
 
-        <Tabs defaultValue="write" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="write">Write Entry</TabsTrigger>
             <TabsTrigger value="history">Entry History</TabsTrigger>
