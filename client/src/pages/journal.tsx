@@ -23,7 +23,9 @@ import {
   Lightbulb,
   Trash2,
   Edit,
-  FileText
+  FileText,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { format } from "date-fns";
 import { challengeContent } from "@/data/challenge-content";
