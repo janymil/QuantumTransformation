@@ -131,10 +131,20 @@ export async function getAuthenticAnalytics() {
       .from(aiResponseHistory)
       .where(sql`COALESCE(${aiResponseHistory.tokenCount}, 0) > 0`);
 
+    // Get user engagement metrics
+    const userStats = await db
+      .select({
+        totalUsers: sql`count(distinct ${aiResponseHistory.userId})`,
+        avgResponsesPerUser: sql`count(*) / nullif(count(distinct ${aiResponseHistory.userId}), 0)`
+      })
+      .from(aiResponseHistory)
+      .where(sql`COALESCE(${aiResponseHistory.tokenCount}, 0) > 0`);
+
     const stats = totalUsage[0] || {};
     const models = modelStats || [];
     const challenges = challengeStats || [];
     const cache = cacheStats[0] || {};
+    const users = userStats[0] || {};
 
     return {
       totalRequests: Number(stats.totalRequests) || 0,
@@ -157,6 +167,12 @@ export async function getAuthenticAnalytics() {
         cost: Number(c.totalCost) || 0,
         quality: Number(c.avgQuality) || 0
       })),
+      
+      userEngagement: {
+        totalUsers: Number(users.totalUsers) || 0,
+        activeUsers: Number(users.totalUsers) || 0,
+        avgResponsesPerUser: Number(users.avgResponsesPerUser) || 0
+      },
       
       cacheEfficiency: {
         cachedRequests: Number(cache.cached) || 0,
