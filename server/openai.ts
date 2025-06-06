@@ -500,30 +500,30 @@ Required JSON structure:
     const endTime = Date.now();
     const responseTime = endTime - startTime;
 
-    // Track AI usage for analytics
+    // Track authentic AI usage with real OpenAI response data
     try {
-      const { trackSimpleUsage, calculateUsageCost } = await import('./simple-usage-tracker');
+      const { trackAuthenticUsage } = await import('./authentic-usage-tracker');
       
-      const inputTokens = response.usage?.prompt_tokens || 0;
-      const outputTokens = response.usage?.completion_tokens || 0;
-      const totalTokens = response.usage?.total_tokens || 0;
-      const cost = calculateUsageCost('gpt-4o', inputTokens, outputTokens);
-
-      await trackSimpleUsage({
-        userId,
-        requestType: 'coaching',
-        challengeType: request.challengeType,
-        day: currentDay,
-        model: 'gpt-4o',
-        inputTokens,
-        outputTokens,
-        totalTokens,
-        cost,
-        responseTime,
-        wasFromCache: false,
-      });
+      if (response.usage) {
+        await trackAuthenticUsage({
+          userId,
+          requestType: 'coaching',
+          challengeType: request.challengeType,
+          day: currentDay,
+          model: response.model || 'gpt-4o',
+          usage: {
+            prompt_tokens: response.usage.prompt_tokens,
+            completion_tokens: response.usage.completion_tokens,
+            total_tokens: response.usage.total_tokens
+          },
+          responseTime,
+          wasFromCache: false,
+          userInput: `Personalized coaching for day ${currentDay}`,
+          response: JSON.parse(response.choices[0].message.content || '{}')
+        });
+      }
     } catch (trackingError) {
-      console.log("Usage tracking error:", trackingError);
+      console.log("Authentic usage tracking error:", trackingError);
     }
 
     return JSON.parse(response.choices[0].message.content || '{}');

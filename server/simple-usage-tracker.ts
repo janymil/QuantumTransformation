@@ -61,14 +61,16 @@ export async function trackSimpleUsage(data: SimpleUsageData): Promise<void> {
  * Calculate token costs based on model
  */
 export function calculateUsageCost(model: string, inputTokens: number, outputTokens: number): number {
+  // Authentic OpenAI pricing per 1k tokens (December 2024)
   const pricing = {
-    'gpt-4o': { input: 2.50, output: 10.00 },
-    'gpt-4o-mini': { input: 0.15, output: 0.60 }
+    'gpt-4o': { input: 0.0025, output: 0.01 },
+    'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+    'gpt-4o-mini-2024-07-18': { input: 0.00015, output: 0.0006 }
   };
 
-  const modelPricing = pricing[model as keyof typeof pricing] || pricing['gpt-4o'];
-  const inputCost = (inputTokens / 1_000_000) * modelPricing.input;
-  const outputCost = (outputTokens / 1_000_000) * modelPricing.output;
+  const modelPricing = pricing[model as keyof typeof pricing] || pricing['gpt-4o-mini'];
+  const inputCost = (inputTokens / 1000) * modelPricing.input;
+  const outputCost = (outputTokens / 1000) * modelPricing.output;
   
   return inputCost + outputCost;
 }
