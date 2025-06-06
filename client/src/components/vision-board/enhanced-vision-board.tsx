@@ -110,11 +110,95 @@ export default function EnhancedVisionBoard() {
   const [loadedImages] = useState<Map<string, HTMLImageElement>>(new Map());
   const [showTour, setShowTour] = useState(false);
   const [showAIGuide, setShowAIGuide] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [currentBoardId, setCurrentBoardId] = useState<number | null>(null);
 
-  // Queries
-  const { data: savedBoards } = useQuery({
+  // Save/Load functionality
+  const saveVisionBoard = async () => {
+    try {
+      const boardData = {
+        title: board.title,
+        description: board.description,
+        canvasData: board.canvasData,
+        templateCategory: board.templateCategory
+      };
+
+      let response;
+      if (currentBoardId) {
+        // Update existing board
+        response = await fetch(`/api/vision-boards/${currentBoardId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(boardData)
+        });
+      } else {
+        // Create new board
+        response = await fetch('/api/vision-boards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(boardData)
+        });
+      }
+
+      if (response.ok) {
+        const savedBoard = await response.json();
+        setCurrentBoardId(savedBoard.id);
+        toast({
+          title: "Vision Board Saved!",
+          description: `${board.title} has been saved successfully.`,
+        });
+        setShowSaveDialog(false);
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save vision board. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const loadVisionBoard = async (boardId: number) => {
+    try {
+      const response = await fetch(`/api/vision-boards/${boardId}`);
+      if (response.ok) {
+        const loadedBoard = await response.json();
+        setBoard({
+          title: loadedBoard.title,
+          description: loadedBoard.description,
+          canvasData: loadedBoard.canvasData,
+          templateCategory: loadedBoard.templateCategory
+        });
+        setCurrentBoardId(loadedBoard.id);
+        setShowLoadDialog(false);
+        
+        // Redraw canvas with loaded data
+        setTimeout(() => {
+          redrawCanvas();
+        }, 100);
+        
+        toast({
+          title: "Vision Board Loaded!",
+          description: `${loadedBoard.title} has been loaded successfully.`,
+        });
+      } else {
+        throw new Error('Failed to load');
+      }
+    } catch (error) {
+      toast({
+        title: "Load Failed",
+        description: "Failed to load vision board. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const { data: savedBoards = [], refetch: refetchBoards } = useQuery({
     queryKey: ['/api/vision-boards'],
-    enabled: false // Only load when user wants to see saved boards
+    enabled: false
   });
 
   const saveBoardMutation = useMutation({
@@ -912,6 +996,29 @@ export default function EnhancedVisionBoard() {
           >
             <Brain className="w-4 h-4 mr-1" />
             AI Guide
+          </Button>
+
+          <div className="w-px bg-border" />
+
+          <Button
+            onClick={() => setShowSaveDialog(true)}
+            variant="outline"
+            size="sm"
+          >
+            <Save className="w-4 h-4 mr-1" />
+            Save
+          </Button>
+
+          <Button
+            onClick={() => {
+              refetchBoards();
+              setShowLoadDialog(true);
+            }}
+            variant="outline"
+            size="sm"
+          >
+            <FolderOpen className="w-4 h-4 mr-1" />
+            Load
           </Button>
 
           {selectedItem && (

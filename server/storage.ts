@@ -822,6 +822,47 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Vision board operations
+  async createVisionBoard(visionBoard: InsertVisionBoard): Promise<VisionBoard> {
+    const [createdBoard] = await db
+      .insert(visionBoards)
+      .values(visionBoard)
+      .returning();
+    return createdBoard;
+  }
+
+  async getVisionBoards(userId: string): Promise<VisionBoard[]> {
+    return await db
+      .select()
+      .from(visionBoards)
+      .where(eq(visionBoards.userId, userId))
+      .orderBy(desc(visionBoards.updatedAt));
+  }
+
+  async getVisionBoard(id: number, userId: string): Promise<VisionBoard | undefined> {
+    const [board] = await db
+      .select()
+      .from(visionBoards)
+      .where(and(eq(visionBoards.id, id), eq(visionBoards.userId, userId)));
+    return board;
+  }
+
+  async updateVisionBoard(id: number, userId: string, updates: Partial<InsertVisionBoard>): Promise<VisionBoard | undefined> {
+    const [updatedBoard] = await db
+      .update(visionBoards)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(visionBoards.id, id), eq(visionBoards.userId, userId)))
+      .returning();
+    return updatedBoard;
+  }
+
+  async deleteVisionBoard(id: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(visionBoards)
+      .where(and(eq(visionBoards.id, id), eq(visionBoards.userId, userId)));
+    return result.rowCount > 0;
+  }
 }
 
 export const storage = new DatabaseStorage();
