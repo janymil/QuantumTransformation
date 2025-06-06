@@ -1034,7 +1034,262 @@ Format as JSON with detailed challenge structure.`;
   }
 
   /**
-   * 18. Create personalized challenge plan
+   * 18. Generate AI-driven daily assessment (replaces pre-defined challenges)
+   */
+  async generateDailyAssessment(userId: string): Promise<any> {
+    console.log(`Generating personalized daily assessment for user ${userId}`);
+    
+    try {
+      // Get user context for AI analysis
+      const context = await this.getUserProgressContext(userId);
+      
+      // Use AI to analyze user situation and determine optimal daily focus
+      const aiAnalysis = await this.analyzeUserSituation(context);
+      
+      // Generate specific daily content based on analysis
+      const dailyContent = await this.generateDailyContent(context, aiAnalysis);
+      
+      return {
+        userId,
+        currentFocus: aiAnalysis.currentFocus,
+        reasoning: aiAnalysis.reasoning,
+        dailyAssessment: dailyContent,
+        nextSteps: aiAnalysis.nextSteps,
+        progressIndicators: aiAnalysis.progressIndicators
+      };
+    } catch (error) {
+      console.error("Error generating daily assessment:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * AI analyzes user's complete situation and determines optimal approach
+   */
+  private async analyzeUserSituation(context: any): Promise<any> {
+    const prompt = `
+You are an advanced AI coaching psychologist with expertise in 16+ therapeutic modalities including Joe Dispenza's quantum consciousness work, Neville Goddard's manifestation principles, Access Consciousness, EMDR, CBT, trauma-informed therapy, and somatic approaches.
+
+ANALYZE this user's complete situation and determine the optimal coaching path:
+
+USER PROFILE:
+- Healing Readiness: ${context.profile?.healingReadiness}/10
+- Primary Goals: ${JSON.stringify(context.profile?.primaryGoals)}
+- Current Challenges: ${JSON.stringify(context.profile?.traumaAreas)}
+- Resistance Patterns: ${JSON.stringify(context.profile?.resistancePatterns)}
+- Motivation Triggers: ${JSON.stringify(context.profile?.motivationTriggers)}
+- Support Needs: ${JSON.stringify(context.profile?.supportNeeds)}
+- Learning Style: ${context.profile?.learningStyle}
+- Communication Style: ${context.profile?.communicationStyle}
+
+RECENT PROGRESS:
+- Recent Sessions: ${context.recentSessions?.length || 0} sessions
+- Emotional State: ${context.emotionalState}
+- Last Response: ${JSON.stringify(context.lastAssessmentResponse)}
+
+Based on this analysis, determine what this user should focus on TODAY. Say something like:
+
+"Based on your current challenges with [specific issue] and your goal of [specific goal], we need to start with [specific focus area] because this will [specific benefit] and prepare you for [next steps]."
+
+Respond in JSON format:
+{
+  "currentFocus": "specific focus area like 'Emotional Regulation' or 'Limiting Belief Clearing'",
+  "reasoning": "detailed explanation starting with 'Based on your...' explaining why this is the optimal starting point",
+  "therapeuticApproaches": ["approach1", "approach2", "approach3"],
+  "nextSteps": "what this prepares them for in coming days/weeks",
+  "progressIndicators": ["indicator1", "indicator2", "indicator3"]
+}
+`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error in AI situation analysis:", error);
+      return {
+        currentFocus: "Foundational Stability",
+        reasoning: "Based on your current situation, we need to start with foundational emotional stability because this will create a solid base for all future growth and prepare you for deeper transformational work.",
+        therapeuticApproaches: ["CBT", "Breathing Techniques", "Mindfulness"],
+        nextSteps: "Building resilience for deeper consciousness work",
+        progressIndicators: ["Improved daily mood", "Better stress response", "Increased self-awareness"]
+      };
+    }
+  }
+
+  /**
+   * Generate specific daily content based on AI analysis
+   */
+  private async generateDailyContent(context: any, analysis: any): Promise<any> {
+    const prompt = `
+Create a personalized daily assessment and exercises for this user.
+
+CURRENT FOCUS: ${analysis.currentFocus}
+THERAPEUTIC APPROACHES: ${analysis.therapeuticApproaches.join(', ')}
+USER LEARNING STYLE: ${context.profile?.learningStyle}
+USER COMMUNICATION STYLE: ${context.profile?.communicationStyle}
+
+Create TODAY'S specific content:
+
+1. DAILY ASSESSMENT: 
+   - Title and description
+   - 3-5 specific exercises (meditation, journaling, visualization, etc.)
+   - Each exercise should be 5-30 minutes
+   - Include step-by-step instructions
+   - Specify which therapeutic approach each exercise uses
+
+2. REFLECTION QUESTIONS: 3-4 questions to assess progress
+
+3. COMPLETION CRITERIA: Clear criteria for marking today's work as complete
+
+Make everything specific, actionable, and personalized to this user's situation and learning style.
+
+Respond in JSON format:
+{
+  "id": "daily_assessment_${Date.now()}",
+  "title": "Today's Focus Title",
+  "description": "What we're working on today and why",
+  "exercises": [
+    {
+      "id": "exercise_id",
+      "type": "meditation/journaling/visualization/breathing/movement/awareness",
+      "title": "Exercise Title",
+      "description": "What this exercise does",
+      "duration": 15,
+      "instructions": ["step 1", "step 2", "step 3"],
+      "therapeuticBasis": "Which approach this is based on"
+    }
+  ],
+  "reflectionQuestions": ["question 1", "question 2", "question 3"],
+  "completionCriteria": ["criteria 1", "criteria 2"]
+}
+`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+        max_tokens: 1500,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating daily content:", error);
+      return {
+        id: `daily_${Date.now()}`,
+        title: "Foundation Building",
+        description: "Today we focus on establishing emotional stability and awareness",
+        exercises: [
+          {
+            id: "breathing_foundation",
+            type: "breathing",
+            title: "Coherent Breathing",
+            description: "Establish nervous system regulation",
+            duration: 10,
+            instructions: ["Sit comfortably", "Breathe in for 5 counts", "Breathe out for 5 counts", "Continue for 10 minutes"],
+            therapeuticBasis: "Somatic therapy and nervous system regulation"
+          }
+        ],
+        reflectionQuestions: ["How do you feel after the breathing exercise?", "What did you notice in your body?"],
+        completionCriteria: ["Completed breathing exercise", "Answered reflection questions"]
+      };
+    }
+  }
+
+  /**
+   * Get comprehensive user context for AI analysis
+   */
+  private async getUserProgressContext(userId: string): Promise<any> {
+    try {
+      // Get user profile
+      const profile = await storage.getAICouchProfile(userId);
+
+      // Get recent sessions (last 7 days)
+      const [recentSessions] = await db
+        .select()
+        .from(aiCouchSessions)
+        .where(eq(aiCouchSessions.userId, userId))
+        .orderBy(desc(aiCouchSessions.createdAt))
+        .limit(10);
+
+      return {
+        profile,
+        recentSessions: recentSessions || [],
+        currentChallenges: Array.isArray(profile?.traumaAreas) ? profile.traumaAreas : [],
+        emotionalState: recentSessions?.emotionalState || 'neutral',
+        lastAssessmentResponse: recentSessions || null
+      };
+    } catch (error) {
+      console.error("Error getting user context:", error);
+      return {
+        profile: null,
+        recentSessions: [],
+        currentChallenges: [],
+        emotionalState: 'neutral',
+        lastAssessmentResponse: null
+      };
+    }
+  }
+
+  /**
+   * Process daily check-in and adapt future content
+   */
+  async processDailyCheckIn(userId: string, responses: any): Promise<any> {
+    console.log(`Processing daily check-in for user ${userId}`);
+    
+    const context = await this.getUserProgressContext(userId);
+    
+    const prompt = `
+The user has completed their daily assessment. Based on their responses, provide insights for tomorrow's adaptation.
+
+USER RESPONSES: ${JSON.stringify(responses)}
+CURRENT PROGRESS: ${JSON.stringify(context)}
+
+Analyze:
+1. How did they respond to today's exercises?
+2. What emotional/mental shifts occurred?
+3. What should we focus on tomorrow?
+4. Should we continue current approach or pivot?
+
+Respond with adaptation recommendations:
+{
+  "progressAssessment": "how they're doing",
+  "emotionalShifts": "what changed today",
+  "tomorrowFocus": "what to focus on next",
+  "approachAdjustments": "any changes needed"
+}
+`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 800,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      return content ? JSON.parse(content) : null;
+    } catch (error) {
+      console.error("Error processing check-in:", error);
+      return null;
+    }
+  }
+
+  /**
+   * 19. Create personalized challenge plan
    */
   async createPersonalizedChallengePlan(userId: string): Promise<any> {
     const [profile] = await db.select()

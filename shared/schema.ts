@@ -606,9 +606,90 @@ export const aiCouchKnowledge = pgTable("ai_couch_knowledge", {
   index("ai_knowledge_type_idx").on(table.knowledgeType)
 ]);
 
+// AI Couch Daily Assessments - Dynamic personalized content
+export const aiCouchDailyAssessments = pgTable("ai_couch_daily_assessments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  profileId: integer("profile_id").notNull().references(() => aiCouchProfiles.id),
+  
+  // Assessment Details
+  assessmentDate: date("assessment_date").notNull(),
+  currentFocus: varchar("current_focus").notNull(), // What AI determined to focus on
+  reasoning: text("reasoning").notNull(), // Why AI chose this focus
+  
+  // Generated Content
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  exercises: jsonb("exercises").notNull(), // Array of daily exercises
+  reflectionQuestions: jsonb("reflection_questions").notNull(), // Array of questions
+  completionCriteria: jsonb("completion_criteria").notNull(), // Array of criteria
+  
+  // Therapeutic Context
+  therapeuticApproaches: jsonb("therapeutic_approaches").notNull(), // Which modalities used
+  nextSteps: text("next_steps"), // What this prepares for
+  progressIndicators: jsonb("progress_indicators"), // How to measure success
+  
+  // Completion Tracking
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  userResponses: jsonb("user_responses"), // User's responses to exercises/questions
+  
+  // AI Adaptation
+  aiConfidence: integer("ai_confidence").default(8), // AI's confidence in this assessment
+  adaptationNotes: text("adaptation_notes"), // Notes for next day's adaptation
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("ai_daily_assessments_user_idx").on(table.userId),
+  index("ai_daily_assessments_date_idx").on(table.assessmentDate),
+  index("ai_daily_assessments_completed_idx").on(table.isCompleted)
+]);
+
+// AI Couch Progress Tracking - Track user's journey and patterns
+export const aiCouchProgressTracking = pgTable("ai_couch_progress_tracking", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  profileId: integer("profile_id").notNull().references(() => aiCouchProfiles.id),
+  
+  // Progress Metrics
+  trackingDate: date("tracking_date").notNull(),
+  overallProgress: integer("overall_progress").default(0), // 0-100 scale
+  currentPhase: varchar("current_phase").notNull(), // foundation, growth, integration, mastery
+  focusAreas: jsonb("focus_areas").notNull(), // Current focus areas
+  
+  // Emotional & Mental State
+  emotionalBaseline: integer("emotional_baseline").default(5), // 1-10 scale
+  stressLevel: integer("stress_level").default(5), // 1-10 scale
+  motivationLevel: integer("motivation_level").default(7), // 1-10 scale
+  clarityLevel: integer("clarity_level").default(5), // 1-10 scale
+  
+  // Achievement Tracking
+  completedAssessments: integer("completed_assessments").default(0),
+  streakDays: integer("streak_days").default(0),
+  totalEngagementMinutes: integer("total_engagement_minutes").default(0),
+  
+  // Pattern Recognition
+  identifiedPatterns: jsonb("identified_patterns"), // AI-identified patterns
+  breakthroughMoments: jsonb("breakthrough_moments"), // Significant insights
+  challengeAreas: jsonb("challenge_areas"), // Areas of resistance
+  
+  // Adaptive Insights
+  aiInsights: text("ai_insights"), // AI's analysis of progress
+  recommendedAdjustments: jsonb("recommended_adjustments"), // What to adjust
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("ai_progress_tracking_user_idx").on(table.userId),
+  index("ai_progress_tracking_date_idx").on(table.trackingDate)
+]);
+
 // Type exports for AI Couch system
 export type InsertAiCouchProfile = typeof aiCouchProfiles.$inferInsert;
 export type AiCouchProfile = typeof aiCouchProfiles.$inferSelect;
+export type AiCouchDailyAssessment = typeof aiCouchDailyAssessments.$inferSelect;
+export type InsertAiCouchDailyAssessment = typeof aiCouchDailyAssessments.$inferInsert;
 
 export type InsertAiCouchSession = typeof aiCouchSessions.$inferInsert;
 export type AiCouchSession = typeof aiCouchSessions.$inferSelect;

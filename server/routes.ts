@@ -1480,6 +1480,134 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Get today's personalized daily assessment (AI-driven)
+  app.get('/api/ai-couch/daily-assessment', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      // Check if user has today's assessment
+      const today = new Date().toISOString().split('T')[0];
+      const { aiCouchDailyAssessments } = await import('@shared/schema');
+      
+      const [existingAssessment] = await db
+        .select()
+        .from(aiCouchDailyAssessments)
+        .where(eq(aiCouchDailyAssessments.userId, userId))
+        .where(eq(aiCouchDailyAssessments.assessmentDate, today))
+        .limit(1);
+
+      if (existingAssessment) {
+        return res.json(existingAssessment);
+      }
+
+      // Create new AI-driven daily assessment
+      const dailyPlan = await aiCouchEngine.generateDailyAssessment(userId);
+      
+      // Get user profile
+      const profile = await storage.getAICouchProfile(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      // Save to database
+      const [newAssessment] = await db
+        .insert(aiCouchDailyAssessments)
+        .values({
+          userId,
+          profileId: profile.id,
+          assessmentDate: today,
+          currentFocus: dailyPlan.currentFocus,
+          reasoning: dailyPlan.reasoning,
+          title: dailyPlan.dailyAssessment.title,
+          description: dailyPlan.dailyAssessment.description,
+          exercises: dailyPlan.dailyAssessment.exercises,
+          reflectionQuestions: dailyPlan.dailyAssessment.reflectionQuestions,
+          completionCriteria: dailyPlan.dailyAssessment.completionCriteria,
+          therapeuticApproaches: dailyPlan.progressIndicators,
+          nextSteps: dailyPlan.nextSteps,
+          progressIndicators: dailyPlan.progressIndicators,
+        })
+        .returning();
+
+      res.json(newAssessment);
+    } catch (error) {
+      console.error("Error getting daily assessment:", error);
+      res.status(500).json({ message: "Failed to get daily assessment", error: (error as Error).message });
+    }
+  });
+
+  // Complete daily assessment with user responses
+  app.post('/api/ai-couch/complete-assessment/:assessmentId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { assessmentId } = req.params;
+      const { userResponses } = req.body;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      const { aiCouchDailyAssessments } = await import('@shared/schema');
+
+      // Update assessment as completed
+      const [updatedAssessment] = await db
+        .update(aiCouchDailyAssessments)
+        .set({
+          isCompleted: true,
+          completedAt: new Date(),
+          userResponses,
+          updatedAt: new Date()
+        })
+        .where(eq(aiCouchDailyAssessments.id, parseInt(assessmentId)))
+        .where(eq(aiCouchDailyAssessments.userId, userId))
+        .returning();
+
+      if (!updatedAssessment) {
+        return res.status(404).json({ message: "Assessment not found" });
+      }
+
+      // Process responses for next day adaptation
+      const adaptationInsights = await aiCouchEngine.processDailyCheckIn(userId, userResponses);
+
+      res.json({ 
+        success: true, 
+        assessment: updatedAssessment,
+        adaptationInsights 
+      });
+    } catch (error) {
+      console.error("Error completing assessment:", error);
+      res.status(500).json({ message: "Failed to complete assessment", error: (error as Error).message });
+    }
+  });
+
+  // Get user's assessment history and progress
+  app.get('/api/ai-couch/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchDailyAssessments } = await import('@shared/schema');
+
+      const assessments = await db
+        .select()
+        .from(aiCouchDailyAssessments)
+        .where(eq(aiCouchDailyAssessments.userId, userId))
+        .orderBy(desc(aiCouchDailyAssessments.assessmentDate))
+        .limit(30);
+
+      const completedCount = assessments.filter(a => a.isCompleted).length;
+      const currentStreak = calculateStreak(assessments);
+
+      res.json({
+        assessments,
+        stats: {
+          totalAssessments: assessments.length,
+          completedAssessments: completedCount,
+          completionRate: assessments.length > 0 ? (completedCount / assessments.length) * 100 : 0,
+          currentStreak
+        }
+      });
+    } catch (error) {
+      console.error("Error getting progress:", error);
+      res.status(500).json({ message: "Failed to get progress", error: (error as Error).message });
+    }
+  });
+
   // AI Couch intelligent multidisciplinary coaching session
   app.post('/api/ai-couch/session', isAuthenticated, async (req: any, res) => {
     try {
