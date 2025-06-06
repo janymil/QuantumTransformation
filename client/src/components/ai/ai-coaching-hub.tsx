@@ -59,20 +59,7 @@ export default function AICoachingHub({
   const [coachingResponse, setCoachingResponse] = useState<any>(null);
   const [explanationResponse, setExplanationResponse] = useState<any>(null);
   
-  // Profile editing states
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({
-    primaryGoals: [] as string[],
-    currentChallenges: [] as string[],
-    healingReadiness: 5,
-    preferredMode: 'mixed' as 'scientific' | 'spiritual' | 'mixed',
-    communicationStyle: 'gentle' as 'gentle' | 'direct' | 'motivational',
-    learningStyle: 'visual' as 'visual' | 'auditory' | 'kinesthetic' | 'reading',
-    traumaHistory: '',
-    spiritualBackground: '',
-    mentalHealthHistory: '',
-    lifeContext: ''
-  });
+
 
   // Update question when prefilledQuestion changes
   useEffect(() => {
@@ -119,29 +106,7 @@ export default function AICoachingHub({
     retry: false,
   }) as { data?: { dailyUsage: string; monthlyUsage: string; totalRequests: string } };
 
-  // Get AI Couch profile
-  const { data: aiProfile, refetch: refetchProfile } = useQuery({
-    queryKey: ["/api/ai-couch/profile"],
-    retry: false,
-  });
 
-  // Update profile form when profile data loads
-  useEffect(() => {
-    if (aiProfile && !isEditingProfile) {
-      setProfileForm({
-        primaryGoals: Array.isArray(aiProfile?.primaryGoals) ? aiProfile.primaryGoals : [],
-        currentChallenges: Array.isArray(aiProfile?.currentChallenges) ? aiProfile.currentChallenges : [],
-        healingReadiness: aiProfile?.healingReadiness || 5,
-        preferredMode: aiProfile?.preferredMode || 'mixed',
-        communicationStyle: aiProfile?.communicationStyle || 'gentle',
-        learningStyle: aiProfile?.learningStyle || 'visual',
-        traumaHistory: aiProfile?.traumaHistory || '',
-        spiritualBackground: aiProfile?.spiritualBackground || '',
-        mentalHealthHistory: aiProfile?.mentalHealthHistory || '',
-        lifeContext: (typeof aiProfile?.lifeContext === 'string') ? aiProfile.lifeContext : ''
-      });
-    }
-  }, [aiProfile, isEditingProfile]);
 
   // Personalized coaching mutation
   const coachingMutation = useMutation({
