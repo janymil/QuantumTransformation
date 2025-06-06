@@ -58,8 +58,6 @@ export default function AICoachingHub({
   const [mood, setMood] = useState(5);
   const [coachingResponse, setCoachingResponse] = useState<any>(null);
   const [explanationResponse, setExplanationResponse] = useState<any>(null);
-  
-
 
   // Update question when prefilledQuestion changes
   useEffect(() => {
@@ -137,30 +135,6 @@ export default function AICoachingHub({
     },
   });
 
-  // Profile update mutation
-  const updateProfileMutation = useMutation({
-    mutationFn: async (updatedProfile: typeof profileForm) => {
-      return apiRequest("PUT", "/api/ai-couch/profile", updatedProfile);
-    },
-    onSuccess: () => {
-      setIsEditingProfile(false);
-      refetchProfile();
-      queryClient.invalidateQueries({ queryKey: ["/api/ai-couch/profile"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/ai-couch/sessions"] });
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated and AI coaching will adapt to your changes.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update profile",
-        variant: "destructive",
-      });
-    },
-  });
-
   // AI explanation mutation
   const explanationMutation = useMutation({
     mutationFn: async (questionText: string) => {
@@ -224,7 +198,7 @@ export default function AICoachingHub({
       
       <CardContent>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="coaching" className="text-xs">
               <Heart className="w-4 h-4 mr-1" />
               Coaching
@@ -236,10 +210,6 @@ export default function AICoachingHub({
             <TabsTrigger value="insights" className="text-xs">
               <Lightbulb className="w-4 h-4 mr-1" />
               Insights
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="text-xs">
-              <Settings className="w-4 h-4 mr-1" />
-              Profile
             </TabsTrigger>
           </TabsList>
 
@@ -469,284 +439,6 @@ export default function AICoachingHub({
                         <span className="font-medium">{usageStats.totalRequests || 0}</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="profile" className="space-y-4 mt-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-foreground flex items-center">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Profile Settings
-                </h4>
-                {!isEditingProfile ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditingProfile(true)}
-                  >
-                    <Edit3 className="w-4 h-4 mr-1" />
-                    Edit
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingProfile(false);
-                        if (aiProfile) {
-                          setProfileForm({
-                            primaryGoals: Array.isArray(aiProfile?.primaryGoals) ? aiProfile.primaryGoals : [],
-                            currentChallenges: Array.isArray(aiProfile?.currentChallenges) ? aiProfile.currentChallenges : [],
-                            healingReadiness: aiProfile?.healingReadiness || 5,
-                            preferredMode: aiProfile?.preferredMode || 'mixed',
-                            communicationStyle: aiProfile?.communicationStyle || 'gentle',
-                            learningStyle: aiProfile?.learningStyle || 'visual',
-                            traumaHistory: aiProfile?.traumaHistory || '',
-                            spiritualBackground: aiProfile?.spiritualBackground || '',
-                            mentalHealthHistory: aiProfile?.mentalHealthHistory || '',
-                            lifeContext: (typeof aiProfile?.lifeContext === 'string') ? aiProfile.lifeContext : ''
-                          });
-                        }
-                      }}
-                    >
-                      <RotateCcw className="w-4 h-4 mr-1" />
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => updateProfileMutation.mutate(profileForm)}
-                      disabled={updateProfileMutation.isPending}
-                    >
-                      {updateProfileMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4 mr-1" />
-                      )}
-                      Save
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {aiProfile ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Primary Goals
-                      </label>
-                      {isEditingProfile ? (
-                        <Textarea
-                          placeholder="What are your main transformation goals?"
-                          value={profileForm.primaryGoals.join(', ')}
-                          onChange={(e) => setProfileForm({
-                            ...profileForm,
-                            primaryGoals: e.target.value.split(',').map(g => g.trim()).filter(Boolean)
-                          })}
-                          className="h-20 text-sm"
-                        />
-                      ) : (
-                        <div className="text-sm text-muted-foreground">
-                          {profileForm.primaryGoals.length > 0 ? profileForm.primaryGoals.join(', ') : 'Not specified'}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Current Challenges
-                      </label>
-                      {isEditingProfile ? (
-                        <Textarea
-                          placeholder="What obstacles are you facing?"
-                          value={profileForm.currentChallenges.join(', ')}
-                          onChange={(e) => setProfileForm({
-                            ...profileForm,
-                            currentChallenges: e.target.value.split(',').map(c => c.trim()).filter(Boolean)
-                          })}
-                          className="h-20 text-sm"
-                        />
-                      ) : (
-                        <div className="text-sm text-muted-foreground">
-                          {profileForm.currentChallenges.length > 0 ? profileForm.currentChallenges.join(', ') : 'Not specified'}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Healing Readiness: {profileForm.healingReadiness}/10
-                      </label>
-                      {isEditingProfile ? (
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          value={profileForm.healingReadiness}
-                          onChange={(e) => setProfileForm({
-                            ...profileForm,
-                            healingReadiness: parseInt(e.target.value)
-                          })}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                      ) : (
-                        <div className="text-sm text-muted-foreground">
-                          Level {profileForm.healingReadiness} - Ready for transformation
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Preferred Mode
-                      </label>
-                      {isEditingProfile ? (
-                        <select
-                          value={profileForm.preferredMode}
-                          onChange={(e) => setProfileForm({
-                            ...profileForm,
-                            preferredMode: e.target.value as 'scientific' | 'spiritual' | 'mixed'
-                          })}
-                          className="w-full text-sm border border-gray-300 rounded-md p-2"
-                        >
-                          <option value="scientific">Scientific</option>
-                          <option value="spiritual">Spiritual</option>
-                          <option value="mixed">Mixed</option>
-                        </select>
-                      ) : (
-                        <div className="text-sm text-muted-foreground capitalize">
-                          {profileForm.preferredMode}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Communication Style
-                      </label>
-                      {isEditingProfile ? (
-                        <select
-                          value={profileForm.communicationStyle}
-                          onChange={(e) => setProfileForm({
-                            ...profileForm,
-                            communicationStyle: e.target.value as 'gentle' | 'direct' | 'motivational'
-                          })}
-                          className="w-full text-sm border border-gray-300 rounded-md p-2"
-                        >
-                          <option value="gentle">Gentle</option>
-                          <option value="direct">Direct</option>
-                          <option value="motivational">Motivational</option>
-                        </select>
-                      ) : (
-                        <div className="text-sm text-muted-foreground capitalize">
-                          {profileForm.communicationStyle}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Learning Style
-                      </label>
-                      {isEditingProfile ? (
-                        <select
-                          value={profileForm.learningStyle}
-                          onChange={(e) => setProfileForm({
-                            ...profileForm,
-                            learningStyle: e.target.value as 'visual' | 'auditory' | 'kinesthetic' | 'reading'
-                          })}
-                          className="w-full text-sm border border-gray-300 rounded-md p-2"
-                        >
-                          <option value="visual">Visual</option>
-                          <option value="auditory">Auditory</option>
-                          <option value="kinesthetic">Kinesthetic</option>
-                          <option value="reading">Reading/Writing</option>
-                        </select>
-                      ) : (
-                        <div className="text-sm text-muted-foreground capitalize">
-                          {profileForm.learningStyle}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Spiritual Background
-                      </label>
-                      {isEditingProfile ? (
-                        <Input
-                          placeholder="Your spiritual background"
-                          value={profileForm.spiritualBackground}
-                          onChange={(e) => setProfileForm({
-                            ...profileForm,
-                            spiritualBackground: e.target.value
-                          })}
-                          className="text-sm"
-                        />
-                      ) : (
-                        <div className="text-sm text-muted-foreground">
-                          {profileForm.spiritualBackground || 'Not specified'}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Life Context
-                    </label>
-                    {isEditingProfile ? (
-                      <Textarea
-                        placeholder="Your current life situation and context"
-                        value={profileForm.lifeContext}
-                        onChange={(e) => setProfileForm({
-                          ...profileForm,
-                          lifeContext: e.target.value
-                        })}
-                        className="h-20 text-sm"
-                      />
-                    ) : (
-                      <div className="text-sm text-muted-foreground">
-                        {profileForm.lifeContext || 'Not specified'}
-                      </div>
-                    )}
-                  </div>
-
-                  {isEditingProfile && (
-                    <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-700">
-                      <CardContent className="p-4">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Brain className="w-3 h-3 text-white" />
-                          </div>
-                          <div>
-                            <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                              AI Reassessment
-                            </h5>
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                              When you save changes to your profile, the AI coaching system will automatically reassess your needs and adapt all future coaching sessions to your updated preferences and goals.
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Complete your AI Couch assessment to view and edit your profile.
-                    </p>
                   </CardContent>
                 </Card>
               )}
