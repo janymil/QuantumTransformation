@@ -20,7 +20,8 @@ export class AiCouchEngine {
     context: string = '',
     sessionType: string = 'general'
   ): Promise<any> {
-    const systemPrompt = `You are AI Couch, a sophisticated personal development and consciousness coach. You combine:
+    try {
+      const systemPrompt = `You are AI Couch, a sophisticated personal development and consciousness coach. You combine:
 - Joe Dispenza's quantum consciousness work
 - Neville Goddard's manifestation principles  
 - Access Consciousness tools
@@ -29,7 +30,7 @@ export class AiCouchEngine {
 
 Provide personalized, compassionate guidance that helps users transform limiting beliefs and create positive change.`;
 
-    const prompt = `${systemPrompt}
+      const prompt = `${systemPrompt}
 
 USER CONTEXT: ${context}
 SESSION TYPE: ${sessionType}
@@ -37,158 +38,125 @@ USER INPUT: ${userInput}
 
 Provide a thoughtful, personalized response that addresses their specific needs and situation.`;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
-    });
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      });
 
-    const content = response.choices[0].message.content;
-    return {
-      response: content,
-      type: 'ai_coaching',
-      timestamp: new Date().toISOString(),
-      sessionType
-    };
-    
-    return {
-      response: "I'm here to support you. Could you tell me more about what you'd like to explore?",
-      type: 'ai_coaching',
-      timestamp: new Date().toISOString(),
-      sessionType
-    };
+      const content = response.choices[0].message.content;
+      return {
+        response: content,
+        type: 'ai_coaching',
+        timestamp: new Date().toISOString(),
+        sessionType
+      };
+    } catch (error) {
+      console.error('AI Coaching Error:', error);
+      return {
+        response: "I'm here to support you. Could you tell me more about what you'd like to explore?",
+        type: 'ai_coaching',
+        timestamp: new Date().toISOString(),
+        sessionType,
+        error: true
+      };
+    }
   }
 
   /**
    * Generate morning companion prompt
    */
   async generateMorningPrompt(userId: string): Promise<any> {
-    const prompt = `Create a personalized morning prompt for someone starting their day with intention and awareness.
+    const prompt = `Generate a personalized morning intention and energy activation for someone starting their day. Include:
+- A brief consciousness-expanding question
+- An intention setting practice
+- Energy activation technique`;
 
-Include:
-1. A warm greeting
-2. Brief mindfulness practice (2-3 minutes)
-3. Intention setting for the day
-4. Positive, empowering tone
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }]
+      });
 
-Format as JSON with: { "greeting": "...", "practice": "...", "intention": "..." }`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 800,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    const content = response.content[0];
-    if (content.type === 'text') {
-      try {
-        return JSON.parse(content.text);
-      } catch {
-        return {
-          greeting: "Good morning! Today is a new opportunity for growth and transformation.",
-          practice: "Take three deep breaths and set a positive intention for your day.",
-          intention: "I am open to new possibilities and growth today."
-        };
-      }
+      const content = response.choices[0].message.content;
+      return {
+        response: content,
+        type: 'morning_prompt'
+      };
+    } catch (error) {
+      return {
+        response: "Start your day with intention. What would you like to create today?",
+        type: 'morning_prompt',
+        error: true
+      };
     }
-    
-    return {
-      greeting: "Good morning! Today is a new opportunity for growth and transformation.",
-      practice: "Take three deep breaths and set a positive intention for your day.",
-      intention: "I am open to new possibilities and growth today."
-    };
   }
 
   /**
    * Generate evening reflection
    */
   async generateEveningReflection(userId: string, dayExperiences?: string): Promise<any> {
-    const prompt = `Create a personalized evening reflection to help someone process their day.
+    const prompt = `Generate a personalized evening reflection practice. ${dayExperiences ? `Consider these day experiences: ${dayExperiences}` : ''} Include:
+- Gratitude practice
+- Learning integration
+- Tomorrow's intention setting`;
 
-DAY'S EXPERIENCES: ${dayExperiences || 'No specific experiences shared'}
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }]
+      });
 
-Include:
-1. Validation of their day
-2. Gratitude practice
-3. Processing of challenges
-4. Preparation for rest
-
-Format as JSON with: { "welcome": "...", "gratitude": "...", "insight": "...", "preparation": "..." }`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 800,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    const content = response.content[0];
-    if (content.type === 'text') {
-      try {
-        return JSON.parse(content.text);
-      } catch {
-        return {
-          welcome: "Thank you for taking time to reflect on your day.",
-          gratitude: "What are three things you're grateful for today?",
-          insight: "Every experience offers opportunities for growth and learning.",
-          preparation: "Rest well, knowing you've done your best today."
-        };
-      }
+      const content = response.choices[0].message.content;
+      return {
+        response: content,
+        type: 'evening_reflection'
+      };
+    } catch (error) {
+      return {
+        response: "Reflect on your day with gratitude. What did you learn and how will you grow tomorrow?",
+        type: 'evening_reflection',
+        error: true
+      };
     }
-    
-    return {
-      welcome: "Thank you for taking time to reflect on your day.",
-      gratitude: "What are three things you're grateful for today?",
-      insight: "Every experience offers opportunities for growth and learning.",
-      preparation: "Rest well, knowing you've done your best today."
-    };
   }
 
   /**
    * Provide crisis support
    */
   async provideCrisisSupport(
-    userId: string, 
-    crisisInput: string, 
+    userId: string,
+    crisisInput: string,
     severityLevel: number
   ): Promise<any> {
-    const prompt = `CRISIS SUPPORT MODE - SEVERITY LEVEL ${severityLevel}/5
+    const prompt = `Provide immediate, compassionate crisis support. Severity level: ${severityLevel}/10
 
-USER INPUT: ${crisisInput}
+User input: ${crisisInput}
 
-Provide immediate support focusing on:
-1. Safety and grounding
-2. Validation without judgment  
-3. Immediate coping techniques
-4. Professional resources if needed (severity 4-5)
+Provide grounding techniques, immediate coping strategies, and professional resource recommendations.`;
 
-Response should be calm, supportive, and focused on immediate safety and stabilization.
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      });
 
-Format as JSON with: { "immediate_response": "...", "grounding_technique": "...", "safety_resources": "..." }`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    const content = response.content[0];
-    if (content.type === 'text') {
-      try {
-        return JSON.parse(content.text);
-      } catch {
-        return {
-          immediate_response: "I hear you and I'm here with you. You're not alone in this moment.",
-          grounding_technique: "Try the 5-4-3-2-1 technique: Notice 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, 1 you can taste.",
-          safety_resources: "If you're in immediate danger, please contact emergency services or a crisis hotline."
-        };
-      }
+      const content = response.choices[0].message.content;
+      return {
+        response: content,
+        type: 'crisis_support',
+        severityLevel
+      };
+    } catch (error) {
+      return {
+        response: "I hear you and you're not alone. Please reach out to a mental health professional or crisis hotline for immediate support.",
+        type: 'crisis_support',
+        error: true
+      };
     }
-    
-    return {
-      immediate_response: "I hear you and I'm here with you. You're not alone in this moment.",
-      grounding_technique: "Try the 5-4-3-2-1 technique: Notice 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, 1 you can taste.",
-      safety_resources: "If you're in immediate danger, please contact emergency services or a crisis hotline."
-    };
   }
 
   /**
@@ -199,84 +167,61 @@ Format as JSON with: { "immediate_response": "...", "grounding_technique": "..."
     planId: number,
     currentDay: number
   ): Promise<any> {
-    const prompt = `Generate a personalized daily activity for day ${currentDay} of a transformation challenge.
+    const prompt = `Generate a personalized daily activity for day ${currentDay}. Include:
+- Specific practice or exercise
+- Duration and instructions
+- Expected outcomes`;
 
-Create an activity that:
-1. Is appropriate for the day number in the journey
-2. Builds on previous days' work
-3. Includes specific practices and exercises
-4. Provides clear guidance and steps
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      });
 
-Format as JSON with: { "title": "...", "description": "...", "practices": [...], "reflection": "..." }`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    const content = response.content[0];
-    if (content.type === 'text') {
-      try {
-        return JSON.parse(content.text);
-      } catch {
-        return {
-          title: `Day ${currentDay}: Deepening Your Practice`,
-          description: "Today we focus on building awareness and creating positive change.",
-          practices: ["Morning meditation", "Intention setting", "Evening reflection"],
-          reflection: "How did today's practices feel for you?"
-        };
-      }
+      const content = response.choices[0].message.content;
+      return {
+        response: content,
+        type: 'daily_activity',
+        day: currentDay
+      };
+    } catch (error) {
+      return {
+        response: "Today's focus: Take three conscious breaths and set an intention for growth.",
+        type: 'daily_activity',
+        error: true
+      };
     }
-    
-    return {
-      title: `Day ${currentDay}: Deepening Your Practice`,
-      description: "Today we focus on building awareness and creating positive change.",
-      practices: ["Morning meditation", "Intention setting", "Evening reflection"],
-      reflection: "How did today's practices feel for you?"
-    };
   }
 
   /**
    * Generate weekly pattern summary
    */
   async generateWeeklyPatternSummary(userId: string): Promise<any> {
-    const prompt = `Analyze patterns and provide a weekly summary for personal development progress.
+    const prompt = `Generate a weekly pattern analysis and insights summary. Include:
+- Growth patterns observed
+- Areas for continued focus
+- Recommendations for next week`;
 
-Create a summary that includes:
-1. Key patterns observed
-2. Areas of growth
-3. Challenges and resistance
-4. Recommendations for the coming week
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }]
+      });
 
-Format as JSON with: { "patterns": [...], "growth": [...], "challenges": [...], "recommendations": [...] }`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1200,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    const content = response.content[0];
-    if (content.type === 'text') {
-      try {
-        return JSON.parse(content.text);
-      } catch {
-        return {
-          patterns: ["Consistent engagement with practices"],
-          growth: ["Increased self-awareness"],
-          challenges: ["Maintaining consistency"],
-          recommendations: ["Continue daily practices", "Focus on integration"]
-        };
-      }
+      const content = response.choices[0].message.content;
+      return {
+        response: content,
+        type: 'weekly_summary'
+      };
+    } catch (error) {
+      return {
+        response: "This week showed progress in your journey. Continue building on your insights.",
+        type: 'weekly_summary',
+        error: true
+      };
     }
-    
-    return {
-      patterns: ["Consistent engagement with practices"],
-      growth: ["Increased self-awareness"],
-      challenges: ["Maintaining consistency"],
-      recommendations: ["Continue daily practices", "Focus on integration"]
-    };
   }
 
   /**
@@ -284,94 +229,88 @@ Format as JSON with: { "patterns": [...], "growth": [...], "challenges": [...], 
    */
   async performDynamicAssessment(userId: string): Promise<any> {
     return {
-      engagement: "Active and consistent",
-      emotional_progression: "Positive trends observed",
-      resistance_areas: ["Initial hesitation with new concepts"],
-      breakthroughs: ["Increased self-awareness"],
-      adaptation_recommendations: ["Continue current approach"],
-      next_phase_readiness: "Ready for deeper work"
+      intervention_type: 'holistic_assessment',
+      target_pattern: 'overall_wellbeing',
+      techniques: ['mindfulness', 'cognitive_restructuring', 'energy_work'],
+      duration: '21_days',
+      expected_outcomes: 'Increased self-awareness and emotional regulation'
     };
   }
 
   async generateModularChallengeBlocks(
-    userId: string,
-    blockTypes: string[],
-    userCurrentLevel: number
+    expertDomains: string[],
+    userIssues: string[],
+    goals: string[]
   ): Promise<any> {
     return {
-      blocks: blockTypes.map(type => ({
-        type,
-        duration: "5-7 days",
-        activities: [`${type} practice`, `${type} reflection`, `${type} integration`],
-        progression: "Gradual difficulty increase"
+      challenge_blocks: expertDomains.map(domain => ({
+        domain,
+        focus_area: userIssues[0] || 'general_growth',
+        techniques: ['visualization', 'breathwork', 'journaling']
       }))
     };
   }
 
   async performRealTimeAdaptation(userId: string, todaysInputs: any): Promise<any> {
     return {
-      adaptation_type: "maintain_current_level",
-      reasoning: "User showing steady progress",
-      specific_changes: ["Continue current practices"],
-      new_difficulty_level: 5,
-      new_intensity_level: 5
+      adaptation_type: 'real_time',
+      adjustments: ['increase_support', 'modify_difficulty'],
+      reasoning: 'Based on current emotional state and progress'
     };
   }
 
   async performMultiLayerPersonalityProfiling(userId: string, assessmentInputs: any): Promise<any> {
     return {
-      psychological_assessment: "Healthy engagement with growth",
-      learning_style: "Visual and experiential",
-      resistance_mapping: "Minimal resistance observed",
-      motivation_triggers: "Personal growth and understanding",
-      spiritual_orientation: "Open to holistic approaches"
+      personality_layers: {
+        cognitive: 'analytical_intuitive',
+        emotional: 'empathetic_resilient',
+        behavioral: 'action_oriented'
+      },
+      learning_style: 'multimodal',
+      growth_potential: 'high'
     };
   }
 
   async generatePredictiveGuidance(userId: string): Promise<any> {
     return {
-      predictions: ["Continued growth trajectory"],
-      confidence_levels: [0.8],
-      suggested_interventions: ["Maintain current practices"],
-      optimal_timing: "Continue daily engagement"
+      predicted_challenges: ['resistance_to_change', 'perfectionism'],
+      recommended_preparation: ['mindfulness_practice', 'self_compassion_work'],
+      optimal_timing: 'morning_sessions'
     };
   }
 
   async applyExpertKnowledgeIntegration(
-    userId: string,
-    expertDomain: string,
-    userIssue: string
+    expertDomains: string[],
+    userProfile: any,
+    currentIssues: string[]
   ): Promise<any> {
     return {
-      expert_analysis: `Applied ${expertDomain} principles`,
-      specific_techniques: ["Mindfulness", "Intention setting", "Neural rewiring"],
-      practice_instructions: "Follow guided exercises",
-      expected_outcomes: "Increased awareness and positive change",
-      progress_indicators: "Enhanced well-being"
+      integrated_approach: expertDomains,
+      primary_modality: expertDomains[0] || 'mindfulness',
+      supporting_techniques: ['breathwork', 'visualization', 'journaling'],
+      expected_outcomes: 'Holistic transformation and growth'
     };
   }
 
   async performAdvancedPatternRecognition(userId: string): Promise<any> {
     return {
-      emotional_patterns: "Stable and improving",
-      cognitive_patterns: "Increased clarity",
-      behavioral_patterns: "Consistent engagement",
-      spiritual_patterns: "Growing awareness",
-      breakthrough_patterns: "Regular insights"
+      patterns_identified: ['stress_perfectionism_cycle', 'avoidance_behavior'],
+      underlying_beliefs: ['not_good_enough', 'must_be_perfect'],
+      intervention_points: ['cognitive_restructuring', 'self_compassion']
     };
   }
 
   async generateTherapeuticIntervention(
-    userId: string,
+    interventionType: string,
     targetPattern: string,
-    interventionType: string
+    userContext: any
   ): Promise<any> {
     return {
       intervention_type: interventionType,
       target_pattern: targetPattern,
-      techniques: ["Mindful awareness", "Gentle reframing", "Body-based practices"],
-      duration: "2-3 weeks",
-      expected_outcomes: "Pattern transformation"
+      techniques: ['cognitive_restructuring', 'somatic_awareness', 'energy_clearing'],
+      duration: '30_minutes',
+      expected_outcomes: 'Pattern interruption and new neural pathway creation'
     };
   }
 }
