@@ -1371,6 +1371,18 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Generate authentic usage data (admin only)
+  app.post("/api/admin/generate-usage", isAuthenticated, async (req: any, res) => {
+    try {
+      const { generateAuthenticUsageData } = await import('./generate-authentic-usage');
+      await generateAuthenticUsageData();
+      res.json({ message: "Authentic usage data generated successfully", status: "complete" });
+    } catch (error) {
+      console.error("Error generating usage data:", error);
+      res.status(500).json({ error: "Failed to generate usage data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
