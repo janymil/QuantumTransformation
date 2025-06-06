@@ -690,7 +690,7 @@ Provide personalized, actionable guidance that:
       }
 
       // Track usage with actual cost
-      await trackUsage(userId, 'enhanced_coaching', query, finalResponse, Number(challengeType) || 1);
+      await trackUsage(userId, 'enhanced_coaching', createInputHash(query, 'enhanced_coaching'), 1000, 0.01);
 
       res.json({
         response: finalResponse,
@@ -862,7 +862,7 @@ Provide personalized, actionable guidance that:
       const completionForecast = await predictiveIntelligence.predictCompletionLikelihood(userId, challengeType);
 
       // Track usage
-      await trackUsage(userId, 'supreme_coaching', query, memoryEnhancedResponse, Number(challengeType) || 1);
+      await trackUsage(userId, 'supreme_coaching', createInputHash(query, 'supreme_coaching'), 1200, 0.015);
 
       res.json({
         response: memoryEnhancedResponse,
@@ -954,7 +954,7 @@ Provide personalized, actionable guidance that:
       }
 
       // Track usage with actual cost
-      await trackUsage(userId, 'smart_coaching', query, aiResult.response, Number(challengeType) || 1);
+      await trackUsage(userId, 'smart_coaching', createInputHash(query, 'smart_coaching'), 800, 0.008);
 
       res.json({
         response: aiResult.response,
@@ -1286,12 +1286,13 @@ Provide personalized, actionable guidance that:
         conditions.push(eq(aiResponseHistory.isFavorited, true));
       }
       if (searchQuery) {
-        conditions.push(
-          or(
-            ilike(aiResponseHistory.userInput, `%${searchQuery}%`),
-            ilike(aiResponseHistory.aiResponse, `%${searchQuery}%`)
-          )
+        const searchCondition = or(
+          ilike(aiResponseHistory.userInput, `%${searchQuery}%`),
+          ilike(aiResponseHistory.aiResponse, `%${searchQuery}%`)
         );
+        if (searchCondition) {
+          conditions.push(searchCondition);
+        }
       }
 
       const responses = await db
