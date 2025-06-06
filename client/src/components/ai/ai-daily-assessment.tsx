@@ -137,6 +137,9 @@ export function AiDailyAssessment({ assessment, onComplete, isSubmitting }: AiDa
         try {
           await apiRequest('/api/assessment-reflections', {
             method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify(reflection)
           });
         } catch (error) {
