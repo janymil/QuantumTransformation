@@ -270,10 +270,10 @@ export default function EnhancedVisionBoard() {
         
         // Draw resize handles for images
         if (item.type === 'image') {
-          const handleSize = 8;
+          const handleSize = 12;
           ctx.fillStyle = '#3b82f6';
           ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1;
+          ctx.lineWidth = 2;
           
           // Corner handles
           const handles = [
@@ -483,8 +483,8 @@ export default function EnhancedVisionBoard() {
       setSelectedItem(clickedItem.id);
       
       // Check if clicking on resize handle for images
-      if (clickedItem.type === 'image' && selectedItem === clickedItem.id) {
-        const handleSize = 8;
+      if (clickedItem.type === 'image') {
+        const handleSize = 12; // Increased handle size for easier clicking
         const handles = [
           { id: 'nw', x: clickedItem.x - handleSize/2, y: clickedItem.y - handleSize/2, cursor: 'nw-resize' },
           { id: 'ne', x: clickedItem.x + clickedItem.width - handleSize/2, y: clickedItem.y - handleSize/2, cursor: 'ne-resize' },
@@ -498,6 +498,8 @@ export default function EnhancedVisionBoard() {
         );
         
         if (clickedHandle) {
+          event.preventDefault();
+          event.stopPropagation();
           setIsResizing(true);
           setResizeHandle(clickedHandle.id);
           setResizeStart({ 
@@ -507,6 +509,7 @@ export default function EnhancedVisionBoard() {
             height: clickedItem.height 
           });
           canvas.style.cursor = clickedHandle.cursor;
+          console.log('Starting resize with handle:', clickedHandle.id);
           return;
         }
       }
@@ -543,7 +546,7 @@ export default function EnhancedVisionBoard() {
       const selectedItemData = board.canvasData.items.find(item => item.id === selectedItem);
       
       if (selectedItemData?.type === 'image') {
-        const handleSize = 8;
+        const handleSize = 12;
         const handles = [
           { id: 'nw', x: selectedItemData.x - handleSize/2, y: selectedItemData.y - handleSize/2, cursor: 'nw-resize' },
           { id: 'ne', x: selectedItemData.x + selectedItemData.width - handleSize/2, y: selectedItemData.y - handleSize/2, cursor: 'ne-resize' },

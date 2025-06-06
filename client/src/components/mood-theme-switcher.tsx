@@ -273,7 +273,7 @@ export default function MoodThemeSwitcher({ onThemeChange }: MoodThemeSwitcherPr
         variant="outline"
         size="sm"
         onClick={toggleDarkMode}
-        className="p-2"
+        className="p-2 bg-background hover:bg-muted border-border"
       >
         {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </Button>
