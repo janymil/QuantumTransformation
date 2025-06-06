@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Brain, Lightbulb, Target, Clock, CheckCircle, Loader2 } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface Exercise {
@@ -147,6 +147,10 @@ export function AiDailyAssessment({ assessment, onComplete, isSubmitting }: AiDa
       }
 
       if (reflectionsToSave.length > 0) {
+        // Invalidate journal queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['/api/assessment-reflections'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/journal'] });
+        
         toast({
           title: "Assessment Complete",
           description: `Saved ${reflectionsToSave.length} reflections to your journal.`
