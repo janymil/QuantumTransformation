@@ -78,30 +78,39 @@ export default function Journal() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // State management
-  const [activeTab, setActiveTab] = useState("write");
-  const [entryMode, setEntryMode] = useState<"free" | "challenge">("free");
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [reflectionFilter, setReflectionFilter] = useState("all");
-  const [selectedInsightType, setSelectedInsightType] = useState("all");
-  const [expandedEntries, setExpandedEntries] = useState(new Set<string | number>());
-
-  // Challenge entry fields
+  const [selectedChallengeType, setSelectedChallengeType] = useState<string | null>(null);
   const [experience, setExperience] = useState("");
   const [insights, setInsights] = useState("");
   const [intention, setIntention] = useState("");
-
-  // Free-form entry fields
-  const [freeFormExperience, setFreeFormExperience] = useState("");
-  const [freeFormInsights, setFreeFormInsights] = useState("");
-  const [freeFormIntention, setFreeFormIntention] = useState("");
-
-  // Editing state
+  const [filterDay, setFilterDay] = useState<string>("all");
+  const [filterChallengeType, setFilterChallengeType] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [reflectionFilter, setReflectionFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [expandedEntries, setExpandedEntries] = useState<Set<string | number>>(new Set());
+  const [activeTab, setActiveTab] = useState("write");
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [editExperience, setEditExperience] = useState("");
   const [editInsights, setEditInsights] = useState("");
   const [editIntention, setEditIntention] = useState("");
+  const [selectedInsightType, setSelectedInsightType] = useState<string | null>(null);
+  
+  // Free-form entry mode
+  const [entryMode, setEntryMode] = useState<"free" | "challenge">("challenge");
+  const [freeFormExperience, setFreeFormExperience] = useState("");
+  const [freeFormInsights, setFreeFormInsights] = useState("");
+  const [freeFormIntention, setFreeFormIntention] = useState("");
+
+  const toggleEntryExpansion = (entryId: string | number) => {
+    const newExpanded = new Set(expandedEntries);
+    if (newExpanded.has(entryId)) {
+      newExpanded.delete(entryId);
+    } else {
+      newExpanded.add(entryId);
+    }
+    setExpandedEntries(newExpanded);
+  };
 
   // Data queries
   const { data: entriesData = [], isLoading: entriesLoading } = useQuery({
@@ -123,10 +132,16 @@ export default function Journal() {
 
   // Mutations
   const saveMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/journal', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to save entry');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/journal'] });
       toast({
@@ -270,16 +285,6 @@ export default function Journal() {
     setEditExperience("");
     setEditInsights("");
     setEditIntention("");
-  };
-
-  const toggleEntryExpansion = (entryId: string | number) => {
-    const newExpanded = new Set(expandedEntries);
-    if (newExpanded.has(entryId)) {
-      newExpanded.delete(entryId);
-    } else {
-      newExpanded.add(entryId);
-    }
-    setExpandedEntries(newExpanded);
   };
 
   // Filter entries and reflections
