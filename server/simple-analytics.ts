@@ -1,91 +1,98 @@
 import { db } from "./db";
-import { aiResponseHistory } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 /**
- * Simplified analytics that works with existing database schema
+ * Analytics using raw SQL queries that work with the actual database structure
  */
 export async function getSimpleAnalytics() {
   try {
-    // Get basic counts
-    const totalResponses = await db
-      .select({ count: sql`count(*)` })
-      .from(aiResponseHistory);
+    // Get basic counts using raw SQL
+    const totalResponsesResult = await db.execute(sql`SELECT COUNT(*) as count FROM ai_response_history`);
+    const totalResponses = totalResponsesResult.rows[0]?.count || 0;
 
     // Get model distribution
-    const modelStats = await db
-      .select({
-        model: aiResponseHistory.model,
-        count: sql`count(*)`
-      })
-      .from(aiResponseHistory)
-      .groupBy(aiResponseHistory.model);
+    const modelStatsResult = await db.execute(sql`
+      SELECT model_used as model, COUNT(*) as count 
+      FROM ai_response_history 
+      WHERE model_used IS NOT NULL 
+      GROUP BY model_used
+    `);
 
     // Get challenge type stats
-    const challengeStats = await db
-      .select({
-        challengeType: aiResponseHistory.challengeType,
-        count: sql`count(*)`
-      })
-      .from(aiResponseHistory)
-      .where(sql`${aiResponseHistory.challengeType} IS NOT NULL`)
-      .groupBy(aiResponseHistory.challengeType)
-      .orderBy(sql`count(*) DESC`);
+    const challengeStatsResult = await db.execute(sql`
+      SELECT challenge_type, COUNT(*) as count 
+      FROM ai_response_history 
+      WHERE challenge_type IS NOT NULL 
+      GROUP BY challenge_type 
+      ORDER BY COUNT(*) DESC
+    `);
 
     // Get cost and performance metrics
-    const costStats = await db
-      .select({
-        totalCost: sql`sum(COALESCE(${aiResponseHistory.cost}, 0))`,
-        avgResponseTime: sql`avg(COALESCE(${aiResponseHistory.responseTime}, 0))`,
-        avgQuality: sql`avg(COALESCE(${aiResponseHistory.qualityScore}, 8))`
-      })
-      .from(aiResponseHistory);
+    const costStatsResult = await db.execute(sql`
+      SELECT 
+        SUM(COALESCE(cost, 0)) as total_cost,
+        AVG(COALESCE(response_time, 0)) as avg_response_time,
+        AVG(COALESCE(response_quality, 8)) as avg_quality
+      FROM ai_response_history
+    `);
 
     // Get daily usage over last 30 days
-    const dailyUsage = await db
-      .select({
-        date: sql`date(${aiResponseHistory.createdAt})`,
-        count: sql`count(*)`
-      })
-      .from(aiResponseHistory)
-      .where(sql`${aiResponseHistory.createdAt} >= current_date - interval '30 days'`)
-      .groupBy(sql`date(${aiResponseHistory.createdAt})`)
-      .orderBy(sql`date(${aiResponseHistory.createdAt}) DESC`);
+    const dailyUsageResult = await db.execute(sql`
+      SELECT 
+        DATE(created_at) as date, 
+        COUNT(*) as count 
+      FROM ai_response_history 
+      WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+      GROUP BY DATE(created_at) 
+      ORDER BY DATE(created_at) DESC
+    `);
 
     // Get user engagement
-    const userEngagement = await db
-      .select({
-        totalUsers: sql`count(distinct ${aiResponseHistory.userId})`,
-        activeUsers: sql`count(distinct case when ${aiResponseHistory.createdAt} >= current_date - interval '7 days' then ${aiResponseHistory.userId} end)`
-      })
-      .from(aiResponseHistory);
+    const userEngagementResult = await db.execute(sql`
+      SELECT 
+        COUNT(DISTINCT user_id) as total_users,
+        COUNT(DISTINCT CASE WHEN created_at >= CURRENT_DATE - INTERVAL '7 days' THEN user_id END) as active_users
+      FROM ai_response_history
+    `);
+
+    // Process the results
+    const costStats = costStatsResult.rows[0] || {};
+    const userEngagement = userEngagementResult.rows[0] || {};
+    
+    const modelStats = modelStatsResult.rows.map(row => ({
+      name: row.model || 'unknown',
+      value: Number(row.count || 0)
+    }));
+
+    const challengeStats = challengeStatsResult.rows.map(row => ({
+      name: row.challenge_type || 'general',
+      value: Number(row.count || 0)
+    }));
+
+    const dailyUsage = dailyUsageResult.rows.map(row => ({
+      date: row.date,
+      count: Number(row.count || 0)
+    }));
+
+    const totalUsers = Number(userEngagement.total_users || 0);
+    const activeUsers = Number(userEngagement.active_users || 0);
 
     return {
-      totalUsers: Number(userEngagement[0]?.totalUsers || 0),
-      totalResponses: Number(totalResponses[0]?.count || 0),
-      totalCost: Number(costStats[0]?.totalCost || 0),
-      costSavings: 0, // Calculated client-side if needed
-      modelDistribution: modelStats.map(stat => ({
-        name: stat.model || 'unknown',
-        value: Number(stat.count || 0)
-      })),
-      averageQuality: Number(costStats[0]?.avgQuality || 8),
-      highQualityPercentage: 85, // Default estimate
-      averageResponseTime: Number(costStats[0]?.avgResponseTime || 1000),
-      topChallengeTypes: challengeStats.map(stat => ({
-        name: stat.challengeType || 'general',
-        value: Number(stat.count || 0)
-      })),
+      totalUsers,
+      totalResponses: Number(totalResponses),
+      totalCost: Number(costStats.total_cost || 0),
+      costSavings: 0,
+      modelDistribution: modelStats,
+      averageQuality: Number(costStats.avg_quality || 8),
+      highQualityPercentage: 85,
+      averageResponseTime: Number(costStats.avg_response_time || 1000),
+      topChallengeTypes: challengeStats,
       userEngagement: {
-        activeUsers: Number(userEngagement[0]?.activeUsers || 0),
-        totalUsers: Number(userEngagement[0]?.totalUsers || 0),
-        engagementRate: userEngagement[0]?.totalUsers ? 
-          Math.round((Number(userEngagement[0].activeUsers) / Number(userEngagement[0].totalUsers)) * 100) : 0
+        activeUsers,
+        totalUsers,
+        engagementRate: totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0
       },
-      dailyUsage: dailyUsage.map(usage => ({
-        date: usage.date,
-        count: Number(usage.count || 0)
-      }))
+      dailyUsage
     };
   } catch (error) {
     console.error("Error in getSimpleAnalytics:", error);

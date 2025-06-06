@@ -178,11 +178,11 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   day: integer("day"),
   
   // Analytics fields for cost tracking
-  model: varchar("model").default("gpt-4o"), // 'gpt-4o', 'gpt-4o-mini'
+  modelUsed: varchar("model_used").default("gpt-4o"), // 'gpt-4o', 'gpt-4o-mini'
   tokenCount: integer("token_count").default(0),
   cost: real("cost").default(0), // Cost in dollars
   responseTime: integer("response_time").default(0), // milliseconds
-  qualityScore: integer("quality_score").default(8), // 1-10 scale
+  responseQuality: integer("response_quality").default(8), // 1-10 scale
   
   // User interaction fields
   tags: jsonb("tags").default([]), // For filtering and search
@@ -195,7 +195,7 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   index("ai_response_history_user_idx").on(table.userId),
   index("ai_response_history_session_type_idx").on(table.sessionType),
   index("ai_response_history_challenge_type_idx").on(table.challengeType),
-  index("ai_response_history_model_idx").on(table.model),
+  index("ai_response_history_model_idx").on(table.modelUsed),
   index("ai_response_history_created_at_idx").on(table.createdAt),
 ]);
 
