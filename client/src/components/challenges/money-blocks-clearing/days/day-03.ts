@@ -69,5 +69,12 @@ export const day03Content = {
   quote: {
     text: "Elevated emotion is the carrier frequency of the thought into the quantum field.",
     author: "Joe Dispenza"
-  }
+  },
+
+  expectedResults: [
+    "Ability to consciously generate and sustain elevated emotions linked to abundance",
+    "Creation of a rich, emotionally charged mental blueprint of your desired life", 
+    "Deepening emotional connection with your Quantum Intention, enhancing subconscious alignment"
+  ]
+  
 };
