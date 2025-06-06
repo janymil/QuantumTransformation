@@ -2320,10 +2320,46 @@ Provide personalized, actionable guidance that:
   // AI Vision Board Guide
   app.post('/api/ai/vision-board-guide', isAuthenticated, async (req: any, res) => {
     try {
-      const { userGoals } = req.body;
+      const userId = req.user.id;
+      const { userGoals, userTier = 'basic' } = req.body;
       
       if (!userGoals) {
         return res.status(400).json({ error: 'User goals are required' });
+      }
+
+      // Import cost control functions
+      const { 
+        validateAIRequest, 
+        getCachedResponse, 
+        cacheResponse, 
+        trackUsage,
+        createInputHash 
+      } = await import('./ai-cost-control');
+
+      // Validate AI request with cost controls
+      const inputHash = createInputHash(userGoals, 'vision_guide');
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'vision_guide',
+        input: userGoals,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests 
+        });
+      }
+
+      // Check cache first
+      if (validation.cachedResponse) {
+        await trackUsage(userId, 'vision_guide', inputHash, 0, 0);
+        return res.json({ 
+          ...validation.cachedResponse, 
+          fromCache: true,
+          remainingRequests: validation.remainingRequests
+        });
       }
 
       const { OpenAI } = await import('openai');
@@ -2408,10 +2444,50 @@ Make recommendations specific to their exact goals, timeline, and aspirations. F
   // AI Vision Board Suggestions - Contextual board analysis and improvements
   app.post('/api/ai/vision-board-suggestions', isAuthenticated, async (req: any, res) => {
     try {
-      const { boardData, userGoals, focusArea, currentContent } = req.body;
+      const userId = req.user.id;
+      const { boardData, userGoals, focusArea, currentContent, userTier = 'basic' } = req.body;
       
       if (!boardData || !userGoals || !focusArea) {
         return res.status(400).json({ error: 'Board data, user goals, and focus area are required' });
+      }
+
+      // Import cost control functions
+      const { 
+        validateAIRequest, 
+        getCachedResponse, 
+        cacheResponse, 
+        trackUsage,
+        createInputHash 
+      } = await import('./ai-cost-control');
+
+      // Create input for validation and caching
+      const inputText = JSON.stringify({ boardData, userGoals, focusArea });
+      const inputHash = createInputHash(inputText, 'vision_suggestions', focusArea);
+
+      // Validate AI request with cost controls
+      const validation = await validateAIRequest({
+        userId,
+        requestType: 'vision_suggestions',
+        input: inputText,
+        challengeType: focusArea,
+        userTier
+      });
+
+      if (!validation.allowed) {
+        return res.status(429).json({ 
+          error: validation.reason,
+          remainingRequests: validation.remainingRequests 
+        });
+      }
+
+      // Check cache first
+      if (validation.cachedResponse) {
+        await trackUsage(userId, 'vision_suggestions', inputHash, 0, 0);
+        return res.json({ 
+          ...validation.cachedResponse, 
+          fromCache: true,
+          remainingRequests: validation.remainingRequests
+        });
       }
 
       const { OpenAI } = await import('openai');
@@ -2470,12 +2546,26 @@ Focus on practical, implementable suggestions that directly support their ${focu
       });
 
       const aiResponse = JSON.parse(response.choices[0].message.content);
-
-      res.json({ 
+      const responseData = {
         success: true, 
         suggestions: aiResponse.suggestions || [],
         analysis: aiResponse.analysis || "Analysis complete",
         message: "Vision board suggestions generated successfully"
+      };
+
+      // Calculate usage for tracking
+      const tokensUsed = Math.ceil(inputText.length / 4) + Math.ceil(JSON.stringify(responseData).length / 4);
+      const cost = Math.ceil(tokensUsed * 0.00003 * 100); // GPT-4o pricing
+
+      // Cache the response for future use
+      await cacheResponse(inputHash, responseData, 'vision_suggestions', 24); // 24 hour cache
+
+      // Track usage
+      await trackUsage(userId, 'vision_suggestions', inputHash, tokensUsed, cost);
+
+      res.json({ 
+        ...responseData,
+        remainingRequests: validation.remainingRequests
       });
 
     } catch (error) {
