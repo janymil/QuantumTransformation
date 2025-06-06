@@ -39,6 +39,149 @@ import { modelRouter } from "./intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Vision Board API endpoints (placed first to avoid frontend routing conflicts)
+  app.get('/api/vision-board/templates', async (req, res) => {
+    try {
+      const templates = [
+        {
+          id: 'financial_freedom',
+          name: 'Financial Freedom',
+          category: 'wealth',
+          description: 'Manifest abundance and financial prosperity',
+          thumbnail: '/templates/financial_freedom.jpg',
+          elements: [
+            { type: 'text', content: 'Financial Freedom', position: { x: 100, y: 50 }, style: { fontSize: 32, fontWeight: 'bold', color: '#2d5a27' } },
+            { type: 'text', content: '$1,000,000', position: { x: 300, y: 150 }, style: { fontSize: 28, color: '#2d5a27' } },
+            { type: 'text', content: 'Multiple Income Streams', position: { x: 50, y: 250 }, style: { fontSize: 20, color: '#2d5a27' } }
+          ]
+        },
+        {
+          id: 'health_wellness',
+          name: 'Health & Wellness',
+          category: 'health',
+          description: 'Focus on physical and mental well-being',
+          thumbnail: '/templates/health_wellness.jpg',
+          elements: [
+            { type: 'text', content: 'Vibrant Health', position: { x: 100, y: 50 }, style: { fontSize: 32, fontWeight: 'bold', color: '#2d5a27' } },
+            { type: 'text', content: 'Daily Exercise', position: { x: 50, y: 150 }, style: { fontSize: 20, color: '#2d5a27' } },
+            { type: 'text', content: 'Nutritious Food', position: { x: 300, y: 200 }, style: { fontSize: 20, color: '#2d5a27' } }
+          ]
+        }
+      ];
+      
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching vision board templates:', error);
+      res.status(500).json({ message: 'Failed to fetch templates' });
+    }
+  });
+
+  app.get('/api/vision-board/categories', async (req, res) => {
+    try {
+      const categories = [
+        { id: 'wealth', name: 'Wealth & Abundance', icon: '💰', description: 'Financial goals and prosperity' },
+        { id: 'health', name: 'Health & Wellness', icon: '🌿', description: 'Physical and mental well-being' },
+        { id: 'career', name: 'Career & Success', icon: '🎯', description: 'Professional achievements' },
+        { id: 'relationships', name: 'Love & Relationships', icon: '❤️', description: 'Meaningful connections' },
+        { id: 'lifestyle', name: 'Lifestyle & Travel', icon: '✈️', description: 'Experiences and adventures' },
+        { id: 'personal', name: 'Personal Growth', icon: '🧘', description: 'Self-improvement and mindfulness' }
+      ];
+      
+      res.json(categories);
+    } catch (error) {
+      console.error('Error fetching vision board categories:', error);
+      res.status(500).json({ message: 'Failed to fetch categories' });
+    }
+  });
+
+  app.get('/api/vision-board/examples', async (req, res) => {
+    try {
+      const examples = [
+        {
+          id: 'entrepreneur_success',
+          title: 'Entrepreneur Success Story',
+          description: 'Vision board for building a successful business',
+          category: 'career',
+          imageUrl: '/examples/entrepreneur.jpg',
+          elements: ['Company Logo', 'Revenue Goals', 'Team Vision', 'Market Leadership']
+        },
+        {
+          id: 'healthy_lifestyle',
+          title: 'Healthy Lifestyle Goals',
+          description: 'Complete wellness transformation',
+          category: 'health',
+          imageUrl: '/examples/wellness.jpg',
+          elements: ['Fitness Goals', 'Nutrition Plan', 'Mental Health', 'Energy & Vitality']
+        }
+      ];
+      
+      res.json(examples);
+    } catch (error) {
+      console.error('Error fetching vision board examples:', error);
+      res.status(500).json({ message: 'Failed to fetch examples' });
+    }
+  });
+
+  app.get('/api/vision-board/progress-analytics/:userId', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const visionBoards = await storage.getVisionBoards(userId);
+      
+      const analytics = {
+        totalBoards: visionBoards.length,
+        completedGoals: 0,
+        activeGoals: visionBoards.length * 3,
+        engagementMetrics: {
+          boardsCreatedThisMonth: visionBoards.filter(board => {
+            const boardDate = new Date(board.createdAt);
+            const now = new Date();
+            return boardDate.getMonth() === now.getMonth() && boardDate.getFullYear() === now.getFullYear();
+          }).length,
+          lastActivityDate: visionBoards.length > 0 ? visionBoards[0].updatedAt : null,
+          averageElementsPerBoard: visionBoards.length > 0 ? 
+            visionBoards.reduce((sum, board) => sum + (board.canvasData?.elements?.length || 0), 0) / visionBoards.length : 0
+        }
+      };
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching vision board analytics:', error);
+      res.status(500).json({ message: 'Failed to fetch analytics' });
+    }
+  });
+
+  app.post('/api/vision-board/generate-mobile-wallpaper', async (req, res) => {
+    try {
+      const { visionBoard, deviceType = 'iphone', style = 'modern' } = req.body;
+      
+      if (!visionBoard) {
+        return res.status(400).json({ message: 'Vision board data is required' });
+      }
+      
+      const dimensions = {
+        iphone: { width: 1170, height: 2532 },
+        android: { width: 1080, height: 2340 },
+        ipad: { width: 1620, height: 2160 }
+      };
+      
+      const deviceDimensions = dimensions[deviceType] || dimensions.iphone;
+      
+      const wallpaperData = {
+        wallpaperUrl: `/api/vision-board/wallpaper/${Date.now()}.png`,
+        deviceType,
+        dimensions: deviceDimensions,
+        style,
+        elements: visionBoard.elements || [],
+        backgroundColor: visionBoard.backgroundColor || '#ffffff'
+      };
+      
+      res.json(wallpaperData);
+    } catch (error) {
+      console.error('Error generating mobile wallpaper:', error);
+      res.status(500).json({ message: 'Failed to generate wallpaper' });
+    }
+  });
+
   // Auth middleware
   await setupAuth(app);
 
