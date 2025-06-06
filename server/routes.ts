@@ -1384,6 +1384,265 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // ===================================
+  // AI COUCH SYSTEM ROUTES - INDEPENDENT MODULE
+  // ===================================
+
+  // AI Couch onboarding assessment
+  app.post('/api/ai-couch/assessment', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const assessmentData = req.body;
+      const profile = await aiCouchEngine.createUserProfile(userId, assessmentData);
+      
+      res.json({ 
+        success: true, 
+        profile,
+        message: "AI Couch profile created successfully" 
+      });
+    } catch (error) {
+      console.error("Error creating AI Couch profile:", error);
+      res.status(500).json({ message: "Failed to create profile", error: (error as Error).message });
+    }
+  });
+
+  // AI Couch coaching session
+  app.post('/api/ai-couch/session', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const { 
+        userInput, 
+        sessionType = 'daily_checkin',
+        emotionalState,
+        sessionGoal 
+      } = req.body;
+
+      const session = await aiCouchEngine.conductCoachingSession(
+        userId, 
+        userInput, 
+        sessionType,
+        emotionalState,
+        sessionGoal
+      );
+      
+      res.json(session);
+    } catch (error) {
+      console.error("Error conducting AI Couch session:", error);
+      res.status(500).json({ message: "Failed to conduct session", error: (error as Error).message });
+    }
+  });
+
+  // Generate personalized challenge plan
+  app.post('/api/ai-couch/generate-plan', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const { 
+        baseChallengeType, 
+        userSpecificNeeds 
+      } = req.body;
+
+      // Get user profile first
+      const { aiCouchProfiles } = await import('@shared/schema');
+      const [profile] = await db
+        .select()
+        .from(aiCouchProfiles)
+        .where(eq(aiCouchProfiles.userId, userId));
+
+      if (!profile) {
+        return res.status(400).json({ message: "AI Couch profile required. Please complete assessment first." });
+      }
+
+      const plan = await aiCouchEngine.generatePersonalizedChallenge(
+        userId,
+        profile.id,
+        baseChallengeType,
+        userSpecificNeeds
+      );
+      
+      res.json(plan);
+    } catch (error) {
+      console.error("Error generating personalized plan:", error);
+      res.status(500).json({ message: "Failed to generate plan", error: (error as Error).message });
+    }
+  });
+
+  // Generate daily adaptive activity
+  app.post('/api/ai-couch/daily-activity', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchEngine } = await import('./ai-couch-engine');
+      
+      const { 
+        planId, 
+        day, 
+        userCurrentState 
+      } = req.body;
+
+      const activity = await aiCouchEngine.generateDailyActivity(
+        planId,
+        userId,
+        day,
+        userCurrentState
+      );
+      
+      res.json(activity);
+    } catch (error) {
+      console.error("Error generating daily activity:", error);
+      res.status(500).json({ message: "Failed to generate activity", error: (error as Error).message });
+    }
+  });
+
+  // Get AI Couch user profile
+  app.get('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { aiCouchProfiles } = await import('@shared/schema');
+      
+      const [profile] = await db
+        .select()
+        .from(aiCouchProfiles)
+        .where(eq(aiCouchProfiles.userId, userId));
+      
+      res.json(profile || null);
+    } catch (error) {
+      console.error("Error fetching AI Couch profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile", error: (error as Error).message });
+    }
+  });
+
+  // Get user's personalized challenge plans
+  app.get('/api/ai-couch/plans', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { personalizedChallengePlans } = await import('@shared/schema');
+      
+      const plans = await db
+        .select()
+        .from(personalizedChallengePlans)
+        .where(eq(personalizedChallengePlans.userId, userId))
+        .orderBy(desc(personalizedChallengePlans.createdAt));
+      
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching personalized plans:", error);
+      res.status(500).json({ message: "Failed to fetch plans", error: (error as Error).message });
+    }
+  });
+
+  // Get daily activities for a plan
+  app.get('/api/ai-couch/plans/:planId/activities', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const planId = parseInt(req.params.planId);
+      const { dailyAdaptiveActivities } = await import('@shared/schema');
+      
+      const activities = await db
+        .select()
+        .from(dailyAdaptiveActivities)
+        .where(and(
+          eq(dailyAdaptiveActivities.planId, planId),
+          eq(dailyAdaptiveActivities.userId, userId)
+        ))
+        .orderBy(dailyAdaptiveActivities.day);
+      
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching plan activities:", error);
+      res.status(500).json({ message: "Failed to fetch activities", error: (error as Error).message });
+    }
+  });
+
+  // Complete daily activity
+  app.patch('/api/ai-couch/activities/:activityId/complete', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const activityId = parseInt(req.params.activityId);
+      const { 
+        completionTime, 
+        userFeedback, 
+        emotionalResponse, 
+        effectiveness 
+      } = req.body;
+      
+      const { dailyAdaptiveActivities } = await import('@shared/schema');
+      
+      await db
+        .update(dailyAdaptiveActivities)
+        .set({
+          completed: true,
+          completionTime,
+          userFeedback,
+          emotionalResponse,
+          effectiveness,
+          completedAt: new Date()
+        })
+        .where(and(
+          eq(dailyAdaptiveActivities.id, activityId),
+          eq(dailyAdaptiveActivities.userId, userId)
+        ));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error completing activity:", error);
+      res.status(500).json({ message: "Failed to complete activity", error: (error as Error).message });
+    }
+  });
+
+  // Get AI Couch session history
+  app.get('/api/ai-couch/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { limit = 20, offset = 0, sessionType } = req.query;
+      const { aiCouchSessions } = await import('@shared/schema');
+      
+      const conditions = [eq(aiCouchSessions.userId, userId)];
+      if (sessionType) {
+        conditions.push(eq(aiCouchSessions.sessionType, sessionType as string));
+      }
+      
+      const sessions = await db
+        .select()
+        .from(aiCouchSessions)
+        .where(and(...conditions))
+        .orderBy(desc(aiCouchSessions.createdAt))
+        .limit(parseInt(limit as string))
+        .offset(parseInt(offset as string));
+      
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching AI Couch sessions:", error);
+      res.status(500).json({ message: "Failed to fetch sessions", error: (error as Error).message });
+    }
+  });
+
+  // Update AI Couch profile preferences
+  app.patch('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const updates = req.body;
+      const { aiCouchProfiles } = await import('@shared/schema');
+      
+      await db
+        .update(aiCouchProfiles)
+        .set({
+          ...updates,
+          lastUpdated: new Date()
+        })
+        .where(eq(aiCouchProfiles.userId, userId));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating AI Couch profile:", error);
+      res.status(500).json({ message: "Failed to update profile", error: (error as Error).message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
