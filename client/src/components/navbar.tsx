@@ -94,6 +94,9 @@ export default function Navbar() {
           {/* Right Side */}
           <div className="flex items-center space-x-4">
             
+            {/* Mood Theme Switcher */}
+            <MoodThemeSwitcher />
+            
             {/* Notifications */}
             <Button variant="ghost" size="sm" className="relative">
               <Bell className="w-5 h-5" />
