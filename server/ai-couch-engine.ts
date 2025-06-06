@@ -7,6 +7,14 @@ import {
   journalEntries
 } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { 
+  validateAIRequest, 
+  getCachedResponse, 
+  cacheResponse, 
+  trackUsage,
+  createInputHash,
+  optimizeContext 
+} from './ai-cost-control';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

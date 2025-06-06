@@ -78,38 +78,57 @@ export class AdaptiveCoachingEngine {
    * AI analyzes user's complete situation and determines optimal approach
    */
   private async analyzeUserAndCreatePlan(context: UserProgressContext): Promise<any> {
+    // Create optimized input for cost control
+    const optimizedContext = optimizeContext(
+      JSON.stringify(context),
+      'daily_coaching_analysis',
+      { maxTokens: 2000, priorityFields: ['profile', 'emotionalState', 'lastAssessmentResponse'] }
+    );
+
+    // Create hash for caching
+    const inputHash = createInputHash(
+      optimizedContext, 
+      'daily_coaching_analysis',
+      undefined,
+      undefined
+    );
+
+    // Check cache first
+    const cachedResponse = await getCachedResponse(inputHash);
+    if (cachedResponse) {
+      console.log("Using cached AI analysis");
+      return JSON.parse(cachedResponse.response);
+    }
+
+    // Validate AI request
+    const aiRequest = {
+      userId: context.profile?.userId || 'unknown',
+      requestType: 'daily_coaching_analysis',
+      input: optimizedContext,
+      userTier: 'premium' as const
+    };
+
+    const validation = await validateAIRequest(aiRequest);
+    if (!validation.allowed) {
+      throw new Error(validation.reason || 'AI request not allowed');
+    }
+
     const prompt = `
-You are an advanced AI coaching psychologist with expertise in 16+ therapeutic modalities including Joe Dispenza's quantum consciousness work, Neville Goddard's manifestation principles, Access Consciousness, EMDR, CBT, trauma-informed therapy, and somatic approaches.
+You are an advanced AI coaching psychologist. Analyze this user's situation and determine optimal coaching path.
 
-ANALYZE this user's complete situation and determine the optimal coaching path:
+USER CONTEXT: ${optimizedContext}
 
-USER PROFILE:
-- Healing Readiness: ${context.profile?.healingReadiness}/10
-- Primary Goals: ${JSON.stringify(context.profile?.primaryGoals)}
-- Current Challenges: ${JSON.stringify(context.profile?.traumaAreas)}
-- Resistance Patterns: ${JSON.stringify(context.profile?.resistancePatterns)}
-- Motivation Triggers: ${JSON.stringify(context.profile?.motivationTriggers)}
-- Support Needs: ${JSON.stringify(context.profile?.supportNeeds)}
-- Learning Style: ${context.profile?.learningStyle}
-- Communication Style: ${context.profile?.communicationStyle}
+Determine:
+1. CURRENT FOCUS: One specific area to focus on now
+2. REASONING: Why this is optimal for their situation  
+3. THERAPEUTIC APPROACHES: 3 best modalities
+4. NEXT STEPS: What this prepares them for
+5. PROGRESS INDICATORS: How to measure success
 
-RECENT PROGRESS:
-- Recent Sessions: ${context.recentSessions.length} sessions
-- Emotional State: ${context.emotionalState}
-- Last Response: ${JSON.stringify(context.lastAssessmentResponse)}
-
-Based on this analysis, determine:
-
-1. CURRENT FOCUS: What should we focus on RIGHT NOW? (one specific area)
-2. REASONING: Why is this the optimal starting point for this user's situation?
-3. THERAPEUTIC APPROACH: Which 3-5 therapeutic modalities are best for this focus?
-4. NEXT STEPS: What will this prepare them for in the coming weeks?
-5. PROGRESS INDICATORS: How will we know this is working?
-
-Respond in JSON format:
+Respond in JSON:
 {
   "currentFocus": "specific focus area",
-  "reasoning": "detailed explanation of why this is the optimal starting point",
+  "reasoning": "explanation of why this is optimal",
   "therapeuticApproaches": ["approach1", "approach2", "approach3"],
   "nextSteps": "what this prepares them for",
   "progressIndicators": ["indicator1", "indicator2", "indicator3"]
@@ -118,14 +137,34 @@ Respond in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini", // Use cheaper model for analysis
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 600, // Reduced from 1000
       });
 
       const content = response.choices[0]?.message?.content;
       if (!content) throw new Error("No response from AI");
+
+      // Track usage
+      await trackUsage(
+        context.profile?.userId || 'unknown',
+        'daily_coaching_analysis',
+        prompt,
+        response.usage?.prompt_tokens || 0,
+        response.usage?.completion_tokens || 0
+      );
+
+      // Cache response
+      await cacheResponse(
+        inputHash,
+        'daily_coaching_analysis',
+        undefined,
+        undefined,
+        content,
+        response.usage?.total_tokens || 0,
+        context.profile?.userId || 'unknown'
+      );
 
       return JSON.parse(content);
     } catch (error) {
