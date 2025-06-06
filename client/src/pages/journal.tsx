@@ -116,7 +116,7 @@ export default function Journal() {
   });
 
   // Fetch AI coaching responses for insights
-  const { data: aiResponses, isLoading: aiResponsesLoading } = useQuery({
+  const { data: aiResponses, isLoading: aiResponsesLoading } = useQuery<any[]>({
     queryKey: ["/api/ai/responses"],
   });
 
@@ -811,7 +811,7 @@ export default function Journal() {
                     </p>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
-                    {aiResponses && aiResponses.length > 0 ? (
+                    {aiResponses && Array.isArray(aiResponses) && aiResponses.length > 0 ? (
                       <div className="space-y-3 flex-1">
                         <p className="text-sm text-muted-foreground mb-2">
                           {aiResponses.length} coaching session{aiResponses.length !== 1 ? 's' : ''} completed
@@ -847,7 +847,7 @@ export default function Journal() {
                       size="sm" 
                       className="w-full mt-4"
                       onClick={() => setSelectedInsightType('coaching')}
-                      disabled={!aiResponses || aiResponses.length === 0}
+                      disabled={!aiResponses || !Array.isArray(aiResponses) || aiResponses.length === 0}
                     >
                       Read All
                     </Button>
@@ -985,7 +985,7 @@ export default function Journal() {
                 </div>
               )}
 
-              {selectedInsightType === 'coaching' && aiResponses && (
+              {selectedInsightType === 'coaching' && aiResponses && Array.isArray(aiResponses) && (
                 <div className="space-y-4">
                   {aiResponses.map((response: any, index: number) => (
                     <Card key={index}>
