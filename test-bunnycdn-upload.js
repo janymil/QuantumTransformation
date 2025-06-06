@@ -21,9 +21,9 @@ async function testBunnyCDNUpload() {
   const testImageBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
   
   try {
-    // Test upload
+    // Test upload with correct NY region endpoint
     const filename = `test_${Date.now()}.jpg`;
-    const uploadUrl = `https://storage.bunnycdn.com/${storageZone}/${filename}`;
+    const uploadUrl = `https://ny.storage.bunnycdn.com/${storageZone}/${filename}`;
     
     // Convert base64 to blob
     const response = await fetch(testImageBase64);
