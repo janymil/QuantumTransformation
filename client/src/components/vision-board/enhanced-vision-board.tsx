@@ -12,6 +12,7 @@ import { screenCaptureService, CaptureResult } from "@/services/screen-capture";
 import ImageEditor from "@/components/image-editor/image-editor";
 import { apiRequest } from "@/lib/queryClient";
 import { ImageCompressor, ExternalHostingUploader } from "@/lib/image-compression";
+import { getActiveHostingConfig } from "@/lib/hosting-config";
 import {
   Monitor,
   Camera,
@@ -105,33 +106,58 @@ export default function EnhancedVisionBoard() {
 
   const saveBoardMutation = useMutation({
     mutationFn: async (boardData: VisionBoard) => {
+      const hostingConfig = getActiveHostingConfig();
+      
       // Compress all images before saving
       const compressedItems = await ImageCompressor.compressVisionBoardImages(
         boardData.canvasData.items
       );
       
-      const compressedBoard = {
+      // Upload images to BunnyCDN and replace with URLs
+      const uploadedItems = await Promise.all(
+        compressedItems.map(async (item) => {
+          if (item.type === 'image' && item.content.startsWith('data:') && hostingConfig.provider === 'bunnycdn') {
+            try {
+              const filename = `visionboard_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+              const imageUrl = await ExternalHostingUploader.uploadToBunnyCDN(
+                item.content,
+                filename,
+                hostingConfig.config
+              );
+              
+              return { ...item, content: imageUrl };
+            } catch (error) {
+              console.warn('Upload failed, keeping local:', error);
+              return item;
+            }
+          }
+          return item;
+        })
+      );
+
+      const finalBoard = {
         ...boardData,
         canvasData: {
           ...boardData.canvasData,
-          items: compressedItems
+          items: uploadedItems
         }
       };
 
-      // Calculate total size
+      // Calculate total size for reporting
       const totalSize = compressedItems
         .filter(item => item.type === 'image' && item.content.startsWith('data:'))
         .reduce((sum, item) => sum + ImageCompressor.getImageSizeKB(item.content), 0);
 
-      console.log(`Vision board total size: ${totalSize.toFixed(1)}KB`);
+      console.log(`Vision board total size: ${totalSize.toFixed(1)}KB uploaded to BunnyCDN`);
 
-      // For now, save to localStorage until external hosting is configured
+      // Save metadata to localStorage (URLs instead of base64)
       const savedBoards = JSON.parse(localStorage.getItem('visionBoards') || '[]');
       const newBoard = { 
-        ...compressedBoard, 
+        ...finalBoard, 
         id: Date.now(),
         createdAt: new Date().toISOString(),
-        totalSizeKB: totalSize 
+        totalSizeKB: totalSize,
+        hostingProvider: hostingConfig.provider
       };
       savedBoards.push(newBoard);
       localStorage.setItem('visionBoards', JSON.stringify(savedBoards));
@@ -140,12 +166,13 @@ export default function EnhancedVisionBoard() {
     },
     onSuccess: (data) => {
       toast({ 
-        title: "Vision board saved successfully!", 
-        description: `Size: ${data.totalSizeKB.toFixed(1)}KB (compressed)`
+        title: "Vision board saved to BunnyCDN!", 
+        description: `${data.totalSizeKB.toFixed(1)}KB uploaded successfully`
       });
       queryClient.invalidateQueries({ queryKey: ['/api/vision-boards'] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Save error:', error);
       toast({ title: "Failed to save vision board", variant: "destructive" });
     }
   });

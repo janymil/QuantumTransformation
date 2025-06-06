@@ -146,7 +146,7 @@ export class ExternalHostingUploader {
   }
 
   /**
-   * Upload to BunnyCDN
+   * Upload to BunnyCDN Storage Zone
    */
   static async uploadToBunnyCDN(
     imageData: string,
@@ -154,24 +154,30 @@ export class ExternalHostingUploader {
     config: {
       storageZone: string;
       accessKey: string;
-      baseUrl: string;
+      baseUrl?: string;
     }
   ): Promise<string> {
     const blob = this.dataURLtoBlob(imageData);
     
-    const response = await fetch(`${config.baseUrl}/${config.storageZone}/${filename}`, {
+    // Use correct BunnyCDN storage API endpoint format
+    const uploadUrl = `https://ny.storage.bunnycdn.com/${config.storageZone}/${filename}`;
+    
+    const response = await fetch(uploadUrl, {
       method: 'PUT',
       headers: {
         'AccessKey': config.accessKey,
-        'Content-Type': blob.type
+        'Content-Type': blob.type || 'image/jpeg'
       },
       body: blob
     });
 
     if (!response.ok) {
-      throw new Error(`BunnyCDN upload failed: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('BunnyCDN Error:', response.status, errorText);
+      throw new Error(`BunnyCDN upload failed: ${response.status} ${response.statusText}`);
     }
 
+    // Return CDN URL for serving the image
     return `https://${config.storageZone}.b-cdn.net/${filename}`;
   }
 
