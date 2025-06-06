@@ -127,15 +127,16 @@ Respond in JSON:
 `;
 
     try {
-      // Use intelligent model routing for optimal cost/quality balance
-      const selectedModel = modelRouter.selectModel(prompt, 'daily_coaching_analysis');
-      
-      const response = await openai.chat.completions.create({
-        model: selectedModel,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: selectedModel === "gpt-4o" ? 800 : 600,
-      });
+      // Use full intelligent model routing with complexity analysis
+      const aiResult = await modelRouter.executeWithOptimalModel(
+        prompt,
+        "You are an advanced AI coaching psychologist specializing in adaptive personalized coaching.",
+        optimizedContext,
+        'daily_coaching_analysis',
+        'advanced_ai_couch',
+        'premium',
+        { temperature: 0.7, maxTokens: 800 }
+      );
 
       const content = response.choices[0]?.message?.content;
       if (!content) throw new Error("No response from AI");
@@ -222,17 +223,22 @@ Respond in JSON format:
 `;
 
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.8,
-        max_tokens: 1500,
-      });
+      // Use intelligent routing for daily content generation
+      const aiResult = await modelRouter.executeWithOptimalModel(
+        prompt,
+        "You are an advanced AI coach creating detailed daily coaching content with therapeutic exercises.",
+        contextString,
+        'therapeutic_content_generation',
+        'advanced_ai_couch',
+        'premium',
+        { temperature: 0.8, maxTokens: 1500 }
+      );
 
-      const content = response.choices[0]?.message?.content;
-      if (!content) throw new Error("No response from AI");
-
-      return JSON.parse(content);
+      const dailyContent = JSON.parse(aiResult.response);
+      
+      console.log(`Daily Content - Model: ${aiResult.modelUsed}, Complexity: ${aiResult.routingDecision.complexity}, Cost: $${aiResult.actualCost.toFixed(4)}`);
+      
+      return dailyContent;
     } catch (error) {
       console.error("Error generating daily content:", error);
       return {
