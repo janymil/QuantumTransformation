@@ -26,7 +26,8 @@ import {
   Edit,
   FileText,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from "lucide-react";
 import { format } from "date-fns";
 import { challengeContent } from "@/data/challenge-content";
@@ -84,6 +85,7 @@ export default function Journal() {
   const [editExperience, setEditExperience] = useState("");
   const [editInsights, setEditInsights] = useState("");
   const [editIntention, setEditIntention] = useState("");
+  const [selectedInsightType, setSelectedInsightType] = useState<string | null>(null);
 
   const toggleEntryExpansion = (entryId: string | number) => {
     const newExpanded = new Set(expandedEntries);
@@ -113,10 +115,16 @@ export default function Journal() {
     enabled: entries && entries.length > 0,
   });
 
+  // Fetch AI coaching responses for insights
+  const { data: aiResponses, isLoading: aiResponsesLoading } = useQuery({
+    queryKey: ["/api/ai/responses"],
+  });
+
   useEffect(() => {
     console.log("Analysis Data:", analysis);
     console.log("Analysis Loading:", analysisLoading);
-  }, [analysis, analysisLoading]);
+    console.log("AI Responses Data:", aiResponses);
+  }, [analysis, analysisLoading, aiResponses]);
 
   const { data: progressData } = useQuery({
     queryKey: ["/api/progress"],
@@ -728,86 +736,351 @@ export default function Journal() {
           </TabsContent>
 
           <TabsContent value="insights" className="space-y-6">
-            {analysisLoading ? (
+            {(analysisLoading || aiResponsesLoading) ? (
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-center py-12">
                     <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Analyzing your journal entries...</p>
+                    <p className="text-muted-foreground">Loading your AI insights...</p>
                   </div>
                 </CardContent>
               </Card>
-            ) : analysis ? (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Brain className="w-6 h-6 mr-2 text-primary" />
-                      AI Analysis of Your Journey
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Journal Analysis Insights */}
+                <Card className="flex flex-col">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center text-lg">
+                      <Brain className="w-5 h-5 mr-2 text-blue-500" />
+                      Journal Analysis
                     </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      AI analysis of your personal journal entries
+                    </p>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="font-semibold text-foreground mb-3">Overall Progress</h3>
-                        <p className="text-muted-foreground leading-relaxed">{analysis.overallProgress}</p>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-foreground mb-3 flex items-center">
-                          <TrendingUp className="w-5 h-5 mr-2" />
-                          Emotional Trends
-                        </h3>
-                        <p className="text-muted-foreground leading-relaxed">{analysis.emotionalTrends}</p>
-                      </div>
-
-                      {analysis.patterns.length > 0 && (
+                  <CardContent className="flex-1 flex flex-col">
+                    {analysis ? (
+                      <div className="space-y-3 flex-1">
                         <div>
-                          <h3 className="font-semibold text-foreground mb-3">Patterns Identified</h3>
-                          <ul className="space-y-2">
-                            {analysis.patterns.map((pattern, index) => (
-                              <li key={index} className="flex items-start space-x-3">
-                                <Star className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                                <span className="text-muted-foreground">{pattern}</span>
-                              </li>
-                            ))}
-                          </ul>
+                          <p className="text-sm text-muted-foreground mb-2">Overall Progress:</p>
+                          <p className="text-sm leading-relaxed line-clamp-4">{analysis.overallProgress}</p>
                         </div>
-                      )}
+                        {analysis.patterns && analysis.patterns.length > 0 && (
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">Key Patterns:</p>
+                            <ul className="space-y-1">
+                              {analysis.patterns.slice(0, 2).map((pattern, index) => (
+                                <li key={index} className="text-sm flex items-start space-x-2">
+                                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                                  <span className="line-clamp-2">{pattern}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground">No journal entries yet</p>
+                        </div>
+                      </div>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-4"
+                      onClick={() => setSelectedInsightType('journal')}
+                      disabled={!analysis}
+                    >
+                      Read All
+                    </Button>
+                  </CardContent>
+                </Card>
 
-                      {analysis.recommendations.length > 0 && (
-                        <div>
-                          <h3 className="font-semibold text-foreground mb-3 flex items-center">
-                            <Lightbulb className="w-5 h-5 mr-2" />
-                            Recommendations
-                          </h3>
-                          <ul className="space-y-2">
-                            {analysis.recommendations.map((recommendation, index) => (
-                              <li key={index} className="flex items-start space-x-3">
-                                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>
-                                <span className="text-muted-foreground">{recommendation}</span>
-                              </li>
-                            ))}
-                          </ul>
+                {/* AI Coaching Insights */}
+                <Card className="flex flex-col">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center text-lg">
+                      <MessageSquare className="w-5 h-5 mr-2 text-green-500" />
+                      AI Coaching Sessions
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Personalized coaching insights and guidance
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col">
+                    {aiResponses && aiResponses.length > 0 ? (
+                      <div className="space-y-3 flex-1">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {aiResponses.length} coaching session{aiResponses.length !== 1 ? 's' : ''} completed
+                        </p>
+                        <div className="space-y-2">
+                          {aiResponses.slice(0, 3).map((response: any, index: number) => (
+                            <div key={index} className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">
+                                {response.sessionType?.replace('_', ' ') || 'Coaching Session'}
+                              </p>
+                              <p className="text-sm line-clamp-3">
+                                {typeof response.aiResponse === 'string' 
+                                  ? response.aiResponse 
+                                  : response.aiResponse?.personalizedMessage?.slice(0, 150) + '...' || 
+                                    response.aiResponse?.response?.slice(0, 150) + '...' ||
+                                    'AI coaching insights available'
+                                }
+                              </p>
+                            </div>
+                          ))}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground">No coaching sessions yet</p>
+                        </div>
+                      </div>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-4"
+                      onClick={() => setSelectedInsightType('coaching')}
+                      disabled={!aiResponses || aiResponses.length === 0}
+                    >
+                      Read All
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Assessment Reflections */}
+                <Card className="flex flex-col">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center text-lg">
+                      <FileText className="w-5 h-5 mr-2 text-purple-500" />
+                      Assessment Reflections
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Daily assessment insights and reflections
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col">
+                    {reflectionsData && reflectionsData.length > 0 ? (
+                      <div className="space-y-3 flex-1">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {reflectionsData.length} reflection{reflectionsData.length !== 1 ? 's' : ''} recorded
+                        </p>
+                        <div className="space-y-2">
+                          {reflectionsData.slice(0, 3).map((reflection: any, index: number) => (
+                            <div key={index} className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">
+                                {reflection.title || 'Assessment Reflection'}
+                              </p>
+                              <p className="text-sm line-clamp-3">
+                                {reflection.content?.slice(0, 150) + '...' || 'Reflection content available'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground">No reflections yet</p>
+                        </div>
+                      </div>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-4"
+                      onClick={() => setSelectedInsightType('reflections')}
+                      disabled={!reflectionsData || reflectionsData.length === 0}
+                    >
+                      Read All
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
-            ) : entries && entries.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6 text-center py-12">
-                  <Brain className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No Analysis Available</h3>
-                  <p className="text-muted-foreground">
-                    Write a few journal entries to get AI-powered insights about your journey.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : null}
+            )}
           </TabsContent>
         </Tabs>
+
+        {/* AI Insights Modal */}
+        <Dialog open={!!selectedInsightType} onOpenChange={(open) => !open && setSelectedInsightType(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                {selectedInsightType === 'journal' && (
+                  <>
+                    <Brain className="w-6 h-6 mr-2 text-blue-500" />
+                    Complete Journal Analysis
+                  </>
+                )}
+                {selectedInsightType === 'coaching' && (
+                  <>
+                    <MessageSquare className="w-6 h-6 mr-2 text-green-500" />
+                    All AI Coaching Sessions
+                  </>
+                )}
+                {selectedInsightType === 'reflections' && (
+                  <>
+                    <FileText className="w-6 h-6 mr-2 text-purple-500" />
+                    All Assessment Reflections
+                  </>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {selectedInsightType === 'journal' && analysis && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-3">Overall Progress</h3>
+                    <p className="text-muted-foreground leading-relaxed">{analysis.overallProgress}</p>
+                  </div>
+
+                  {analysis.emotionalTrends && (
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-3 flex items-center">
+                        <TrendingUp className="w-5 h-5 mr-2" />
+                        Emotional Trends
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed">{analysis.emotionalTrends}</p>
+                    </div>
+                  )}
+
+                  {analysis.patterns && analysis.patterns.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-3">Patterns Identified</h3>
+                      <ul className="space-y-2">
+                        {analysis.patterns.map((pattern, index) => (
+                          <li key={index} className="flex items-start space-x-3">
+                            <Star className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                            <span className="text-muted-foreground">{pattern}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {analysis.recommendations && analysis.recommendations.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-3 flex items-center">
+                        <Lightbulb className="w-5 h-5 mr-2" />
+                        Recommendations
+                      </h3>
+                      <ul className="space-y-2">
+                        {analysis.recommendations.map((recommendation, index) => (
+                          <li key={index} className="flex items-start space-x-3">
+                            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>
+                            <span className="text-muted-foreground">{recommendation}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedInsightType === 'coaching' && aiResponses && (
+                <div className="space-y-4">
+                  {aiResponses.map((response: any, index: number) => (
+                    <Card key={index}>
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center justify-between">
+                          <span>{response.sessionType?.replace('_', ' ') || 'Coaching Session'}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(response.createdAt).toLocaleDateString()}
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Your Input:</p>
+                            <p className="text-sm bg-muted p-3 rounded-lg">{response.userInput}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">AI Coaching Response:</p>
+                            <div className="text-sm leading-relaxed">
+                              {typeof response.aiResponse === 'string' ? (
+                                <p>{response.aiResponse}</p>
+                              ) : (
+                                <div className="space-y-3">
+                                  {response.aiResponse?.personalizedMessage && (
+                                    <div className="whitespace-pre-wrap">{response.aiResponse.personalizedMessage}</div>
+                                  )}
+                                  {response.aiResponse?.response && (
+                                    <div className="whitespace-pre-wrap">{response.aiResponse.response}</div>
+                                  )}
+                                  {response.aiResponse?.modalities_used && response.aiResponse.modalities_used.length > 0 && (
+                                    <div>
+                                      <p className="font-medium text-muted-foreground mb-2">Therapeutic Approaches Used:</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {response.aiResponse.modalities_used.map((modality: string, idx: number) => (
+                                          <span key={idx} className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
+                                            {modality}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {selectedInsightType === 'reflections' && reflectionsData && (
+                <div className="space-y-4">
+                  {reflectionsData.map((reflection: any, index: number) => (
+                    <Card key={index}>
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center justify-between">
+                          <span>{reflection.title}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(reflection.createdAt).toLocaleDateString()}
+                          </span>
+                        </CardTitle>
+                        {reflection.challengeType && (
+                          <p className="text-sm text-muted-foreground">
+                            Challenge: {reflection.challengeType.replace('_', ' ')} • Day {reflection.day}
+                          </p>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {reflection.questionPrompt && (
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-2">Question:</p>
+                              <p className="text-sm bg-muted p-3 rounded-lg">{reflection.questionPrompt}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Your Reflection:</p>
+                            <p className="text-sm leading-relaxed">{reflection.content}</p>
+                          </div>
+                          <div className="flex text-xs text-muted-foreground space-x-4">
+                            <span>{reflection.wordCount} words</span>
+                            <span>{reflection.characterCount} characters</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Edit Journal Entry Modal */}
         <Dialog open={!!editingEntry} onOpenChange={(open) => !open && handleCancelEdit()}>
