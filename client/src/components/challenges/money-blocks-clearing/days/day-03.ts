@@ -16,7 +16,9 @@ export const day03Content = {
         "Let this feeling of financial gratitude or security expand through your chest. Hold it for 3–5 minutes, as if it were a living force inside you",
         "While in this elevated emotional state, repeat your Day 1 Quantum Intention about financial abundance. Let the emotion fuel the words",
         "Journal what emotions you accessed and how your body responded. Were there any resistances? Note them"
-      ]
+      ],
+      whyItWorks: "Most money blocks are rooted not in logic, but in emotional history—stress, scarcity, shame. By generating feelings of financial gratitude, you're rewriting the emotional signature associated with money. You are literally teaching your body that money is safe, abundant, and welcome.",
+      scientificBasis: "HeartMath Institute studies show that positive emotional states like gratitude shift your heart rhythm into coherence, which improves focus, decision-making, and neuroplasticity. This coherence helps anchor new subconscious associations to money."
     },
     
     daytime: {
@@ -26,7 +28,9 @@ export const day03Content = {
         "Journal a scene with rich sensory detail: What do you see when you check your bank app? How does your morning coffee taste in your dream kitchen? What do you say to your accountant? Write in present tense",
         "Include income sources, investments, purchases, donations—anything real to your new life",
         "After writing, read it aloud slowly and try to feel what this version of you feels. Confidence. Calm. Joy"
-      ]
+      ],
+      whyItWorks: "Scripting connects your rational and emotional brain. The clearer the inner blueprint, the faster your subconscious can seek to match it externally.",
+      scientificBasis: "Mental rehearsal, when emotionally charged, activates the same brain regions as real-life experiences. This triggers the brain to expect and prepare for that reality."
     },
     
     evening: {
@@ -37,7 +41,9 @@ export const day03Content = {
         "Imagine those feelings as a warm light in your body, expanding as you breathe",
         "Whisper your Quantum Intention 3× times, feeling it rather than saying it",
         "Let yourself fall asleep in this emotional state. This primes the subconscious to absorb it"
-      ]
+      ],
+      whyItWorks: "The pre-sleep state is a gateway into the subconscious. Embedding elevated emotions tied to abundance in this phase leads to deep rewiring and accelerated reprogramming of money blocks.",
+      scientificBasis: "Sleep researchers confirm that emotions present before sleep strongly influence what the subconscious processes during REM cycles."
     },
     
     tips: [
