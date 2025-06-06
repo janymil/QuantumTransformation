@@ -199,14 +199,13 @@ export const aiResponseHistory = pgTable("ai_response_history", {
   index("ai_response_history_created_at_idx").on(table.createdAt),
 ]);
 
-// AI Response Cache for performance optimization
+// AI Response Cache for optimizing repeat requests
 export const aiResponseCache = pgTable("ai_response_cache", {
   id: serial("id").primaryKey(),
-  inputHash: varchar("input_hash").notNull().unique(),
+  inputHash: varchar("input_hash").unique().notNull(),
   response: text("response").notNull(),
   requestType: varchar("request_type").notNull(),
   expiresAt: timestamp("expires_at"),
-  accessCount: integer("access_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -371,22 +370,6 @@ export type InsertKnowledgeQuiz = typeof knowledgeQuizzes.$inferInsert;
 export type KnowledgeQuiz = typeof knowledgeQuizzes.$inferSelect;
 export type InsertUserQuizResult = typeof userQuizResults.$inferInsert;
 export type UserQuizResult = typeof userQuizResults.$inferSelect;
-
-// AI Response Cache for optimizing repeat requests
-export const aiResponseCache = pgTable("ai_response_cache", {
-  id: serial("id").primaryKey(),
-  inputHash: varchar("input_hash").unique().notNull(),
-  requestType: varchar("request_type").notNull(),
-  challengeType: varchar("challenge_type"),
-  day: integer("day"),
-  response: text("response").notNull(),
-  tokensUsed: integer("tokens_used").default(0),
-  userId: varchar("user_id").notNull(), // Track who originally asked
-  hitCount: integer("hit_count").default(0), // Track how many times this response was reused
-  lastHitAt: timestamp("last_hit_at"), // When this was last accessed
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
 export type InsertAiResponseCache = typeof aiResponseCache.$inferInsert;
 export type AiResponseCache = typeof aiResponseCache.$inferSelect;
