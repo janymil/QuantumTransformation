@@ -23,7 +23,11 @@ import {
   Send,
   Loader2,
   Zap,
-  BookOpen
+  BookOpen,
+  Settings,
+  Edit3,
+  Save,
+  RotateCcw
 } from "lucide-react";
 
 interface AICoachingHubProps {
@@ -54,6 +58,21 @@ export default function AICoachingHub({
   const [mood, setMood] = useState(5);
   const [coachingResponse, setCoachingResponse] = useState<any>(null);
   const [explanationResponse, setExplanationResponse] = useState<any>(null);
+  
+  // Profile editing states
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    primaryGoals: [] as string[],
+    currentChallenges: [] as string[],
+    healingReadiness: 5,
+    preferredMode: 'mixed' as 'scientific' | 'spiritual' | 'mixed',
+    communicationStyle: 'gentle' as 'gentle' | 'direct' | 'motivational',
+    learningStyle: 'visual' as 'visual' | 'auditory' | 'kinesthetic' | 'reading',
+    traumaHistory: '',
+    spiritualBackground: '',
+    mentalHealthHistory: '',
+    lifeContext: ''
+  });
 
   // Update question when prefilledQuestion changes
   useEffect(() => {
@@ -100,6 +119,30 @@ export default function AICoachingHub({
     retry: false,
   }) as { data?: { dailyUsage: string; monthlyUsage: string; totalRequests: string } };
 
+  // Get AI Couch profile
+  const { data: aiProfile, refetch: refetchProfile } = useQuery({
+    queryKey: ["/api/ai-couch/profile"],
+    retry: false,
+  });
+
+  // Update profile form when profile data loads
+  useEffect(() => {
+    if (aiProfile && !isEditingProfile) {
+      setProfileForm({
+        primaryGoals: Array.isArray(aiProfile.primaryGoals) ? aiProfile.primaryGoals : [],
+        currentChallenges: Array.isArray(aiProfile.currentChallenges) ? aiProfile.currentChallenges : [],
+        healingReadiness: aiProfile.healingReadiness || 5,
+        preferredMode: aiProfile.personalityType || 'mixed',
+        communicationStyle: aiProfile.communicationStyle || 'gentle',
+        learningStyle: aiProfile.learningStyle || 'visual',
+        traumaHistory: aiProfile.traumaHistory || '',
+        spiritualBackground: aiProfile.spiritualBackground || '',
+        mentalHealthHistory: aiProfile.mentalHealthHistory || '',
+        lifeContext: aiProfile.lifeContext || ''
+      });
+    }
+  }, [aiProfile, isEditingProfile]);
+
   // Personalized coaching mutation
   const coachingMutation = useMutation({
     mutationFn: async () => {
@@ -124,6 +167,30 @@ export default function AICoachingHub({
       toast({
         title: "Error",
         description: error.message || "Failed to generate coaching",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Profile update mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updatedProfile: typeof profileForm) => {
+      return apiRequest("PUT", "/api/ai-couch/profile", updatedProfile);
+    },
+    onSuccess: () => {
+      setIsEditingProfile(false);
+      refetchProfile();
+      queryClient.invalidateQueries({ queryKey: ["/api/ai-couch/profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ai-couch/sessions"] });
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated and AI coaching will adapt to your changes.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
         variant: "destructive",
       });
     },
@@ -192,7 +259,7 @@ export default function AICoachingHub({
       
       <CardContent>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="coaching" className="text-xs">
               <Heart className="w-4 h-4 mr-1" />
               Coaching
@@ -204,6 +271,10 @@ export default function AICoachingHub({
             <TabsTrigger value="insights" className="text-xs">
               <Lightbulb className="w-4 h-4 mr-1" />
               Insights
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="text-xs">
+              <Settings className="w-4 h-4 mr-1" />
+              Profile
             </TabsTrigger>
           </TabsList>
 
