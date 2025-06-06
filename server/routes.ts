@@ -3057,6 +3057,147 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
+  // ElevenLabs Voice Cloning and Text-to-Speech Endpoints
+  
+  // Get available voices
+  app.get('/api/elevenlabs/voices', isAuthenticated, async (req: any, res) => {
+    try {
+      const { elevenlabsService } = await import('./elevenlabs-simple');
+      const voices = await elevenlabsService.getAvailableVoices();
+      res.json({ voices });
+    } catch (error) {
+      console.error('Error fetching voices:', error);
+      res.status(500).json({ message: 'Failed to fetch voices' });
+    }
+  });
+
+  // Get user's voice clones
+  app.get('/api/elevenlabs/user-voices', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { elevenlabsService } = await import('./elevenlabs-simple');
+      const userVoices = await elevenlabsService.getUserVoiceClones(userId);
+      res.json({ voices: userVoices });
+    } catch (error) {
+      console.error('Error fetching user voices:', error);
+      res.status(500).json({ message: 'Failed to fetch user voices' });
+    }
+  });
+
+  // Generate affirmation audio
+  app.post('/api/elevenlabs/generate-affirmation', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { text, voice_id } = req.body;
+
+      if (!text || text.trim().length === 0) {
+        return res.status(400).json({ message: 'Text is required' });
+      }
+
+      if (text.length > 5000) {
+        return res.status(400).json({ message: 'Text too long (max 5000 characters)' });
+      }
+
+      const { elevenlabsService } = await import('./elevenlabs-simple');
+      const result = await elevenlabsService.generateAffirmationAudio(userId, text.trim(), voice_id);
+
+      // Store the audio generation record
+      await storage.createAffirmationAudio({
+        userId,
+        affirmationId: null, // Could link to saved phrases if needed
+        voiceId: voice_id || 'default',
+        audioUrl: result.audioUrl,
+        charactersUsed: result.charactersUsed,
+        cost: result.cost.toString(),
+        duration: null
+      });
+
+      // Return audio as base64 for immediate playback
+      const audioBase64 = result.audioBuffer.toString('base64');
+      
+      res.json({
+        success: true,
+        audioData: `data:audio/mpeg;base64,${audioBase64}`,
+        cost: result.cost,
+        charactersUsed: result.charactersUsed,
+        message: 'Affirmation audio generated successfully'
+      });
+
+    } catch (error) {
+      console.error('Error generating affirmation audio:', error);
+      res.status(500).json({ 
+        message: 'Failed to generate affirmation audio',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Generate text-to-speech
+  app.post('/api/elevenlabs/text-to-speech', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { text, voice_id, settings } = req.body;
+
+      if (!text || text.trim().length === 0) {
+        return res.status(400).json({ message: 'Text is required' });
+      }
+
+      if (!voice_id) {
+        return res.status(400).json({ message: 'Voice ID is required' });
+      }
+
+      if (text.length > 5000) {
+        return res.status(400).json({ message: 'Text too long (max 5000 characters)' });
+      }
+
+      const { elevenlabsService } = await import('./elevenlabs-simple');
+      const result = await elevenlabsService.generateSpeech(userId, text.trim(), voice_id, settings || {});
+
+      // Return audio as base64 for immediate playback
+      const audioBase64 = result.audioBuffer.toString('base64');
+      
+      res.json({
+        success: true,
+        audioData: `data:audio/mpeg;base64,${audioBase64}`,
+        cost: result.cost,
+        charactersUsed: result.charactersUsed,
+        message: 'Text-to-speech generated successfully'
+      });
+
+    } catch (error) {
+      console.error('Error generating text-to-speech:', error);
+      res.status(500).json({ 
+        message: 'Failed to generate text-to-speech',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get ElevenLabs usage statistics
+  app.get('/api/elevenlabs/usage-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { elevenlabsService } = await import('./elevenlabs-simple');
+      const stats = await elevenlabsService.getUsageStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching usage stats:', error);
+      res.status(500).json({ message: 'Failed to fetch usage statistics' });
+    }
+  });
+
+  // Get user's affirmation audio history
+  app.get('/api/elevenlabs/affirmation-history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const audioHistory = await storage.getUserAffirmationAudio(userId);
+      res.json({ history: audioHistory });
+    } catch (error) {
+      console.error('Error fetching affirmation history:', error);
+      res.status(500).json({ message: 'Failed to fetch affirmation history' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

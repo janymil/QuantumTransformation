@@ -19,6 +19,7 @@ import AdminUnlockDays from "@/pages/admin-unlock-days";
 import AiCouchOnboarding from "@/pages/ai-couch-onboarding";
 import AiCouchNewDashboard from "@/pages/ai-couch-new-dashboard";
 import VisionBoard from "@/pages/vision-board";
+import { ElevenLabsVoiceTest } from "@/components/voice/elevenlabs-voice-test";
 
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
@@ -100,6 +101,7 @@ function Router() {
         <Route path="/progress" component={Progress} />
         <Route path="/saved-affirmations" component={SavedAffirmations} />
         <Route path="/vision-board" component={VisionBoard} />
+        <Route path="/voice-test" component={ElevenLabsVoiceTest} />
         
         {/* AI Couch Premium System */}
         <Route path="/ai-couch" component={AiCouchNewDashboard} />
