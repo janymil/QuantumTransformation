@@ -17,21 +17,34 @@ import {
   Zap,
   Shield,
   Activity,
-  Database
+  Database,
+  UserCheck,
+  Target,
+  Calendar,
+  Award
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminAnalytics() {
   const { toast } = useToast();
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authAttempted, setAuthAttempted] = useState(false);
+  const [activeTab, setActiveTab] = useState("ai-usage");
 
   const correctPassword = "quantum2025admin";
 
   // Analytics query - only run if authenticated
   const { data: analytics, isLoading, error } = useQuery({
     queryKey: ['/api/admin/analytics'],
+    retry: false,
+    enabled: isAuthenticated,
+  });
+
+  // User statistics query - only run if authenticated
+  const { data: userStats, isLoading: userStatsLoading, error: userStatsError } = useQuery({
+    queryKey: ['/api/admin/user-statistics'],
     retry: false,
     enabled: isAuthenticated,
   });
