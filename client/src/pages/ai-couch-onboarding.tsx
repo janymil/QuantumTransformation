@@ -526,13 +526,46 @@ export default function AiCouchOnboarding() {
             <Button 
               onClick={handleNext}
               disabled={!canProceed() || createProfileMutation.isPending}
+              className="min-w-[140px]"
             >
-              {currentStep === assessmentSteps.length - 1 ? 
-                (createProfileMutation.isPending ? 'Creating Profile...' : 'Complete Setup') : 
+              {currentStep === assessmentSteps.length - 1 ? (
+                createProfileMutation.isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Complete Setup
+                  </>
+                )
+              ) : (
                 'Next'
-              }
+              )}
             </Button>
           </div>
+          
+          {/* Progress indicator when creating profile */}
+          {createProfileMutation.isPending && (
+            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm font-medium text-blue-900">
+                  <span>Setting up your personalized AI coaching system</span>
+                  <span>Please wait</span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2.5">
+                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-2.5 rounded-full animate-pulse" style={{width: '75%'}}></div>
+                </div>
+                <div className="space-y-1 text-xs text-blue-700">
+                  <p>✓ Analyzing your personality and preferences</p>
+                  <p>✓ Selecting optimal therapeutic approaches</p>
+                  <p className="opacity-60">• Configuring AI coaching parameters...</p>
+                  <p className="opacity-40">• Preparing your personalized dashboard</p>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -656,6 +656,26 @@ export default function AiCouchDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Progress indicator when updating profile */}
+              {updateProfileMutation.isPending && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-900">Updating your profile and recalibrating AI...</p>
+                        <div className="w-full bg-blue-200 rounded-full h-1.5 mt-2">
+                          <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-1.5 rounded-full animate-pulse" style={{width: '70%'}}></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-blue-700 space-y-1 ml-8">
+                      <p>✓ Saving your updated responses</p>
+                      <p className="opacity-60">• AI is analyzing changes and adapting coaching approach...</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="space-y-8">
                 {/* Approach Section */}
                 <div className="border-b pb-6">
