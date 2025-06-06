@@ -159,7 +159,7 @@ export function registerJournalRoutes(app: Express) {
       const { analyzeJournalEntries } = await import('../openai');
       const analysis = await analyzeJournalEntries({
         entries: entries.map(entry => ({
-          day: entry.day,
+          day: entry.day || 0, // Use 0 for free journal entries
           experience: entry.experience || "",
           insights: entry.insights || "",
           intention: entry.intention || "",
