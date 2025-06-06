@@ -2326,6 +2326,7 @@ Provide personalized, actionable guidance that:
         return res.status(400).json({ error: 'User goals are required' });
       }
 
+      const { OpenAI } = await import('openai');
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       const prompt = `You are an expert vision board coach and manifestation specialist. Analyze the user's goals and provide a comprehensive, personalized vision board creation guide.

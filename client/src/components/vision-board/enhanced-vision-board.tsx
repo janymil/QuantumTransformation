@@ -108,6 +108,8 @@ export default function EnhancedVisionBoard() {
   const [isRotating, setIsRotating] = useState(false);
   const [rotationStart, setRotationStart] = useState<{ centerX: number; centerY: number; startAngle: number; initialRotation: number } | null>(null);
   const [loadedImages] = useState<Map<string, HTMLImageElement>>(new Map());
+  const [showTour, setShowTour] = useState(false);
+  const [showAIGuide, setShowAIGuide] = useState(false);
 
   // Queries
   const { data: savedBoards } = useQuery({
@@ -892,6 +894,26 @@ export default function EnhancedVisionBoard() {
             Add Text
           </Button>
 
+          <div className="w-px bg-border" />
+
+          <Button
+            onClick={() => setShowTour(true)}
+            variant="outline"
+            size="sm"
+          >
+            <PlayCircle className="w-4 h-4 mr-1" />
+            Interactive Tour
+          </Button>
+
+          <Button
+            onClick={() => setShowAIGuide(true)}
+            variant="outline"
+            size="sm"
+          >
+            <Brain className="w-4 h-4 mr-1" />
+            AI Guide
+          </Button>
+
           {selectedItem && (
             <>
               <div className="w-px bg-border" />
@@ -993,6 +1015,25 @@ export default function EnhancedVisionBoard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Interactive Tour */}
+      <VisionBoardTour
+        isOpen={showTour}
+        onClose={() => setShowTour(false)}
+        onComplete={() => {
+          setShowTour(false);
+          toast({
+            title: "Tutorial Complete!",
+            description: "You're ready to create amazing vision boards. Consider using the AI Guide for personalized recommendations.",
+          });
+        }}
+      />
+
+      {/* AI Vision Guide */}
+      <AIVisionGuide
+        isOpen={showAIGuide}
+        onClose={() => setShowAIGuide(false)}
+      />
     </Card>
   );
 }
