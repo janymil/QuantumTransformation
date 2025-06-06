@@ -244,6 +244,30 @@ export class IntelligentModelRouter {
     };
   }
 
+  /**
+   * Simple model selection based on prompt characteristics
+   */
+  selectModel(prompt: string, requestType: string): 'gpt-4o' | 'gpt-4o-mini' {
+    const promptLower = prompt.toLowerCase();
+    
+    // Use GPT-4o for complex analysis requests
+    const complexIndicators = [
+      'analyze', 'breakthrough', 'complex', 'deep', 'therapeutic',
+      'personality', 'trauma', 'resistance', 'pattern', 'integration'
+    ];
+    
+    const hasComplexity = complexIndicators.some(indicator => 
+      promptLower.includes(indicator)
+    );
+    
+    // Use GPT-4o for analysis tasks, GPT-4o-mini for content generation
+    if (requestType === 'daily_coaching_analysis' || hasComplexity) {
+      return 'gpt-4o';
+    }
+    
+    return 'gpt-4o-mini';
+  }
+
   private calculateIndicatorScore(query: string, indicators: string[]): number {
     let score = 0;
     for (const indicator of indicators) {
