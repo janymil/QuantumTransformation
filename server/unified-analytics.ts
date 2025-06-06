@@ -104,38 +104,30 @@ export class UnifiedAnalytics {
     // Calculate total cost and tokens from actual usage data
     const [costData] = await db
       .select({
-        totalCost: sql`sum(coalesce(${aiUsageTracking.cost}, 0))`,
-        totalTokens: sql`sum(coalesce(${aiUsageTracking.totalTokens}, 0))`,
-        avgResponseTime: sql`avg(coalesce(${aiUsageTracking.responseTime}, 2000))`
+        totalCost: sql`sum(coalesce(cost, 0))`,
+        totalTokens: sql`sum(coalesce(tokens_used, 0))`,
+        avgResponseTime: sql`avg(2000)` // Default since response time not tracked in current table
       })
       .from(aiUsageTracking);
 
     // Get request type distribution (shows all AI systems)
     const requestTypeStats = await db
       .select({
-        requestType: aiUsageTracking.requestType,
+        requestType: sql`request_type`,
         count: sql`count(*)`,
-        totalCost: sql`sum(coalesce(${aiUsageTracking.cost}, 0))`
+        totalCost: sql`sum(coalesce(cost, 0))`
       })
       .from(aiUsageTracking)
-      .where(sql`${aiUsageTracking.requestType} IS NOT NULL`)
-      .groupBy(aiUsageTracking.requestType);
+      .where(sql`request_type IS NOT NULL`)
+      .groupBy(sql`request_type`);
 
-    // Get challenge type distribution
-    const challengeStats = await db
-      .select({
-        challengeType: aiUsageTracking.challengeType,
-        count: sql`count(*)`,
-        totalCost: sql`sum(coalesce(${aiUsageTracking.cost}, 0))`
-      })
-      .from(aiUsageTracking)
-      .where(sql`${aiUsageTracking.challengeType} IS NOT NULL`)
-      .groupBy(aiUsageTracking.challengeType);
+    // Get challenge type distribution (if column exists)
+    const challengeStats: any[] = []; // Temporarily empty since challenge_type column doesn't exist
 
     // Calculate cost savings from caching
     const [cacheStats] = await db
       .select({
-        cachedRequests: sql`count(case when ${aiUsageTracking.isFromCache} = true then 1 end)`,
+        cachedRequests: sql`count(case when is_from_cache = true then 1 end)`,
         totalRequests: sql`count(*)`
       })
       .from(aiUsageTracking);
