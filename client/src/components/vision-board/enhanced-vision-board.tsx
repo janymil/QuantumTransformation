@@ -605,7 +605,7 @@ export default function EnhancedVisionBoard() {
   }, [draggedItem, isDragging, dragStart]);
 
   const handleResize = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isResizing || !selectedItem || !resizeHandle) return;
+    if (!isResizing || !selectedItem || !resizeHandle || !resizeStart) return;
     
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
@@ -615,6 +615,8 @@ export default function EnhancedVisionBoard() {
     
     const x = (event.clientX - rect.left) * scaleX;
     const y = (event.clientY - rect.top) * scaleY;
+
+    console.log('Resizing:', { handle: resizeHandle, x, y, resizeStart });
 
     setBoard(prev => ({
       ...prev,
@@ -632,24 +634,33 @@ export default function EnhancedVisionBoard() {
           
           switch (resizeHandle) {
             case 'nw':
-              newWidth = Math.max(50, resizeStart.x + resizeStart.width - x);
+              const deltaX_nw = x - resizeStart.x;
+              const deltaY_nw = y - resizeStart.y;
+              newWidth = Math.max(50, resizeStart.width - deltaX_nw);
               newHeight = newWidth / aspectRatio;
               newX = resizeStart.x + resizeStart.width - newWidth;
               newY = resizeStart.y + resizeStart.height - newHeight;
               break;
             case 'ne':
-              newWidth = Math.max(50, x - resizeStart.x);
+              const deltaX_ne = x - (resizeStart.x + resizeStart.width);
+              newWidth = Math.max(50, resizeStart.width + deltaX_ne);
               newHeight = newWidth / aspectRatio;
+              newX = resizeStart.x;
               newY = resizeStart.y + resizeStart.height - newHeight;
               break;
             case 'sw':
-              newWidth = Math.max(50, resizeStart.x + resizeStart.width - x);
+              const deltaX_sw = x - resizeStart.x;
+              newWidth = Math.max(50, resizeStart.width - deltaX_sw);
               newHeight = newWidth / aspectRatio;
               newX = resizeStart.x + resizeStart.width - newWidth;
+              newY = resizeStart.y;
               break;
             case 'se':
-              newWidth = Math.max(50, x - resizeStart.x);
+              const deltaX_se = x - (resizeStart.x + resizeStart.width);
+              newWidth = Math.max(50, resizeStart.width + deltaX_se);
               newHeight = newWidth / aspectRatio;
+              newX = resizeStart.x;
+              newY = resizeStart.y;
               break;
           }
           
@@ -755,7 +766,7 @@ export default function EnhancedVisionBoard() {
               Webcam
             </Button>
             <Button
-              onClick={() => { setCaptureMode('upload'); handleCapture(); }}
+              onClick={() => fileInputRef.current?.click()}
               variant="outline"
               size="sm"
             >

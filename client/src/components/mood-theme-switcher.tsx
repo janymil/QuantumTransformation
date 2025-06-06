@@ -235,17 +235,32 @@ export default function MoodThemeSwitcher({ onThemeChange }: MoodThemeSwitcherPr
 
   // Apply theme colors to CSS variables
   useEffect(() => {
-    const colors = isDark ? currentTheme.darkColors : currentTheme.colors;
     const root = document.documentElement;
     
-    Object.entries(colors).forEach(([key, value]) => {
-      root.style.setProperty(`--${key}`, value);
-    });
-
-    // Toggle dark class
     if (isDark) {
+      // Use consistent grey colors for dark theme
+      const darkColors = {
+        background: '240 10% 9%',
+        foreground: '0 0% 95%',
+        muted: '240 4% 20%',
+        card: '240 10% 9%',
+        border: '240 4% 20%',
+        primary: currentTheme.darkColors.primary,
+        secondary: currentTheme.darkColors.secondary,
+        accent: currentTheme.darkColors.accent
+      };
+      
+      Object.entries(darkColors).forEach(([key, value]) => {
+        root.style.setProperty(`--${key}`, value);
+      });
+      
       document.documentElement.classList.add('dark');
     } else {
+      const colors = currentTheme.colors;
+      Object.entries(colors).forEach(([key, value]) => {
+        root.style.setProperty(`--${key}`, value);
+      });
+      
       document.documentElement.classList.remove('dark');
     }
   }, [currentTheme, isDark]);
