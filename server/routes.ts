@@ -2986,6 +2986,77 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
+  // AI Cost Optimization & Savings Endpoints
+  app.get('/api/ai-cost-optimization/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const status = costOptimizationEngine.getOptimizationStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('Error getting optimization status:', error);
+      res.status(500).json({ message: 'Failed to get optimization status' });
+    }
+  });
+
+  app.get('/api/ai-cost-optimization/savings-report/:days?', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const days = parseInt(req.params.days) || 30;
+      
+      const report = await costOptimizationEngine.getCostSavingsReport(userId, days);
+      res.json(report);
+    } catch (error) {
+      console.error('Error generating savings report:', error);
+      res.status(500).json({ message: 'Failed to generate savings report' });
+    }
+  });
+
+  app.post('/api/ai-cost-optimization/config', isAuthenticated, async (req: any, res) => {
+    try {
+      const { config } = req.body;
+      costOptimizationEngine.updateConfig(config);
+      res.json({ success: true, message: 'Optimization configuration updated' });
+    } catch (error) {
+      console.error('Error updating optimization config:', error);
+      res.status(500).json({ message: 'Failed to update optimization configuration' });
+    }
+  });
+
+  // ElevenLabs Voice API Cost Estimation
+  app.post('/api/elevenlabs/cost-estimate', isAuthenticated, async (req: any, res) => {
+    try {
+      const { text, voice_id, subscription_tier = 'free' } = req.body;
+      
+      const characterCount = text.length;
+      
+      // ElevenLabs pricing structure
+      const pricing = {
+        free: { limit: 10000, overage: 0.00030 },
+        starter: { limit: 30000, overage: 0.00030 },
+        creator: { limit: 100000, overage: 0.00024 },
+        pro: { limit: 500000, overage: 0.00018 }
+      };
+      
+      const tierPricing = pricing[subscription_tier] || pricing.free;
+      
+      let cost = 0;
+      if (characterCount > tierPricing.limit) {
+        cost = (characterCount - tierPricing.limit) * tierPricing.overage;
+      }
+      
+      res.json({
+        characterCount,
+        subscription_tier,
+        monthlyLimit: tierPricing.limit,
+        estimatedCost: cost,
+        withinLimit: characterCount <= tierPricing.limit,
+        costPerCharacter: tierPricing.overage
+      });
+    } catch (error) {
+      console.error('Error estimating ElevenLabs cost:', error);
+      res.status(500).json({ message: 'Failed to estimate cost' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
