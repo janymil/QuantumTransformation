@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
@@ -37,16 +38,28 @@ export default function AiCouchDashboard() {
   // Profile editing states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
-    primaryGoals: [] as string[],
-    currentChallenges: [] as string[],
-    healingReadiness: 5,
-    preferredMode: 'mixed' as 'scientific' | 'spiritual' | 'mixed',
-    communicationStyle: 'gentle' as 'gentle' | 'direct' | 'motivational',
+    // Approach step
+    preferredApproach: 'mixed' as 'scientific' | 'spiritual' | 'mixed',
+    
+    // Personality step
     learningStyle: 'visual' as 'visual' | 'auditory' | 'kinesthetic' | 'reading',
-    traumaHistory: '',
-    spiritualBackground: '',
-    mentalHealthHistory: '',
-    lifeContext: ''
+    decisionMaking: 'logical' as 'logical' | 'intuitive' | 'emotional' | 'collaborative',
+    stressResponse: '',
+    
+    // Healing step
+    healingReadiness: 5,
+    currentChallenges: '',
+    resistanceAreas: '',
+    supportNeeds: '',
+    
+    // Goals step
+    primaryGoals: '',
+    idealLife: '',
+    motivation: '',
+    lifeContext: '',
+    
+    // Communication step
+    communicationStyle: 'gentle' as 'gentle' | 'direct' | 'motivational'
   });
 
   // Fetch user profile
@@ -71,16 +84,19 @@ export default function AiCouchDashboard() {
   useEffect(() => {
     if (profile && !isEditingProfile) {
       setProfileForm({
-        primaryGoals: Array.isArray(profile?.primaryGoals) ? profile.primaryGoals : [],
-        currentChallenges: Array.isArray(profile?.currentChallenges) ? profile.currentChallenges : [],
-        healingReadiness: profile?.healingReadiness || 5,
-        preferredMode: profile?.preferredMode || 'mixed',
-        communicationStyle: profile?.communicationStyle || 'gentle',
+        preferredApproach: profile?.preferredApproach || profile?.preferredMode || 'mixed',
         learningStyle: profile?.learningStyle || 'visual',
-        traumaHistory: profile?.traumaHistory || '',
-        spiritualBackground: profile?.spiritualBackground || '',
-        mentalHealthHistory: profile?.mentalHealthHistory || '',
-        lifeContext: (typeof profile?.lifeContext === 'string') ? profile.lifeContext : ''
+        decisionMaking: profile?.decisionMaking || 'logical',
+        stressResponse: profile?.stressResponse || '',
+        healingReadiness: profile?.healingReadiness || 5,
+        currentChallenges: profile?.currentChallenges || '',
+        resistanceAreas: profile?.resistanceAreas || '',
+        supportNeeds: profile?.supportNeeds || '',
+        primaryGoals: profile?.primaryGoals || '',
+        idealLife: profile?.idealLife || '',
+        motivation: profile?.motivation || '',
+        lifeContext: profile?.lifeContext || '',
+        communicationStyle: profile?.communicationStyle || 'gentle'
       });
     }
   }, [profile, isEditingProfile]);
@@ -568,16 +584,19 @@ export default function AiCouchDashboard() {
                         setIsEditingProfile(false);
                         if (profile) {
                           setProfileForm({
-                            primaryGoals: Array.isArray(profile?.primaryGoals) ? profile.primaryGoals : [],
-                            currentChallenges: Array.isArray(profile?.currentChallenges) ? profile.currentChallenges : [],
-                            healingReadiness: profile?.healingReadiness || 5,
-                            preferredMode: profile?.preferredMode || 'mixed',
-                            communicationStyle: profile?.communicationStyle || 'gentle',
+                            preferredApproach: profile?.preferredApproach || profile?.preferredMode || 'mixed',
                             learningStyle: profile?.learningStyle || 'visual',
-                            traumaHistory: profile?.traumaHistory || '',
-                            spiritualBackground: profile?.spiritualBackground || '',
-                            mentalHealthHistory: profile?.mentalHealthHistory || '',
-                            lifeContext: (typeof profile?.lifeContext === 'string') ? profile.lifeContext : ''
+                            decisionMaking: profile?.decisionMaking || 'logical',
+                            stressResponse: profile?.stressResponse || '',
+                            healingReadiness: profile?.healingReadiness || 5,
+                            currentChallenges: profile?.currentChallenges || '',
+                            resistanceAreas: profile?.resistanceAreas || '',
+                            supportNeeds: profile?.supportNeeds || '',
+                            primaryGoals: profile?.primaryGoals || '',
+                            idealLife: profile?.idealLife || '',
+                            motivation: profile?.motivation || '',
+                            lifeContext: profile?.lifeContext || '',
+                            communicationStyle: profile?.communicationStyle || 'gentle'
                           });
                         }
                       }}
@@ -602,119 +621,353 @@ export default function AiCouchDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium">Primary Goals</Label>
-                    {isEditingProfile ? (
-                      <Textarea
-                        placeholder="What are your main transformation goals?"
-                        value={profileForm.primaryGoals.join(', ')}
-                        onChange={(e) => setProfileForm({
-                          ...profileForm,
-                          primaryGoals: e.target.value.split(',').map(g => g.trim()).filter(Boolean)
-                        })}
-                        className="h-20 text-sm mt-2"
-                      />
-                    ) : (
-                      <div className="text-sm text-muted-foreground mt-2">
-                        {profileForm.primaryGoals.length > 0 ? profileForm.primaryGoals.join(', ') : 'Not specified'}
+              <div className="space-y-8">
+                {/* Approach Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-lg font-semibold mb-4">Your Preferred Approach</h3>
+                  <Label className="text-sm font-medium">How would you like to approach your transformation?</Label>
+                  {isEditingProfile ? (
+                    <RadioGroup 
+                      value={profileForm.preferredApproach} 
+                      onValueChange={(value) => setProfileForm({
+                        ...profileForm,
+                        preferredApproach: value as 'scientific' | 'spiritual' | 'mixed'
+                      })}
+                      className="mt-3"
+                    >
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <RadioGroupItem value="scientific" id="edit-scientific" />
+                        <Label htmlFor="edit-scientific" className="flex-1">
+                          <div className="font-medium">Scientific Approach</div>
+                          <div className="text-sm text-gray-600">Evidence-based psychology, neuroscience, and therapeutic techniques</div>
+                        </Label>
                       </div>
-                    )}
-                  </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <RadioGroupItem value="spiritual" id="edit-spiritual" />
+                        <Label htmlFor="edit-spiritual" className="flex-1">
+                          <div className="font-medium">Spiritual Approach</div>
+                          <div className="text-sm text-gray-600">Quantum consciousness, manifestation, and energy work</div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <RadioGroupItem value="mixed" id="edit-mixed" />
+                        <Label htmlFor="edit-mixed" className="flex-1">
+                          <div className="font-medium">Integrated Approach</div>
+                          <div className="text-sm text-gray-600">Balanced combination of science and spirituality</div>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  ) : (
+                    <div className="text-sm text-muted-foreground mt-2 capitalize">
+                      {profileForm.preferredApproach === 'mixed' ? 'Integrated Approach' : profileForm.preferredApproach + ' Approach'}
+                    </div>
+                  )}
+                </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Healing Readiness</Label>
-                    {isEditingProfile ? (
-                      <div className="mt-2">
-                        <div className="text-sm mb-2">{profileForm.healingReadiness}/10</div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          value={profileForm.healingReadiness}
+                {/* Personality Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-lg font-semibold mb-4">Understanding Your Patterns</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">How do you best learn and process information?</Label>
+                      {isEditingProfile ? (
+                        <RadioGroup 
+                          value={profileForm.learningStyle} 
+                          onValueChange={(value) => setProfileForm({
+                            ...profileForm,
+                            learningStyle: value as 'visual' | 'auditory' | 'kinesthetic' | 'reading'
+                          })}
+                          className="mt-2"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="visual" id="edit-visual" />
+                            <Label htmlFor="edit-visual">Visual (images, diagrams, visualization)</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="auditory" id="edit-auditory" />
+                            <Label htmlFor="edit-auditory">Auditory (listening, discussion, music)</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="kinesthetic" id="edit-kinesthetic" />
+                            <Label htmlFor="edit-kinesthetic">Kinesthetic (movement, hands-on experience)</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="reading" id="edit-reading" />
+                            <Label htmlFor="edit-reading">Reading/Writing (text, journaling, analysis)</Label>
+                          </div>
+                        </RadioGroup>
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2 capitalize">
+                          {profileForm.learningStyle}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">How do you typically make important decisions?</Label>
+                      {isEditingProfile ? (
+                        <RadioGroup 
+                          value={profileForm.decisionMaking} 
+                          onValueChange={(value) => setProfileForm({
+                            ...profileForm,
+                            decisionMaking: value as 'logical' | 'intuitive' | 'emotional' | 'collaborative'
+                          })}
+                          className="mt-2"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="logical" id="edit-logical" />
+                            <Label htmlFor="edit-logical">Logical analysis and research</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="intuitive" id="edit-intuitive" />
+                            <Label htmlFor="edit-intuitive">Gut feeling and intuition</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="emotional" id="edit-emotional" />
+                            <Label htmlFor="edit-emotional">How I feel about it emotionally</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="collaborative" id="edit-collaborative" />
+                            <Label htmlFor="edit-collaborative">Seeking advice from others</Label>
+                          </div>
+                        </RadioGroup>
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2 capitalize">
+                          {profileForm.decisionMaking}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">When facing challenges or stress, you tend to:</Label>
+                      {isEditingProfile ? (
+                        <Textarea
+                          placeholder="Describe how you typically respond to stress or challenges..."
+                          value={profileForm.stressResponse}
                           onChange={(e) => setProfileForm({
                             ...profileForm,
-                            healingReadiness: parseInt(e.target.value)
+                            stressResponse: e.target.value
                           })}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          className="mt-2"
                         />
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground mt-2">
-                        Level {profileForm.healingReadiness} - Ready for transformation
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {profileForm.stressResponse || 'Not specified'}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium">Preferred Mode</Label>
-                    {isEditingProfile ? (
-                      <select
-                        value={profileForm.preferredMode}
-                        onChange={(e) => setProfileForm({
-                          ...profileForm,
-                          preferredMode: e.target.value as 'scientific' | 'spiritual' | 'mixed'
-                        })}
-                        className="w-full text-sm border border-gray-300 rounded-md p-2 mt-2"
-                      >
-                        <option value="scientific">Scientific</option>
-                        <option value="spiritual">Spiritual</option>
-                        <option value="mixed">Mixed</option>
-                      </select>
-                    ) : (
-                      <div className="text-sm text-muted-foreground capitalize mt-2">
-                        {profileForm.preferredMode}
-                      </div>
-                    )}
-                  </div>
+                {/* Healing Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-lg font-semibold mb-4">Areas for Growth & Healing</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">How ready do you feel to work on deep personal transformation? (1-10)</Label>
+                      {isEditingProfile ? (
+                        <div className="mt-2">
+                          <div className="text-sm mb-2">{profileForm.healingReadiness}/10</div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            value={profileForm.healingReadiness}
+                            onChange={(e) => setProfileForm({
+                              ...profileForm,
+                              healingReadiness: parseInt(e.target.value)
+                            })}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          Level {profileForm.healingReadiness} - Ready for transformation
+                        </div>
+                      )}
+                    </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Communication Style</Label>
-                    {isEditingProfile ? (
-                      <select
-                        value={profileForm.communicationStyle}
-                        onChange={(e) => setProfileForm({
-                          ...profileForm,
-                          communicationStyle: e.target.value as 'gentle' | 'direct' | 'motivational'
-                        })}
-                        className="w-full text-sm border border-gray-300 rounded-md p-2 mt-2"
-                      >
-                        <option value="gentle">Gentle</option>
-                        <option value="direct">Direct</option>
-                        <option value="motivational">Motivational</option>
-                      </select>
-                    ) : (
-                      <div className="text-sm text-muted-foreground capitalize mt-2">
-                        {profileForm.communicationStyle}
-                      </div>
-                    )}
-                  </div>
+                    <div>
+                      <Label className="text-sm font-medium">What are your biggest current challenges or patterns you'd like to change?</Label>
+                      {isEditingProfile ? (
+                        <Textarea
+                          placeholder="Describe the patterns, beliefs, or challenges you're experiencing..."
+                          value={profileForm.currentChallenges}
+                          onChange={(e) => setProfileForm({
+                            ...profileForm,
+                            currentChallenges: e.target.value
+                          })}
+                          className="mt-2"
+                        />
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {profileForm.currentChallenges || 'Not specified'}
+                        </div>
+                      )}
+                    </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Learning Style</Label>
-                    {isEditingProfile ? (
-                      <select
-                        value={profileForm.learningStyle}
-                        onChange={(e) => setProfileForm({
-                          ...profileForm,
-                          learningStyle: e.target.value as 'visual' | 'auditory' | 'kinesthetic' | 'reading'
-                        })}
-                        className="w-full text-sm border border-gray-300 rounded-md p-2 mt-2"
-                      >
-                        <option value="visual">Visual</option>
-                        <option value="auditory">Auditory</option>
-                        <option value="kinesthetic">Kinesthetic</option>
-                        <option value="reading">Reading/Writing</option>
-                      </select>
-                    ) : (
-                      <div className="text-sm text-muted-foreground capitalize mt-2">
-                        {profileForm.learningStyle}
-                      </div>
-                    )}
+                    <div>
+                      <Label className="text-sm font-medium">Are there any areas where you feel resistance or have tried to change before but struggled?</Label>
+                      {isEditingProfile ? (
+                        <Textarea
+                          placeholder="What feels difficult or where do you get stuck?"
+                          value={profileForm.resistanceAreas}
+                          onChange={(e) => setProfileForm({
+                            ...profileForm,
+                            resistanceAreas: e.target.value
+                          })}
+                          className="mt-2"
+                        />
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {profileForm.resistanceAreas || 'Not specified'}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">What kind of support feels most helpful to you?</Label>
+                      {isEditingProfile ? (
+                        <Textarea
+                          placeholder="Gentle encouragement, direct feedback, practical tools, emotional support, etc."
+                          value={profileForm.supportNeeds}
+                          onChange={(e) => setProfileForm({
+                            ...profileForm,
+                            supportNeeds: e.target.value
+                          })}
+                          className="mt-2"
+                        />
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {profileForm.supportNeeds || 'Not specified'}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                {/* Goals Section */}
+                <div className="border-b pb-6">
+                  <h3 className="text-lg font-semibold mb-4">Your Goals & Intentions</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">What are your main goals for personal transformation?</Label>
+                      {isEditingProfile ? (
+                        <Textarea
+                          placeholder="What do you most want to achieve or become?"
+                          value={profileForm.primaryGoals}
+                          onChange={(e) => setProfileForm({
+                            ...profileForm,
+                            primaryGoals: e.target.value
+                          })}
+                          className="mt-2"
+                        />
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {profileForm.primaryGoals || 'Not specified'}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">Describe your ideal life 6 months from now:</Label>
+                      {isEditingProfile ? (
+                        <Textarea
+                          placeholder="How would you feel, what would you be doing, how would your relationships be?"
+                          value={profileForm.idealLife}
+                          onChange={(e) => setProfileForm({
+                            ...profileForm,
+                            idealLife: e.target.value
+                          })}
+                          className="mt-2"
+                        />
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {profileForm.idealLife || 'Not specified'}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">What motivates you most to change and grow?</Label>
+                      {isEditingProfile ? (
+                        <Textarea
+                          placeholder="What drives your desire for transformation?"
+                          value={profileForm.motivation}
+                          onChange={(e) => setProfileForm({
+                            ...profileForm,
+                            motivation: e.target.value
+                          })}
+                          className="mt-2"
+                        />
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {profileForm.motivation || 'Not specified'}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">Tell us about your current life context:</Label>
+                      {isEditingProfile ? (
+                        <Textarea
+                          placeholder="Age range, relationship status, work situation, health, living situation - anything relevant"
+                          value={profileForm.lifeContext}
+                          onChange={(e) => setProfileForm({
+                            ...profileForm,
+                            lifeContext: e.target.value
+                          })}
+                          className="mt-2"
+                        />
+                      ) : (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {profileForm.lifeContext || 'Not specified'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Communication Section */}
+                <div className="pb-6">
+                  <h3 className="text-lg font-semibold mb-4">How You Prefer to Receive Guidance</h3>
+                  {isEditingProfile ? (
+                    <RadioGroup 
+                      value={profileForm.communicationStyle} 
+                      onValueChange={(value) => setProfileForm({
+                        ...profileForm,
+                        communicationStyle: value as 'gentle' | 'direct' | 'motivational'
+                      })}
+                    >
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <RadioGroupItem value="gentle" id="edit-gentle" />
+                        <Label htmlFor="edit-gentle" className="flex-1">
+                          <div className="font-medium">Gentle & Nurturing</div>
+                          <div className="text-sm text-gray-600">Compassionate, supportive, and encouraging</div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <RadioGroupItem value="direct" id="edit-direct" />
+                        <Label htmlFor="edit-direct" className="flex-1">
+                          <div className="font-medium">Direct & Practical</div>
+                          <div className="text-sm text-gray-600">Clear, straightforward, and action-oriented</div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <RadioGroupItem value="motivational" id="edit-motivational" />
+                        <Label htmlFor="edit-motivational" className="flex-1">
+                          <div className="font-medium">Motivational & Inspiring</div>
+                          <div className="text-sm text-gray-600">Energizing, empowering, and uplifting</div>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  ) : (
+                    <div className="text-sm text-muted-foreground capitalize">
+                      {profileForm.communicationStyle === 'gentle' ? 'Gentle & Nurturing' : 
+                       profileForm.communicationStyle === 'direct' ? 'Direct & Practical' : 
+                       'Motivational & Inspiring'}
+                    </div>
+                  )}
                 </div>
 
                 {isEditingProfile && (
