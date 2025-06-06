@@ -601,6 +601,67 @@ export default function EnhancedVisionBoard() {
     }));
   }, [draggedItem, isDragging, dragStart]);
 
+  const handleResize = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isResizing || !selectedItem || !resizeHandle) return;
+    
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
+
+    setBoard(prev => ({
+      ...prev,
+      canvasData: {
+        ...prev.canvasData,
+        items: prev.canvasData.items.map(item => {
+          if (item.id !== selectedItem) return item;
+          
+          let newX = resizeStart.x;
+          let newY = resizeStart.y;
+          let newWidth = resizeStart.width;
+          let newHeight = resizeStart.height;
+          
+          const aspectRatio = resizeStart.width / resizeStart.height;
+          
+          switch (resizeHandle) {
+            case 'nw':
+              newWidth = Math.max(50, resizeStart.x + resizeStart.width - x);
+              newHeight = newWidth / aspectRatio;
+              newX = resizeStart.x + resizeStart.width - newWidth;
+              newY = resizeStart.y + resizeStart.height - newHeight;
+              break;
+            case 'ne':
+              newWidth = Math.max(50, x - resizeStart.x);
+              newHeight = newWidth / aspectRatio;
+              newY = resizeStart.y + resizeStart.height - newHeight;
+              break;
+            case 'sw':
+              newWidth = Math.max(50, resizeStart.x + resizeStart.width - x);
+              newHeight = newWidth / aspectRatio;
+              newX = resizeStart.x + resizeStart.width - newWidth;
+              break;
+            case 'se':
+              newWidth = Math.max(50, x - resizeStart.x);
+              newHeight = newWidth / aspectRatio;
+              break;
+          }
+          
+          return {
+            ...item,
+            x: newX,
+            y: newY,
+            width: newWidth,
+            height: newHeight
+          };
+        })
+      }
+    }));
+  }, [isResizing, selectedItem, resizeHandle, resizeStart]);
+
   const handleMouseUp = () => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -608,6 +669,8 @@ export default function EnhancedVisionBoard() {
     }
     setDraggedItem(null);
     setIsDragging(false);
+    setIsResizing(false);
+    setResizeHandle(null);
   };
 
   const deleteSelectedItem = () => {
