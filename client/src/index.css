@@ -57,13 +57,13 @@
   --success: 142 76% 36%; /* #22C55E */
   --warning: 43 96% 56%; /* #F59E0B */
   --ring: 240 4% 83%; /* #D4D4D8 */
-  --sidebar-background: 240 10% 4%; /* #0A0A0B */
+  --sidebar-background: 240 10% 9%; /* #1A1A1B */
   --sidebar-foreground: 0 0% 95%; /* #F2F2F2 */
   --sidebar-primary: 249 85% 65%; /* #6366F1 */
   --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
-  --sidebar-accent: 240 4% 16%; /* #262626 */
+  --sidebar-accent: 240 4% 20%; /* #333333 */
   --sidebar-accent-foreground: 0 0% 95%; /* #F2F2F2 */
-  --sidebar-border: 240 4% 16%; /* #262626 */
+  --sidebar-border: 240 4% 20%; /* #333333 */
   --sidebar-ring: 240 4% 83%; /* #D4D4D8 */
 }
 

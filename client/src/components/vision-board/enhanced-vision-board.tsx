@@ -97,6 +97,9 @@ export default function EnhancedVisionBoard() {
   const [newText, setNewText] = useState({ content: '', fontSize: 24, color: '#000000' });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeHandle, setResizeHandle] = useState<string | null>(null);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
   // Queries
   const { data: savedBoards } = useQuery({
@@ -257,13 +260,34 @@ export default function EnhancedVisionBoard() {
         });
       }
 
-      // Draw selection border
+      // Draw selection border and resize handles
       if (selectedItem === item.id) {
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
         ctx.strokeRect(item.x, item.y, item.width, item.height);
         ctx.setLineDash([]);
+        
+        // Draw resize handles for images
+        if (item.type === 'image') {
+          const handleSize = 8;
+          ctx.fillStyle = '#3b82f6';
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          
+          // Corner handles
+          const handles = [
+            { x: item.x - handleSize/2, y: item.y - handleSize/2, cursor: 'nw-resize' }, // top-left
+            { x: item.x + item.width - handleSize/2, y: item.y - handleSize/2, cursor: 'ne-resize' }, // top-right
+            { x: item.x - handleSize/2, y: item.y + item.height - handleSize/2, cursor: 'sw-resize' }, // bottom-left
+            { x: item.x + item.width - handleSize/2, y: item.y + item.height - handleSize/2, cursor: 'se-resize' } // bottom-right
+          ];
+          
+          handles.forEach(handle => {
+            ctx.fillRect(handle.x, handle.y, handleSize, handleSize);
+            ctx.strokeRect(handle.x, handle.y, handleSize, handleSize);
+          });
+        }
       }
 
       ctx.restore();
@@ -457,6 +481,37 @@ export default function EnhancedVisionBoard() {
 
     if (clickedItem) {
       setSelectedItem(clickedItem.id);
+      
+      // Check if clicking on resize handle for images
+      if (clickedItem.type === 'image' && selectedItem === clickedItem.id) {
+        const handleSize = 8;
+        const handles = [
+          { id: 'nw', x: clickedItem.x - handleSize/2, y: clickedItem.y - handleSize/2, cursor: 'nw-resize' },
+          { id: 'ne', x: clickedItem.x + clickedItem.width - handleSize/2, y: clickedItem.y - handleSize/2, cursor: 'ne-resize' },
+          { id: 'sw', x: clickedItem.x - handleSize/2, y: clickedItem.y + clickedItem.height - handleSize/2, cursor: 'sw-resize' },
+          { id: 'se', x: clickedItem.x + clickedItem.width - handleSize/2, y: clickedItem.y + clickedItem.height - handleSize/2, cursor: 'se-resize' }
+        ];
+        
+        const clickedHandle = handles.find(handle => 
+          x >= handle.x && x <= handle.x + handleSize &&
+          y >= handle.y && y <= handle.y + handleSize
+        );
+        
+        if (clickedHandle) {
+          setIsResizing(true);
+          setResizeHandle(clickedHandle.id);
+          setResizeStart({ 
+            x: clickedItem.x, 
+            y: clickedItem.y, 
+            width: clickedItem.width, 
+            height: clickedItem.height 
+          });
+          canvas.style.cursor = clickedHandle.cursor;
+          return;
+        }
+      }
+      
+      // Regular dragging
       setDraggedItem(clickedItem.id);
       setDragStart({ x: x - clickedItem.x, y: y - clickedItem.y });
       setIsDragging(true);
@@ -477,10 +532,36 @@ export default function EnhancedVisionBoard() {
     const x = (event.clientX - rect.left) * scaleX;
     const y = (event.clientY - rect.top) * scaleY;
 
-    if (isDragging && draggedItem) {
+    if (isResizing && selectedItem) {
+      // Handle resizing
+      handleResize(event);
+    } else if (isDragging && draggedItem) {
       // Handle dragging
       handleMouseMove(event);
     } else {
+      // Check if hovering over resize handles or items
+      const selectedItemData = board.canvasData.items.find(item => item.id === selectedItem);
+      
+      if (selectedItemData?.type === 'image') {
+        const handleSize = 8;
+        const handles = [
+          { id: 'nw', x: selectedItemData.x - handleSize/2, y: selectedItemData.y - handleSize/2, cursor: 'nw-resize' },
+          { id: 'ne', x: selectedItemData.x + selectedItemData.width - handleSize/2, y: selectedItemData.y - handleSize/2, cursor: 'ne-resize' },
+          { id: 'sw', x: selectedItemData.x - handleSize/2, y: selectedItemData.y + selectedItemData.height - handleSize/2, cursor: 'sw-resize' },
+          { id: 'se', x: selectedItemData.x + selectedItemData.width - handleSize/2, y: selectedItemData.y + selectedItemData.height - handleSize/2, cursor: 'se-resize' }
+        ];
+        
+        const hoveredHandle = handles.find(handle => 
+          x >= handle.x && x <= handle.x + handleSize &&
+          y >= handle.y && y <= handle.y + handleSize
+        );
+        
+        if (hoveredHandle) {
+          canvas.style.cursor = hoveredHandle.cursor;
+          return;
+        }
+      }
+      
       // Check if hovering over an item
       const sortedItems = [...board.canvasData.items].sort((a, b) => b.zIndex - a.zIndex);
       const hoveredItem = sortedItems.find(item => 
