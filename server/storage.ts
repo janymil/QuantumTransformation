@@ -10,6 +10,7 @@ import {
   spacedRepetitionConcepts,
   spacedRepetitionReviews,
   spacedRepetitionSchedule,
+  aiUsageTracking,
   type User,
   type UpsertUser,
   type UserProgress,

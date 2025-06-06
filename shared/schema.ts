@@ -80,6 +80,29 @@ export const journalEntries = pgTable("journal_entries", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Assessment Reflections - Store user reflections from daily assessments
+export const assessmentReflections = pgTable("assessment_reflections", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  assessmentId: varchar("assessment_id").notNull(), // Links to daily assessment
+  reflectionType: varchar("reflection_type").notNull(), // 'journal_reflection', 'evening_integration', 'exercise_reflection', 'daily_assessment'
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  questionPrompt: text("question_prompt"), // The question/prompt that generated this reflection
+  wordCount: integer("word_count").default(0),
+  characterCount: integer("character_count").default(0),
+  challengeType: varchar("challenge_type"),
+  day: integer("day"),
+  metadata: jsonb("metadata").default({}), // Store additional context like exercise type, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("assessment_reflections_user_idx").on(table.userId),
+  index("assessment_reflections_type_idx").on(table.reflectionType),
+  index("assessment_reflections_challenge_idx").on(table.challengeType),
+  index("assessment_reflections_created_idx").on(table.createdAt)
+]);
+
 // Saved phrases/quotes
 export const savedPhrases = pgTable("saved_phrases", {
   id: serial("id").primaryKey(),
@@ -260,6 +283,8 @@ export type ChallengeCompletion = typeof challengeCompletions.$inferSelect;
 
 export type InsertJournalEntry = typeof journalEntries.$inferInsert;
 export type JournalEntry = typeof journalEntries.$inferSelect;
+export type InsertAssessmentReflection = typeof assessmentReflections.$inferInsert;
+export type AssessmentReflection = typeof assessmentReflections.$inferSelect;
 
 export type InsertSavedPhrase = typeof savedPhrases.$inferInsert;
 export type SavedPhrase = typeof savedPhrases.$inferSelect;
@@ -378,6 +403,7 @@ export type AiResponseCache = typeof aiResponseCache.$inferSelect;
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true });
 export const insertChallengeCompletionSchema = createInsertSchema(challengeCompletions).omit({ id: true });
 export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({ id: true });
+export const insertAssessmentReflectionSchema = createInsertSchema(assessmentReflections).omit({ id: true });
 export const insertSavedPhraseSchema = createInsertSchema(savedPhrases).omit({ id: true });
 export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true });
 export const insertAiChatSessionSchema = createInsertSchema(aiChatSessions).omit({ id: true });
