@@ -1493,8 +1493,10 @@ Provide personalized, actionable guidance that:
       const [existingAssessment] = await db
         .select()
         .from(aiCouchDailyAssessments)
-        .where(eq(aiCouchDailyAssessments.userId, userId))
-        .where(eq(aiCouchDailyAssessments.assessmentDate, today))
+        .where(and(
+          eq(aiCouchDailyAssessments.userId, userId),
+          eq(aiCouchDailyAssessments.assessmentDate, today)
+        ))
         .limit(1);
 
       if (existingAssessment) {
@@ -1555,7 +1557,10 @@ Provide personalized, actionable guidance that:
           userResponses,
           updatedAt: new Date()
         })
-        .where(eq(aiCouchDailyAssessments.id, parseInt(assessmentId)))
+        .where(and(
+          eq(aiCouchDailyAssessments.id, parseInt(assessmentId)),
+          eq(aiCouchDailyAssessments.userId, userId)
+        ))
         .returning();
 
       if (!updatedAssessment) {

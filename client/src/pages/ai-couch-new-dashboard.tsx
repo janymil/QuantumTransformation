@@ -30,10 +30,7 @@ export default function AiCouchNewDashboard() {
   // Complete assessment mutation
   const completeAssessment = useMutation({
     mutationFn: (data: { assessmentId: string; responses: any }) => 
-      apiRequest(`/api/ai-couch/complete-assessment/${data.assessmentId}`, {
-        method: 'POST',
-        body: data.responses
-      }),
+      apiRequest(`/api/ai-couch/complete-assessment/${data.assessmentId}`, 'POST', data.responses),
     onSuccess: () => {
       toast({
         title: "Assessment Completed!",
