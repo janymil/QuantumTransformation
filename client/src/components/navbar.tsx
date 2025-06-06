@@ -14,6 +14,7 @@ import {
 import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
+import MoodThemeSwitcher from "@/components/mood-theme-switcher";
 
 export default function Navbar() {
   const { user } = useAuth();

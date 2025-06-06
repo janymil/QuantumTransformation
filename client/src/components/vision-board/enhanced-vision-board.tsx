@@ -217,31 +217,44 @@ export default function EnhancedVisionBoard() {
       } else if (item.type === 'text') {
         const { fontSize = 24, fontFamily = 'Arial', color = '#000000', textAlign = 'left', fontWeight = 'normal', fontStyle = 'normal' } = item.styling;
         
+        // Add background for text for better visibility and dragging
+        if (selectedItem === item.id || draggedItem === item.id) {
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+          ctx.fillRect(item.x, item.y, item.width, item.height);
+        }
+        
         ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
         ctx.fillStyle = color;
         ctx.textAlign = textAlign;
         ctx.textBaseline = 'top';
         
-        // Word wrap for text
-        const words = item.content.split(' ');
+        // Handle multi-line text (split by \n)
+        const lines = item.content.split('\n');
         const lineHeight = fontSize * 1.2;
-        let line = '';
-        let y = item.y;
+        
+        lines.forEach((line, index) => {
+          const y = item.y + (index * lineHeight) + 5; // Add padding
+          
+          // Word wrap for long lines
+          const words = line.split(' ');
+          let currentLine = '';
+          let currentY = y;
 
-        for (let n = 0; n < words.length; n++) {
-          const testLine = line + words[n] + ' ';
-          const metrics = ctx.measureText(testLine);
-          const testWidth = metrics.width;
+          for (let n = 0; n < words.length; n++) {
+            const testLine = currentLine + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            const testWidth = metrics.width;
 
-          if (testWidth > item.width && n > 0) {
-            ctx.fillText(line, item.x, y);
-            line = words[n] + ' ';
-            y += lineHeight;
-          } else {
-            line = testLine;
+            if (testWidth > (item.width - 10) && n > 0) {
+              ctx.fillText(currentLine, item.x + 5, currentY);
+              currentLine = words[n] + ' ';
+              currentY += lineHeight;
+            } else {
+              currentLine = testLine;
+            }
           }
-        }
-        ctx.fillText(line, item.x, y);
+          ctx.fillText(currentLine, item.x + 5, currentY);
+        });
       }
 
       // Draw selection border
@@ -369,17 +382,35 @@ export default function EnhancedVisionBoard() {
     }
   };
 
+  const calculateTextDimensions = (text: string, fontSize: number, fontFamily: string = 'Arial'): { width: number; height: number } => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    
+    const lines = text.split('\n');
+    const lineHeight = fontSize * 1.2;
+    const maxWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+    const height = lines.length * lineHeight;
+    
+    return {
+      width: Math.max(maxWidth + 20, 100), // Add padding
+      height: Math.max(height + 10, 30)
+    };
+  };
+
   const handleAddText = () => {
     if (!newText.content.trim()) return;
 
+    const dimensions = calculateTextDimensions(newText.content, newText.fontSize);
+    
     const textItem: VisionBoardItem = {
       id: Date.now().toString(),
       type: 'text',
       content: newText.content,
       x: 100,
       y: 100,
-      width: 300,
-      height: 100,
+      width: dimensions.width,
+      height: dimensions.height,
       rotation: 0,
       opacity: 1,
       zIndex: board.canvasData.items.length,
@@ -424,8 +455,33 @@ export default function EnhancedVisionBoard() {
       setDraggedItem(clickedItem.id);
       setDragStart({ x: x - clickedItem.x, y: y - clickedItem.y });
       setIsDragging(true);
+      
+      // Change cursor to grabbing
+      canvas.style.cursor = 'grabbing';
     } else {
       setSelectedItem(null);
+    }
+  };
+
+  const handleCanvasMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    if (isDragging && draggedItem) {
+      // Handle dragging
+      handleMouseMove(event);
+    } else {
+      // Check if hovering over an item
+      const sortedItems = [...board.canvasData.items].sort((a, b) => b.zIndex - a.zIndex);
+      const hoveredItem = sortedItems.find(item => 
+        x >= item.x && x <= item.x + item.width &&
+        y >= item.y && y <= item.y + item.height
+      );
+
+      // Change cursor based on hover state
+      canvas.style.cursor = hoveredItem ? 'grab' : 'default';
     }
   };
 
@@ -452,6 +508,10 @@ export default function EnhancedVisionBoard() {
   }, [draggedItem, isDragging, dragStart]);
 
   const handleMouseUp = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.style.cursor = 'default';
+    }
     setDraggedItem(null);
     setIsDragging(false);
   };
@@ -574,9 +634,9 @@ export default function EnhancedVisionBoard() {
         <div className="flex justify-center">
           <canvas
             ref={canvasRef}
-            className="border rounded-lg cursor-pointer max-w-full"
+            className="border rounded-lg max-w-full"
             onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
+            onMouseMove={handleCanvasMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             style={{ maxHeight: '600px' }}
