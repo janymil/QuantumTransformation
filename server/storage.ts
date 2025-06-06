@@ -3,6 +3,7 @@ import {
   userProgress,
   challengeCompletions,
   journalEntries,
+  assessmentReflections,
   savedPhrases,
   userAchievements,
   aiChatSessions,
@@ -19,6 +20,8 @@ import {
   type InsertChallengeCompletion,
   type JournalEntry,
   type InsertJournalEntry,
+  type AssessmentReflection,
+  type InsertAssessmentReflection,
   type SavedPhrase,
   type InsertSavedPhrase,
   type UserAchievement,
@@ -86,6 +89,11 @@ export interface IStorage {
   // AI Couch profile operations
   getAICouchProfile(userId: string): Promise<any>;
   updateAICouchProfile(userId: string, updates: any): Promise<any>;
+  
+  // Assessment reflection operations
+  createAssessmentReflection(reflection: InsertAssessmentReflection): Promise<AssessmentReflection>;
+  getUserAssessmentReflections(userId: string): Promise<AssessmentReflection[]>;
+  getAssessmentReflectionsByType(userId: string, reflectionType: string): Promise<AssessmentReflection[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -611,6 +619,46 @@ export class DatabaseStorage implements IStorage {
       await db.delete(users).where(eq(users.id, userId));
     } catch (error) {
       console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+
+  // Assessment reflection operations
+  async createAssessmentReflection(reflection: InsertAssessmentReflection): Promise<AssessmentReflection> {
+    try {
+      const [newReflection] = await db.insert(assessmentReflections).values(reflection).returning();
+      return newReflection;
+    } catch (error) {
+      console.error('Error creating assessment reflection:', error);
+      throw error;
+    }
+  }
+
+  async getUserAssessmentReflections(userId: string): Promise<AssessmentReflection[]> {
+    try {
+      return await db
+        .select()
+        .from(assessmentReflections)
+        .where(eq(assessmentReflections.userId, userId))
+        .orderBy(desc(assessmentReflections.createdAt));
+    } catch (error) {
+      console.error('Error getting user assessment reflections:', error);
+      throw error;
+    }
+  }
+
+  async getAssessmentReflectionsByType(userId: string, reflectionType: string): Promise<AssessmentReflection[]> {
+    try {
+      return await db
+        .select()
+        .from(assessmentReflections)
+        .where(and(
+          eq(assessmentReflections.userId, userId),
+          eq(assessmentReflections.reflectionType, reflectionType)
+        ))
+        .orderBy(desc(assessmentReflections.createdAt));
+    } catch (error) {
+      console.error('Error getting assessment reflections by type:', error);
       throw error;
     }
   }

@@ -677,6 +677,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Assessment reflections endpoints
+  app.post('/api/assessment-reflections', async (req, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const reflectionData = {
+        ...req.body,
+        userId: req.user.id,
+        wordCount: req.body.content?.trim().split(/\s+/).length || 0,
+        characterCount: req.body.content?.length || 0
+      };
+
+      const reflection = await storage.createAssessmentReflection(reflectionData);
+      res.json(reflection);
+    } catch (error) {
+      console.error('Create assessment reflection error:', error);
+      res.status(500).json({ error: 'Failed to create reflection' });
+    }
+  });
+
+  app.get('/api/assessment-reflections', async (req, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const reflections = await storage.getUserAssessmentReflections(req.user.id);
+      res.json(reflections);
+    } catch (error) {
+      console.error('Get assessment reflections error:', error);
+      res.status(500).json({ error: 'Failed to get reflections' });
+    }
+  });
+
+  app.get('/api/assessment-reflections/:type', async (req, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { type } = req.params;
+      const reflections = await storage.getAssessmentReflectionsByType(req.user.id, type);
+      res.json(reflections);
+    } catch (error) {
+      console.error('Get assessment reflections by type error:', error);
+      res.status(500).json({ error: 'Failed to get reflections' });
+    }
+  });
+
   // Admin User Statistics endpoint (password protected in frontend)
   app.get('/api/admin/user-statistics', async (req, res) => {
     try {

@@ -40,9 +40,30 @@ interface JournalEntry {
   updatedAt: string;
 }
 
+interface AssessmentReflection {
+  id: number;
+  assessmentId: string;
+  reflectionType: string;
+  title: string;
+  content: string;
+  questionPrompt?: string;
+  wordCount: number;
+  characterCount: number;
+  challengeType?: string;
+  day?: number;
+  metadata: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ChallengeJournalGroup {
   challengeType: string;
   entries: JournalEntry[];
+}
+
+interface ReflectionGroup {
+  type: string;
+  reflections: AssessmentReflection[];
 }
 
 interface JournalAnalysis {
