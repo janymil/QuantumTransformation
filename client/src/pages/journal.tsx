@@ -224,14 +224,14 @@ export default function Journal() {
   }) || [];
 
   // Filter reflections by type and search
-  const filteredReflections = reflectionsData.filter((reflection: AssessmentReflection) => {
+  const filteredReflections = Array.isArray(reflectionsData) ? reflectionsData.filter((reflection: AssessmentReflection) => {
     const matchesFilter = reflectionFilter === 'all' || reflection.reflectionType === reflectionFilter;
-    const matchesSearch = searchTerm === '' || 
-      reflection.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reflection.content.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = searchQuery === '' || 
+      reflection.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      reflection.content.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesFilter && matchesSearch;
-  });
+  }) : [];
 
   // Group reflections by type
   const groupedReflections = filteredReflections.reduce((acc: { [key: string]: AssessmentReflection[] }, reflection: AssessmentReflection) => {
@@ -300,6 +300,22 @@ export default function Journal() {
                 {availableDays.map(day => (
                   <SelectItem key={day} value={day.toString()}>Day {day}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={reflectionFilter} onValueChange={setReflectionFilter}>
+              <SelectTrigger className="w-48">
+                <FileText className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Content</SelectItem>
+                <SelectItem value="journal_only">Journal Entries Only</SelectItem>
+                <SelectItem value="reflections_only">Assessment Reflections Only</SelectItem>
+                <SelectItem value="journal_reflection">Journal Reflections</SelectItem>
+                <SelectItem value="evening_integration">Evening Integration</SelectItem>
+                <SelectItem value="exercise_reflection">Exercise Reflections</SelectItem>
+                <SelectItem value="daily_assessment">Daily Assessments</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -505,13 +521,14 @@ export default function Journal() {
 
           <TabsContent value="history" className="space-y-6">
             <div className="grid gap-6">
-              {filteredEntries.length > 0 ? (
+              {/* Show filtered journal entries */}
+              {(reflectionFilter === 'all' || reflectionFilter === 'journal_only') && filteredEntries.length > 0 && 
                 filteredEntries
                   .sort((a, b) => b.day - a.day)
                   .map((entry) => {
                     const content = challengeContent.find(c => c.day === entry.day);
                     return (
-                      <Card key={entry.id} className="hover:shadow-lg transition-shadow duration-300">
+                      <Card key={`journal-${entry.id}`} className="hover:shadow-lg transition-shadow duration-300">
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center">
@@ -568,8 +585,47 @@ export default function Journal() {
                         </CardContent>
                       </Card>
                     );
-                  })
-              ) : (
+                  })}
+              
+              {/* Show filtered assessment reflections */}
+              {(reflectionFilter === 'all' || reflectionFilter === 'reflections_only' || 
+                reflectionFilter === 'journal_reflection' || reflectionFilter === 'evening_integration' ||
+                reflectionFilter === 'exercise_reflection' || reflectionFilter === 'daily_assessment') && 
+                filteredReflections.length > 0 && 
+                filteredReflections.map((reflection) => (
+                  <Card key={`reflection-${reflection.id}`} className="hover:shadow-lg transition-shadow duration-300">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center">
+                          <FileText className="w-5 h-5 mr-2 text-primary" />
+                          {reflection.title}
+                        </CardTitle>
+                        <Badge variant="outline">
+                          {reflection.reflectionType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Badge>
+                      </div>
+                      {reflection.day && (
+                        <p className="text-sm text-muted-foreground">Day {reflection.day}</p>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-muted-foreground leading-relaxed">{reflection.content}</p>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{reflection.wordCount} words</span>
+                          <span>{format(new Date(reflection.createdAt), 'MMM d, yyyy')}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+              {/* Show no content message */}
+              {((reflectionFilter === 'journal_only' && filteredEntries.length === 0) ||
+                (reflectionFilter === 'reflections_only' && filteredReflections.length === 0) ||
+                (reflectionFilter === 'all' && filteredEntries.length === 0 && filteredReflections.length === 0)) ? (
                 <Card>
                   <CardContent className="pt-6 text-center py-12">
                     <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -582,7 +638,7 @@ export default function Journal() {
                     </p>
                   </CardContent>
                 </Card>
-              )}
+              ) : null}
             </div>
           </TabsContent>
 
