@@ -135,13 +135,7 @@ export function AiDailyAssessment({ assessment, onComplete, isSubmitting }: AiDa
       // Save all reflections to database
       for (const reflection of reflectionsToSave) {
         try {
-          await apiRequest('/api/assessment-reflections', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(reflection)
-          });
+          await apiRequest('POST', '/api/assessment-reflections', reflection);
         } catch (error) {
           console.error('Error saving reflection:', error);
           toast({

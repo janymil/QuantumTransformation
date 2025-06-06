@@ -22,7 +22,8 @@ import {
   BarChart3,
   Lightbulb,
   Trash2,
-  Edit
+  Edit,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { challengeContent } from "@/data/challenge-content";
