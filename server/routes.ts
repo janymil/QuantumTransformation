@@ -509,12 +509,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           return acc;
         }, {} as Record<string, number>),
-        avgQuality: Math.round((avgMetrics[0]?.avgQuality || 0) * 10) / 10,
-        avgCostPerResponse: avgMetrics[0]?.avgCost || 0,
-        totalCost: avgMetrics[0]?.totalCost || 0,
+        avgQuality: Math.round((Number(avgMetrics[0]?.avgQuality) || 0) * 10) / 10,
+        avgCostPerResponse: Number(avgMetrics[0]?.avgCost) || 0,
+        totalCost: Number(avgMetrics[0]?.totalCost) || 0,
         avgResponseTime: {
-          "gpt-4o": Math.round(avgMetrics[0]?.avgResponseTime || 0),
-          "gpt-4o-mini": Math.round((avgMetrics[0]?.avgResponseTime || 0) * 0.7)
+          "gpt-4o": Math.round(Number(avgMetrics[0]?.avgResponseTime) || 0),
+          "gpt-4o-mini": Math.round((Number(avgMetrics[0]?.avgResponseTime) || 0) * 0.7)
         },
         highQualityPercentage: total > 0 ? Math.round((highQuality[0]?.count || 0) / total * 100) : 0,
         costSavings
@@ -690,7 +690,7 @@ Provide personalized, actionable guidance that:
       }
 
       // Track usage with actual cost
-      await trackUsage(userId, 'enhanced_coaching', query, finalResponse, challengeType);
+      await trackUsage(userId, 'enhanced_coaching', query, finalResponse, Number(challengeType) || 1);
 
       res.json({
         response: finalResponse,
@@ -862,7 +862,7 @@ Provide personalized, actionable guidance that:
       const completionForecast = await predictiveIntelligence.predictCompletionLikelihood(userId, challengeType);
 
       // Track usage
-      await trackUsage(userId, 'supreme_coaching', query, memoryEnhancedResponse, challengeType);
+      await trackUsage(userId, 'supreme_coaching', query, memoryEnhancedResponse, Number(challengeType) || 1);
 
       res.json({
         response: memoryEnhancedResponse,
@@ -954,7 +954,7 @@ Provide personalized, actionable guidance that:
       }
 
       // Track usage with actual cost
-      await trackUsage(userId, 'smart_coaching', query, aiResult.response, challengeType);
+      await trackUsage(userId, 'smart_coaching', query, aiResult.response, Number(challengeType) || 1);
 
       res.json({
         response: aiResult.response,
@@ -1242,7 +1242,7 @@ Provide personalized, actionable guidance that:
       res.json({ affirmation });
     } catch (error) {
       console.error("Error generating personalized affirmation:", error);
-      res.status(500).json({ message: "Failed to generate affirmation", error: error.message });
+      res.status(500).json({ message: "Failed to generate affirmation", error: (error as Error).message });
     }
   });
 
@@ -1256,7 +1256,7 @@ Provide personalized, actionable guidance that:
       res.json({ affirmation });
     } catch (error) {
       console.error("Test error generating personalized affirmation:", error);
-      res.status(500).json({ message: "Failed to generate affirmation", error: error.message });
+      res.status(500).json({ message: "Failed to generate affirmation", error: (error as Error).message });
     }
   });
 
