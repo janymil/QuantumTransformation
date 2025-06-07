@@ -22,7 +22,11 @@ import {
   Eye,
   EyeOff,
   Smartphone,
-  Camera
+  Camera,
+  Play,
+  Star,
+  Palette,
+  Settings
 } from "lucide-react";
 import { Tool, ViewMode } from "./vision-board-types";
 
@@ -172,6 +176,15 @@ export default function VisionBoardToolbar({
           <Download className="w-4 h-4" />
           <span className="hidden sm:inline">Export</span>
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBoardEditor}
+          className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700"
+        >
+          <Settings className="w-4 h-4" />
+          <span className="hidden sm:inline">Edit Board</span>
+        </Button>
       </div>
 
       <Separator orientation="vertical" className="h-6" />
@@ -199,11 +212,11 @@ export default function VisionBoardToolbar({
         <Button
           variant="outline"
           size="sm"
-          onClick={onAISuggestions}
+          onClick={onPersonalizedSuggestions || onAISuggestions}
           className="flex items-center gap-2 text-green-600 hover:text-green-700"
         >
-          <Lightbulb className="w-4 h-4" />
-          <span className="hidden sm:inline">Suggestions</span>
+          <Star className="w-4 h-4" />
+          <span className="hidden sm:inline">AI Suggestions</span>
         </Button>
         <Button
           variant="outline"
@@ -213,6 +226,24 @@ export default function VisionBoardToolbar({
         >
           <Square className="w-4 h-4" />
           <span className="hidden sm:inline">Templates</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onIconsPicker}
+          className="flex items-center gap-2 text-orange-600 hover:text-orange-700"
+        >
+          <Palette className="w-4 h-4" />
+          <span className="hidden sm:inline">Elements</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onVirtualTour}
+          className="flex items-center gap-2 text-teal-600 hover:text-teal-700"
+        >
+          <Play className="w-4 h-4" />
+          <span className="hidden sm:inline">Tour</span>
         </Button>
       </div>
 
