@@ -255,6 +255,32 @@ export default function TherapeuticChat() {
     }
   };
 
+  // Handle finish conversation - manually save the session
+  const handleFinishConversation = async () => {
+    if (!activeSession) return;
+    
+    try {
+      toast({
+        title: "Conversation Saved",
+        description: "Your therapeutic session has been saved successfully.",
+      });
+      
+      // Refresh the threads list to show the saved session
+      queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+      
+      // Reset to new session state
+      setActiveSession(null);
+      setMessages([]);
+      startNewSession();
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Unable to save conversation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -564,7 +590,18 @@ export default function TherapeuticChat() {
                           ? 'bg-blue-500 text-white ml-auto'
                           : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
                       }`}>
-                        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                        <div className="whitespace-pre-wrap leading-relaxed">
+                          {message.type === 'ai' ? (
+                            <div className="space-y-3">
+                              {/* Display AI response in natural, humanized format */}
+                              <div className="text-gray-800 dark:text-gray-200 leading-7">
+                                {message.content}
+                              </div>
+                            </div>
+                          ) : (
+                            <p>{message.content}</p>
+                          )}
+                        </div>
                       </div>
                       
                       <div className={`flex items-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400 ${
@@ -617,6 +654,15 @@ export default function TherapeuticChat() {
                           >
                             <Settings className="h-3 w-3 mr-1" />
                             Customize
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                            onClick={() => handleFinishConversation()}
+                            disabled={!activeSession}
+                          >
+                            Finish Entry
                           </Button>
                         </div>
                       )}
