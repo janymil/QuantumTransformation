@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { db } from "./db";
+import { responseQualityTiering } from './response-quality-tiering';
 import { 
   journalingThreads, 
   threadExchanges, 
@@ -126,7 +127,7 @@ export class DeepJournalingEngine {
   }
 
   /**
-   * Generate deep therapeutic analysis and questioning
+   * Generate deep therapeutic analysis and questioning with quality tiering optimization
    */
   private async generateDeepAnalysisResponse(
     request: DeepJournalingRequest, 
@@ -143,34 +144,90 @@ export class DeepJournalingEngine {
     const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext);
     const analysisPrompt = this.buildAnalysisPrompt(request.userInput, request.actionType);
 
-    const messages = [
-      { role: "system" as const, content: systemPrompt },
-      { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
-    ];
+    try {
+      // Apply quality tiering optimization for deep journaling
+      const qualityOptimization = await responseQualityTiering.optimizeWithQualityTiering(
+        request.userInput,
+        'deep-journaling', // discipline ID for deep journaling
+        request.userId
+      );
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages,
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 2000
-    });
+      const selectedModel = qualityOptimization.recommendedModel;
+      
+      const messages = [
+        { role: "system" as const, content: systemPrompt },
+        { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
+      ];
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    const tokenCount = response.usage?.total_tokens || 0;
-    const cost = this.calculateCost(tokenCount, 'gpt-4o');
+      const response = await openai.chat.completions.create({
+        model: selectedModel === 'gpt-4o-mini' ? 'gpt-4o-mini' : 'gpt-4o',
+        messages,
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: selectedModel === 'gpt-4o-mini' ? 1500 : 2000
+      });
 
-    return {
-      analysis: result.analysis || {},
-      question: result.question || "What would you like to explore further?",
-      patternInsights: result.patternInsights || {},
-      emotionalAssessment: result.emotionalAssessment || {},
-      emotionalState: result.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
-      suggestions: result.suggestions || [],
-      tokenCount,
-      cost,
-      remainingRequests: undefined
-    };
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      const tokenCount = response.usage?.total_tokens || 0;
+      const cost = this.calculateCost(tokenCount, selectedModel === 'gpt-4o-mini' ? 'gpt-4o-mini' : 'gpt-4o');
+
+      // Assess response quality for learning
+      const qualityMetrics = await responseQualityTiering.assessResponseQuality(
+        request.userInput,
+        result.analysis?.professionalAnalysis || '',
+        'deep-journaling',
+        selectedModel
+      );
+
+      return {
+        analysis: result.analysis || {},
+        question: result.question || "What would you like to explore further?",
+        patternInsights: result.patternInsights || {},
+        emotionalAssessment: result.emotionalAssessment || {},
+        emotionalState: result.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
+        suggestions: result.suggestions || [],
+        tokenCount,
+        cost,
+        remainingRequests: undefined,
+        qualityTier: qualityOptimization.recommendedTier.tier,
+        qualityConfidence: qualityOptimization.qualityConfidence,
+        qualityScore: qualityMetrics.overallQuality,
+        additionalSavings: qualityOptimization.expectedSavings
+      };
+      
+    } catch (error) {
+      console.error('Quality tiering error in deep journaling:', error);
+      
+      // Fallback to standard approach
+      const messages = [
+        { role: "system" as const, content: systemPrompt },
+        { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
+      ];
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages,
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      const tokenCount = response.usage?.total_tokens || 0;
+      const cost = this.calculateCost(tokenCount, 'gpt-4o');
+
+      return {
+        analysis: result.analysis || {},
+        question: result.question || "What would you like to explore further?",
+        patternInsights: result.patternInsights || {},
+        emotionalAssessment: result.emotionalAssessment || {},
+        emotionalState: result.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
+        suggestions: result.suggestions || [],
+        tokenCount,
+        cost,
+        remainingRequests: undefined
+      };
+    }
   }
 
   /**

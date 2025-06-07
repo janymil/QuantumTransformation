@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import Anthropic from '@anthropic-ai/sdk';
+import { responseQualityTiering } from '../response-quality-tiering';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -11,20 +12,30 @@ interface ModelResponse {
   tokenCount: number;
   cost: number;
   efficiency: number;
+  qualityTier?: string;
+  qualityConfidence?: number;
+  additionalSavings?: number;
 }
 
 export class IntelligentModelRouter {
   
   /**
-   * Route discipline requests to optimal AI model
+   * Route discipline requests to optimal AI model with quality tiering
    */
   async routeDisciplineRequest(
     disciplineId: string,
     userInput: string,
     systemPrompt: string,
-    complexity: 'simple' | 'moderate' | 'complex'
+    complexity: 'simple' | 'moderate' | 'complex',
+    userId?: string
   ): Promise<ModelResponse> {
     
+    // Apply quality tiering optimization if userId is provided
+    if (userId) {
+      return await this.routeWithQualityTiering(disciplineId, userInput, systemPrompt, complexity, userId);
+    }
+    
+    // Fallback to original routing
     const optimalModel = this.selectOptimalModel(disciplineId, userInput, complexity);
     
     try {
@@ -37,6 +48,72 @@ export class IntelligentModelRouter {
       console.error('Model routing error:', error);
       // Fallback to GPT-4o Mini
       return await this.callOpenAI(systemPrompt, userInput, 'gpt-4o-mini');
+    }
+  }
+
+  /**
+   * Enhanced routing with quality tiering optimization
+   */
+  private async routeWithQualityTiering(
+    disciplineId: string,
+    userInput: string,
+    systemPrompt: string,
+    complexity: 'simple' | 'moderate' | 'complex',
+    userId: string
+  ): Promise<ModelResponse> {
+    
+    try {
+      // Get quality tiering recommendation
+      const qualityOptimization = await responseQualityTiering.optimizeWithQualityTiering(
+        userInput, 
+        disciplineId, 
+        userId
+      );
+      
+      const selectedModel = qualityOptimization.recommendedModel;
+      let response: ModelResponse;
+      
+      // Route to recommended model
+      if (selectedModel === 'claude-sonnet-4') {
+        response = await this.callClaude(systemPrompt, userInput, selectedModel);
+      } else if (selectedModel === 'gpt-4o') {
+        response = await this.callOpenAI(systemPrompt, userInput, selectedModel);
+      } else {
+        response = await this.callOpenAI(systemPrompt, userInput, 'gpt-4o-mini');
+      }
+      
+      // Add quality tiering metadata
+      response.qualityTier = qualityOptimization.recommendedTier.tier;
+      response.qualityConfidence = qualityOptimization.qualityConfidence;
+      response.additionalSavings = qualityOptimization.expectedSavings;
+      
+      // Assess response quality for learning
+      const qualityMetrics = await responseQualityTiering.assessResponseQuality(
+        userInput,
+        response.content,
+        disciplineId,
+        selectedModel
+      );
+      
+      // Update efficiency based on quality
+      response.efficiency = this.calculateQualityAdjustedEfficiency(
+        response.cost,
+        response.content.length,
+        qualityMetrics.overallQuality
+      );
+      
+      return response;
+      
+    } catch (error) {
+      console.error('Quality tiering error:', error);
+      // Fallback to standard routing
+      const optimalModel = this.selectOptimalModel(disciplineId, userInput, complexity);
+      
+      if (optimalModel.provider === 'anthropic') {
+        return await this.callClaude(systemPrompt, userInput, optimalModel.model);
+      } else {
+        return await this.callOpenAI(systemPrompt, userInput, optimalModel.model);
+      }
     }
   }
 
@@ -177,6 +254,19 @@ export class IntelligentModelRouter {
     if (costPerChar < 0.00001) return 70;
     if (costPerChar < 0.00005) return 50;
     return 30;
+  }
+
+  /**
+   * Calculate quality-adjusted efficiency rating
+   */
+  private calculateQualityAdjustedEfficiency(cost: number, contentLength: number, qualityScore: number): number {
+    const baseEfficiency = this.calculateEfficiency(cost, contentLength);
+    
+    // Adjust efficiency based on quality (quality score 1-10)
+    const qualityMultiplier = qualityScore / 10;
+    
+    // Quality-adjusted efficiency: balance cost efficiency with therapeutic quality
+    return Math.min(100, baseEfficiency * qualityMultiplier * 1.2);
   }
 
   /**
