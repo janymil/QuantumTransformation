@@ -739,9 +739,9 @@ export default function TherapeuticChat() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
-
       {/* Customization Modal */}
       <Dialog open={showCustomizationModal} onOpenChange={setShowCustomizationModal}>
         <DialogContent className="sm:max-w-md">
@@ -791,7 +791,6 @@ export default function TherapeuticChat() {
           </div>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
