@@ -4165,9 +4165,8 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
           .values({
             userId,
             title: message.slice(0, 50) + (message.length > 50 ? '...' : ''),
-            lastMessage: message,
-            sessionType: 'therapeutic_chat',
-            currentTopics: []
+            threadType: 'therapy_session',
+            currentTopic: 'therapeutic_chat'
           })
           .returning();
         
@@ -4178,9 +4177,9 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
       const previousExchanges = await db
         .select({
           userInput: threadExchanges.userInput,
-          therapeuticResponse: threadExchanges.therapeuticResponse,
-          followUpQuestion: threadExchanges.followUpQuestion,
-          emotionalInsight: threadExchanges.emotionalInsight
+          aiAnalysis: threadExchanges.aiAnalysis,
+          aiQuestion: threadExchanges.aiQuestion,
+          aiEmotionalAssessment: threadExchanges.aiEmotionalAssessment
         })
         .from(threadExchanges)
         .where(eq(threadExchanges.threadId, currentSessionId))
@@ -4190,7 +4189,7 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
       // Build conversation context
       const conversationHistory = previousExchanges.reverse().map(exchange => [
         { role: 'user', content: exchange.userInput },
-        { role: 'assistant', content: exchange.therapeuticResponse + (exchange.followUpQuestion ? `\n\n${exchange.followUpQuestion}` : '') }
+        { role: 'assistant', content: `${JSON.stringify(exchange.aiAnalysis)}\n\n${exchange.aiQuestion}` }
       ]).flat();
 
       // Generate therapeutic response using AI
@@ -4240,12 +4239,9 @@ Provide your response in this JSON format:
           threadId: currentSessionId,
           exchangeOrder: nextOrder,
           userInput: message,
-          therapeuticResponse: therapeuticData.response,
-          followUpQuestion: therapeuticData.followUpQuestion,
-          emotionalInsight: therapeuticData.emotionalInsight,
-          primaryEmotion: therapeuticData.emotionalInsight,
-          intensityScore: 5, // Default moderate intensity
-          responseQuality: 'high',
+          aiAnalysis: therapeuticData.response,
+          aiQuestion: therapeuticData.followUpQuestion || "How does this make you feel?",
+          aiEmotionalAssessment: { insight: therapeuticData.emotionalInsight },
           processingTime: 2000
         })
         .returning();
