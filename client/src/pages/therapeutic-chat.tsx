@@ -545,7 +545,7 @@ export default function TherapeuticChat() {
         {/* Messages Area */}
         <ScrollArea className="flex-1 p-6">
           <div className="space-y-6 max-w-4xl mx-auto">
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <div key={message.id} className={`flex group ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-2xl ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
                   <div className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
