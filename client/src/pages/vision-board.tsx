@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import EnhancedVisionBoard from "@/components/vision-board/enhanced-vision-board";
+import ModularVisionBoard from "@/components/vision-board/modular-vision-board";
 import { Palette, Star, Target, Sparkles } from "lucide-react";
 
 export default function VisionBoardPage() {
@@ -67,7 +67,7 @@ export default function VisionBoardPage() {
         </div>
 
         {/* Enhanced Vision Board Component */}
-        <EnhancedVisionBoard />
+        <ModularVisionBoard />
 
         {/* Tips Section */}
         <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800">
