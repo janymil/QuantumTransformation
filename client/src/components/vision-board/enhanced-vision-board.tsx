@@ -19,7 +19,7 @@ import {
   Wand2, Sparkles, Target, Heart, Trophy, Home, Plane, Users,
   Play, Pause, Undo, Redo, AlignCenter, AlignLeft, AlignRight,
   Bold, Italic, Underline, PaintBucket, Crop, FlipHorizontal,
-  FlipVertical, CornerUpRight, MousePointer, Hand, Square
+  FlipVertical, CornerUpRight, MousePointer, Hand, Square, Lightbulb
 } from "lucide-react";
 
 interface VisionBoardItem {
@@ -1023,9 +1023,139 @@ export default function EnhancedVisionBoard() {
           </CardHeader>
         </Card>
 
-        <div className="grid grid-cols-12 gap-4 h-[calc(100vh-200px)]">
-          {/* Left Sidebar - Tools */}
-          <Card className="col-span-2 shadow-lg border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-200px)] lg:h-[calc(100vh-200px)]">
+          {/* Mobile Tools Bar */}
+          <div className="lg:hidden mb-4">
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-3">
+                <Tabs defaultValue="tools" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-3">
+                    <TabsTrigger value="tools" className="text-xs">Tools</TabsTrigger>
+                    <TabsTrigger value="elements" className="text-xs">Add</TabsTrigger>
+                    <TabsTrigger value="templates" className="text-xs">AI</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Mobile Tools Content - Horizontal Layout */}
+                  <TabsContent value="tools" className="mt-0">
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      <Button
+                        variant={activeTool === 'select' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setActiveTool('select')}
+                        className="h-8 text-xs flex-shrink-0"
+                      >
+                        <MousePointer className="w-3 h-3 mr-1" />
+                        Select
+                      </Button>
+                      <Button
+                        variant={activeTool === 'hand' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setActiveTool('hand')}
+                        className="h-8 text-xs flex-shrink-0"
+                      >
+                        <Hand className="w-3 h-3 mr-1" />
+                        Pan
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={undo}
+                        disabled={historyIndex <= 0}
+                        className="h-8 text-xs flex-shrink-0"
+                      >
+                        <Undo className="w-3 h-3 mr-1" />
+                        Undo
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={redo}
+                        disabled={historyIndex >= history.length - 1}
+                        className="h-8 text-xs flex-shrink-0"
+                      >
+                        <Redo className="w-3 h-3 mr-1" />
+                        Redo
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="elements" className="mt-0">
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      <Button
+                        onClick={() => setShowUploadDialog(true)}
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs flex-shrink-0"
+                      >
+                        <Upload className="w-3 h-3 mr-1" />
+                        Upload
+                      </Button>
+                      <Button
+                        onClick={captureScreen}
+                        disabled={isCapturingScreen}
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs flex-shrink-0"
+                      >
+                        {isCapturingScreen ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <Camera className="w-3 h-3 mr-1" />
+                        )}
+                        Capture
+                      </Button>
+                      <Button
+                        onClick={() => setShowAIDialog(true)}
+                        size="sm"
+                        className="h-8 text-xs flex-shrink-0 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      >
+                        <Wand2 className="w-3 h-3 mr-1" />
+                        AI Image
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="templates" className="mt-0">
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      <Button
+                        onClick={generateAIVisionBoard}
+                        disabled={isGeneratingBoard}
+                        size="sm"
+                        className="h-8 text-xs flex-shrink-0 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
+                      >
+                        {isGeneratingBoard ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-3 h-3 mr-1" />
+                        )}
+                        AI Board
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          getAISuggestions();
+                          setShowSuggestionsDialog(true);
+                        }}
+                        disabled={isGeneratingSuggestions || board.canvasData.items.length === 0}
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs flex-shrink-0"
+                      >
+                        {isGeneratingSuggestions ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-3 h-3 mr-1" />
+                        )}
+                        Suggestions
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Desktop Left Sidebar - Tools */}
+          <Card className="hidden lg:block lg:col-span-2 shadow-lg border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
             <CardContent className="p-4 h-full">
               <Tabs defaultValue="tools" className="h-full">
                 <TabsList className="grid w-full grid-cols-3 mb-4">
@@ -1223,18 +1353,21 @@ export default function EnhancedVisionBoard() {
                       </Button>
                       
                       <Button
-                        onClick={getAISuggestions}
+                        onClick={() => {
+                          generateAISuggestions();
+                          setShowSuggestionsDialog(true);
+                        }}
                         disabled={isGeneratingSuggestions || board.canvasData.items.length === 0}
                         size="sm"
                         variant="outline"
-                        className="w-full h-8 text-xs"
+                        className="w-full h-8 text-xs justify-start"
                       >
                         {isGeneratingSuggestions ? (
                           <Loader2 className="w-3 h-3 mr-2 animate-spin" />
                         ) : (
-                          <Wand2 className="w-3 h-3 mr-2" />
+                          <Lightbulb className="w-3 h-3 mr-2" />
                         )}
-                        Get Suggestions
+                        Get AI Suggestions
                       </Button>
                     </div>
                   </div>
