@@ -15,6 +15,7 @@ import SavedAffirmations from "@/pages/saved-affirmations";
 import AICoaching from "@/pages/ai-coaching";
 import AIConversationHistory from "@/pages/ai-conversation-history";
 import DeepJournaling from "@/pages/deep-journaling";
+import TherapeuticChat from "@/pages/therapeutic-chat";
 import AdminAnalytics from "@/pages/admin-analytics";
 import AdminUnlockDays from "@/pages/admin-unlock-days";
 import AiCouchOnboarding from "@/pages/ai-couch-onboarding";

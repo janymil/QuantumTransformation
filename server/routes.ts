@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory } from "@shared/schema";
+import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory, journalingThreads, threadExchanges } from "@shared/schema";
 import { aiInteractionHistory } from "@shared/ai-interaction-schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -20,6 +20,11 @@ import {
 } from "./ai-cost-control";
 import { costOptimizationEngine } from "./ai-cost-optimization";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 import { aiCouchEngine } from "./ai-couch-simple";
 import { db } from "./db";
 import { eq, desc, and, ilike, or, gte, count, avg, sum } from "drizzle-orm";
@@ -4063,6 +4068,208 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
         message: "Failed to process journaling request", 
         error: error instanceof Error ? error.message : 'Unknown error'
       });
+    }
+  });
+
+  // Therapeutic Chat Routes - Conversational Interface Like Mindsera
+  app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      const sessions = await db
+        .select({
+          id: journalingThreads.id,
+          title: journalingThreads.title,
+          lastMessage: journalingThreads.lastMessage,
+          createdAt: journalingThreads.createdAt,
+          emotionalJourney: journalingThreads.currentTopics
+        })
+        .from(journalingThreads)
+        .where(and(eq(journalingThreads.userId, userId), eq(journalingThreads.sessionType, 'therapeutic_chat')))
+        .orderBy(desc(journalingThreads.updatedAt))
+        .limit(20);
+
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching therapeutic chat sessions:", error);
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
+  app.get('/api/therapeutic-chat/sessions/:sessionId/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = parseInt(req.params.sessionId);
+      
+      // Verify session belongs to user
+      const session = await db
+        .select()
+        .from(journalingThreads)
+        .where(and(eq(journalingThreads.id, sessionId), eq(journalingThreads.userId, userId)))
+        .limit(1);
+
+      if (session.length === 0) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Get all exchanges for this session
+      const exchanges = await db
+        .select()
+        .from(threadExchanges)
+        .where(eq(threadExchanges.threadId, sessionId))
+        .orderBy(threadExchanges.exchangeOrder);
+
+      // Convert to message format
+      const messages = [];
+      for (const exchange of exchanges) {
+        // Add user message
+        messages.push({
+          id: `user-${exchange.id}`,
+          type: 'user',
+          content: exchange.userInput,
+          timestamp: exchange.createdAt
+        });
+
+        // Add AI response
+        messages.push({
+          id: `ai-${exchange.id}`,
+          type: 'ai',
+          content: exchange.therapeuticResponse + (exchange.followUpQuestion ? `\n\n${exchange.followUpQuestion}` : ''),
+          timestamp: exchange.createdAt,
+          emotionalTone: exchange.emotionalInsight
+        });
+      }
+
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching session messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post('/api/therapeutic-chat/message', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { sessionId, message, therapeuticMode, conversationStyle, focusArea } = req.body;
+
+      if (!message?.trim()) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      let currentSessionId = sessionId;
+
+      // Create new session if none provided
+      if (!currentSessionId) {
+        const [newSession] = await db
+          .insert(journalingThreads)
+          .values({
+            userId,
+            title: message.slice(0, 50) + (message.length > 50 ? '...' : ''),
+            lastMessage: message,
+            sessionType: 'therapeutic_chat',
+            currentTopics: []
+          })
+          .returning();
+        
+        currentSessionId = newSession.id;
+      }
+
+      // Get conversation context from previous exchanges
+      const previousExchanges = await db
+        .select({
+          userInput: threadExchanges.userInput,
+          therapeuticResponse: threadExchanges.therapeuticResponse,
+          followUpQuestion: threadExchanges.followUpQuestion,
+          emotionalInsight: threadExchanges.emotionalInsight
+        })
+        .from(threadExchanges)
+        .where(eq(threadExchanges.threadId, currentSessionId))
+        .orderBy(desc(threadExchanges.exchangeOrder))
+        .limit(5);
+
+      // Build conversation context
+      const conversationHistory = previousExchanges.reverse().map(exchange => [
+        { role: 'user', content: exchange.userInput },
+        { role: 'assistant', content: exchange.therapeuticResponse + (exchange.followUpQuestion ? `\n\n${exchange.followUpQuestion}` : '') }
+      ]).flat();
+
+      // Generate therapeutic response using AI
+      const therapeuticPrompt = `You are a professional therapeutic companion engaging in a flowing conversation. Your role is to:
+
+1. Respond with empathy and genuine understanding
+2. Provide thoughtful insights when appropriate  
+3. Ask meaningful follow-up questions to deepen the conversation
+4. Maintain a warm, supportive tone while being professionally helpful
+
+Therapeutic Mode: ${therapeuticMode}
+Conversation Style: ${conversationStyle}  
+Focus Area: ${focusArea}
+
+The user just shared: "${message}"
+
+Respond as a therapeutic companion would - with understanding, insight, and a thoughtful question that continues the conversation naturally. Keep your response conversational and engaging, not clinical.
+
+Provide your response in this JSON format:
+{
+  "response": "Your empathetic response with insights",
+  "followUpQuestion": "A thoughtful question to continue the conversation",
+  "emotionalInsight": "Brief emotional insight (1-3 words like 'exploring vulnerability' or 'processing change')"
+}`;
+
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: therapeuticPrompt },
+          ...conversationHistory,
+          { role: "user", content: message }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 800
+      });
+
+      const therapeuticData = JSON.parse(aiResponse.choices[0].message.content);
+
+      // Get next exchange order
+      const nextOrder = previousExchanges.length + 1;
+
+      // Save the exchange
+      const [newExchange] = await db
+        .insert(threadExchanges)
+        .values({
+          threadId: currentSessionId,
+          exchangeOrder: nextOrder,
+          userInput: message,
+          therapeuticResponse: therapeuticData.response,
+          followUpQuestion: therapeuticData.followUpQuestion,
+          emotionalInsight: therapeuticData.emotionalInsight,
+          primaryEmotion: therapeuticData.emotionalInsight,
+          intensityScore: 5, // Default moderate intensity
+          responseQuality: 'high',
+          processingTime: 2000
+        })
+        .returning();
+
+      // Update session last message
+      await db
+        .update(journalingThreads)
+        .set({
+          lastMessage: message,
+          updatedAt: new Date()
+        })
+        .where(eq(journalingThreads.id, currentSessionId));
+
+      res.json({
+        response: therapeuticData.response,
+        followUpQuestion: therapeuticData.followUpQuestion,
+        emotionalInsight: therapeuticData.emotionalInsight,
+        sessionId: currentSessionId,
+        messageId: `ai-${newExchange.id}`
+      });
+
+    } catch (error) {
+      console.error("Error processing therapeutic chat message:", error);
+      res.status(500).json({ message: "Failed to process message" });
     }
   });
 
