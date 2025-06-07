@@ -271,7 +271,27 @@ export const aiUsageTracking = pgTable("ai_usage_tracking", {
   index("ai_usage_tracking_challenge_idx").on(table.challengeType),
 ]);
 
-
+// Generated Images Gallery
+export const generatedImages = pgTable("generated_images", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  imageUrl: text("image_url").notNull(),
+  prompt: text("prompt").notNull(),
+  size: varchar("size").notNull(),
+  quality: varchar("quality").notNull(),
+  model: varchar("model").notNull(),
+  cost: decimal("cost", { precision: 6, scale: 4 }).notNull(),
+  generationType: varchar("generation_type").default("ai_generation"), // ai_generation, vision_board, wallpaper
+  tags: jsonb("tags").default([]),
+  isFavorited: boolean("is_favorited").default(false),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("generated_images_user_idx").on(table.userId),
+  index("generated_images_created_at_idx").on(table.createdAt),
+  index("generated_images_generation_type_idx").on(table.generationType),
+]);
 
 // Schema types
 export type UpsertUser = typeof users.$inferInsert;
@@ -508,6 +528,9 @@ export const insertVisionBoardTemplateSchema = createInsertSchema(visionBoardTem
 
 export type InsertVisionBoard = typeof visionBoards.$inferInsert;
 export type VisionBoard = typeof visionBoards.$inferSelect;
+
+export type InsertGeneratedImage = typeof generatedImages.$inferInsert;
+export type GeneratedImage = typeof generatedImages.$inferSelect;
 export type InsertVisionBoardItem = typeof visionBoardItems.$inferInsert;
 export type VisionBoardItem = typeof visionBoardItems.$inferSelect;
 

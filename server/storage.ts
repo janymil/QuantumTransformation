@@ -15,6 +15,7 @@ import {
   visionBoards,
   voiceClones,
   affirmationAudio,
+  generatedImages,
   type User,
   type UpsertUser,
   type UserProgress,
@@ -39,6 +40,8 @@ import {
   type InsertVoiceClone,
   type AffirmationAudio,
   type InsertAffirmationAudio,
+  type GeneratedImage,
+  type InsertGeneratedImage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, count } from "drizzle-orm";
@@ -933,6 +936,30 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.orderBy(desc(aiUsageTracking.createdAt));
+  }
+
+  // Generated images operations
+  async saveGeneratedImage(image: InsertGeneratedImage): Promise<GeneratedImage> {
+    const [saved] = await db
+      .insert(generatedImages)
+      .values(image)
+      .returning();
+    return saved;
+  }
+
+  async getUserGeneratedImages(userId: string): Promise<GeneratedImage[]> {
+    return await db
+      .select()
+      .from(generatedImages)
+      .where(eq(generatedImages.userId, userId))
+      .orderBy(desc(generatedImages.createdAt));
+  }
+
+  async deleteGeneratedImage(id: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(generatedImages)
+      .where(and(eq(generatedImages.id, id), eq(generatedImages.userId, userId)));
+    return result.rowCount > 0;
   }
 }
 
