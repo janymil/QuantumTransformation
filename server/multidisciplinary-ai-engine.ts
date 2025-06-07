@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { disciplineRegistry } from "./disciplines/discipline-registry";
 import { intelligentModelRouter } from './disciplines/intelligent-model-router';
 import { advancedCostOptimization } from './disciplines/advanced-cost-optimization';
+import { responseQualityTiering } from './response-quality-tiering';
 import { trackUsage } from './ai-cost-control';
 
 export interface MultidisciplinaryAnalysis {
@@ -137,12 +138,13 @@ Available therapeutic approaches: ${disciplineRegistry.getAllDisciplines().map(d
         return similarResponse;
       }
 
-      // Route to optimal model for analysis
+      // Route to optimal model for analysis with quality tiering
       const modelResponse = await intelligentModelRouter.routeDisciplineRequest(
         'therapeutic_analysis',
         userInput,
         prompt,
-        'complex'
+        'complex',
+        userId // Enable quality tiering optimization
       );
 
       // Track usage and costs
