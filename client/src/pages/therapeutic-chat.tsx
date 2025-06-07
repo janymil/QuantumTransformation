@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Mic, MicOff, Send, Settings, Heart, Brain, ChevronDown, Trash2, Plus } from "lucide-react";
+import { Mic, MicOff, Send, Settings, Heart, Brain, ChevronDown, Trash2, Plus, Target } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -221,12 +221,36 @@ export default function TherapeuticChat() {
     }
   }, [sessionMessages]);
 
+  // Voice recording state
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+
   // Voice recording functions
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        await processVoiceRecording(audioBlob);
+        
+        // Clean up
+        stream.getTracks().forEach(track => track.stop());
+        setAudioChunks([]);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
       setIsRecording(true);
-      // Voice recording implementation would go here
+      setAudioChunks(chunks);
     } catch (error) {
       toast({
         title: "Microphone Access",
@@ -237,8 +261,47 @@ export default function TherapeuticChat() {
   };
 
   const stopRecording = () => {
-    setIsRecording(false);
-    // Stop recording and process audio
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      setMediaRecorder(null);
+      setIsRecording(false);
+    }
+  };
+
+  // Process voice recording
+  const processVoiceRecording = async (audioBlob: Blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+      
+      // Send to transcription service (implement based on your backend)
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setCurrentMessage(result.text || '');
+      } else {
+        toast({
+          title: "Transcription Failed",
+          description: "Unable to transcribe audio. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Voice Processing Error",
+        description: "Unable to process voice input. Please try typing instead.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete message function
+  const deleteMessage = (messageId: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
   };
 
   return (
@@ -407,7 +470,7 @@ export default function TherapeuticChat() {
         <ScrollArea className="flex-1 p-6">
           <div className="space-y-6 max-w-4xl mx-auto">
             {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={message.id} className={`flex group ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-2xl ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
                   <div className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                     <Avatar className="mt-1">
@@ -437,6 +500,16 @@ export default function TherapeuticChat() {
                           <Badge variant="secondary" className="text-xs">
                             {message.emotionalTone}
                           </Badge>
+                        )}
+                        {message.type === 'ai' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteMessage(message.id)}
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -477,10 +550,12 @@ export default function TherapeuticChat() {
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
           <div className="max-w-4xl mx-auto">
             <div className="space-y-3">
-              {/* Therapeutic Action Buttons - Inline within chat */}
+              {/* Mindsera-style Therapeutic Actions */}
               {currentMessage.trim() && (
                 <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
                   <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Therapeutic Actions:</span>
+                  
+                  {/* Go Deeper - Main button */}
                   <Button
                     size="sm"
                     variant="outline"
@@ -488,116 +563,182 @@ export default function TherapeuticChat() {
                     className="h-7 px-3 text-xs bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
                     disabled={sendMessageMutation.isPending}
                   >
+                    <Brain className="h-3 w-3 mr-1" />
                     Go Deeper
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleSendMessage('new_direction')}
-                    className="h-7 px-3 text-xs bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
-                    disabled={sendMessageMutation.isPending}
-                  >
-                    New Direction
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleSendMessage('customize_response')}
-                    className="h-7 px-3 text-xs bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40"
-                    disabled={sendMessageMutation.isPending}
-                  >
-                    Customize Response
-                  </Button>
+
+                  {/* Dropdown for other actions */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900/40"
+                        disabled={sendMessageMutation.isPending}
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      <DropdownMenuItem onClick={() => handleSendMessage('new_direction')}>
+                        <Target className="h-3 w-3 mr-2" />
+                        New Direction
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSendMessage('customize_response')}>
+                        <Settings className="h-3 w-3 mr-2" />
+                        Customize Response
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )}
 
-              {/* Inline Customization Controls */}
-              <div className="flex items-center gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500 dark:text-gray-400">Mode:</span>
-                  <Select value={therapeuticMode} onValueChange={setTherapeuticMode}>
-                    <SelectTrigger className="h-7 w-28 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="empathetic">Empathetic</SelectItem>
-                      <SelectItem value="solution-focused">Solution-Focused</SelectItem>
-                      <SelectItem value="analytical">Analytical</SelectItem>
-                      <SelectItem value="challenging">Challenging</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500 dark:text-gray-400">Style:</span>
-                  <Select value={conversationStyle} onValueChange={setConversationStyle}>
-                    <SelectTrigger className="h-7 w-28 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="socratic">Socratic</SelectItem>
-                      <SelectItem value="cbt">CBT</SelectItem>
-                      <SelectItem value="humanistic">Humanistic</SelectItem>
-                      <SelectItem value="mindfulness">Mindfulness</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500 dark:text-gray-400">Focus:</span>
-                  <Select value={focusArea} onValueChange={setFocusArea}>
-                    <SelectTrigger className="h-7 w-32 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="anxiety">Anxiety</SelectItem>
-                      <SelectItem value="relationships">Relationships</SelectItem>
-                      <SelectItem value="self-worth">Self-Worth</SelectItem>
-                      <SelectItem value="life-transitions">Life Changes</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex items-end gap-3">
-                <div className="flex-1">
+              {/* Chat Input with Direct Editing */}
+              <div className="flex items-start gap-3">
+                <div className="flex-1 relative">
                   <Textarea
-                    ref={textareaRef}
                     value={currentMessage}
                     onChange={(e) => setCurrentMessage(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder="Share what's on your mind... I'm here to listen and understand."
-                    className="min-h-[60px] max-h-32 resize-none border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Write directly here... Press Enter to send, Shift+Enter for new line"
+                    className="min-h-[60px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400"
                     disabled={sendMessageMutation.isPending}
                   />
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={isRecording ? stopRecording : startRecording}
-                    className={isRecording ? "text-red-500 border-red-200" : ""}
-                  >
-                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  </Button>
                   
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!currentMessage.trim() || sendMessageMutation.isPending}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                  {/* Voice and Send buttons inside textarea */}
+                  <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
+                      disabled={sendMessageMutation.isPending}
+                    >
+                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSendMessage()}
+                      disabled={!currentMessage.trim() || sendMessageMutation.isPending}
+                      className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
+
+              {/* Voice recording indicator */}
+              {isRecording && (
+                <div className="flex items-center gap-2 text-sm text-red-500 animate-pulse">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  Recording... Click the microphone to stop
+                </div>
+              )}
+
+              {/* Simple mode indicator - keep only sidebar customization */}
+              <div className="flex items-center gap-3 text-xs opacity-60">
+                <span className="text-gray-500 dark:text-gray-400">
+                  Mode: {therapeuticMode} | Style: {conversationStyle} | Focus: {focusArea}
+                </span>
+              </div>
             </div>
-            
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-              Press Enter to send • Shift+Enter for new line • Your conversations are private and secure
-            </p>
           </div>
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <div className="w-80 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Session Settings</h3>
+          
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between">
+                Therapeutic Mode
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 mt-3">
+              <div>
+                <Label className="text-sm font-medium">Mode</Label>
+                <Select value={therapeuticMode} onValueChange={setTherapeuticMode}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="empathetic">Empathetic</SelectItem>
+                    <SelectItem value="solution-focused">Solution-Focused</SelectItem>
+                    <SelectItem value="analytical">Analytical</SelectItem>
+                    <SelectItem value="challenging">Challenging</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Style</Label>
+                <Select value={conversationStyle} onValueChange={setConversationStyle}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="socratic">Socratic</SelectItem>
+                    <SelectItem value="cbt">CBT</SelectItem>
+                    <SelectItem value="humanistic">Humanistic</SelectItem>
+                    <SelectItem value="mindfulness">Mindfulness</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Focus Area</Label>
+                <Select value={focusArea} onValueChange={setFocusArea}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="anxiety">Anxiety</SelectItem>
+                    <SelectItem value="relationships">Relationships</SelectItem>
+                    <SelectItem value="self-worth">Self-Worth</SelectItem>
+                    <SelectItem value="life-transitions">Life Changes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Conversation History</h4>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {threadSessions.map((session: ConversationSession) => (
+              <Button
+                key={session.id}
+                variant={currentSessionId === session.id ? "secondary" : "ghost"}
+                size="sm"
+                className="w-full justify-start text-left h-auto py-2 px-3"
+                onClick={() => setCurrentSessionId(session.id)}
+              >
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium truncate w-full">{session.title}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate w-full">{session.lastMessage}</span>
+                </div>
+              </Button>
+            ))}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full mt-3"
+            onClick={() => setCurrentSessionId(null)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Conversation
+          </Button>
         </div>
       </div>
     </div>
