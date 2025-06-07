@@ -3,6 +3,7 @@ import { deepJournalingEngine } from "./engine";
 import { voiceTranscriptionService } from "./voice-service";
 import { psychologicalAnalyzer } from "./psychological-analyzer";
 import { therapeuticFrameworks } from "./therapeutic-frameworks";
+import { costOptimizationService } from "./cost-optimization";
 import { isAuthenticated } from "../replitAuth";
 import multer from "multer";
 import { z } from "zod";

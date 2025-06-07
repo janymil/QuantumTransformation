@@ -498,6 +498,83 @@ export class DeepJournalingEngine {
       })
       .where(and(eq(journalingThreads.id, threadId), eq(journalingThreads.userId, userId)));
   }
+
+  /**
+   * Determine request complexity for optimal model routing
+   */
+  private determineComplexity(request: DeepJournalingRequest, thread: JournalingThread): 'simple' | 'moderate' | 'complex' {
+    let complexityScore = 0;
+    
+    // Input length complexity
+    if (request.userInput.length > 500) complexityScore += 2;
+    else if (request.userInput.length > 200) complexityScore += 1;
+    
+    // Action type complexity
+    if (request.actionType === 'go_deeper') complexityScore += 2;
+    else if (request.actionType === 'customize_response') complexityScore += 1;
+    
+    // Thread history complexity
+    if (thread.exchangeCount && thread.exchangeCount > 10) complexityScore += 2;
+    else if (thread.exchangeCount && thread.exchangeCount > 5) complexityScore += 1;
+    
+    // Emotional complexity indicators
+    const emotionalWords = ['trauma', 'anxiety', 'depression', 'grief', 'anger', 'fear', 'overwhelmed'];
+    const hasEmotionalComplexity = emotionalWords.some(word => 
+      request.userInput.toLowerCase().includes(word)
+    );
+    if (hasEmotionalComplexity) complexityScore += 2;
+    
+    // Customization complexity
+    if (request.customizations?.customInstructions) complexityScore += 1;
+    
+    if (complexityScore >= 5) return 'complex';
+    if (complexityScore >= 2) return 'moderate';
+    return 'simple';
+  }
+
+  /**
+   * Calculate efficiency rating for cost optimization insights
+   */
+  private calculateEfficiencyRating(aiResponse: any): number {
+    // Base efficiency on cost per meaningful output
+    const baseEfficiency = 0.8;
+    const costFactor = Math.max(0, 1 - (aiResponse.cost / 0.01)); // Penalty for high cost
+    const qualityFactor = aiResponse.analysis && aiResponse.question ? 1.2 : 0.8;
+    
+    return Math.min(1, baseEfficiency * costFactor * qualityFactor);
+  }
+
+  /**
+   * Get cost analysis and optimization recommendations
+   */
+  async getCostAnalysis(userId: string): Promise<any> {
+    try {
+      // Get recent exchanges for cost analysis
+      const recentExchanges = await db.select()
+        .from(threadExchanges)
+        .where(eq(threadExchanges.userId, userId))
+        .orderBy(desc(threadExchanges.createdAt))
+        .limit(50);
+
+      const costData = recentExchanges.map(exchange => ({
+        cost: exchange.cost || 0,
+        modelUsed: exchange.modelUsed || 'unknown',
+        provider: exchange.provider || 'openai',
+        tokenCount: exchange.tokenCount || 0,
+        createdAt: exchange.createdAt
+      }));
+
+      return intelligentModelRouter.getCostAnalysis(costData);
+    } catch (error) {
+      console.error('Error getting cost analysis:', error);
+      return {
+        totalCost: 0,
+        modelBreakdown: {},
+        averageCostPerInteraction: 0,
+        recommendations: []
+      };
+    }
+  }
 }
 
 export const deepJournalingEngine = new DeepJournalingEngine();
