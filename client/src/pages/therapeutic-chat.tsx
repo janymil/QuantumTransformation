@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb } from "lucide-react";
+import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings } from "lucide-react";
 
 // Import modular components
 import { MessageBubble } from "@/components/therapeutic-chat/MessageBubble";
@@ -38,6 +38,38 @@ export default function TherapeuticChat() {
     queryKey: ['/api/deep-journaling/threads'],
   });
 
+  // Delete thread mutation
+  const deleteThreadMutation = useMutation({
+    mutationFn: async (threadId: number) => {
+      const response = await fetch(`/api/deep-journaling/threads/${threadId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/deep-journaling/threads'] });
+      toast({
+        title: "Thread Deleted",
+        description: "The conversation thread has been removed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete thread",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData: { 
@@ -48,11 +80,19 @@ export default function TherapeuticChat() {
       responseLength?: string;
       wasVoiceInput?: boolean;
     }) => {
-      const response = await apiRequest('/api/deep-journaling/send-message', {
+      const response = await fetch('/api/deep-journaling/send-message', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(messageData),
       });
-      return response;
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: (data: TherapeuticResponse) => {
       const aiMessage: Message = {
@@ -299,7 +339,16 @@ export default function TherapeuticChat() {
                         </span>
                       </div>
                     </div>
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteThreadMutation.mutate(thread.id);
+                      }}
+                      disabled={deleteThreadMutation.isPending}
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -354,14 +403,44 @@ export default function TherapeuticChat() {
                 {message.type === 'ai' && index === messages.length - 1 && (
                   <div className="flex justify-center">
                     <div className="w-full max-w-2xl">
-                      <ActionButtons
-                        onGoDeeper={() => handleGoDeeper(message.content)}
-                        onNewDirection={() => handleNewDirection(message.content)}
-                        onCustomize={() => setShowCustomizationModal(true)}
-                        onFinishConversation={handleFinishConversation}
-                        isLoading={sendMessageMutation.isPending}
-                        hasActiveSession={!!activeSession}
-                      />
+                      <div className="mt-3 flex items-center gap-2 justify-center">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs"
+                          onClick={() => handleGoDeeper(message.content)}
+                          disabled={sendMessageMutation.isPending}
+                        >
+                          Go Deeper
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-xs"
+                          onClick={() => handleNewDirection(message.content)}
+                          disabled={sendMessageMutation.isPending}
+                        >
+                          New Direction
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-xs"
+                          onClick={() => setShowCustomizationModal(true)}
+                        >
+                          <Settings className="h-3 w-3 mr-1" />
+                          Customize
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                          onClick={() => handleFinishConversation()}
+                          disabled={!activeSession}
+                        >
+                          Finish Entry
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
