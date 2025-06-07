@@ -245,6 +245,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // BunnyCDN upload routes
+  app.post('/api/bunnycdn/upload', isAuthenticated, async (req, res) => {
+    try {
+      const multer = require('multer');
+      const upload = multer({ storage: multer.memoryStorage() });
+      
+      upload.single('file')(req, res, async (err) => {
+        if (err) {
+          return res.status(400).json({ success: false, error: err.message });
+        }
+
+        if (!req.file) {
+          return res.status(400).json({ success: false, error: 'No file uploaded' });
+        }
+
+        const storageZone = process.env.BUNNYCDN_STORAGE_ZONE || 'vision-board-storage';
+        const accessKey = process.env.BUNNYCDN_ACCESS_KEY;
+        
+        if (!accessKey) {
+          return res.status(500).json({ success: false, error: 'BunnyCDN credentials not configured' });
+        }
+
+        try {
+          // Generate unique filename
+          const timestamp = Date.now();
+          const randomString = Math.random().toString(36).substring(2, 15);
+          const extension = req.file.originalname.split('.').pop() || 'jpg';
+          const filename = `vision-board-${timestamp}-${randomString}.${extension}`;
+
+          // Upload to BunnyCDN
+          const uploadUrl = `https://ny.storage.bunnycdn.com/${storageZone}/${filename}`;
+          
+          const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+              'AccessKey': accessKey,
+              'Content-Type': req.file.mimetype
+            },
+            body: req.file.buffer
+          });
+
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            throw new Error(`BunnyCDN upload failed: ${uploadResponse.status} ${errorText}`);
+          }
+
+          const cdnUrl = `https://${storageZone}.b-cdn.net/${filename}`;
+          
+          res.json({ 
+            success: true, 
+            url: cdnUrl,
+            filename: filename 
+          });
+
+        } catch (uploadError) {
+          console.error('BunnyCDN upload error:', uploadError);
+          res.status(500).json({ 
+            success: false, 
+            error: uploadError instanceof Error ? uploadError.message : 'Upload failed' 
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Upload route error:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+  });
+
+  app.delete('/api/bunnycdn/delete', isAuthenticated, async (req, res) => {
+    try {
+      const { filename } = req.body;
+      
+      if (!filename) {
+        return res.status(400).json({ success: false, error: 'Filename required' });
+      }
+
+      const storageZone = process.env.BUNNYCDN_STORAGE_ZONE || 'vision-board-storage';
+      const accessKey = process.env.BUNNYCDN_ACCESS_KEY;
+      
+      if (!accessKey) {
+        return res.status(500).json({ success: false, error: 'BunnyCDN credentials not configured' });
+      }
+
+      const deleteUrl = `https://ny.storage.bunnycdn.com/${storageZone}/${filename}`;
+      
+      const deleteResponse = await fetch(deleteUrl, {
+        method: 'DELETE',
+        headers: {
+          'AccessKey': accessKey
+        }
+      });
+
+      if (!deleteResponse.ok) {
+        const errorText = await deleteResponse.text();
+        console.error('BunnyCDN delete error:', deleteResponse.status, errorText);
+      }
+
+      res.json({ success: deleteResponse.ok });
+
+    } catch (error) {
+      console.error('Delete route error:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+  });
+
   // Register modular route handlers
   registerAuthRoutes(app);
   registerChallengeRoutes(app);

@@ -342,6 +342,7 @@ export default function ModularVisionBoard() {
         onPersonalizedSuggestions={() => setShowPersonalizedSuggestions(true)}
         onIconsPicker={() => setShowIconsPicker(true)}
         onBoardEditor={() => setShowBoardEditor(true)}
+        onImageAdd={addElement}
         elementCount={board.canvasData.items.length}
         isSaving={isSaving}
       />
