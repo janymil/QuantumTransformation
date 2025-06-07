@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings } from "lucide-react";
+import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain } from "lucide-react";
 
 // Import modular components
 import { MessageBubble } from "@/components/therapeutic-chat/MessageBubble";
@@ -480,8 +480,8 @@ export default function TherapeuticChat() {
         </div>
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-6 w-full">
+        <ScrollArea className="flex-1 p-6 bg-gradient-to-b from-blue-25 to-blue-50 dark:from-gray-800 dark:to-gray-900">
+          <div className="space-y-6 w-full max-w-4xl mx-auto">
             {messages.map((message, index) => (
               <div key={message.id}>
                 <MessageBubble 
