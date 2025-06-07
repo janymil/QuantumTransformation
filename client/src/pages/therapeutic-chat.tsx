@@ -191,18 +191,22 @@ export default function TherapeuticChat() {
     const deeperPrompt = `Based on my previous response: "${aiMessage}", please provide a much deeper, more insightful therapeutic exploration. Ask probing questions that help me uncover underlying patterns, beliefs, or emotions. Use techniques from depth psychology, CBT, or somatic therapy to guide me toward profound self-discovery.`;
     
     try {
-      const response = await apiRequest('/api/deep-journaling/process', {
+      const response = await fetch('/api/deep-journaling/process', {
         method: 'POST',
-        body: { userInput: deeperPrompt, actionType: 'go_deeper' }
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userInput: deeperPrompt, actionType: 'go_deeper' })
       });
 
-      if (response.response) {
+      if (response.ok) {
+        const data = await response.json();
         const newAiMessage: Message = {
           id: Date.now().toString(),
           type: 'ai',
-          content: response.response,
+          content: data.response,
           timestamp: new Date(),
-          emotionalTone: response.emotionalState?.primaryEmotion || 'insightful'
+          emotionalTone: data.emotionalState?.primaryEmotion || 'insightful'
         };
 
         setMessages(prev => [...prev, newAiMessage]);
@@ -222,18 +226,22 @@ export default function TherapeuticChat() {
     const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
     
     try {
-      const response = await apiRequest('/api/deep-journaling/process', {
+      const response = await fetch('/api/deep-journaling/process', {
         method: 'POST',
-        body: { userInput: newDirectionPrompt, actionType: 'new_direction' }
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userInput: newDirectionPrompt, actionType: 'new_direction' })
       });
 
-      if (response.response) {
+      if (response.ok) {
+        const data = await response.json();
         const newAiMessage: Message = {
           id: Date.now().toString(),
           type: 'ai',
-          content: response.response,
+          content: data.response,
           timestamp: new Date(),
-          emotionalTone: response.emotionalState?.primaryEmotion || 'curious'
+          emotionalTone: data.emotionalState?.primaryEmotion || 'curious'
         };
 
         setMessages(prev => [...prev, newAiMessage]);
@@ -760,9 +768,72 @@ export default function TherapeuticChat() {
           </div>
         </ScrollArea>
 
+        {/* Customization Modal */}
+        <Dialog open={showCustomizationModal} onOpenChange={setShowCustomizationModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Customize Approach</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="therapeutic-mode">Therapeutic Mode</Label>
+                <Select value={therapeuticMode} onValueChange={setTherapeuticMode}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="empathetic">Empathetic</SelectItem>
+                    <SelectItem value="analytical">Analytical</SelectItem>
+                    <SelectItem value="solution-focused">Solution-Focused</SelectItem>
+                    <SelectItem value="exploratory">Exploratory</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="conversation-style">Conversation Style</Label>
+                <Select value={conversationStyle} onValueChange={setConversationStyle}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="socratic">Socratic Questioning</SelectItem>
+                    <SelectItem value="directive">Directive</SelectItem>
+                    <SelectItem value="reflective">Reflective</SelectItem>
+                    <SelectItem value="collaborative">Collaborative</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="focus-area">Focus Area</Label>
+                <Select value={focusArea} onValueChange={setFocusArea}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select focus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General Exploration</SelectItem>
+                    <SelectItem value="emotions">Emotional Processing</SelectItem>
+                    <SelectItem value="patterns">Pattern Recognition</SelectItem>
+                    <SelectItem value="goals">Goal Setting</SelectItem>
+                    <SelectItem value="relationships">Relationships</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowCustomizationModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => setShowCustomizationModal(false)}>
+                  Apply Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
       </div>
-
 
     </div>
   );
