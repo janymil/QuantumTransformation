@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette, ExternalLink } from "lucide-react";
+import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette, ExternalLink, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
 import MoodThemeSwitcher from "@/components/mood-theme-switcher";
@@ -48,11 +48,8 @@ export default function Navbar() {
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
     { name: "Challenges", href: "/challenges", icon: Target },
-    { name: "AI Coach", href: "/ai-coaching", icon: Brain },
-    // { name: "AI Couch", href: "/ai-couch-dashboard", icon: Sparkles }, // Hidden for testing
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Progress", href: "/progress", icon: BarChart3 },
-    { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
   ];
 
   const getUserInitials = (user: User | undefined | null) => {
@@ -114,16 +111,29 @@ export default function Navbar() {
               );
             })}
             
-            {/* Vision Board App - External Link */}
-            <button
-              onClick={handleVisionBoardClick}
-              disabled={isOpeningVisionBoard}
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
-            >
-              <Palette className="w-4 h-4" />
-              <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
-              <ExternalLink className="w-3 h-3" />
-            </button>
+            {/* Advanced Dropdown Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Advanced</span>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center">
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-coaching">
+                    <Brain className="mr-2 h-4 w-4" />
+                    <span>AI Coach</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleVisionBoardClick} disabled={isOpeningVisionBoard}>
+                  <Palette className="mr-2 h-4 w-4" />
+                  <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
+                  <ExternalLink className="ml-auto h-3 w-3" />
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Right Side */}
@@ -164,6 +174,12 @@ export default function Navbar() {
                   <Link href="/profile">
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/saved-affirmations">
+                    <Heart className="mr-2 h-4 w-4" />
+                    <span>Saved Affirmations</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
@@ -209,18 +225,28 @@ export default function Navbar() {
               );
             })}
             
-            {/* Vision Board App - Mobile External Link */}
-            <button
-              onClick={handleVisionBoardClick}
-              disabled={isOpeningVisionBoard}
-              className="flex flex-col items-center space-y-1 px-3 py-2 rounded-lg text-muted-foreground disabled:opacity-50"
-            >
-              <Palette className="w-5 h-5" />
-              <span className="text-xs font-medium flex items-center space-x-1">
-                <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
-                <ExternalLink className="w-2 h-2" />
-              </span>
-            </button>
+            {/* Advanced Dropdown Menu - Mobile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex flex-col items-center space-y-1 px-3 py-2 rounded-lg text-muted-foreground">
+                  <Sparkles className="w-5 h-5" />
+                  <span className="text-xs font-medium">Advanced</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center">
+                <DropdownMenuItem asChild>
+                  <Link href="/ai-coaching">
+                    <Brain className="mr-2 h-4 w-4" />
+                    <span>AI Coach</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleVisionBoardClick} disabled={isOpeningVisionBoard}>
+                  <Palette className="mr-2 h-4 w-4" />
+                  <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
+                  <ExternalLink className="ml-auto h-3 w-3" />
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
