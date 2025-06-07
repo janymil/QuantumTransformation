@@ -213,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         iss: 'quantum-challenges-app'
       };
 
-      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'your-secret-key');
+      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'quantum-challenges-vision-board-secret-2025');
       
       res.json({ 
         token, 
@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const token = authHeader.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'quantum-challenges-vision-board-secret-2025') as any;
       
       if (decoded.aud !== 'vision-board-app' || decoded.iss !== 'quantum-challenges-app') {
         return res.status(401).json({ error: 'Invalid token audience or issuer' });
