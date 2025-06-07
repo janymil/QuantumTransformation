@@ -672,12 +672,10 @@ export default function TherapeuticChat() {
                 </div>
               </div>
             ))}
-          </div>
-        </ScrollArea>
 
-        {/* Input Area - Fixed at bottom */}
-        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
-          <div className="max-w-2xl mx-auto">
+            {/* Input Area - Inside chat with consistent alignment */}
+            <div className="flex justify-center">
+              <div className="w-full max-w-2xl">
             {!sendMessageMutation.isPending && (
               <>
                 <div className="relative">
@@ -722,25 +720,23 @@ export default function TherapeuticChat() {
               </>
             )}
           
-          {sendMessageMutation.isPending && (
-            <div className="flex justify-center">
-              <div className="max-w-2xl">
-                <div className="flex items-start gap-3">
-                  <Avatar className="mt-1">
-                    <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400">
-                      <Brain className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-500"></div>
-                    <span className="text-sm">AI is thinking...</span>
-                  </div>
+            {sendMessageMutation.isPending && (
+              <div className="flex items-start gap-3">
+                <Avatar className="mt-1">
+                  <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400">
+                    <Brain className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-500"></div>
+                  <span className="text-sm">AI is thinking...</span>
                 </div>
               </div>
+            )}
+              </div>
             </div>
-          )}
           </div>
-        </div>
+        </ScrollArea>
       </div>
       {/* Customization Modal */}
       <Dialog open={showCustomizationModal} onOpenChange={setShowCustomizationModal}>
