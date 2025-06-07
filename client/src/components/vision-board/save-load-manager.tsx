@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, FolderOpen, Trash2, Eye, Lock, Unlock, Calendar } from "lucide-react";
+import { Loader2, Save, FolderOpen, Trash2, Eye, Lock, Unlock, Calendar, Edit3, Settings } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { VisionBoard } from "./vision-board-types";
+import BoardEditor from "./board-editor";
 
 interface SaveLoadManagerProps {
   isOpen: boolean;
@@ -35,6 +36,8 @@ export default function SaveLoadManager({
     isPublic: currentBoard.isPublic || false,
     tags: currentBoard.tags?.join(", ") || ""
   });
+  const [editingBoard, setEditingBoard] = useState<VisionBoard | null>(null);
+  const [showBoardEditor, setShowBoardEditor] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -178,6 +181,27 @@ export default function SaveLoadManager({
     if (confirm("Are you sure you want to delete this vision board? This action cannot be undone.")) {
       deleteBoardMutation.mutate(boardId);
     }
+  };
+
+  const handleEdit = (board: VisionBoard) => {
+    setEditingBoard(board);
+    setShowBoardEditor(true);
+  };
+
+  const handleBoardUpdated = (updatedBoard: VisionBoard) => {
+    setShowBoardEditor(false);
+    setEditingBoard(null);
+    queryClient.invalidateQueries({ queryKey: ['/api/vision-boards'] });
+    toast({
+      title: "Vision Board Updated",
+      description: `"${updatedBoard.title}" has been updated successfully`
+    });
+  };
+
+  const handleBoardDeleted = () => {
+    setShowBoardEditor(false);
+    setEditingBoard(null);
+    queryClient.invalidateQueries({ queryKey: ['/api/vision-boards'] });
   };
 
   const formatDate = (dateString: string) => {
@@ -388,6 +412,13 @@ export default function SaveLoadManager({
                             >
                               <Eye className="w-3 h-3 mr-2" />
                               Load
+                            </Button>
+                            <Button
+                              onClick={() => handleEdit(board)}
+                              size="sm"
+                              variant="outline"
+                            >
+                              <Edit3 className="w-3 h-3" />
                             </Button>
                             <Button
                               onClick={() => handleDelete(board.id)}
