@@ -276,11 +276,11 @@ Response format (JSON):
     const messages = [
       { role: "system", content: systemPrompt },
       { role: "user", content: `User's current writing: "${request.userInput}"\n\nGenerate a completely new direction for exploration that differs from typical therapeutic approaches.` }
-    ] as const;
+    ];
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: messages as any,
+      messages,
       response_format: { type: "json_object" },
       temperature: 0.8, // Higher temperature for creativity
       max_tokens: 1500
