@@ -571,25 +571,24 @@ export default function TherapeuticChat() {
         <ScrollArea className="flex-1 p-6">
           <div className="space-y-6 w-full">
             {messages.map((message, index) => (
-              <div key={message.id} className={`flex group ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`w-full ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
-                  <div className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <Avatar className="mt-1">
-                      <AvatarFallback className={
-                        message.type === 'user' 
-                          ? "bg-blue-500 text-white" 
-                          : "bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400"
-                      }>
-                        {message.type === 'user' ? 'Y' : <Brain className="h-4 w-4" />}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1">
-                      <div className={`p-4 rounded-2xl max-w-2xl ${
-                        message.type === 'user'
-                          ? 'bg-blue-500 text-white ml-auto'
-                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
-                      }`}>
+              <div key={message.id} className="w-full max-w-2xl mx-auto group">
+                <div className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <Avatar className="mt-1">
+                    <AvatarFallback className={
+                      message.type === 'user' 
+                        ? "bg-blue-500 text-white" 
+                        : "bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400"
+                    }>
+                      {message.type === 'user' ? 'Y' : <Brain className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1">
+                    <div className={`p-4 rounded-2xl w-full ${
+                      message.type === 'user'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                    }`}>
                         <div className="whitespace-pre-wrap leading-relaxed">
                           {message.type === 'ai' ? (
                             <div className="space-y-3">
@@ -624,102 +623,176 @@ export default function TherapeuticChat() {
                           </Button>
                         )}
                       </div>
+                    </div>
+                  
+                  {/* Go Deeper button with submenu for AI messages - only show after last AI message */}
+                  {message.type === 'ai' && index === messages.length - 1 && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => handleGoDeeper(message.content)}
+                        disabled={sendMessageMutation.isPending}
+                      >
+                        Go Deeper
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => handleNewDirection(message.content)}
+                        disabled={sendMessageMutation.isPending}
+                      >
+                        New Direction
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => setShowCustomizationModal(true)}
+                      >
+                        <Settings className="h-3 w-3 mr-1" />
+                        Customize
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                        onClick={() => handleFinishConversation()}
+                        disabled={!activeSession}
+                      >
+                        Finish Entry
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
 
-                      {/* Go Deeper button with submenu for AI messages - only show after last AI message */}
-                      {message.type === 'ai' && index === messages.length - 1 && (
-                        <div className="mt-3 flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs"
-                            onClick={() => handleGoDeeper(message.content)}
-                            disabled={sendMessageMutation.isPending}
-                          >
-                            Go Deeper
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-xs"
-                            onClick={() => handleNewDirection(message.content)}
-                            disabled={sendMessageMutation.isPending}
-                          >
-                            New Direction
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-xs"
-                            onClick={() => setShowCustomizationModal(true)}
-                          >
-                            <Settings className="h-3 w-3 mr-1" />
-                            Customize
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                            onClick={() => handleFinishConversation()}
-                            disabled={!activeSession}
-                          >
-                            Finish Entry
-                          </Button>
-                        </div>
-                      )}
+        {/* Input Area - Fixed at bottom */}
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+          <div className="max-w-2xl mx-auto">
+            {!sendMessageMutation.isPending && (
+              <div className="relative">
+                  <Textarea
+                    value={currentMessage}
+                    onChange={(e) => setCurrentMessage(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Write directly here... Press Enter to send, Shift+Enter for new line"
+                    className="min-h-[120px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400"
+                    disabled={sendMessageMutation.isPending}
+                  />
+                  
+                  {/* Voice and Send buttons inside textarea */}
+                  <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
+                      disabled={sendMessageMutation.isPending}
+                    >
+                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSendMessage()}
+                      disabled={!currentMessage.trim() || sendMessageMutation.isPending}
+                      className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
 
-                      {/* Input field positioned directly below AI responses - Mindsera style */}
-                      {message.type === 'ai' && messages.indexOf(message) === messages.length - 1 && (
-                        <div className="mt-4">
-                          <div className="relative">
-                            <Textarea
-                              value={currentMessage}
-                              onChange={(e) => setCurrentMessage(e.target.value)}
-                              onKeyDown={handleKeyPress}
-                              placeholder="Can you customize your response to be more"
-                              className="min-h-[80px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 bg-gray-50 dark:bg-gray-900 rounded-lg"
-                              disabled={sendMessageMutation.isPending}
-                            />
-                            
-                            {/* Voice and Send buttons inside textarea */}
-                            <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={isRecording ? stopRecording : startRecording}
-                                className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
-                                disabled={sendMessageMutation.isPending}
-                              >
-                                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleSendMessage()}
-                                disabled={!currentMessage.trim() || sendMessageMutation.isPending}
-                                className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
+                {/* Voice recording indicator */}
+                {isRecording && (
+                  <div className="flex items-center justify-center gap-2 mt-3 text-sm text-red-500 animate-pulse">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    Recording... Click the microphone to stop
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {sendMessageMutation.isPending && (
+              <div className="flex justify-center">
+                <div className="max-w-2xl">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="mt-1">
+                      <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400">
+                        <Brain className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-500"></div>
+                      <span className="text-sm">AI is thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-                          {/* Voice recording indicator */}
-                          {isRecording && (
-                            <div className="flex items-center gap-2 mt-2 text-sm text-red-500 animate-pulse">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                              Recording... Click the microphone to stop
-                            </div>
-                          )}
+        {/* Customization Modal */}
+        <Dialog open={showCustomizationModal} onOpenChange={setShowCustomizationModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Customize Response</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="conversation-style">Conversation Style</Label>
+                <Select value={conversationStyle} onValueChange={setConversationStyle}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="socratic">Socratic Questioning</SelectItem>
+                    <SelectItem value="directive">Directive</SelectItem>
+                    <SelectItem value="reflective">Reflective</SelectItem>
+                    <SelectItem value="collaborative">Collaborative</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="focus-area">Focus Area</Label>
+                <Select value={focusArea} onValueChange={setFocusArea}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select focus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General Exploration</SelectItem>
+                    <SelectItem value="emotions">Emotional Processing</SelectItem>
+                    <SelectItem value="patterns">Pattern Recognition</SelectItem>
+                    <SelectItem value="goals">Goal Setting</SelectItem>
+                    <SelectItem value="relationships">Relationships</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowCustomizationModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => setShowCustomizationModal(false)}>
+                  Apply Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-                          <div className="flex items-center gap-4 mt-3">
-                            <Button variant="outline" size="sm" className="text-xs">
-                              Refresh
-                            </Button>
-                            <Button variant="ghost" size="sm" className="text-xs text-gray-500">
-                              Finish entry
-                            </Button>
-                          </div>
-                        </div>
-                      )}
+      </div>
+
+    </div>
+  );
+}
                     </div>
                   </div>
                 </div>
