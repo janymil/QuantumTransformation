@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { disciplineRegistry } from "./disciplines/discipline-registry";
 import { intelligentModelRouter } from './disciplines/intelligent-model-router';
 import { advancedCostOptimization } from './disciplines/advanced-cost-optimization';
-import { unifiedAnalytics } from './unified-analytics';
+import { trackUsage } from './ai-cost-control';
 
 export interface MultidisciplinaryAnalysis {
   primaryNeeds: string[];
@@ -133,7 +133,7 @@ Available therapeutic approaches: ${disciplineRegistry.getAllDisciplines().map(d
       
       if (similarResponse && similarResponse.primaryNeeds) {
         // Return cached similar analysis with cost savings
-        await unifiedAnalytics.recordUsage(userId, 'multidisciplinary_analysis', 0.001); // Minimal cost for cache hit
+        await trackUsage(userId, 'multidisciplinary_analysis', userInput, JSON.stringify(similarResponse), 'cache', 0, '0.001'); // Minimal cost for cache hit
         return similarResponse;
       }
 
@@ -146,7 +146,7 @@ Available therapeutic approaches: ${disciplineRegistry.getAllDisciplines().map(d
       );
 
       // Track usage and costs
-      await unifiedAnalytics.recordUsage(userId, 'multidisciplinary_analysis', modelResponse.cost);
+      await trackUsage(userId, 'multidisciplinary_analysis', userInput, modelResponse.content, modelResponse.modelUsed, modelResponse.tokenCount, modelResponse.cost.toString());
       
       const analysis = JSON.parse(modelResponse.content);
       
@@ -223,7 +223,7 @@ Focus on seamless integration rather than separate approaches.
       const similarExpertise = await advancedCostOptimization.findSimilarResponse(userId, prompt);
       
       if (similarExpertise && similarExpertise.multidisciplinaryAssessment) {
-        await unifiedAnalytics.recordUsage(userId, 'multidisciplinary_expertise', 0.001);
+        await trackUsage(userId, 'multidisciplinary_expertise', userInput, JSON.stringify(similarExpertise), 'cache', 0, '0.001');
         return similarExpertise;
       }
 
@@ -235,7 +235,7 @@ Focus on seamless integration rather than separate approaches.
         'complex'
       );
 
-      await unifiedAnalytics.recordUsage(userId, 'multidisciplinary_expertise', modelResponse.cost);
+      await trackUsage(userId, 'multidisciplinary_expertise', userInput, modelResponse.content, modelResponse.modelUsed, modelResponse.tokenCount, modelResponse.cost.toString());
       
       const expertiseResponse = JSON.parse(modelResponse.content);
       
@@ -286,13 +286,17 @@ Create a warm, professional response that:
 Respond as the AI Coach directly, without JSON formatting.
       `;
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
-      });
+      // Route to optimal model for natural response generation
+      const modelResponse = await intelligentModelRouter.routeDisciplineRequest(
+        'natural_coaching_response',
+        userInput,
+        prompt,
+        'medium'
+      );
 
-      return response.content[0].type === 'text' ? response.content[0].text : 'I understand what you\'re going through. Let\'s work on this together.';
+      await trackUsage(userId, 'natural_coaching_response', userInput, modelResponse.content, modelResponse.modelUsed, modelResponse.tokenCount, modelResponse.cost.toString());
+
+      return modelResponse.content;
 
     } catch (error) {
       console.error('Error generating natural response:', error);
