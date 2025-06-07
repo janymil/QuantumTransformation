@@ -166,6 +166,12 @@ export default function VisionBoardToolbar({
               const formData = new FormData();
               formData.append('file', file);
               
+              // Show loading state
+              const loadingToast = document.createElement('div');
+              loadingToast.textContent = 'Uploading image...';
+              loadingToast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50';
+              document.body.appendChild(loadingToast);
+
               fetch('/api/bunnycdn/upload', {
                 method: 'POST',
                 credentials: 'include',
@@ -173,6 +179,8 @@ export default function VisionBoardToolbar({
               })
               .then(response => response.json())
               .then(result => {
+                document.body.removeChild(loadingToast);
+                
                 if (result.success) {
                   const newImageElement = {
                     id: `image-${Date.now()}`,
@@ -187,12 +195,43 @@ export default function VisionBoardToolbar({
                     zIndex: 1
                   };
                   onImageAdd(newImageElement);
+                  
+                  // Success feedback
+                  const successToast = document.createElement('div');
+                  successToast.textContent = 'Image uploaded successfully!';
+                  successToast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+                  document.body.appendChild(successToast);
+                  setTimeout(() => {
+                    if (document.body.contains(successToast)) {
+                      document.body.removeChild(successToast);
+                    }
+                  }, 3000);
                 } else {
-                  console.error('Image upload failed:', result.error);
+                  // Error feedback
+                  const errorToast = document.createElement('div');
+                  errorToast.textContent = `Upload failed: ${result.error || 'Unknown error'}`;
+                  errorToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
+                  document.body.appendChild(errorToast);
+                  setTimeout(() => {
+                    if (document.body.contains(errorToast)) {
+                      document.body.removeChild(errorToast);
+                    }
+                  }, 5000);
                 }
               })
               .catch(error => {
-                console.error('Image upload error:', error);
+                document.body.removeChild(loadingToast);
+                
+                // Network error feedback
+                const errorToast = document.createElement('div');
+                errorToast.textContent = 'Network error. Please check your connection.';
+                errorToast.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50';
+                document.body.appendChild(errorToast);
+                setTimeout(() => {
+                  if (document.body.contains(errorToast)) {
+                    document.body.removeChild(errorToast);
+                  }
+                }, 5000);
               });
             }
           }}

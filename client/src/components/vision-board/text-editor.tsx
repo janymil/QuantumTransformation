@@ -123,14 +123,26 @@ interface PopupTextEditorProps {
 }
 
 export function PopupTextEditor({ item, onUpdate, onClose, isOpen }: PopupTextEditorProps) {
-  const [content, setContent] = useState(item.content);
-  const [fontSize, setFontSize] = useState(item.fontSize || 16);
-  const [color, setColor] = useState(item.color || '#000000');
-  const [fontWeight, setFontWeight] = useState(item.fontWeight || 'normal');
-  const [textAlign, setTextAlign] = useState(item.textAlign || 'left');
-  const [fontFamily, setFontFamily] = useState(item.fontFamily || 'Arial');
+  const [content, setContent] = useState(item?.content || '');
+  const [fontSize, setFontSize] = useState(item?.fontSize || 16);
+  const [color, setColor] = useState(item?.color || '#000000');
+  const [fontWeight, setFontWeight] = useState(item?.fontWeight || 'normal');
+  const [textAlign, setTextAlign] = useState(item?.textAlign || 'left');
+  const [fontFamily, setFontFamily] = useState(item?.fontFamily || 'Arial');
 
-  if (!isOpen) return null;
+  // Update state when item changes
+  useEffect(() => {
+    if (item) {
+      setContent(item.content || '');
+      setFontSize(item.fontSize || 16);
+      setColor(item.color || '#000000');
+      setFontWeight(item.fontWeight || 'normal');
+      setTextAlign(item.textAlign || 'left');
+      setFontFamily(item.fontFamily || 'Arial');
+    }
+  }, [item]);
+
+  if (!isOpen || !item) return null;
 
   const handleSave = () => {
     onUpdate({

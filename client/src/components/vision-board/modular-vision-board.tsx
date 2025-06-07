@@ -22,7 +22,7 @@ import BoardEditor from "./board-editor";
 // Import new modular functionality
 import { useDragHandler } from "./drag-handler";
 import { useResizeHandler, ResizeHandles } from "./resize-handler";
-import { useTextEditor, TextEditor, TextFormattingToolbar } from "./text-editor";
+import { useTextEditor, TextEditor, TextFormattingToolbar, PopupTextEditor } from "./text-editor";
 import { ImageUpload, ImageDropZone } from "./image-upload";
 
 export default function ModularVisionBoard() {
@@ -113,6 +113,9 @@ export default function ModularVisionBoard() {
   });
 
   const textEditor = useTextEditor();
+  
+  // Popup text editor state
+  const [editingTextItem, setEditingTextItem] = useState<VisionBoardItem | null>(null);
 
   // Canvas interaction handlers
   const handleCanvasClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -413,13 +416,19 @@ export default function ModularVisionBoard() {
                 onClick={(e) => handleElementClick(item.id, e)}
               >
                 {item.type === 'text' && (
-                  <TextEditor
-                    item={item}
-                    isEditing={textEditor.editingText === item.id}
-                    onUpdate={(updates) => updateElement(item.id, updates)}
-                    onFinishEditing={textEditor.finishEditing}
-                    onStartEditing={() => textEditor.startEditing(item.id, item.content)}
-                  />
+                  <div
+                    className="w-full h-full flex items-center justify-center cursor-text p-2"
+                    style={{
+                      fontSize: item.fontSize || 16,
+                      fontFamily: item.fontFamily || 'Arial',
+                      fontWeight: item.fontWeight || 'normal',
+                      color: item.color || '#000000',
+                      textAlign: (item.textAlign as any) || 'left'
+                    }}
+                    onDoubleClick={() => setEditingTextItem(item)}
+                  >
+                    {item.content || 'Double-click to edit'}
+                  </div>
                 )}
 
                 {item.type === 'image' && (
@@ -449,14 +458,7 @@ export default function ModularVisionBoard() {
                   onRotate={resizeHandler.handleRotate}
                 />
 
-                {/* Text formatting toolbar for selected text elements */}
-                {selectedItem === item.id && item.type === 'text' && (
-                  <TextFormattingToolbar
-                    item={item}
-                    onUpdate={(updates) => updateElement(item.id, updates)}
-                    isVisible={true}
-                  />
-                )}
+                {/* Removed inline text formatting toolbar - now using popup editor */}
               </div>
             ))}
             </div>
@@ -591,6 +593,18 @@ export default function ModularVisionBoard() {
           setEditingBoard(null);
           setShowBoardEditor(false);
         }}
+      />
+
+      {/* Popup Text Editor */}
+      <PopupTextEditor
+        item={editingTextItem}
+        isOpen={!!editingTextItem}
+        onUpdate={(updates) => {
+          if (editingTextItem) {
+            updateElement(editingTextItem.id, updates);
+          }
+        }}
+        onClose={() => setEditingTextItem(null)}
       />
     </div>
   );
