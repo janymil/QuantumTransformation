@@ -3070,8 +3070,17 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
 
   app.post('/api/vision-boards', isAuthenticated, async (req: any, res) => {
     try {
+      console.log('Vision board save attempt - User object:', {
+        userExists: !!req.user,
+        userKeys: req.user ? Object.keys(req.user) : [],
+        claims: req.user?.claims,
+        isAuthenticated: req.isAuthenticated?.(),
+        sessionUser: req.session?.user
+      });
+      
       const userId = req.user?.claims?.sub || req.user?.id || req.session?.user?.id;
       if (!userId) {
+        console.log('No user ID found in request');
         return res.status(401).json({ message: "User not authenticated" });
       }
 
