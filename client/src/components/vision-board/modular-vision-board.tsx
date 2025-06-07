@@ -14,6 +14,10 @@ import ExportManager from "./export-manager";
 import MobileWallpaper from "./mobile-wallpaper";
 import ScreenCapture from "./screen-capture";
 import ElementEditor from "./element-editor";
+import VirtualTour from "./virtual-tour";
+import AIPersonalizedSuggestions from "./ai-personalized-suggestions";
+import IconsElementsPicker from "./icons-elements-picker";
+import BoardEditor from "./board-editor";
 
 export default function ModularVisionBoard() {
   const { toast } = useToast();
@@ -53,6 +57,16 @@ export default function ModularVisionBoard() {
     setShowMobileWallpaperDialog,
     showElementEditor,
     setShowElementEditor,
+    showVirtualTour,
+    setShowVirtualTour,
+    showPersonalizedSuggestions,
+    setShowPersonalizedSuggestions,
+    showIconsPicker,
+    setShowIconsPicker,
+    showBoardEditor,
+    setShowBoardEditor,
+    editingBoard,
+    setEditingBoard,
 
     // Working states
     isCapturingScreen,
@@ -300,6 +314,10 @@ export default function ModularVisionBoard() {
         onImageGenerate={() => setShowScreenCaptureDialog(true)}
         onScreenCapture={handleScreenCapture}
         onMobileWallpaper={() => setShowMobileWallpaperDialog(true)}
+        onVirtualTour={() => setShowVirtualTour(true)}
+        onPersonalizedSuggestions={() => setShowPersonalizedSuggestions(true)}
+        onIconsPicker={() => setShowIconsPicker(true)}
+        onBoardEditor={() => setShowBoardEditor(true)}
         elementCount={board.canvasData.items.length}
         isSaving={isSaving}
       />
@@ -473,6 +491,45 @@ export default function ModularVisionBoard() {
         selectedElement={getSelectedElement()}
         onElementUpdate={(element) => updateElement(element.id, element)}
         onElementDelete={deleteElement}
+      />
+
+      <VirtualTour
+        isOpen={showVirtualTour}
+        onClose={() => setShowVirtualTour(false)}
+        onStartCreating={() => {
+          setShowVirtualTour(false);
+          // Focus on canvas for creating
+        }}
+      />
+
+      <AIPersonalizedSuggestions
+        isOpen={showPersonalizedSuggestions}
+        onClose={() => setShowPersonalizedSuggestions(false)}
+        currentBoard={board}
+        onApplySuggestion={handleSuggestionApplied}
+      />
+
+      <IconsElementsPicker
+        isOpen={showIconsPicker}
+        onClose={() => setShowIconsPicker(false)}
+        onElementSelected={(element) => {
+          addElement(element);
+          setShowIconsPicker(false);
+        }}
+      />
+
+      <BoardEditor
+        isOpen={showBoardEditor}
+        onClose={() => setShowBoardEditor(false)}
+        board={editingBoard || board}
+        onBoardUpdate={(updatedBoard) => {
+          setBoard(updatedBoard);
+          setEditingBoard(null);
+          setShowBoardEditor(false);
+        }}
+        onStartEdit={(boardToEdit) => {
+          setEditingBoard(boardToEdit);
+        }}
       />
     </div>
   );

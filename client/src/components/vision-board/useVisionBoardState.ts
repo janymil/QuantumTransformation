@@ -36,6 +36,11 @@ export function useVisionBoardState() {
   const [showScreenCaptureDialog, setShowScreenCaptureDialog] = useState(false);
   const [showMobileWallpaperDialog, setShowMobileWallpaperDialog] = useState(false);
   const [showElementEditor, setShowElementEditor] = useState(false);
+  const [showVirtualTour, setShowVirtualTour] = useState(false);
+  const [showPersonalizedSuggestions, setShowPersonalizedSuggestions] = useState(false);
+  const [showIconsPicker, setShowIconsPicker] = useState(false);
+  const [showBoardEditor, setShowBoardEditor] = useState(false);
+  const [editingBoard, setEditingBoard] = useState<VisionBoard | null>(null);
 
   // Working states
   const [isCapturingScreen, setIsCapturingScreen] = useState(false);
@@ -157,6 +162,16 @@ export function useVisionBoardState() {
     setShowMobileWallpaperDialog,
     showElementEditor,
     setShowElementEditor,
+    showVirtualTour,
+    setShowVirtualTour,
+    showPersonalizedSuggestions,
+    setShowPersonalizedSuggestions,
+    showIconsPicker,
+    setShowIconsPicker,
+    showBoardEditor,
+    setShowBoardEditor,
+    editingBoard,
+    setEditingBoard,
 
     // Working states
     isCapturingScreen,

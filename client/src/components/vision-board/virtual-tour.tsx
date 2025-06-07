@@ -48,7 +48,7 @@ export default function VirtualTour({
       tips: [
         'Start with clear intentions about what you want to achieve',
         'Choose images and words that evoke strong emotions',
-        'Place your vision board where you'll see it daily',
+        'Place your vision board where you will see it daily',
         'Update it regularly as your goals evolve'
       ],
       category: 'basics'
