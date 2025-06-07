@@ -94,7 +94,7 @@ export class MultidisciplinaryAIEngine {
   /**
    * Analyze therapeutic needs from user input
    */
-  private async analyzeTherapeuticNeeds(userInput: string, profile: any): Promise<MultidisciplinaryAnalysis> {
+  private async analyzeTherapeuticNeeds(userId: string, userInput: string, profile: any): Promise<MultidisciplinaryAnalysis> {
     try {
       const prompt = `
 Analyze this user input for multidisciplinary therapeutic needs:
