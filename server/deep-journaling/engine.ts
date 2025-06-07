@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import { db } from "../db";
 import { 
   journalingThreads, 
@@ -13,8 +12,7 @@ import { eq, and, desc, count } from "drizzle-orm";
 import { DeepJournalingRequest, DeepJournalingResponse } from "./types";
 import { therapeuticFrameworks } from "./therapeutic-frameworks";
 import { psychologicalAnalyzer } from "./psychological-analyzer";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { intelligentModelRouter } from "./intelligent-model-router";
 
 export class DeepJournalingEngine {
   
@@ -117,27 +115,27 @@ export class DeepJournalingEngine {
       { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
     ];
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages,
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 2000
-    });
-
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    const tokenCount = response.usage?.total_tokens || 0;
-    const cost = this.calculateCost(tokenCount, 'gpt-4o');
+    // Determine complexity for optimal model routing
+    const complexity = this.determineComplexity(request, thread);
+    
+    const aiResponse = await intelligentModelRouter.routeTherapeuticRequest(
+      request,
+      systemPrompt,
+      `${contextPrompt}\n\n${analysisPrompt}`,
+      complexity
+    );
 
     return {
-      analysis: result.analysis || {},
-      question: result.question || "What would you like to explore further?",
-      patternInsights: result.patternInsights || {},
-      emotionalAssessment: result.emotionalAssessment || {},
-      emotionalState: result.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
-      suggestions: result.suggestions || [],
-      tokenCount,
-      cost,
+      analysis: aiResponse.analysis || {},
+      question: aiResponse.question || "What would you like to explore further?",
+      patternInsights: aiResponse.patternInsights || {},
+      emotionalAssessment: aiResponse.emotionalAssessment || {},
+      emotionalState: aiResponse.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
+      suggestions: aiResponse.suggestions || [],
+      tokenCount: aiResponse.tokenCount,
+      cost: aiResponse.cost,
+      modelUsed: aiResponse.modelUsed,
+      provider: aiResponse.provider,
       remainingRequests: undefined
     };
   }
@@ -158,27 +156,24 @@ export class DeepJournalingEngine {
       { role: "user" as const, content: `User's current writing: "${request.userInput}"\n\nGenerate a completely new direction for exploration that differs from typical therapeutic approaches.` }
     ];
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages,
-      response_format: { type: "json_object" },
-      temperature: 0.8, // Higher temperature for creativity
-      max_tokens: 1500
-    });
-
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    const tokenCount = response.usage?.total_tokens || 0;
-    const cost = this.calculateCost(tokenCount, 'gpt-4o');
+    const aiResponse = await intelligentModelRouter.routeTherapeuticRequest(
+      request,
+      systemPrompt,
+      `User's current writing: "${request.userInput}"\n\nGenerate a completely new direction for exploration that differs from typical therapeutic approaches.`,
+      'moderate'
+    );
 
     return {
-      analysis: result.analysis || {},
-      question: result.question || "What if we explored this from a completely different angle?",
-      patternInsights: result.patternInsights || {},
-      emotionalAssessment: result.emotionalAssessment || {},
-      emotionalState: result.emotionalState || { primaryEmotion: 'curious', intensity: 0.6, clarity: 0.7 },
-      suggestions: result.suggestions || [],
-      tokenCount,
-      cost,
+      analysis: aiResponse.analysis || {},
+      question: aiResponse.question || "What if we explored this from a completely different angle?",
+      patternInsights: aiResponse.patternInsights || {},
+      emotionalAssessment: aiResponse.emotionalAssessment || {},
+      emotionalState: aiResponse.emotionalState || { primaryEmotion: 'curious', intensity: 0.6, clarity: 0.7 },
+      suggestions: aiResponse.suggestions || [],
+      tokenCount: aiResponse.tokenCount,
+      cost: aiResponse.cost,
+      modelUsed: aiResponse.modelUsed,
+      provider: aiResponse.provider,
       remainingRequests: undefined
     };
   }
@@ -204,27 +199,24 @@ export class DeepJournalingEngine {
       { role: "user" as const, content: `Original user input: "${request.userInput}"\n\nPrevious AI response: "${lastExchange.aiQuestion}"\n\nGenerate a new response using the specified customizations.` }
     ];
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages,
-      response_format: { type: "json_object" },
-      temperature: 0.6,
-      max_tokens: 1500
-    });
-
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    const tokenCount = response.usage?.total_tokens || 0;
-    const cost = this.calculateCost(tokenCount, 'gpt-4o');
+    const aiResponse = await intelligentModelRouter.routeTherapeuticRequest(
+      request,
+      systemPrompt,
+      `Original user input: "${request.userInput}"\n\nPrevious AI response: "${lastExchange.aiQuestion}"\n\nGenerate a new response using the specified customizations.`,
+      'moderate'
+    );
 
     return {
-      analysis: result.analysis || {},
-      question: result.question || "How does this perspective change your understanding?",
-      patternInsights: result.patternInsights || {},
-      emotionalAssessment: result.emotionalAssessment || {},
-      emotionalState: result.emotionalState || { primaryEmotion: 'reflective', intensity: 0.5, clarity: 0.6 },
-      suggestions: [],
-      tokenCount,
-      cost,
+      analysis: aiResponse.analysis || {},
+      question: aiResponse.question || "How does this perspective change your understanding?",
+      patternInsights: aiResponse.patternInsights || {},
+      emotionalAssessment: aiResponse.emotionalAssessment || {},
+      emotionalState: aiResponse.emotionalState || { primaryEmotion: 'reflective', intensity: 0.5, clarity: 0.6 },
+      suggestions: aiResponse.suggestions || [],
+      tokenCount: aiResponse.tokenCount,
+      cost: aiResponse.cost,
+      modelUsed: aiResponse.modelUsed,
+      provider: aiResponse.provider,
       remainingRequests: undefined
     };
   }
