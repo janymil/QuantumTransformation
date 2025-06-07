@@ -56,13 +56,13 @@ export class MultidisciplinaryAIEngine {
       }
 
       // Analyze therapeutic needs
-      const analysis = await this.analyzeTherapeuticNeeds(userInput, profile);
+      const analysis = await this.analyzeTherapeuticNeeds(userId, userInput, profile);
 
       // Apply multidisciplinary expertise
-      const expertResponse = await this.applyMultidisciplinaryExpertise(userInput, analysis, profile);
+      const expertResponse = await this.applyMultidisciplinaryExpertise(userId, userInput, analysis, profile);
 
       // Generate natural coaching response
-      const naturalResponse = await this.generateNaturalCoachingResponse(userInput, expertResponse, profile);
+      const naturalResponse = await this.generateNaturalCoachingResponse(userId, userInput, expertResponse, profile);
 
       // Store session
       await this.storeSession(userId, userInput, naturalResponse, analysis, profile.id);
@@ -133,7 +133,7 @@ Available therapeutic approaches: ${disciplineRegistry.getAllDisciplines().map(d
       
       if (similarResponse && similarResponse.primaryNeeds) {
         // Return cached similar analysis with cost savings
-        await unifiedAnalytics.trackUsage(userId, 'multidisciplinary_analysis', 0.001); // Minimal cost for cache hit
+        await unifiedAnalytics.recordUsage(userId, 'multidisciplinary_analysis', 0.001); // Minimal cost for cache hit
         return similarResponse;
       }
 
@@ -146,7 +146,7 @@ Available therapeutic approaches: ${disciplineRegistry.getAllDisciplines().map(d
       );
 
       // Track usage and costs
-      await unifiedAnalytics.trackUsage(userId, 'multidisciplinary_analysis', modelResponse.cost);
+      await unifiedAnalytics.recordUsage(userId, 'multidisciplinary_analysis', modelResponse.cost);
       
       const analysis = JSON.parse(modelResponse.content);
       
@@ -170,6 +170,7 @@ Available therapeutic approaches: ${disciplineRegistry.getAllDisciplines().map(d
    * Apply integrated multidisciplinary therapeutic expertise
    */
   private async applyMultidisciplinaryExpertise(
+    userId: string,
     userInput: string,
     analysis: MultidisciplinaryAnalysis,
     profile: any
@@ -222,7 +223,7 @@ Focus on seamless integration rather than separate approaches.
       const similarExpertise = await advancedCostOptimization.findSimilarResponse(userId, prompt);
       
       if (similarExpertise && similarExpertise.multidisciplinaryAssessment) {
-        await unifiedAnalytics.trackUsage(userId, 'multidisciplinary_expertise', 0.001);
+        await unifiedAnalytics.recordUsage(userId, 'multidisciplinary_expertise', 0.001);
         return similarExpertise;
       }
 
@@ -234,7 +235,7 @@ Focus on seamless integration rather than separate approaches.
         'complex'
       );
 
-      await unifiedAnalytics.trackUsage(userId, 'multidisciplinary_expertise', modelResponse.cost);
+      await unifiedAnalytics.recordUsage(userId, 'multidisciplinary_expertise', modelResponse.cost);
       
       const expertiseResponse = JSON.parse(modelResponse.content);
       
@@ -257,6 +258,7 @@ Focus on seamless integration rather than separate approaches.
    * Generate natural coaching response that integrates therapeutic expertise seamlessly
    */
   private async generateNaturalCoachingResponse(
+    userId: string,
     userInput: string,
     expertResponse: Omit<MultidisciplinaryResponse, 'naturalResponse'>,
     profile: any
