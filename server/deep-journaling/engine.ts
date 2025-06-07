@@ -21,8 +21,8 @@ export class DeepJournalingEngine {
    * Main entry point for deep journaling interactions
    */
   async processJournalingRequest(request: DeepJournalingRequest): Promise<DeepJournalingResponse> {
-    // Check for cached user profile first
-    const cachedProfile = await advancedCostOptimization.getCachedUserProfile(request.userId);
+    // Temporarily disable all cost optimization to test AI quality
+    // const cachedProfile = await advancedCostOptimization.getCachedUserProfile(request.userId);
     
     // Temporarily disable caching for therapeutic chat to ensure response quality
     // const similarResponse = await advancedCostOptimization.findSimilarResponse(request.userId, request.userInput);

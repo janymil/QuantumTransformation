@@ -544,10 +544,10 @@ export default function TherapeuticChat() {
 
         {/* Messages Area */}
         <ScrollArea className="flex-1 p-6">
-          <div className="space-y-6 max-w-4xl mx-auto">
+          <div className="space-y-6 w-full">
             {messages.map((message, index) => (
               <div key={message.id} className={`flex group ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-2xl ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
+                <div className={`w-full ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
                   <div className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                     <Avatar className="mt-1">
                       <AvatarFallback className={
@@ -559,8 +559,8 @@ export default function TherapeuticChat() {
                       </AvatarFallback>
                     </Avatar>
                     
-                    <div className={`flex-1 ${message.type === 'user' ? 'text-right' : 'text-left'}`}>
-                      <div className={`inline-block p-4 rounded-2xl ${
+                    <div className="flex-1">
+                      <div className={`w-full p-4 rounded-2xl ${
                         message.type === 'user'
                           ? 'bg-blue-500 text-white'
                           : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
