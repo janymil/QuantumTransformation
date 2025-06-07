@@ -146,6 +146,9 @@ export default function VisionBoardToolbar({
             <span className="hidden sm:inline">{getToolLabel(tool)}</span>
           </Button>
         ))}
+        
+        {/* Image Upload Component */}
+        <ImageUpload onImageAdd={onImageAdd} />
       </div>
 
       <Separator orientation="vertical" className="h-6" />

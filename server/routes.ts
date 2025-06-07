@@ -248,10 +248,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // BunnyCDN upload routes
   app.post('/api/bunnycdn/upload', isAuthenticated, async (req, res) => {
     try {
-      const multer = require('multer');
-      const upload = multer({ storage: multer.memoryStorage() });
+      // Dynamic import of multer
+      const multer = await import('multer');
+      const upload = multer.default({ storage: multer.default.memoryStorage() });
       
-      upload.single('file')(req, res, async (err) => {
+      upload.single('file')(req, res, async (err: any) => {
         if (err) {
           return res.status(400).json({ success: false, error: err.message });
         }
