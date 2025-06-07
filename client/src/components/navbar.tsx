@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette } from "lucide-react";
+import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette, Wand2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
 import MoodThemeSwitcher from "@/components/mood-theme-switcher";
@@ -29,6 +29,7 @@ export default function Navbar() {
     { name: "Progress", href: "/progress", icon: BarChart3 },
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
     { name: "Vision Board", href: "/vision-board", icon: Palette },
+    { name: "Vision Transform", href: "http://localhost:3001", icon: Wand2, external: true },
   ];
 
   const getUserInitials = (user: User | undefined | null) => {
@@ -76,6 +77,20 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => {
               const isActive = location === item.href;
+              
+              if (item.external) {
+                return (
+                  <a key={item.name} href={item.href} target="_blank" rel="noopener noreferrer">
+                    <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                      'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}>
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.name}</span>
+                    </div>
+                  </a>
+                );
+              }
+              
               return (
                 <Link key={item.name} href={item.href}>
                   <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
@@ -160,6 +175,20 @@ export default function Navbar() {
           <div className="flex items-center justify-around py-2">
             {navigation.map((item) => {
               const isActive = location === item.href;
+              
+              if (item.external) {
+                return (
+                  <a key={item.name} href={item.href} target="_blank" rel="noopener noreferrer">
+                    <div className={`flex flex-col items-center space-y-1 px-3 py-2 rounded-lg cursor-pointer ${
+                      'text-muted-foreground'
+                    }`}>
+                      <item.icon className="w-5 h-5" />
+                      <span className="text-xs font-medium">{item.name}</span>
+                    </div>
+                  </a>
+                );
+              }
+              
               return (
                 <Link key={item.name} href={item.href}>
                   <div className={`flex flex-col items-center space-y-1 px-3 py-2 rounded-lg cursor-pointer ${
