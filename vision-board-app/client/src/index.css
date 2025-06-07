@@ -1,0 +1,309 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Futuristic Design System */
+:root {
+  /* Primary Colors - Quantum Energy */
+  --primary: 245 100% 95%; /* Light quantum blue */
+  --primary-foreground: 230 85% 15%;
+  --primary-glow: 245 100% 70%;
+  
+  /* Secondary Colors - Cosmic Purple */
+  --secondary: 270 95% 95%;
+  --secondary-foreground: 270 85% 15%;
+  
+  /* Accent Colors - Energy Green */
+  --accent: 150 100% 95%;
+  --accent-foreground: 150 85% 15%;
+  
+  /* Neural Network Grays */
+  --background: 220 15% 3%; /* Deep space background */
+  --surface: 220 15% 6%; /* Card surfaces */
+  --surface-elevated: 220 15% 9%; /* Elevated surfaces */
+  --foreground: 220 15% 98%; /* Primary text */
+  --muted: 220 15% 45%; /* Secondary text */
+  --muted-foreground: 220 15% 65%;
+  
+  /* Semantic Colors */
+  --border: 220 15% 15%;
+  --input: 220 15% 15%;
+  --ring: 245 100% 60%;
+  
+  /* Status Colors */
+  --success: 150 85% 50%;
+  --warning: 45 100% 60%;
+  --error: 0 85% 60%;
+  
+  /* Glow Effects */
+  --glow-primary: 0 0 20px hsl(var(--primary-glow));
+  --glow-accent: 0 0 15px hsl(var(--accent));
+  --glow-soft: 0 0 10px rgba(255, 255, 255, 0.1);
+  
+  /* Animation Durations */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Heading Font */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+}
+
+@layer components {
+  /* Futuristic Glass Effect */
+  .glass {
+    @apply bg-surface/50 backdrop-blur-xl border border-white/10;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--surface)) 0%,
+      hsl(var(--surface))/80% 100%
+    );
+  }
+  
+  /* Neural Network Grid Background */
+  .neural-grid {
+    background-image: 
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+    background-size: 40px 40px;
+    position: relative;
+  }
+  
+  .neural-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--background)) 0%,
+      hsl(var(--surface))/30% 50%,
+      hsl(var(--background)) 100%
+    );
+    pointer-events: none;
+  }
+  
+  /* Quantum Glow Button */
+  .btn-quantum {
+    @apply relative overflow-hidden rounded-xl px-8 py-4 font-medium transition-all duration-300;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 
+      0 0 20px hsl(var(--primary-glow))/30%,
+      0 4px 15px -3px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .btn-quantum::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  .btn-quantum:hover::before {
+    left: 100%;
+  }
+  
+  .btn-quantum:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 0 30px hsl(var(--primary-glow))/50%,
+      0 8px 25px -3px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  
+  /* Holographic Card */
+  .card-holographic {
+    @apply glass relative overflow-hidden rounded-2xl p-6;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--surface)) 0%,
+      hsl(var(--surface-elevated)) 50%,
+      hsl(var(--surface)) 100%
+    );
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 4px 15px -3px rgba(0, 0, 0, 0.3),
+      0 0 30px rgba(255, 255, 255, 0.02);
+  }
+  
+  .card-holographic::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  }
+  
+  .card-holographic:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 8px 30px -3px rgba(0, 0, 0, 0.4),
+      0 0 50px rgba(255, 255, 255, 0.04);
+  }
+  
+  /* Energy Progress Bar */
+  .progress-energy {
+    @apply relative h-2 overflow-hidden rounded-full bg-surface;
+  }
+  
+  .progress-energy::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, hsl(var(--accent)), hsl(var(--primary-glow)));
+    border-radius: inherit;
+    transition: width 0.5s ease-in-out;
+    box-shadow: 0 0 10px hsl(var(--accent))/50%;
+  }
+  
+  /* Floating Animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-10px) rotate(1deg); }
+    66% { transform: translateY(5px) rotate(-1deg); }
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  /* Pulse Glow */
+  @keyframes pulse-glow {
+    0%, 100% { 
+      box-shadow: 0 0 20px hsl(var(--primary-glow))/30%;
+    }
+    50% { 
+      box-shadow: 0 0 40px hsl(var(--primary-glow))/60%;
+    }
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  /* Quantum Particle Effect */
+  @keyframes quantum-drift {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    50% { transform: translate(20px, -20px) scale(1.2); opacity: 0.7; }
+    100% { transform: translate(40px, 0) scale(0.8); opacity: 0; }
+  }
+  
+  .quantum-particles::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: hsl(var(--primary-glow));
+    border-radius: 50%;
+    animation: quantum-drift 3s linear infinite;
+    box-shadow: 
+      0 0 6px hsl(var(--primary-glow)),
+      20px 30px 0 -2px hsl(var(--accent)),
+      40px -10px 0 -1px hsl(var(--primary-glow)),
+      60px 20px 0 -3px hsl(var(--accent));
+  }
+  
+  /* Focus States */
+  .focus-quantum:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+    box-shadow: 0 0 20px hsl(var(--primary-glow))/40%;
+  }
+  
+  /* Text Gradients */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary-glow)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-cosmic {
+    background: linear-gradient(135deg, hsl(var(--primary-glow)), hsl(var(--secondary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--surface));
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, hsl(var(--primary-glow)), hsl(var(--accent)));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, hsl(var(--accent)), hsl(var(--primary-glow)));
+}
+
+/* Selection */
+::selection {
+  background: hsl(var(--primary-glow))/30%;
+  color: hsl(var(--foreground));
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Loading States */
+.skeleton {
+  @apply bg-surface animate-pulse rounded;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--surface)) 25%,
+    hsl(var(--surface-elevated)) 50%,
+    hsl(var(--surface)) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
