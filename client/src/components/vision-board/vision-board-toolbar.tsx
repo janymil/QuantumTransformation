@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ImageUpload } from "./image-upload";
 import { 
   MousePointer, 
   Type, 
@@ -146,9 +145,6 @@ export default function VisionBoardToolbar({
             <span className="hidden sm:inline">{getToolLabel(tool)}</span>
           </Button>
         ))}
-        
-        {/* Image Upload Component */}
-        <ImageUpload onImageAdd={onImageAdd} />
       </div>
 
       <Separator orientation="vertical" className="h-6" />
