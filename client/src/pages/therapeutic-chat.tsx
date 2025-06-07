@@ -152,6 +152,7 @@ export default function TherapeuticChat() {
     if (!currentMessage.trim() || sendMessageMutation.isPending) return;
 
     const messageToSend = currentMessage;
+    setCurrentMessage(""); // Clear input immediately
     
     try {
       await sendMessageMutation.mutateAsync({
@@ -159,6 +160,12 @@ export default function TherapeuticChat() {
       });
     } catch (error) {
       console.error('Failed to send message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+      setCurrentMessage(messageToSend); // Restore message on error
     }
   };
 
@@ -312,73 +319,9 @@ export default function TherapeuticChat() {
   };
 
   // Voice recording functions
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-
-      recorder.ondataavailable = (event) => {
-        chunks.push(event.data);
-      };
-
-      recorder.onstop = () => {
-        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
-        // Here you would typically send the audio to your speech-to-text service
-        toast({
-          title: "Voice Recording Complete",
-          description: "Processing your voice message...",
-        });
-      };
-
-      recorder.start();
-      setMediaRecorder(recorder);
-      setIsRecording(true);
-
-      toast({
-        title: "Recording Started",
-        description: "Speak your message now. Click the microphone again to stop.",
-      });
-    } catch (error) {
-      toast({
-        title: "Recording Error",
-        description: "Unable to access microphone. Please check permissions.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder && isRecording) {
-      mediaRecorder.stop();
-      setIsRecording(false);
-      setMediaRecorder(null);
-    }
-  };
-
-  // Voice recording functions
   const handleStartRecording = async () => {
-    if (!isRecording) {
-      startRecording();
-    }
-  };
-
-  const handleStopRecording = () => {
-    if (isRecording && audioChunks.length === 0) {
-      stopRecording();
-      setAudioChunks([]);
-    }
-  };
-      setMessages([]);
-      queryClient.invalidateQueries({ queryKey: ['/api/deep-journaling/threads'] });
-    }
-  };
-
-  const deleteMessage = (messageId: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== messageId));
-  };
-
-  const startRecording = async () => {
+    if (isRecording) return;
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
@@ -391,11 +334,17 @@ export default function TherapeuticChat() {
       
       recorder.onstop = () => {
         stream.getTracks().forEach(track => track.stop());
+        // Process voice recording here if needed
       };
       
       setMediaRecorder(recorder);
       recorder.start();
       setIsRecording(true);
+      
+      toast({
+        title: "Recording Started",
+        description: "Speak your message now. Click the microphone again to stop.",
+      });
     } catch (error) {
       toast({
         title: "Recording Error",
@@ -405,13 +354,19 @@ export default function TherapeuticChat() {
     }
   };
 
-  const stopRecording = () => {
+  const handleStopRecording = () => {
     if (mediaRecorder && isRecording) {
       mediaRecorder.stop();
       setIsRecording(false);
       setMediaRecorder(null);
     }
   };
+
+  const deleteMessage = (messageId: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+  };
+
+
 
   const processVoiceRecording = async (audioBlob: Blob) => {
     // Voice processing would go here
