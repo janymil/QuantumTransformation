@@ -291,7 +291,7 @@ Respond as the AI Coach directly, without JSON formatting.
         'natural_coaching_response',
         userInput,
         prompt,
-        'medium'
+        'moderate'
       );
 
       await trackUsage(userId, 'natural_coaching_response', userInput, modelResponse.content, modelResponse.modelUsed, modelResponse.tokenCount, modelResponse.cost.toString());
