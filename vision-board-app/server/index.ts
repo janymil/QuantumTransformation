@@ -26,14 +26,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'Vision Board App is running', port: PORT });
 });
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
-  });
-}
+// Serve static files and React app
+app.use(express.static(path.join(__dirname, '../client')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/index.html'));
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎨 Vision Board App server running on port ${PORT}`);

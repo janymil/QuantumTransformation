@@ -29,7 +29,7 @@ export default function Navbar() {
     { name: "Progress", href: "/progress", icon: BarChart3 },
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
     { name: "Vision Board", href: "/vision-board", icon: Palette },
-    { name: "Vision Transform", href: "http://localhost:3001", icon: Wand2, external: true },
+    { name: "Vision Transform", href: "/vision-transform", icon: Wand2 },
   ];
 
   const getUserInitials = (user: User | undefined | null) => {
