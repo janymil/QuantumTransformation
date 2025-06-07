@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VisionBoardItem, AISuggestion } from "./vision-board-types";
 import { useVisionBoardState } from "./useVisionBoardState";
-import { Input } from "@/components/ui/input";
 
 // Import all modular components
 import VisionBoardToolbar from "./vision-board-toolbar";
@@ -20,15 +19,14 @@ import AIPersonalizedSuggestions from "./ai-personalized-suggestions";
 import IconsElementsPicker from "./icons-elements-picker";
 import BoardEditor from "./board-editor";
 
+// Import new modular functionality
+import { useDragHandler } from "./drag-handler";
+import { useResizeHandler, ResizeHandles } from "./resize-handler";
+import { useTextEditor, TextEditor, TextFormattingToolbar } from "./text-editor";
+import { ImageUpload, ImageDropZone } from "./image-upload";
+
 export default function ModularVisionBoard() {
   const { toast } = useToast();
-  
-  // Local state for drag, resize, and text editing
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [editingText, setEditingText] = useState<string | null>(null);
-  const [draggedElement, setDraggedElement] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Use the modular state management hook
   const {
@@ -97,6 +95,24 @@ export default function ModularVisionBoard() {
     deleteElement,
     getSelectedElement
   } = useVisionBoardState();
+
+  // Initialize modular functionality hooks
+  const dragHandler = useDragHandler({
+    items: board.canvasData.items,
+    selectedItem,
+    onUpdateElement: updateElement,
+    onSelectElement: setSelectedItem,
+    zoomLevel
+  });
+
+  const resizeHandler = useResizeHandler({
+    selectedItem,
+    items: board.canvasData.items,
+    onUpdateElement: updateElement,
+    zoomLevel
+  });
+
+  const textEditor = useTextEditor();
 
   // Canvas interaction handlers
   const handleCanvasClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -339,19 +355,25 @@ export default function ModularVisionBoard() {
             zoom: `${zoomLevel}%` 
           }}
         >
-          <div
-            ref={canvasRef}
-            className={`relative mx-auto my-8 shadow-lg border ${
-              board.canvasData.gridVisible ? 'bg-grid-pattern' : ''
-            }`}
-            style={{
-              width: board.canvasData.canvasWidth,
-              height: board.canvasData.canvasHeight,
-              backgroundColor: board.canvasData.backgroundColor,
-              cursor: activeTool === 'text' ? 'text' : activeTool === 'shape' ? 'crosshair' : 'default'
-            }}
-            onClick={handleCanvasClick}
+          <ImageDropZone
+            onImageAdd={addElement}
+            className="flex justify-center items-start py-8"
           >
+            <div
+              ref={canvasRef}
+              className={`relative shadow-lg border ${
+                board.canvasData.gridVisible ? 'bg-grid-pattern' : ''
+              }`}
+              style={{
+                width: board.canvasData.canvasWidth,
+                height: board.canvasData.canvasHeight,
+                backgroundColor: board.canvasData.backgroundColor,
+                cursor: activeTool === 'text' ? 'text' : activeTool === 'shape' ? 'crosshair' : 'default'
+              }}
+              onClick={handleCanvasClick}
+              onMouseMove={dragHandler.handleMouseMove}
+              onMouseUp={dragHandler.handleMouseUp}
+            >
             {/* Grid overlay */}
             {board.canvasData.gridVisible && (
               <div 
@@ -370,7 +392,7 @@ export default function ModularVisionBoard() {
             {board.canvasData.items.map((item) => (
               <div
                 key={item.id}
-                className={`absolute select-none cursor-pointer ${
+                className={`absolute select-none ${
                   selectedItem === item.id ? 'ring-2 ring-blue-500' : ''
                 } ${item.locked ? 'pointer-events-none' : ''}`}
                 style={{
@@ -386,22 +408,17 @@ export default function ModularVisionBoard() {
                   backgroundColor: item.backgroundColor || 'transparent',
                   boxShadow: item.shadow ? '0 4px 6px rgba(0, 0, 0, 0.1)' : 'none'
                 }}
+                onMouseDown={(e) => dragHandler.handleElementMouseDown(item.id, e)}
                 onClick={(e) => handleElementClick(item.id, e)}
-                onDoubleClick={() => handleElementDoubleClick(item.id)}
               >
                 {item.type === 'text' && (
-                  <div
-                    className="w-full h-full flex items-center justify-center overflow-hidden"
-                    style={{
-                      fontSize: item.fontSize || 16,
-                      fontFamily: item.fontFamily || 'Arial',
-                      fontWeight: item.fontWeight || 'normal',
-                      color: item.color || '#000000',
-                      textAlign: (item.textAlign as any) || 'left'
-                    }}
-                  >
-                    {item.content}
-                  </div>
+                  <TextEditor
+                    item={item}
+                    isEditing={textEditor.editingText === item.id}
+                    onUpdate={(updates) => updateElement(item.id, updates)}
+                    onFinishEditing={textEditor.finishEditing}
+                    onStartEditing={() => textEditor.startEditing(item.id, item.content)}
+                  />
                 )}
 
                 {item.type === 'image' && (
@@ -422,9 +439,27 @@ export default function ModularVisionBoard() {
                     }}
                   />
                 )}
+
+                {/* Resize handles for selected element */}
+                <ResizeHandles
+                  elementId={item.id}
+                  isSelected={selectedItem === item.id}
+                  onResizeStart={resizeHandler.handleResizeStart}
+                  onRotate={resizeHandler.handleRotate}
+                />
+
+                {/* Text formatting toolbar for selected text elements */}
+                {selectedItem === item.id && item.type === 'text' && (
+                  <TextFormattingToolbar
+                    item={item}
+                    onUpdate={(updates) => updateElement(item.id, updates)}
+                    isVisible={true}
+                  />
+                )}
               </div>
             ))}
-          </div>
+            </div>
+          </ImageDropZone>
         </div>
       </div>
 
