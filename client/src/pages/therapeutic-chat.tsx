@@ -80,12 +80,18 @@ export default function TherapeuticChat() {
       responseLength?: string;
       wasVoiceInput?: boolean;
     }) => {
-      const response = await fetch('/api/deep-journaling/send-message', {
+      const response = await fetch('/api/therapeutic-chat/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(messageData),
+        body: JSON.stringify({
+          message: messageData.message,
+          sessionId: messageData.threadId,
+          therapeuticMode: 'supportive',
+          conversationStyle: messageData.conversationStyle || 'compassionate',
+          focusArea: messageData.focusArea || 'general'
+        }),
       });
       
       if (!response.ok) {
