@@ -278,8 +278,8 @@ export default function TherapeuticChat() {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.wav');
       
-      // Send to transcription service (implement based on your backend)
-      const response = await fetch('/api/transcribe', {
+      // Send to transcription service
+      const response = await fetch('/api/deep-journaling/transcribe', {
         method: 'POST',
         body: formData,
       });
@@ -694,48 +694,7 @@ export default function TherapeuticChat() {
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
           <div className="max-w-4xl mx-auto">
             <div className="space-y-3">
-              {/* Mindsera-style Therapeutic Actions */}
-              {currentMessage.trim() && (
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Therapeutic Actions:</span>
-                  
-                  {/* Go Deeper - Main button */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleSendMessage('go_deeper')}
-                    className="h-7 px-3 text-xs bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
-                    disabled={sendMessageMutation.isPending}
-                  >
-                    <Brain className="h-3 w-3 mr-1" />
-                    Go Deeper
-                  </Button>
 
-                  {/* Dropdown for other actions */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900/40"
-                        disabled={sendMessageMutation.isPending}
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-48">
-                      <DropdownMenuItem onSelect={() => handleSendMessage('new_direction')}>
-                        <Target className="h-3 w-3 mr-2" />
-                        New Direction
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleSendMessage('customize_response')}>
-                        <Settings className="h-3 w-3 mr-2" />
-                        Customize Response
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
 
               {/* Chat Input with Direct Editing */}
               <div className="flex items-start gap-3">

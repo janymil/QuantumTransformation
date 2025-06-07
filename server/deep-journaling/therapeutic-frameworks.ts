@@ -181,6 +181,63 @@ export function selectOptimalFramework(
   return frameworks;
 }
 
+/**
+ * Build system prompt for therapeutic analysis
+ */
+export function buildTherapeuticSystemPrompt(
+  frameworks: TherapeuticFramework[],
+  userInput: string,
+  context: any
+): string {
+  const frameworkNames = frameworks.map(f => f.name).join(', ');
+  
+  return `You are a sophisticated AI therapeutic companion trained in multiple therapeutic frameworks including ${frameworkNames}.
+
+Your role is to:
+1. Provide empathetic, non-judgmental responses
+2. Ask insightful therapeutic questions
+3. Help users explore their thoughts and feelings
+4. Offer gentle guidance and perspective
+5. Maintain appropriate boundaries
+
+User's input: "${userInput}"
+
+Respond with warmth, understanding, and therapeutic insight. Include a thoughtful follow-up question to encourage deeper exploration.`;
+}
+
+/**
+ * Get system prompt for new direction responses
+ */
+export function getNewDirectionSystemPrompt(context: any): string {
+  return `You are a therapeutic companion helping the user explore their situation from a new perspective.
+
+Your role is to:
+1. Acknowledge what they've shared
+2. Offer a fresh angle or perspective
+3. Ask questions that open new avenues of exploration
+4. Help them see possibilities they might not have considered
+
+Respond with curiosity and gentle guidance to help them shift their perspective constructively.`;
+}
+
+/**
+ * Get system prompt for response customization
+ */
+export function getCustomizationSystemPrompt(
+  style: string,
+  mode: string,
+  focus: string
+): string {
+  return `You are a therapeutic companion adapting your response style based on user preferences.
+
+Current settings:
+- Style: ${style}
+- Mode: ${mode}  
+- Focus: ${focus}
+
+Adjust your response to match these preferences while maintaining therapeutic effectiveness and empathy.`;
+}
+
 export function generateTherapeuticQuestions(
   framework: TherapeuticFramework,
   userInput: string,

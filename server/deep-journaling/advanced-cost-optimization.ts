@@ -87,10 +87,7 @@ export class AdvancedCostOptimization {
     try {
       const recentExchanges = await db.select()
         .from(threadExchanges)
-        .where(and(
-          eq(threadExchanges.userId, userId),
-          gte(threadExchanges.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-        ))
+        .where(eq(threadExchanges.userId, userId))
         .orderBy(desc(threadExchanges.createdAt))
         .limit(20);
 
