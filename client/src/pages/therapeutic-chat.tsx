@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Mic, MicOff, Send, Settings, Heart, Brain } from "lucide-react";
+import { Mic, MicOff, Send, Settings, Heart, Brain, ChevronDown, Trash2, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -84,8 +85,7 @@ export default function TherapeuticChat() {
   // Send message mutation - now using deep journaling engine
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, actionType }: { message: string; actionType?: 'go_deeper' | 'new_direction' | 'customize_response' }) => {
-      return await apiRequest('POST', '/api/deep-journaling/process', {
-        threadId: activeSession,
+      const requestBody: any = {
         userInput: message.trim(),
         customizations: {
           mode: therapeuticMode === 'empathetic' ? 'therapeutic' : 
@@ -95,9 +95,19 @@ export default function TherapeuticChat() {
           perspective: conversationStyle === 'socratic' ? 'psychologist' :
                       conversationStyle === 'cbt' ? 'cbt_therapist' :
                       conversationStyle === 'humanistic' ? 'life_coach' : 'psychologist'
-        },
-        actionType
-      });
+        }
+      };
+
+      // Only include threadId if we have an active session
+      if (activeSession) {
+        requestBody.threadId = activeSession;
+      }
+
+      if (actionType) {
+        requestBody.actionType = actionType;
+      }
+
+      return await apiRequest('POST', '/api/deep-journaling/process', requestBody);
     },
     onSuccess: (response: any) => {
       // Add user message
