@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -9,6 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Bot, 
   Brain, 
@@ -27,7 +35,18 @@ import {
   Settings,
   Edit3,
   Save,
-  RotateCcw
+  RotateCcw,
+  Mic,
+  MicOff,
+  ArrowDown,
+  Shuffle,
+  Palette,
+  User,
+  Archive,
+  Plus,
+  Volume2,
+  Play,
+  Pause
 } from "lucide-react";
 
 interface AICoachingHubProps {
@@ -51,6 +70,8 @@ export default function AICoachingHub({
 }: AICoachingHubProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
   const [activeTab, setActiveTab] = useState(initialTab);
   const [question, setQuestion] = useState(prefilledQuestion);
   const [goals, setGoals] = useState("");
@@ -58,6 +79,21 @@ export default function AICoachingHub({
   const [mood, setMood] = useState(5);
   const [coachingResponse, setCoachingResponse] = useState<any>(null);
   const [explanationResponse, setExplanationResponse] = useState<any>(null);
+  
+  // Mindsera-like deep journaling features
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
+  const [selectedThreadId, setSelectedThreadId] = useState<number | null>(null);
+  const [freeFormInput, setFreeFormInput] = useState("");
+  
+  // Advanced customization settings
+  const [customizations, setCustomizations] = useState({
+    mode: "therapeutic" as "conversational" | "therapeutic" | "analytical",
+    tone: "supportive" as "supportive" | "challenging" | "neutral" | "empathetic", 
+    perspective: "psychologist" as "psychologist" | "life_coach" | "cbt_therapist" | "philosopher" | "stoic",
+    customInstructions: ""
+  });
 
   // Update question when prefilledQuestion changes
   useEffect(() => {
