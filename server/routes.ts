@@ -189,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication for Vision Board app
   app.post('/api/auth/generate-vision-token', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = (req.user as any)?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
@@ -254,10 +254,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get comprehensive user data
       const user = await storage.getUser(userId);
-      const journalEntries = await storage.getJournalEntries(userId);
+      const journalEntries = await storage.getAllJournalEntries(userId);
       const userProgress = await storage.getUserProgress(userId);
       const userProfile = await storage.getUserProfile(userId);
-      const affirmations = await storage.getUserAffirmations(userId);
+      const affirmations = await storage.getSavedPhrases(userId);
 
       res.json({
         user,

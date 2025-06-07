@@ -208,6 +208,19 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            
+            {/* Vision Board App - Mobile External Link */}
+            <button
+              onClick={handleVisionBoardClick}
+              disabled={isOpeningVisionBoard}
+              className="flex flex-col items-center space-y-1 px-3 py-2 rounded-lg text-muted-foreground disabled:opacity-50"
+            >
+              <Palette className="w-5 h-5" />
+              <span className="text-xs font-medium flex items-center space-x-1">
+                <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
+                <ExternalLink className="w-2 h-2" />
+              </span>
+            </button>
           </div>
         </div>
       </div>
