@@ -25,10 +25,11 @@ export default function Navbar() {
     { name: "Challenges", href: "/challenges", icon: Target },
     { name: "AI Coach", href: "/ai-coaching", icon: Brain },
     // { name: "AI Couch", href: "/ai-couch-dashboard", icon: Sparkles }, // Hidden for testing
+    { name: "Vision Board", href: "/vision-board", icon: Palette },
+    { name: "Vision App", href: "http://localhost:3001", icon: Wand2, external: true },
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Progress", href: "/progress", icon: BarChart3 },
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
-    { name: "Vision Board", href: "/vision-board", icon: Palette },
     { name: "Vision Transform", href: "/vision-transform", icon: Wand2 },
   ];
 
