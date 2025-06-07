@@ -114,6 +114,161 @@ interface TextFormattingToolbarProps {
   isVisible: boolean;
 }
 
+// Popup Text Editor Component
+interface PopupTextEditorProps {
+  item: VisionBoardItem;
+  onUpdate: (updates: Partial<VisionBoardItem>) => void;
+  onClose: () => void;
+  isOpen: boolean;
+}
+
+export function PopupTextEditor({ item, onUpdate, onClose, isOpen }: PopupTextEditorProps) {
+  const [content, setContent] = useState(item.content);
+  const [fontSize, setFontSize] = useState(item.fontSize || 16);
+  const [color, setColor] = useState(item.color || '#000000');
+  const [fontWeight, setFontWeight] = useState(item.fontWeight || 'normal');
+  const [textAlign, setTextAlign] = useState(item.textAlign || 'left');
+  const [fontFamily, setFontFamily] = useState(item.fontFamily || 'Arial');
+
+  if (!isOpen) return null;
+
+  const handleSave = () => {
+    onUpdate({
+      content,
+      fontSize,
+      color,
+      fontWeight,
+      textAlign,
+      fontFamily
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl p-6 min-w-96 max-w-lg">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Edit Text</h2>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClose}
+            className="h-8 w-8 p-0"
+          >
+            ×
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium">Text Content</Label>
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="min-h-20 mt-1"
+              placeholder="Enter your text..."
+              autoFocus
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium">Font Size</Label>
+              <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[12, 14, 16, 18, 20, 24, 28, 32, 36, 48].map(size => (
+                    <SelectItem key={size} value={size.toString()}>{size}px</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Font Family</Label>
+              <Select value={fontFamily} onValueChange={setFontFamily}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Arial">Arial</SelectItem>
+                  <SelectItem value="Helvetica">Helvetica</SelectItem>
+                  <SelectItem value="Times">Times</SelectItem>
+                  <SelectItem value="Georgia">Georgia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium">Font Weight</Label>
+              <Select value={fontWeight} onValueChange={setFontWeight}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="bold">Bold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Text Align</Label>
+              <Select value={textAlign} onValueChange={setTextAlign}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="center">Center</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div>
+            <Label className="text-sm font-medium">Text Color</Label>
+            <div className="flex items-center gap-3 mt-1">
+              <div 
+                className="w-10 h-10 rounded border-2 cursor-pointer hover:border-gray-400"
+                style={{ backgroundColor: color }}
+                onClick={() => document.getElementById('popup-color-picker')?.click()}
+              />
+              <Input
+                id="popup-color-picker"
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="sr-only"
+              />
+              <Input
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="flex-1"
+                placeholder="#000000"
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <Button onClick={handleSave} className="flex-1">
+              Save Changes
+            </Button>
+            <Button onClick={onClose} variant="outline" className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TextFormattingToolbar({ item, onUpdate, isVisible }: TextFormattingToolbarProps) {
   if (!isVisible) return null;
 

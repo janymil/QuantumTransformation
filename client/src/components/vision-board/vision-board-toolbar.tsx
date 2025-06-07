@@ -127,24 +127,76 @@ export default function VisionBoardToolbar({
     }
   };
 
-  const tools: Tool[] = ['select', 'text', 'image', 'shape', 'hand'];
+  // Only keep essential tools - remove select, shape, and hand (pan) as they have no function
+  const tools: Tool[] = ['text'];
 
   return (
     <div className="flex flex-wrap items-center gap-2 p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-      {/* Tools Section */}
+      
+      {/* Basic Content Tools */}
       <div className="flex items-center gap-1">
-        {tools.map((tool) => (
-          <Button
-            key={tool}
-            variant={activeTool === tool ? "default" : "outline"}
-            size="sm"
-            onClick={() => onToolChange(tool)}
-            className="flex items-center gap-2"
-          >
-            {getToolIcon(tool)}
-            <span className="hidden sm:inline">{getToolLabel(tool)}</span>
-          </Button>
-        ))}
+        <Button
+          variant={activeTool === 'text' ? "default" : "outline"}
+          size="sm"
+          onClick={() => onToolChange('text')}
+          className="flex items-center gap-2"
+        >
+          <Type className="w-4 h-4" />
+          <span className="hidden sm:inline">Text</span>
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => document.getElementById('image-upload-input')?.click()}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+        >
+          <Image className="w-4 h-4" />
+          <span className="hidden sm:inline">Image</span>
+        </Button>
+        
+        <input
+          id="image-upload-input"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const formData = new FormData();
+              formData.append('file', file);
+              
+              fetch('/api/bunnycdn/upload', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+              })
+              .then(response => response.json())
+              .then(result => {
+                if (result.success) {
+                  const newImageElement = {
+                    id: `image-${Date.now()}`,
+                    type: 'image' as const,
+                    content: result.url,
+                    x: 100,
+                    y: 100,
+                    width: 200,
+                    height: 150,
+                    rotation: 0,
+                    opacity: 1,
+                    zIndex: 1
+                  };
+                  onImageAdd(newImageElement);
+                } else {
+                  console.error('Image upload failed:', result.error);
+                }
+              })
+              .catch(error => {
+                console.error('Image upload error:', error);
+              });
+            }
+          }}
+        />
       </div>
 
       <Separator orientation="vertical" className="h-6" />
