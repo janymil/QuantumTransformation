@@ -449,6 +449,17 @@ export default function SaveLoadManager({
           </div>
         </div>
       </DialogContent>
+
+      {/* Board Editor Modal */}
+      {editingBoard && (
+        <BoardEditor
+          isOpen={showBoardEditor}
+          onClose={() => setShowBoardEditor(false)}
+          board={editingBoard}
+          onBoardUpdated={handleBoardUpdated}
+          onBoardDeleted={handleBoardDeleted}
+        />
+      )}
     </Dialog>
   );
 }
