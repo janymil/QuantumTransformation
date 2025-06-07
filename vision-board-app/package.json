@@ -4,7 +4,7 @@
   "description": "AI-Powered Vision Board Transformation App",
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/index.ts",
+    "dev": "cd .. && NODE_ENV=development PORT=3001 npx tsx vision-board-app/server/index.ts",
     "build": "vite build",
     "preview": "vite preview"
   },
