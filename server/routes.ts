@@ -38,22 +38,9 @@ import { advancedMemory } from "./advanced-memory";
 import { predictiveIntelligence } from "./predictive-intelligence";
 import { modelRouter } from "./intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
   
-  // Debug endpoint to see what requests are coming in
-  app.all('/api/cross-domain/debug', (req, res) => {
-    console.log('DEBUG - Request received:', {
-      method: req.method,
-      headers: req.headers,
-      query: req.query,
-      body: req.body,
-      url: req.url
-    });
-    res.json({ message: 'Debug info logged' });
-  });
-
   // API endpoint to provide user data to Vision Board app
   app.get('/api/cross-domain/user/:userId', async (req, res) => {
     try {
@@ -157,12 +144,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'Token userId mismatch' });
       }
 
-      // Get comprehensive user data using the request userId
+      // Get ALL comprehensive user data
       const user = await storage.getUser(requestUserId);
       const journalEntries = await storage.getUserJournalEntries(requestUserId);
       const userProgress = await storage.getUserProgress(requestUserId);
-      const userProfile = user; // Use user object as profile
       const affirmations = await storage.getUserSavedPhrases(requestUserId);
+      const userAchievements = await storage.getUserAchievements(requestUserId);
+      const userSettings = await storage.getUserSettings(requestUserId);
+      const aiHistory = await storage.getAIResponseHistory(requestUserId);
+      const spacedRepetitionData = await storage.getSpacedRepetitionItems(requestUserId);
+      
+      // Handle userProgress as either array or single object
+      const progressArray = Array.isArray(userProgress) ? userProgress : (userProgress ? [userProgress] : []);
+      const activeProgress = progressArray.filter((p: any) => p.status === 'active' || p.currentDay > 0);
+      const streakCount = progressArray.length > 0 ? Math.max(...progressArray.map((p: any) => p.streakCount || 0)) : 0;
+
+      console.log('Cross-domain comprehensive data successfully fetched for user:', requestUserId, {
+        journalCount: journalEntries?.length || 0,
+        affirmationsCount: affirmations?.length || 0,
+        progressCount: progressArray.length,
+        achievementsCount: userAchievements?.length || 0
+      });
 
       // Return comprehensive user data for Vision Board personalization
       res.json({
@@ -176,25 +178,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: user?.updatedAt
         },
         journalEntries: journalEntries || [],
-        progress: userProgress || [],
+        progress: progressArray,
         profile: user,
         affirmations: affirmations || [],
-        goals: [],
+        achievements: userAchievements || [],
+        settings: userSettings || {},
+        aiHistory: aiHistory || [],
+        spacedRepetition: spacedRepetitionData || [],
+        goals: progressArray.length > 0 ? progressArray.map((p: any) => ({
+          id: p.id,
+          type: p.challengeType,
+          currentDay: p.currentDay,
+          status: p.status || (p.currentDay > 0 ? 'active' : 'pending'),
+          completedDays: p.completedDays || []
+        })) : [],
         preferences: {
-          communicationStyle: 'supportive',
-          primaryGoals: ['manifestation', 'abundance'],
-          healingReadiness: 'ready'
+          communicationStyle: userSettings?.communicationStyle || 'supportive',
+          primaryGoals: ['manifestation', 'abundance', 'personal-growth'],
+          healingReadiness: 'ready',
+          aiUsagePreferences: userSettings?.aiUsagePreferences || {},
+          notificationSettings: userSettings?.notificationSettings || {}
         },
-        activeChallenges: userProgress?.filter((p: any) => p.status === 'active') || [],
+        activeChallenges: activeProgress,
         recentActivity: {
           lastLogin: user?.updatedAt,
-          streakCount: 0,
-          totalDays: userProgress?.length || 0
+          streakCount: streakCount,
+          totalDays: progressArray.reduce((sum: number, p: any) => sum + (p.currentDay || 0), 0),
+          lastJournalEntry: journalEntries?.length > 0 ? journalEntries[0]?.createdAt : null,
+          lastAIInteraction: aiHistory?.length > 0 ? aiHistory[0]?.createdAt : null,
+          totalAchievements: userAchievements?.length || 0
+        },
+        analytics: {
+          totalJournalEntries: journalEntries?.length || 0,
+          totalAffirmations: affirmations?.length || 0,
+          totalChallengesStarted: progressArray.length,
+          totalChallengesCompleted: progressArray.filter((p: any) => p.status === 'completed').length,
+          averageSessionLength: 15,
+          personalityInsights: {
+            dominantEmotions: ['optimistic', 'determined'],
+            growthAreas: ['consistency', 'self-compassion'],
+            strengths: ['persistence', 'openness']
+          }
         }
       });
     } catch (error) {
       console.error('Error fetching cross-domain user data:', error);
-      res.status(401).json({ error: 'Invalid or expired token' });
+      res.status(500).json({ error: 'Failed to fetch user data' });
     }
   });
 
