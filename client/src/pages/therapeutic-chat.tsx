@@ -709,18 +709,19 @@ export default function TherapeuticChat() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-
-                {/* Voice recording indicator */}
-                {isRecording && (
-                  <div className="flex items-center justify-center gap-2 mt-3 text-sm text-red-500 animate-pulse">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    Recording... Click the microphone to stop
-                  </div>
-                )}
               </div>
-            )}
+
+              {/* Voice recording indicator */}
+              {isRecording && (
+                <div className="flex items-center justify-center gap-2 mt-3 text-sm text-red-500 animate-pulse">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  Recording... Click the microphone to stop
+                </div>
+              )}
+            </div>
+          )}
           
-            {sendMessageMutation.isPending && (
+          {sendMessageMutation.isPending && (
             <div className="flex justify-center">
               <div className="max-w-2xl">
                 <div className="flex items-start gap-3">

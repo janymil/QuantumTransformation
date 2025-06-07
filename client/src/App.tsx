@@ -15,7 +15,7 @@ import SavedAffirmations from "@/pages/saved-affirmations";
 import AICoaching from "@/pages/ai-coaching";
 import AIConversationHistory from "@/pages/ai-conversation-history";
 import DeepJournaling from "@/pages/deep-journaling";
-import TherapeuticChatClean from "@/pages/therapeutic-chat-clean";
+import TherapeuticChat from "@/pages/therapeutic-chat";
 import AdminAnalytics from "@/pages/admin-analytics";
 import AdminUnlockDays from "@/pages/admin-unlock-days";
 import AiCouchOnboarding from "@/pages/ai-couch-onboarding";
@@ -98,7 +98,7 @@ function Router() {
         <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/ai-conversation-history" component={AIConversationHistory} />
         <Route path="/deep-journaling" component={DeepJournaling} />
-        <Route path="/therapeutic-chat" component={TherapeuticChatClean} />
+        <Route path="/therapeutic-chat" component={TherapeuticChat} />
         <Route path="/admin-analytics" component={AdminAnalytics} />
         <Route path="/admin-unlock-days" component={AdminUnlockDays} />
         <Route path="/journal" component={() => <Journal />} />
