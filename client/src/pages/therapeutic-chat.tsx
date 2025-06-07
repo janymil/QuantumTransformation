@@ -780,113 +780,13 @@ export default function TherapeuticChat() {
                 </div>
               )}
 
-              {/* Simple mode indicator - keep only sidebar customization */}
-              <div className="flex items-center gap-3 text-xs opacity-60">
-                <span className="text-gray-500 dark:text-gray-400">
-                  Mode: {therapeuticMode} | Style: {conversationStyle} | Focus: {focusArea}
-                </span>
-              </div>
+
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sidebar */}
-      <div className="w-80 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 p-6 space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Session Settings</h3>
-          
-          <Collapsible>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between">
-                Therapeutic Mode
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 mt-3">
-              <div>
-                <Label className="text-sm font-medium">Mode</Label>
-                <Select value={therapeuticMode} onValueChange={setTherapeuticMode}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="empathetic">Empathetic</SelectItem>
-                    <SelectItem value="solution-focused">Solution-Focused</SelectItem>
-                    <SelectItem value="analytical">Analytical</SelectItem>
-                    <SelectItem value="challenging">Challenging</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Style</Label>
-                <Select value={conversationStyle} onValueChange={setConversationStyle}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="socratic">Socratic</SelectItem>
-                    <SelectItem value="cbt">CBT</SelectItem>
-                    <SelectItem value="humanistic">Humanistic</SelectItem>
-                    <SelectItem value="mindfulness">Mindfulness</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Focus Area</Label>
-                <Select value={focusArea} onValueChange={setFocusArea}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="anxiety">Anxiety</SelectItem>
-                    <SelectItem value="relationships">Relationships</SelectItem>
-                    <SelectItem value="self-worth">Self-Worth</SelectItem>
-                    <SelectItem value="life-transitions">Life Changes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
 
-        <Separator />
-
-        <div>
-          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Conversation History</h4>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {sessions && sessions.map((session: any) => (
-              <Button
-                key={session.id}
-                variant={activeSession === session.id ? "secondary" : "ghost"}
-                size="sm"
-                className="w-full justify-start text-left h-auto py-2 px-3"
-                onClick={() => setActiveSession(session.id)}
-              >
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium truncate w-full">{session.title || 'Untitled Session'}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate w-full">
-                    {session.currentTopic || 'No messages yet'}
-                  </span>
-                </div>
-              </Button>
-            ))}
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full mt-3"
-            onClick={() => setActiveSession(null)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Conversation
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
