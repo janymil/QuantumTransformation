@@ -537,8 +537,8 @@ export default function TherapeuticChat() {
               onMessageChange={setCurrentMessage}
               onKeyPress={handleKeyPress}
               onSendMessage={handleSendMessage}
-              onStartRecording={startRecording}
-              onStopRecording={stopRecording}
+              onStartRecording={handleStartRecording}
+              onStopRecording={handleStopRecording}
             />
           
             {sendMessageMutation.isPending && (
