@@ -589,8 +589,8 @@ export default function TherapeuticChat() {
                         )}
                       </div>
 
-                      {/* Go Deeper button with submenu for AI messages */}
-                      {message.type === 'ai' && (
+                      {/* Go Deeper button with submenu for AI messages - only show after last AI message */}
+                      {message.type === 'ai' && index === messages.length - 1 && (
                         <div className="mt-3 flex items-center gap-2">
                           <Button 
                             variant="outline" 

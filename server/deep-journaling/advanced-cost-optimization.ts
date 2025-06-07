@@ -111,7 +111,13 @@ export class AdvancedCostOptimization {
             effectiveness: 0.8
           });
           
-          return this.createResponseVariation(JSON.parse(exchange.aiResponse), userInput);
+          try {
+            const parsedResponse = JSON.parse(exchange.aiResponse);
+            return this.createResponseVariation(parsedResponse, userInput);
+          } catch (parseError) {
+            console.error('Failed to parse cached response:', parseError);
+            return null; // Force fresh AI generation
+          }
         }
       }
     } catch (error) {
