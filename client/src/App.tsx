@@ -98,6 +98,7 @@ function Router() {
         <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/ai-conversation-history" component={AIConversationHistory} />
         <Route path="/deep-journaling" component={DeepJournaling} />
+        <Route path="/therapeutic-chat" component={TherapeuticChat} />
         <Route path="/admin-analytics" component={AdminAnalytics} />
         <Route path="/admin-unlock-days" component={AdminUnlockDays} />
         <Route path="/journal" component={() => <Journal />} />

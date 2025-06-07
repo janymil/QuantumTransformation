@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette, ExternalLink, ChevronDown } from "lucide-react";
+import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, MessageCircle, Palette, ExternalLink, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
 import MoodThemeSwitcher from "@/components/mood-theme-switcher";
@@ -50,6 +50,7 @@ export default function Navbar() {
     { name: "Challenges", href: "/challenges", icon: Target },
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Deep Journaling", href: "/deep-journaling", icon: Brain },
+    { name: "Therapeutic Chat", href: "/therapeutic-chat", icon: MessageCircle },
     { name: "Progress", href: "/progress", icon: BarChart3 },
   ];
 
