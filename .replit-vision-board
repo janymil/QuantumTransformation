@@ -1,0 +1,7 @@
+run = "cd vision-board-app && NODE_PATH=../node_modules node simple-server.mjs"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "cd vision-board-app && NODE_PATH=../node_modules node simple-server.mjs"]
