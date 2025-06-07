@@ -426,10 +426,31 @@ export default function AICoachingHub({
                           {((explanationMutation.data || explanationResponse)?.suggestions || []).map((suggestion: string, index: number) => (
                             <li key={index} className="text-sm text-green-700 dark:text-green-300 flex items-start">
                               <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0 mt-2 mr-2"></span>
-                              {tip}
+                              {suggestion}
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    )}
+
+                    {(explanationMutation.data || explanationResponse)?.emotionalState && (
+                      <div>
+                        <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2 flex items-center">
+                          <Heart className="w-4 h-4 mr-2" />
+                          Emotional Insight
+                        </h4>
+                        <div className="text-sm text-purple-700 dark:text-purple-300">
+                          Primary emotion: {(explanationMutation.data || explanationResponse)?.emotionalState?.primaryEmotion} 
+                          (Intensity: {(explanationMutation.data || explanationResponse)?.emotionalState?.intensity}/10)
+                        </div>
+                      </div>
+                    )}
+
+                    {(explanationMutation.data || explanationResponse)?.cost !== undefined && (
+                      <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          Session cost: ${(explanationMutation.data || explanationResponse)?.cost?.toFixed(4)}
+                        </p>
                       </div>
                     )}
                   </div>
