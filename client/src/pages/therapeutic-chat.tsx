@@ -105,13 +105,13 @@ export default function TherapeuticChat() {
         timestamp: new Date()
       };
       
-      // Add AI response with deep journaling format - extract the actual therapeutic content
+      // Add AI response with therapeutic chat format - use the correct response fields
       const aiMessage: Message = {
-        id: response.exchangeId?.toString() || `ai-${Date.now()}`,
+        id: response.messageId || `ai-${Date.now()}`,
         type: 'ai',
-        content: response.analysis?.professionalAnalysis || response.question || response.response || 'I understand. Please tell me more.',
+        content: response.response || response.therapeuticResponse || response.analysis?.professionalAnalysis || 'I understand. Please tell me more.',
         timestamp: new Date(),
-        emotionalTone: response.emotionalState?.primaryEmotion || 'curious'
+        emotionalTone: response.emotionalInsight || response.emotionalState?.primaryEmotion || 'curious'
       };
       
       setMessages(prev => [...prev, userMessage, aiMessage]);

@@ -4215,6 +4215,10 @@ Provide your response in this JSON format:
   "emotionalInsight": "Brief emotional insight (1-3 words like 'exploring vulnerability' or 'processing change')"
 }`;
 
+      console.log("Sending therapeutic prompt to OpenAI...");
+      console.log("Message:", message);
+      console.log("Conversation history length:", conversationHistory.length);
+
       const aiResponse = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -4227,7 +4231,21 @@ Provide your response in this JSON format:
         max_tokens: 800
       });
 
-      const therapeuticData = JSON.parse(aiResponse.choices[0].message.content);
+      console.log("OpenAI Raw Response:", aiResponse.choices[0].message.content);
+      
+      let therapeuticData;
+      try {
+        therapeuticData = JSON.parse(aiResponse.choices[0].message.content || '{}');
+        console.log("Parsed therapeutic data:", therapeuticData);
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        // Fallback therapeutic response
+        therapeuticData = {
+          response: "I understand what you're sharing with me. That sounds really challenging.",
+          followUpQuestion: "Can you tell me more about how this is affecting you?",
+          emotionalInsight: "processing"
+        };
+      }
 
       // Get next exchange order
       const nextOrder = previousExchanges.length + 1;
