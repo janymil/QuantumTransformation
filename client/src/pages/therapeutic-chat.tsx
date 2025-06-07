@@ -1,75 +1,151 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Mic, MicOff, Send, Settings, Heart, Brain } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { MessageCircle, Send, Brain, User, Mic, Settings, MoreVertical } from "lucide-react";
 
-interface TherapeuticCustomizations {
-  mode: 'conversational' | 'therapeutic' | 'analytical';
-  tone: 'supportive' | 'challenging' | 'neutral' | 'empathetic';
-  perspective: 'psychologist' | 'life_coach' | 'cbt_therapist' | 'philosopher' | 'stoic';
+interface Message {
+  id: string;
+  type: 'user' | 'ai';
+  content: string;
+  timestamp: Date;
+  emotionalTone?: string;
+}
+
+interface ConversationSession {
+  id: number;
+  title: string;
+  messages: Message[];
+  lastMessage: string;
+  createdAt: string;
+  emotionalJourney: string[];
+}
+
+interface TherapeuticResponse {
+  response: string;
+  followUpQuestion: string;
+  emotionalInsight: string;
+  nextSteps?: string[];
+  sessionId: number;
+  messageId: string;
 }
 
 export default function TherapeuticChat() {
   const [currentMessage, setCurrentMessage] = useState("");
+  const [activeSession, setActiveSession] = useState<number | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [customizations, setCustomizations] = useState<TherapeuticCustomizations>({
-    mode: 'conversational',
-    tone: 'supportive',
-    perspective: 'psychologist'
-  });
-  const [showCustomizations, setShowCustomizations] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const queryClient = useQueryClient();
+  // Therapeutic settings
+  const [therapeuticMode, setTherapeuticMode] = useState('empathetic');
+  const [conversationStyle, setConversationStyle] = useState('socratic');
+  const [focusArea, setFocusArea] = useState('general');
+  
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Connect to existing deep journaling backend
-  const { data: threadData, isLoading: threadLoading } = useQuery({
-    queryKey: ['/api/deep-journaling/threads'],
+  // Get conversation sessions
+  const { data: sessions, isLoading: sessionsLoading } = useQuery({
+    queryKey: ["/api/therapeutic-chat/sessions"],
     retry: false,
   });
 
+  // Get current session messages
+  const { data: sessionMessages } = useQuery({
+    queryKey: ["/api/therapeutic-chat/sessions", activeSession, "messages"],
+    enabled: !!activeSession,
+    retry: false,
+  });
+
+  // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (data: {
-      userInput: string;
-      customizations: TherapeuticCustomizations;
-      actionType?: 'go_deeper' | 'new_direction' | 'customize_response';
-    }) => {
-      return await apiRequest('/api/deep-journaling/process', 'POST', data);
+    mutationFn: async (message: string) => {
+      return await apiRequest('POST', '/api/therapeutic-chat/message', {
+        sessionId: activeSession,
+        message: message.trim(),
+        therapeuticMode,
+        conversationStyle,
+        focusArea
+      });
     },
-    onSuccess: (response: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/deep-journaling/threads'] });
-      setCurrentMessage("");
+    onSuccess: (response: TherapeuticResponse) => {
+      // Add user message
+      const userMessage: Message = {
+        id: `user-${Date.now()}`,
+        type: 'user',
+        content: currentMessage,
+        timestamp: new Date()
+      };
       
-      // Scroll to show new response
-      setTimeout(() => {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      }, 100);
+      // Add AI response
+      const aiMessage: Message = {
+        id: response.messageId,
+        type: 'ai',
+        content: response.response + (response.followUpQuestion ? `\n\n${response.followUpQuestion}` : ''),
+        timestamp: new Date(),
+        emotionalTone: response.emotionalInsight
+      };
+      
+      setMessages(prev => [...prev, userMessage, aiMessage]);
+      setCurrentMessage("");
+      setActiveSession(response.sessionId);
+      
+      // Invalidate queries to refresh session list
+      queryClient.invalidateQueries({ queryKey: ["/api/therapeutic-chat/sessions"] });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to send message",
+        title: "Connection Issue",
+        description: "Please try sending your message again.",
         variant: "destructive",
       });
     },
   });
 
+  // Start new session
+  const startNewSession = () => {
+    setActiveSession(null);
+    setMessages([]);
+    
+    // Add welcome message from AI
+    const welcomeMessage: Message = {
+      id: 'welcome',
+      type: 'ai',
+      content: "Hello! I'm here to listen and support you. Feel free to share whatever is on your mind - there's no judgment here, just genuine understanding. What would you like to explore together today?",
+      timestamp: new Date(),
+      emotionalTone: 'welcoming'
+    };
+    
+    setMessages([welcomeMessage]);
+  };
+
+  // Load session
+  const loadSession = (sessionId: number) => {
+    setActiveSession(sessionId);
+    // Messages will be loaded by the query
+  };
+
+  // Handle sending message
   const handleSendMessage = () => {
     if (!currentMessage.trim()) return;
     
-    sendMessageMutation.mutate({
-      userInput: currentMessage,
-      customizations,
-    });
+    sendMessageMutation.mutate(currentMessage);
   };
 
+  // Handle key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -77,270 +153,311 @@ export default function TherapeuticChat() {
     }
   };
 
-  const handleQuickAction = (actionType: 'go_deeper' | 'new_direction' | 'customize_response') => {
-    if (!currentMessage.trim()) return;
-    
-    sendMessageMutation.mutate({
-      userInput: currentMessage,
-      customizations,
-      actionType,
-    });
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Load session messages when session changes
+  useEffect(() => {
+    if (sessionMessages) {
+      setMessages(sessionMessages);
+    }
+  }, [sessionMessages]);
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setIsRecording(true);
+      // Voice recording implementation would go here
+    } catch (error) {
+      toast({
+        title: "Microphone Access",
+        description: "Unable to access microphone. Please check permissions.",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [currentMessage]);
-
-  const latestThread = Array.isArray(threadData) && threadData.length > 0 ? threadData[0] : null;
-  const exchanges = latestThread?.exchanges || [];
+  const stopRecording = () => {
+    setIsRecording(false);
+    // Stop recording and process audio
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MessageCircle className="w-8 h-8 text-white" />
+    <div className="h-screen flex bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Sidebar */}
+      <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+              <Brain className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Therapeutic Chat</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">AI-powered therapeutic companion</p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Therapeutic Chat
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Your AI therapeutic companion for deep conversations and personal growth
-          </p>
+          
+          <Button 
+            onClick={startNewSession}
+            className="w-full"
+            variant="default"
+          >
+            Start New Conversation
+          </Button>
         </div>
 
-        {/* Conversation Display */}
-        <div className="space-y-6 mb-8">
-          {exchanges.length > 0 ? (
-            exchanges.map((exchange: any, index: number) => (
-              <div key={index} className="space-y-4">
-                {/* User Message */}
-                <div className="flex justify-end">
-                  <div className="bg-blue-600 text-white rounded-2xl rounded-br-md px-6 py-4 max-w-[80%]">
-                    <p className="leading-relaxed">{exchange.userInput}</p>
-                  </div>
-                </div>
-
-                {/* AI Response */}
-                <div className="flex justify-start">
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-bl-md px-6 py-4 max-w-[80%] shadow-sm">
-                    <div className="space-y-3">
-                      {/* Main AI Analysis */}
-                      <p className="text-gray-900 dark:text-white leading-relaxed">
-                        {typeof exchange.aiAnalysis === 'string' 
-                          ? exchange.aiAnalysis 
-                          : exchange.aiAnalysis?.response || exchange.aiAnalysis?.analysis || 'Processing your thoughts...'}
+        {/* Sessions List */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Previous Conversations
+            </h3>
+            
+            {sessionsLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-16 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {sessions?.map((session: ConversationSession) => (
+                  <Card 
+                    key={session.id}
+                    className={`cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                      activeSession === session.id ? 'ring-2 ring-blue-500' : ''
+                    }`}
+                    onClick={() => loadSession(session.id)}
+                  >
+                    <CardContent className="p-3">
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                        {session.title}
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                        {session.lastMessage}
                       </p>
-                      
-                      {/* Emotional Insight */}
-                      {exchange.aiEmotionalAssessment && (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                          <p className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">
-                            Emotional Insight
-                          </p>
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
-                            {typeof exchange.aiEmotionalAssessment === 'string' 
-                              ? exchange.aiEmotionalAssessment 
-                              : exchange.aiEmotionalAssessment?.insight || JSON.stringify(exchange.aiEmotionalAssessment)}
-                          </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-gray-400">
+                          {new Date(session.createdAt).toLocaleDateString()}
+                        </span>
+                        <div className="flex gap-1">
+                          {session.emotionalJourney.slice(0, 3).map((emotion, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs px-1">
+                              {emotion}
+                            </Badge>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Customization Panel */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <Collapsible open={customizeOpen} onOpenChange={setCustomizeOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between">
+                <span className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Customize Approach
+                </span>
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              <div>
+                <Label className="text-xs">Therapeutic Mode</Label>
+                <Select value={therapeuticMode} onValueChange={setTherapeuticMode}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="empathetic">Empathetic & Supportive</SelectItem>
+                    <SelectItem value="challenging">Thoughtfully Challenging</SelectItem>
+                    <SelectItem value="analytical">Deeply Analytical</SelectItem>
+                    <SelectItem value="solution-focused">Solution-Focused</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-xs">Conversation Style</Label>
+                <Select value={conversationStyle} onValueChange={setConversationStyle}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="socratic">Socratic Questioning</SelectItem>
+                    <SelectItem value="cbt">Cognitive Behavioral</SelectItem>
+                    <SelectItem value="humanistic">Humanistic Approach</SelectItem>
+                    <SelectItem value="mindfulness">Mindfulness-Based</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-xs">Focus Area</Label>
+                <Select value={focusArea} onValueChange={setFocusArea}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General Exploration</SelectItem>
+                    <SelectItem value="anxiety">Anxiety & Stress</SelectItem>
+                    <SelectItem value="relationships">Relationships</SelectItem>
+                    <SelectItem value="self-worth">Self-Worth & Identity</SelectItem>
+                    <SelectItem value="life-transitions">Life Transitions</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Chat Header */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400">
+                  <Heart className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="font-semibold text-gray-900 dark:text-white">Therapeutic Companion</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {therapeuticMode} • {conversationStyle} • {focusArea}
+                </p>
+              </div>
+            </div>
+            
+            <Badge variant="outline" className="text-green-600 border-green-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+              Active
+            </Badge>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <ScrollArea className="flex-1 p-6">
+          <div className="space-y-6 max-w-4xl mx-auto">
+            {messages.map((message) => (
+              <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-2xl ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
+                  <div className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <Avatar className="mt-1">
+                      <AvatarFallback className={
+                        message.type === 'user' 
+                          ? "bg-blue-500 text-white" 
+                          : "bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400"
+                      }>
+                        {message.type === 'user' ? 'Y' : <Brain className="h-4 w-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className={`flex-1 ${message.type === 'user' ? 'text-right' : 'text-left'}`}>
+                      <div className={`inline-block p-4 rounded-2xl ${
+                        message.type === 'user'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                      }`}>
+                        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                      </div>
                       
-                      {/* Follow-up Question */}
-                      {exchange.aiQuestion && (
-                        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                          <p className="text-sm text-purple-900 dark:text-purple-100 font-medium">
-                            {exchange.aiQuestion}
-                          </p>
-                        </div>
-                      )}
+                      <div className={`flex items-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400 ${
+                        message.type === 'user' ? 'justify-end' : 'justify-start'
+                      }`}>
+                        <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        {message.emotionalTone && (
+                          <Badge variant="secondary" className="text-xs">
+                            {message.emotionalTone}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-12">
-              <Brain className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
-                Start Your Therapeutic Journey
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Share what's on your mind and begin a meaningful conversation
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Action Buttons */}
-        {currentMessage.trim() && (
-          <div className="flex flex-wrap gap-3 mb-6 justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuickAction('go_deeper')}
-              disabled={sendMessageMutation.isPending}
-              className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-            >
-              Go Deeper
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuickAction('new_direction')}
-              disabled={sendMessageMutation.isPending}
-              className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30"
-            >
-              New Direction
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuickAction('customize_response')}
-              disabled={sendMessageMutation.isPending}
-              className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30"
-            >
-              Customize Response
-            </Button>
-          </div>
-        )}
-
-        {/* Input Area */}
-        <Card className="border-2 border-gray-200 dark:border-gray-700 shadow-lg">
-          <CardContent className="p-6">
-            {/* Customization Controls */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowCustomizations(!showCustomizations)}
-                  className="text-gray-600 dark:text-gray-400"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Customize AI
-                </Button>
-              </div>
-              
-              {latestThread && (
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="text-xs">
-                    {latestThread.currentEmotionalState || 'Neutral'}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {exchanges.length} exchanges
-                  </Badge>
-                </div>
-              )}
-            </div>
-
-            {/* Customization Panel */}
-            {showCustomizations && (
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Mode
-                    </label>
-                    <Select 
-                      value={customizations.mode} 
-                      onValueChange={(value: any) => setCustomizations({...customizations, mode: value})}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="conversational">Conversational</SelectItem>
-                        <SelectItem value="therapeutic">Therapeutic</SelectItem>
-                        <SelectItem value="analytical">Analytical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Tone
-                    </label>
-                    <Select 
-                      value={customizations.tone} 
-                      onValueChange={(value: any) => setCustomizations({...customizations, tone: value})}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="supportive">Supportive</SelectItem>
-                        <SelectItem value="challenging">Challenging</SelectItem>
-                        <SelectItem value="neutral">Neutral</SelectItem>
-                        <SelectItem value="empathetic">Empathetic</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Perspective
-                    </label>
-                    <Select 
-                      value={customizations.perspective} 
-                      onValueChange={(value: any) => setCustomizations({...customizations, perspective: value})}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="psychologist">Psychologist</SelectItem>
-                        <SelectItem value="life_coach">Life Coach</SelectItem>
-                        <SelectItem value="cbt_therapist">CBT Therapist</SelectItem>
-                        <SelectItem value="philosopher">Philosopher</SelectItem>
-                        <SelectItem value="stoic">Stoic</SelectItem>
-                      </SelectContent>
-                    </Select>
+            ))}
+            
+            {sendMessageMutation.isPending && (
+              <div className="flex justify-start">
+                <div className="max-w-2xl">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="mt-1">
+                      <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400">
+                        <Brain className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
+                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                        </div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Reflecting on your message...</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
 
-            {/* Message Input */}
-            <div className="flex space-x-3">
-              <div className="flex-1 relative">
+        {/* Input Area */}
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
                 <Textarea
                   ref={textareaRef}
-                  placeholder="Share your thoughts, feelings, or what's on your mind..."
                   value={currentMessage}
                   onChange={(e) => setCurrentMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="min-h-[100px] max-h-[300px] resize-none pr-12 text-base leading-relaxed"
+                  onKeyDown={handleKeyPress}
+                  placeholder="Share what's on your mind... I'm here to listen and understand."
+                  className="min-h-[60px] max-h-32 resize-none border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500"
                   disabled={sendMessageMutation.isPending}
                 />
+              </div>
+              
+              <div className="flex gap-2">
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute bottom-2 right-2 text-gray-400 hover:text-gray-600"
-                  onClick={() => setIsRecording(!isRecording)}
+                  size="icon"
+                  variant="outline"
+                  onClick={isRecording ? stopRecording : startRecording}
+                  className={isRecording ? "text-red-500 border-red-200" : ""}
                 >
-                  <Mic className={`w-4 h-4 ${isRecording ? 'text-red-500' : ''}`} />
+                  {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+                
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!currentMessage.trim() || sendMessageMutation.isPending}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <Send className="h-4 w-4" />
                 </Button>
               </div>
-              <Button
-                onClick={handleSendMessage}
-                disabled={!currentMessage.trim() || sendMessageMutation.isPending}
-                className="self-end bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
-              >
-                {sendMessageMutation.isPending ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
             </div>
-          </CardContent>
-        </Card>
+            
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+              Press Enter to send • Shift+Enter for new line • Your conversations are private and secure
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
