@@ -64,6 +64,10 @@ export default function TherapeuticChat() {
   const [conversationStyle, setConversationStyle] = useState('socratic');
   const [focusArea, setFocusArea] = useState('general');
   
+  // Session management
+  const [threadSessions, setThreadSessions] = useState<ConversationSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -580,11 +584,11 @@ export default function TherapeuticChat() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-48">
-                      <DropdownMenuItem onClick={() => handleSendMessage('new_direction')}>
+                      <DropdownMenuItem onSelect={() => handleSendMessage('new_direction')}>
                         <Target className="h-3 w-3 mr-2" />
                         New Direction
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSendMessage('customize_response')}>
+                      <DropdownMenuItem onSelect={() => handleSendMessage('customize_response')}>
                         <Settings className="h-3 w-3 mr-2" />
                         Customize Response
                       </DropdownMenuItem>
@@ -714,17 +718,19 @@ export default function TherapeuticChat() {
         <div>
           <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Conversation History</h4>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {threadSessions.map((session: ConversationSession) => (
+            {sessions && sessions.map((session: any) => (
               <Button
                 key={session.id}
-                variant={currentSessionId === session.id ? "secondary" : "ghost"}
+                variant={activeSession === session.id ? "secondary" : "ghost"}
                 size="sm"
                 className="w-full justify-start text-left h-auto py-2 px-3"
-                onClick={() => setCurrentSessionId(session.id)}
+                onClick={() => setActiveSession(session.id)}
               >
                 <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium truncate w-full">{session.title}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate w-full">{session.lastMessage}</span>
+                  <span className="text-sm font-medium truncate w-full">{session.title || 'Untitled Session'}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate w-full">
+                    {session.currentTopic || 'No messages yet'}
+                  </span>
                 </div>
               </Button>
             ))}
@@ -734,7 +740,7 @@ export default function TherapeuticChat() {
             variant="outline"
             size="sm"
             className="w-full mt-3"
-            onClick={() => setCurrentSessionId(null)}
+            onClick={() => setActiveSession(null)}
           >
             <Plus className="h-4 w-4 mr-2" />
             New Conversation
