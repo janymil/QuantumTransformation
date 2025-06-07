@@ -210,7 +210,7 @@ export default function TherapeuticChat() {
         };
 
         setMessages(prev => [...prev, newAiMessage]);
-        queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+        // Auto-save disabled - conversations only save when user clicks "Finish conversation"
       }
     } catch (error) {
       toast({
@@ -245,7 +245,7 @@ export default function TherapeuticChat() {
         };
 
         setMessages(prev => [...prev, newAiMessage]);
-        queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+        // Auto-save disabled - conversations only save when user clicks "Finish conversation"
       }
     } catch (error) {
       toast({

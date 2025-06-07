@@ -129,15 +129,80 @@ export class DeepJournalingEngine {
       { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
     ];
 
-    // Determine complexity for optimal model routing
-    const complexity = this.determineComplexity(request, thread);
+    // Direct OpenAI call for maximum quality - bypassing optimization layer
+    const openai = new (await import('openai')).default({ 
+      apiKey: process.env.OPENAI_API_KEY 
+    });
     
-    const aiResponse = await intelligentModelRouter.routeTherapeuticRequest(
-      request,
-      systemPrompt,
-      `${contextPrompt}\n\n${analysisPrompt}`,
-      complexity
-    );
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `${contextPrompt}\n\n${analysisPrompt}` }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+        response_format: { type: "json_object" }
+      });
+
+      const responseContent = completion.choices[0].message.content;
+      let parsedResponse;
+      
+      try {
+        parsedResponse = JSON.parse(responseContent || '{}');
+      } catch (parseError) {
+        // Fallback if JSON parsing fails
+        parsedResponse = {
+          analysis: { professionalAnalysis: responseContent || "Unable to process response" },
+          question: "What would you like to explore further?",
+          emotionalState: { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 }
+        };
+      }
+      
+      const aiResponse = {
+        analysis: parsedResponse.analysis || { professionalAnalysis: parsedResponse.professionalAnalysis || "Deep psychological analysis not available" },
+        question: parsedResponse.question || parsedResponse.followUpQuestion || "What aspects of this would you like to explore further?",
+        patternInsights: parsedResponse.patternInsights || {},
+        emotionalAssessment: parsedResponse.emotionalAssessment || {},
+        emotionalState: parsedResponse.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
+        suggestions: parsedResponse.suggestions || [],
+        tokenCount: completion.usage?.total_tokens || 0,
+        cost: (completion.usage?.total_tokens || 0) * 0.00001, // Rough cost calculation
+        modelUsed: "gpt-4o",
+        provider: "openai"
+      };
+      
+      console.log('Direct OpenAI Response Quality Check:', {
+        hasAnalysis: !!aiResponse.analysis?.professionalAnalysis,
+        analysisLength: aiResponse.analysis?.professionalAnalysis?.length || 0,
+        questionQuality: aiResponse.question?.length || 0
+      });
+      
+    } catch (openaiError) {
+      console.error('Direct OpenAI call failed:', openaiError);
+      // Fallback to original routing
+      const aiResponse = await intelligentModelRouter.routeTherapeuticRequest(
+        request,
+        systemPrompt,
+        `${contextPrompt}\n\n${analysisPrompt}`,
+        'complex'
+      );
+      
+      return {
+        analysis: aiResponse.analysis || {},
+        question: aiResponse.question || "What would you like to explore further?",
+        patternInsights: aiResponse.patternInsights || {},
+        emotionalAssessment: aiResponse.emotionalAssessment || {},
+        emotionalState: aiResponse.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
+        suggestions: aiResponse.suggestions || [],
+        tokenCount: aiResponse.tokenCount,
+        cost: aiResponse.cost,
+        modelUsed: aiResponse.modelUsed,
+        provider: aiResponse.provider,
+        remainingRequests: undefined
+      };
+    }
 
     return {
       analysis: aiResponse.analysis || {},
