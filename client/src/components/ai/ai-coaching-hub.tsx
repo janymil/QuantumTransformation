@@ -130,16 +130,19 @@ export default function AICoachingHub({
 
 
 
-  // Personalized coaching mutation
+  // Advanced deep journaling mutation with cost optimization
   const coachingMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/ai/coaching", {
-        currentDay,
-        challengeType,
-        userGoals: goals,
-        currentChallenges: challenges.split(',').map(c => c.trim()).filter(Boolean),
-        mood,
-        userTier: 'basic'
+      const userInput = `Current Goals: ${goals}\nChallenges: ${challenges}\nEnergy Level: ${mood}/10\nChallenge Type: ${challengeType}\nDay: ${currentDay}`;
+      
+      return apiRequest("POST", "/api/deep-journaling/process", {
+        userInput,
+        actionType: "initial_exploration",
+        customizations: {
+          mode: "therapeutic",
+          tone: "supportive",
+          perspective: "life_coach"
+        }
       });
     },
     onSuccess: (data) => {
@@ -159,14 +162,17 @@ export default function AICoachingHub({
     },
   });
 
-  // AI explanation mutation
+  // Advanced deep journaling question mutation
   const explanationMutation = useMutation({
     mutationFn: async (questionText: string) => {
-      return apiRequest("POST", "/api/ai/explain", {
-        topic: `Day ${currentDay} - ${challengeType}`,
-        day: currentDay,
-        userQuestion: questionText,
-        context: challengeType
+      return apiRequest("POST", "/api/deep-journaling/process", {
+        userInput: questionText,
+        actionType: "initial_exploration",
+        customizations: {
+          mode: "conversational",
+          tone: "supportive",
+          perspective: "life_coach"
+        }
       });
     },
     onSuccess: (data) => {
@@ -303,37 +309,48 @@ export default function AICoachingHub({
                     <div>
                       <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2 flex items-center">
                         <Heart className="w-4 h-4 mr-2" />
-                        Personal Message
+                        AI Coach Response
                       </h4>
                       <div className="text-sm text-purple-700 dark:text-purple-300 prose prose-sm max-w-none">
-                        {formatCoachingMessage((coachingMutation.data || coachingResponse)?.personalizedMessage)}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center">
-                        <Target className="w-4 h-4 mr-2" />
-                        Today's Recommendation
-                      </h4>
-                      <div className="text-sm text-blue-700 dark:text-blue-300 prose prose-sm max-w-none">
-                        {formatCoachingMessage((coachingMutation.data || coachingResponse)?.todaysRecommendation)}
+                        {formatCoachingMessage((coachingMutation.data || coachingResponse)?.question || (coachingMutation.data || coachingResponse)?.analysis?.professionalAnalysis)}
                       </div>
                     </div>
 
-                    {(coachingMutation.data || coachingResponse)?.practiceAdjustments && (
+                    {(coachingMutation.data || coachingResponse)?.suggestions && (
                       <div>
                         <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center">
                           <TrendingUp className="w-4 h-4 mr-2" />
-                          Practice Adjustments
+                          Suggestions
                         </h4>
                         <ul className="space-y-1">
-                          {((coachingMutation.data || coachingResponse)?.practiceAdjustments || []).map((adjustment: string, index: number) => (
+                          {((coachingMutation.data || coachingResponse)?.suggestions || []).map((suggestion: string, index: number) => (
                             <li key={index} className="text-sm text-green-700 dark:text-green-300 flex items-start">
                               <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0 mt-2 mr-2"></span>
-                              {adjustment}
+                              {suggestion}
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    )}
+
+                    {(coachingMutation.data || coachingResponse)?.emotionalState && (
+                      <div>
+                        <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center">
+                          <Brain className="w-4 h-4 mr-2" />
+                          Emotional Insight
+                        </h4>
+                        <div className="text-sm text-blue-700 dark:text-blue-300">
+                          Primary emotion: {(coachingMutation.data || coachingResponse)?.emotionalState?.primaryEmotion} 
+                          (Intensity: {(coachingMutation.data || coachingResponse)?.emotionalState?.intensity}/10)
+                        </div>
+                      </div>
+                    )}
+
+                    {(coachingMutation.data || coachingResponse)?.cost !== undefined && (
+                      <div className="pt-2 border-t border-purple-200 dark:border-purple-700">
+                        <p className="text-xs text-purple-600 dark:text-purple-400">
+                          Session cost: ${(coachingMutation.data || coachingResponse)?.cost?.toFixed(4)}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -394,19 +411,19 @@ export default function AICoachingHub({
                         <Brain className="w-4 h-4 mr-2" />
                         AI Response
                       </h4>
-                      <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-                        {(explanationMutation.data || explanationResponse)?.explanation || "No response available"}
-                      </p>
+                      <div className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed prose prose-sm max-w-none">
+                        {formatCoachingMessage((explanationMutation.data || explanationResponse)?.question || (explanationMutation.data || explanationResponse)?.analysis?.professionalAnalysis || "No response available")}
+                      </div>
                     </div>
 
-                    {((explanationMutation.data || explanationResponse)?.practicalTips?.length > 0) && (
+                    {(explanationMutation.data || explanationResponse)?.suggestions && (
                       <div>
                         <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center">
                           <Lightbulb className="w-4 h-4 mr-2" />
                           Practical Tips
                         </h4>
                         <ul className="space-y-1">
-                          {((explanationMutation.data || explanationResponse)?.practicalTips || []).map((tip: string, index: number) => (
+                          {((explanationMutation.data || explanationResponse)?.suggestions || []).map((suggestion: string, index: number) => (
                             <li key={index} className="text-sm text-green-700 dark:text-green-300 flex items-start">
                               <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0 mt-2 mr-2"></span>
                               {tip}
