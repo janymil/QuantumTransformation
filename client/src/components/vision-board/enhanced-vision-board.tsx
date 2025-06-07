@@ -136,6 +136,9 @@ export default function EnhancedVisionBoard() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showSuggestionsDialog, setShowSuggestionsDialog] = useState(false);
+  const [showScreenCaptureDialog, setShowScreenCaptureDialog] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   // Working states
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -145,6 +148,8 @@ export default function EnhancedVisionBoard() {
   const [newText, setNewText] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [isCapturingScreen, setIsCapturingScreen] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   // History for undo/redo
   const [history, setHistory] = useState<VisionBoard[]>([]);
@@ -513,6 +518,85 @@ export default function EnhancedVisionBoard() {
       setIsGeneratingSuggestions(false);
     }
   }, [board, toast]);
+
+  // Screen capture functionality
+  const captureScreen = useCallback(async () => {
+    setIsCapturingScreen(true);
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: false
+        });
+        
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+        
+        video.addEventListener('loadedmetadata', () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(video, 0, 0);
+          
+          const dataUrl = canvas.toDataURL('image/png');
+          setCapturedImage(dataUrl);
+          
+          // Stop the stream
+          stream.getTracks().forEach(track => track.stop());
+          
+          setShowScreenCaptureDialog(true);
+        });
+      } else {
+        throw new Error('Screen capture not supported in this browser');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Screen Capture Failed",
+        description: error.message || "Unable to capture screen. Please try uploading an image instead.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCapturingScreen(false);
+    }
+  }, [toast]);
+
+  // Add captured image to board
+  const addCapturedImage = useCallback(() => {
+    if (!capturedImage) return;
+    
+    const newItem: VisionBoardItem = {
+      id: Date.now().toString(),
+      type: 'image',
+      content: capturedImage,
+      x: 150,
+      y: 150,
+      width: 250,
+      height: 200,
+      opacity: 1,
+      zIndex: board.canvasData.items.length + 1,
+      visible: true,
+      locked: false
+    };
+    
+    const newBoard = {
+      ...board,
+      canvasData: {
+        ...board.canvasData,
+        items: [...board.canvasData.items, newItem]
+      }
+    };
+    
+    setBoard(newBoard);
+    addToHistory(newBoard);
+    setSelectedItem(newItem.id);
+    setShowScreenCaptureDialog(false);
+    setCapturedImage(null);
+    
+    toast({ title: "Screen capture added to vision board!" });
+  }, [capturedImage, board, addToHistory, toast]);
 
   const deleteItem = useCallback((id: string) => {
     const newBoard = {
@@ -1051,7 +1135,7 @@ export default function EnhancedVisionBoard() {
 
                 <TabsContent value="elements" className="space-y-3 mt-0">
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-muted-foreground">TEXT</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground">ADD TEXT</Label>
                     <div className="space-y-2">
                       <Input
                         placeholder="Enter text..."
@@ -1075,22 +1159,35 @@ export default function EnhancedVisionBoard() {
                   <Separator />
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-muted-foreground">IMAGES</Label>
-                    <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-muted-foreground">ADD IMAGES</Label>
+                    <div className="grid grid-cols-1 gap-1">
                       <Button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => setShowUploadDialog(true)}
                         size="sm"
                         variant="outline"
-                        className="w-full h-7 text-xs"
+                        className="w-full h-8 text-xs justify-start"
                       >
                         <Upload className="w-3 h-3 mr-2" />
-                        Upload Image
+                        Upload from Device
+                      </Button>
+                      <Button
+                        onClick={captureScreen}
+                        disabled={isCapturingScreen}
+                        size="sm"
+                        variant="outline"
+                        className="w-full h-8 text-xs justify-start"
+                      >
+                        {isCapturingScreen ? (
+                          <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                        ) : (
+                          <Camera className="w-3 h-3 mr-2" />
+                        )}
+                        Screen Capture
                       </Button>
                       <Button
                         onClick={() => setShowAIDialog(true)}
                         size="sm"
-                        variant="outline"
-                        className="w-full h-7 text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600"
+                        className="w-full h-8 text-xs justify-start bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                       >
                         <Wand2 className="w-3 h-3 mr-2" />
                         AI Generate
@@ -1861,6 +1958,133 @@ export default function EnhancedVisionBoard() {
         </DialogContent>
       </Dialog>
 
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5" />
+              Upload Image
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground mb-4">
+                Drag and drop an image here, or click to browse
+              </p>
+              <Button 
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setShowUploadDialog(false);
+                }}
+                variant="outline"
+              >
+                Choose File
+              </Button>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => setShowUploadDialog(false)} variant="outline">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Screen Capture Dialog */}
+      <Dialog open={showScreenCaptureDialog} onOpenChange={setShowScreenCaptureDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-5 h-5" />
+              Screen Capture Preview
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {capturedImage && (
+              <div className="border rounded-lg overflow-hidden">
+                <img 
+                  src={capturedImage} 
+                  alt="Screen capture preview"
+                  className="w-full h-auto max-h-96 object-contain"
+                />
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button 
+                onClick={() => setShowScreenCaptureDialog(false)} 
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button onClick={addCapturedImage}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add to Board
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Suggestions Dialog */}
+      <Dialog open={showSuggestionsDialog} onOpenChange={setShowSuggestionsDialog}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-purple-600" />
+              AI Suggestions for Your Vision Board
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {aiSuggestions.length > 0 ? (
+              <div className="space-y-3">
+                {aiSuggestions.map((suggestion, index) => (
+                  <div key={index} className="p-4 bg-muted/50 rounded-lg border">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm mb-1">
+                          {suggestion.title || `Suggestion ${index + 1}`}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {suggestion.description || suggestion.text || suggestion}
+                        </p>
+                        {suggestion.actionable && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-2 h-7 text-xs"
+                            onClick={() => {
+                              // Apply suggestion logic here
+                              toast({ title: "Suggestion applied!" });
+                            }}
+                          >
+                            Apply
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Wand2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No suggestions available. Add some content to your vision board first.</p>
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => setShowSuggestionsDialog(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* AI Image Generator Dialog */}
       <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
         <DialogContent className="sm:max-w-lg">
@@ -1883,7 +2107,7 @@ export default function EnhancedVisionBoard() {
               />
             </div>
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg">
-              <h4 className="text-sm font-semibold mb-2 text-purple-900">💡 Tips for better results:</h4>
+              <h4 className="text-sm font-semibold mb-2 text-purple-900">Tips for better results:</h4>
               <ul className="text-xs text-purple-800 space-y-1">
                 <li>• Be specific about style, colors, and mood</li>
                 <li>• Include details like lighting, perspective, or art style</li>
@@ -1905,6 +2129,58 @@ export default function EnhancedVisionBoard() {
                   <Sparkles className="w-4 h-4 mr-2" />
                 )}
                 Generate Image
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Vision Board Generator Dialog */}
+      <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-600" />
+              AI Vision Board Generator
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2 text-indigo-900">Personalized Board Creation</h4>
+              <p className="text-sm text-indigo-800 mb-3">
+                Create a vision board based on your journal entries, affirmations, and goals. 
+                The AI will analyze your personal data to create meaningful visual elements.
+              </p>
+              <div className="space-y-2 text-xs text-indigo-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                  <span>Analyzes your journal entries for themes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                  <span>Incorporates your personal affirmations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                  <span>Considers your challenge progress</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => setShowTemplateDialog(false)} variant="outline">
+                Cancel
+              </Button>
+              <Button 
+                onClick={generateAIVisionBoard}
+                disabled={isGeneratingBoard}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+              >
+                {isGeneratingBoard ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-2" />
+                )}
+                Generate Board
               </Button>
             </div>
           </div>
