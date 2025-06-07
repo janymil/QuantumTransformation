@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VisionBoardItem, AISuggestion } from "./vision-board-types";
 import { useVisionBoardState } from "./useVisionBoardState";
+import { Input } from "@/components/ui/input";
 
 // Import all modular components
 import VisionBoardToolbar from "./vision-board-toolbar";
@@ -21,6 +22,13 @@ import BoardEditor from "./board-editor";
 
 export default function ModularVisionBoard() {
   const { toast } = useToast();
+  
+  // Local state for drag, resize, and text editing
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [editingText, setEditingText] = useState<string | null>(null);
+  const [draggedElement, setDraggedElement] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Use the modular state management hook
   const {
