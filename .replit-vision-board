@@ -1,7 +1,7 @@
-run = "cd vision-board-app && NODE_PATH=../node_modules node simple-server.mjs"
-
-[nix]
-channel = "stable-24_05"
+run = "cd vision-board-app && node persistent-server.js"
 
 [deployment]
-run = ["sh", "-c", "cd vision-board-app && NODE_PATH=../node_modules node simple-server.mjs"]
+run = ["sh", "-c", "cd vision-board-app && node persistent-server.js"]
+
+[env]
+PORT = "3001"
