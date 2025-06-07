@@ -35,10 +35,13 @@ export default function TherapeuticChatClean() {
   // Mutations
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData: any) => {
-      return await apiRequest('/api/therapeutic-chat', {
+      return await fetch('/api/therapeutic-chat', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(messageData),
-      });
+      }).then(res => res.json());
     },
     onSuccess: (data: TherapeuticResponse) => {
       const aiMessage: Message = {
@@ -62,9 +65,9 @@ export default function TherapeuticChatClean() {
 
   const deleteSessionMutation = useMutation({
     mutationFn: async (sessionId: number) => {
-      return await apiRequest(`/api/therapeutic-sessions/${sessionId}`, {
+      return await fetch(`/api/therapeutic-sessions/${sessionId}`, {
         method: 'DELETE',
-      });
+      }).then(res => res.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/therapeutic-sessions'] });
@@ -154,8 +157,11 @@ export default function TherapeuticChatClean() {
     if (!activeSession || messages.length === 0) return;
     
     try {
-      await apiRequest('/api/therapeutic-sessions/finish', {
+      await fetch('/api/therapeutic-sessions/finish', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           sessionId: activeSession.id,
           messages: messages,
