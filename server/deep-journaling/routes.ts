@@ -274,10 +274,7 @@ export function registerDeepJournalingRoutes(app: Express) {
       const emotionalHistory = await db
         .select()
         .from(emotionalStateHistory)
-        .where(and(
-          eq(emotionalStateHistory.userId, userId),
-          eq(emotionalStateHistory.createdAt, cutoffDate)
-        ))
+        .where(eq(emotionalStateHistory.userId, userId))
         .orderBy(desc(emotionalStateHistory.createdAt));
 
       // Process data for visualization
