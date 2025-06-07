@@ -10,7 +10,7 @@ import {
 } from "@shared/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { DeepJournalingRequest, DeepJournalingResponse } from "./types";
-import { therapeuticFrameworks } from "./therapeutic-frameworks";
+import { buildTherapeuticSystemPrompt, getNewDirectionSystemPrompt, getCustomizationSystemPrompt } from "./therapeutic-frameworks";
 import { psychologicalAnalyzer } from "./psychological-analyzer";
 import { intelligentModelRouter } from "./intelligent-model-router";
 import { advancedCostOptimization } from "./advanced-cost-optimization";
@@ -121,7 +121,7 @@ export class DeepJournalingEngine {
     const tone = request.customizations?.tone || thread.preferredTone || 'supportive';
     const perspective = request.customizations?.perspective || thread.preferredPerspective || 'psychologist';
 
-    const systemPrompt = therapeuticFrameworks.buildTherapeuticSystemPrompt(mode, tone, perspective, request.customizations?.customInstructions);
+    const systemPrompt = buildTherapeuticSystemPrompt([], request.userInput, { mode, tone, perspective });
     const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext);
     const analysisPrompt = this.buildAnalysisPrompt(request.userInput, request.actionType);
 
@@ -164,7 +164,7 @@ export class DeepJournalingEngine {
     userProfile: PsychologicalProfile | null,
     userContext: any
   ) {
-    const systemPrompt = therapeuticFrameworks.getNewDirectionSystemPrompt();
+    const systemPrompt = getNewDirectionSystemPrompt({});
 
     const messages = [
       { role: "system" as const, content: systemPrompt },
@@ -207,7 +207,7 @@ export class DeepJournalingEngine {
     const perspective = request.customizations?.perspective || 'psychologist';
     const customInstructions = request.customizations?.customInstructions || '';
 
-    const systemPrompt = therapeuticFrameworks.getCustomizationSystemPrompt(mode, tone, perspective, customInstructions);
+    const systemPrompt = getCustomizationSystemPrompt({ mode, tone, perspective, customInstructions });
 
     const messages = [
       { role: "system" as const, content: systemPrompt },
