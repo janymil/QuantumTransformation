@@ -26,7 +26,7 @@ export default function Navbar() {
     { name: "AI Coach", href: "/ai-coaching", icon: Brain },
     // { name: "AI Couch", href: "/ai-couch-dashboard", icon: Sparkles }, // Hidden for testing
     { name: "Vision Board", href: "/vision-board", icon: Palette },
-    { name: "Vision App", href: "http://localhost:3001", icon: Wand2, external: true },
+    { name: "Vision App", href: "/vision-app", icon: Wand2 },
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Progress", href: "/progress", icon: BarChart3 },
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
