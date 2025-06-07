@@ -1354,7 +1354,7 @@ export default function EnhancedVisionBoard() {
                       
                       <Button
                         onClick={() => {
-                          generateAISuggestions();
+                          getAISuggestions();
                           setShowSuggestionsDialog(true);
                         }}
                         disabled={isGeneratingSuggestions || board.canvasData.items.length === 0}
@@ -1365,7 +1365,7 @@ export default function EnhancedVisionBoard() {
                         {isGeneratingSuggestions ? (
                           <Loader2 className="w-3 h-3 mr-2 animate-spin" />
                         ) : (
-                          <Lightbulb className="w-3 h-3 mr-2" />
+                          <Wand2 className="w-3 h-3 mr-2" />
                         )}
                         Get AI Suggestions
                       </Button>
