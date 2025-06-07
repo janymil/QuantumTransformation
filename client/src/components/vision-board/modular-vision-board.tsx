@@ -4,7 +4,7 @@ import { VisionBoardItem, AISuggestion } from "./vision-board-types";
 import { useVisionBoardState } from "./useVisionBoardState";
 
 // Import all modular components
-import VisionBoardToolbar from "./vision-board-toolbar";
+import GroupedToolbar from "./grouped-toolbar";
 import ImageGeneration from "./image-generation";
 import AISuggestions from "./ai-suggestions";
 import AIBoardGenerator from "./ai-board-generator";
@@ -319,11 +319,9 @@ export default function ModularVisionBoard() {
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       {/* Toolbar */}
-      <VisionBoardToolbar
+      <GroupedToolbar
         activeTool={activeTool}
         onToolChange={setActiveTool}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         zoomLevel={zoomLevel}
         onZoomChange={setZoomLevel}
         canUndo={canUndo}
@@ -336,12 +334,11 @@ export default function ModularVisionBoard() {
         onLoad={() => setShowLoadDialog(true)}
         onExport={() => setShowExportDialog(true)}
         onAIGenerate={() => setShowAIDialog(true)}
-        onAISuggestions={() => setShowSuggestionsDialog(true)}
+        onImageGenerate={() => setShowImageGenerationDialog(true)}
         onTemplateSelect={() => setShowTemplateDialog(true)}
-        onImageGenerate={() => setShowScreenCaptureDialog(true)}
-        onScreenCapture={handleScreenCapture}
-        onMobileWallpaper={() => setShowMobileWallpaperDialog(true)}
-        onVirtualTour={() => setShowVirtualTour(true)}
+        onImageAdd={addElement}
+        elementCount={board.canvasData.items.length}
+        isSaving={isSaving}
         onPersonalizedSuggestions={() => setShowPersonalizedSuggestions(true)}
         onIconsPicker={() => setShowIconsPicker(true)}
         onBoardEditor={() => setShowBoardEditor(true)}
