@@ -293,6 +293,167 @@ export const generatedImages = pgTable("generated_images", {
   index("generated_images_generation_type_idx").on(table.generationType),
 ]);
 
+// Deep Journaling Threads - Core conversation containers
+export const journalingThreads = pgTable("journaling_threads", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  threadType: varchar("thread_type").default("free_writing").notNull(), // 'free_writing', 'guided_exploration', 'therapy_session'
+  
+  // Current state tracking
+  currentEmotionalState: varchar("current_emotional_state"), // 'confused', 'anxious', 'hopeful', etc.
+  currentTopic: varchar("current_topic"), // Main theme being explored
+  progressMarkers: jsonb("progress_markers").default({}), // Psychological progress indicators
+  
+  // Thread analytics
+  totalExchanges: integer("total_exchanges").default(0),
+  avgResponseTime: integer("avg_response_time").default(0), // User's average response time in minutes
+  emotionalJourney: jsonb("emotional_journey").default([]), // Array of emotional states over time
+  recurringTopics: jsonb("recurring_topics").default([]), // Topics that keep coming up
+  
+  // AI personalization settings
+  preferredMode: varchar("preferred_mode").default("conversational"), // 'conversational', 'therapeutic', 'analytical'
+  preferredTone: varchar("preferred_tone").default("supportive"), // 'supportive', 'challenging', 'neutral', 'empathetic'
+  preferredPerspective: varchar("preferred_perspective").default("psychologist"), // 'psychologist', 'life_coach', 'cbt_therapist', 'philosopher', 'stoic'
+  customInstructions: text("custom_instructions"), // User-defined AI behavior preferences
+  
+  // Metadata
+  isActive: boolean("is_active").default(true),
+  isArchived: boolean("is_archived").default(false),
+  lastActiveAt: timestamp("last_active_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("journaling_threads_user_idx").on(table.userId),
+  index("journaling_threads_active_idx").on(table.isActive),
+  index("journaling_threads_last_active_idx").on(table.lastActiveAt),
+  index("journaling_threads_emotional_state_idx").on(table.currentEmotionalState),
+]);
+
+// Thread Exchanges - Individual conversation turns
+export const threadExchanges = pgTable("thread_exchanges", {
+  id: serial("id").primaryKey(),
+  threadId: integer("thread_id").notNull().references(() => journalingThreads.id, { onDelete: "cascade" }),
+  exchangeOrder: integer("exchange_order").notNull(), // Sequential order within thread
+  
+  // User input
+  userInput: text("user_input").notNull(),
+  userWordCount: integer("user_word_count").default(0),
+  userWritingTime: integer("user_writing_time").default(0), // Time spent writing in seconds
+  wasVoiceInput: boolean("was_voice_input").default(false),
+  voiceTranscriptionQuality: real("voice_transcription_quality"), // 0-1 confidence score
+  
+  // AI response components
+  aiAnalysis: jsonb("ai_analysis").notNull(), // Professional psychological analysis
+  aiQuestion: text("ai_question").notNull(), // Therapeutic question for deeper exploration
+  aiPatternInsights: jsonb("ai_pattern_insights").default({}), // Patterns compared to previous exchanges
+  aiEmotionalAssessment: jsonb("ai_emotional_assessment").default({}), // Current emotional state analysis
+  
+  // Response customization
+  responseMode: varchar("response_mode").default("conversational"),
+  responseTone: varchar("response_tone").default("supportive"),
+  responsePerspective: varchar("response_perspective").default("psychologist"),
+  customResponseInstructions: text("custom_response_instructions"),
+  
+  // AI processing metadata
+  modelUsed: varchar("model_used").default("gpt-4o"),
+  processingTime: integer("processing_time").default(0), // AI response generation time in ms
+  tokenCount: integer("token_count").default(0),
+  cost: decimal("cost", { precision: 8, scale: 6 }).default(0),
+  
+  // User interaction
+  userRating: integer("user_rating"), // 1-5 rating of AI response quality
+  userFeedback: text("user_feedback"), // Optional user feedback on the response
+  isBookmarked: boolean("is_bookmarked").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("thread_exchanges_thread_idx").on(table.threadId),
+  index("thread_exchanges_order_idx").on(table.exchangeOrder),
+  index("thread_exchanges_created_at_idx").on(table.createdAt),
+  index("thread_exchanges_bookmarked_idx").on(table.isBookmarked),
+]);
+
+// User Psychological Profile - Long-term analysis and insights
+export const psychologicalProfile = pgTable("psychological_profile", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  
+  // Emotional patterns analysis
+  emotionalPatterns: jsonb("emotional_patterns").default({}), // Recurring emotional themes
+  emotionalTrends: jsonb("emotional_trends").default({}), // Changes over time
+  currentDominantEmotion: varchar("current_dominant_emotion"),
+  emotionalVolatility: real("emotional_volatility").default(0), // 0-1 scale of emotional stability
+  
+  // Personality insights
+  personalityTraits: jsonb("personality_traits").default({}), // Big 5, cognitive patterns, etc.
+  communicationStyle: varchar("communication_style"), // 'direct', 'reflective', 'analytical', 'emotional'
+  problemSolvingApproach: varchar("problem_solving_approach"), // 'logical', 'intuitive', 'collaborative', 'avoidant'
+  
+  // Growth and development areas
+  identifiedGrowthAreas: jsonb("identified_growth_areas").default([]),
+  identifiedStrengths: jsonb("identified_strengths").default([]),
+  progressMarkers: jsonb("progress_markers").default({}),
+  developmentGoals: jsonb("development_goals").default([]),
+  
+  // Recurring themes and topics
+  recurringConcerns: jsonb("recurring_concerns").default([]),
+  recurringTopics: jsonb("recurring_topics").default([]),
+  avoidedTopics: jsonb("avoided_topics").default([]),
+  breakthroughMoments: jsonb("breakthrough_moments").default([]),
+  
+  // Behavioral patterns
+  writingPatterns: jsonb("writing_patterns").default({}), // Length, frequency, style analysis
+  responsePatterns: jsonb("response_patterns").default({}), // How they typically respond to AI questions
+  engagementPatterns: jsonb("engagement_patterns").default({}), // When and how they use the system
+  
+  // System preferences and effectiveness
+  mostEffectiveQuestioningStyles: jsonb("most_effective_questioning_styles").default([]),
+  preferredInteractionModes: jsonb("preferred_interaction_modes").default([]),
+  systemUsageStatistics: jsonb("system_usage_statistics").default({}),
+  
+  // Analysis metadata
+  lastFullAnalysisAt: timestamp("last_full_analysis_at"),
+  analysisConfidenceLevel: real("analysis_confidence_level").default(0), // 0-1 confidence in profile accuracy
+  totalDataPoints: integer("total_data_points").default(0), // Number of exchanges analyzed
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("psychological_profile_user_idx").on(table.userId),
+  index("psychological_profile_last_analysis_idx").on(table.lastFullAnalysisAt),
+]);
+
+// Emotional State Tracking - Time-series emotional data
+export const emotionalStateHistory = pgTable("emotional_state_history", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  threadId: integer("thread_id").references(() => journalingThreads.id),
+  exchangeId: integer("exchange_id").references(() => threadExchanges.id),
+  
+  // Emotional state data
+  primaryEmotion: varchar("primary_emotion").notNull(), // 'joy', 'sadness', 'anger', 'fear', 'disgust', 'surprise', 'confusion', etc.
+  secondaryEmotions: jsonb("secondary_emotions").default([]), // Additional emotions present
+  emotionalIntensity: real("emotional_intensity").notNull(), // 0-1 scale
+  emotionalClarity: real("emotional_clarity").notNull(), // How clearly the emotion is expressed/understood
+  
+  // Context
+  triggerContext: text("trigger_context"), // What triggered this emotional state
+  associatedTopics: jsonb("associated_topics").default([]),
+  
+  // Detection method
+  detectionMethod: varchar("detection_method").default("ai_analysis"), // 'ai_analysis', 'user_reported', 'voice_analysis'
+  confidenceScore: real("confidence_score").default(0), // Confidence in the emotional assessment
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("emotional_state_history_user_idx").on(table.userId),
+  index("emotional_state_history_thread_idx").on(table.threadId),
+  index("emotional_state_history_created_at_idx").on(table.createdAt),
+  index("emotional_state_history_primary_emotion_idx").on(table.primaryEmotion),
+]);
+
 // Schema types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -331,6 +492,19 @@ export type InsertSpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$in
 export type InsertAiResponseHistory = typeof aiResponseHistory.$inferInsert;
 export type AiResponseHistory = typeof aiResponseHistory.$inferSelect;
 export type SpacedRepetitionSchedule = typeof spacedRepetitionSchedule.$inferSelect;
+
+// Deep Journaling Types
+export type InsertJournalingThread = typeof journalingThreads.$inferInsert;
+export type JournalingThread = typeof journalingThreads.$inferSelect;
+
+export type InsertThreadExchange = typeof threadExchanges.$inferInsert;
+export type ThreadExchange = typeof threadExchanges.$inferSelect;
+
+export type InsertPsychologicalProfile = typeof psychologicalProfile.$inferInsert;
+export type PsychologicalProfile = typeof psychologicalProfile.$inferSelect;
+
+export type InsertEmotionalStateHistory = typeof emotionalStateHistory.$inferInsert;
+export type EmotionalStateHistory = typeof emotionalStateHistory.$inferSelect;
 
 // Gamification and Micro-Learning System
 export const userLevels = pgTable("user_levels", {
