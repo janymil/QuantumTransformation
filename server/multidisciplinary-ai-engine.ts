@@ -2,11 +2,9 @@ import { db } from "./db";
 import { aiCouchProfiles, aiCouchSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { disciplineRegistry } from "./disciplines/discipline-registry";
-import Anthropic from '@anthropic-ai/sdk';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { intelligentModelRouter } from './disciplines/intelligent-model-router';
+import { advancedCostOptimization } from './disciplines/advanced-cost-optimization';
+import { unifiedAnalytics } from './unified-analytics';
 
 export interface MultidisciplinaryAnalysis {
   primaryNeeds: string[];
@@ -129,14 +127,38 @@ Analyze and respond in JSON format with:
 Available therapeutic approaches: ${disciplineRegistry.getAllDisciplines().map(d => d.expertise.name).join(', ')}
       `;
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
+      // Apply advanced cost optimization for therapeutic analysis
+      const cachedProfile = await advancedCostOptimization.getCachedUserProfile(userId);
+      const similarResponse = await advancedCostOptimization.findSimilarResponse(userId, userInput);
+      
+      if (similarResponse && similarResponse.primaryNeeds) {
+        // Return cached similar analysis with cost savings
+        await unifiedAnalytics.trackUsage(userId, 'multidisciplinary_analysis', 0.001); // Minimal cost for cache hit
+        return similarResponse;
+      }
+
+      // Route to optimal model for analysis
+      const modelResponse = await intelligentModelRouter.routeDisciplineRequest(
+        'therapeutic_analysis',
+        userInput,
+        prompt,
+        'complex'
+      );
+
+      // Track usage and costs
+      await unifiedAnalytics.trackUsage(userId, 'multidisciplinary_analysis', modelResponse.cost);
+      
+      const analysis = JSON.parse(modelResponse.content);
+      
+      // Update user patterns for future optimization
+      await advancedCostOptimization.updateUserPatterns(userId, 'multidisciplinary_analysis', {
+        modelUsed: modelResponse.modelUsed,
+        effectiveness: modelResponse.efficiency / 100,
+        sessionLength: modelResponse.content.length,
+        responseStyle: 'analytical'
       });
 
-      const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
-      return JSON.parse(analysisText);
+      return analysis;
 
     } catch (error) {
       console.error('Error in therapeutic analysis:', error);
@@ -196,14 +218,34 @@ Create an integrated therapeutic response in JSON format:
 Focus on seamless integration rather than separate approaches.
       `;
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
+      // Apply advanced cost optimization for integrated expertise
+      const similarExpertise = await advancedCostOptimization.findSimilarResponse(userId, prompt);
+      
+      if (similarExpertise && similarExpertise.multidisciplinaryAssessment) {
+        await unifiedAnalytics.trackUsage(userId, 'multidisciplinary_expertise', 0.001);
+        return similarExpertise;
+      }
+
+      // Route to optimal model for expertise integration
+      const modelResponse = await intelligentModelRouter.routeDisciplineRequest(
+        'multidisciplinary_integration',
+        userInput,
+        prompt,
+        'complex'
+      );
+
+      await unifiedAnalytics.trackUsage(userId, 'multidisciplinary_expertise', modelResponse.cost);
+      
+      const expertiseResponse = JSON.parse(modelResponse.content);
+      
+      await advancedCostOptimization.updateUserPatterns(userId, 'multidisciplinary_integration', {
+        modelUsed: modelResponse.modelUsed,
+        effectiveness: modelResponse.efficiency / 100,
+        sessionLength: modelResponse.content.length,
+        responseStyle: 'integrative'
       });
 
-      const responseText = response.content[0].type === 'text' ? response.content[0].text : '';
-      return JSON.parse(responseText);
+      return expertiseResponse;
 
     } catch (error) {
       console.error('Error in multidisciplinary expertise:', error);
