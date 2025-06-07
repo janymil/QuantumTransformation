@@ -203,13 +203,13 @@ export default function TherapeuticChat() {
         const newAiMessage: Message = {
           id: Date.now().toString(),
           type: 'ai',
-          content: data.response,
+          content: data.analysis?.professionalAnalysis || data.question || data.response || 'Let me explore this deeper with you.',
           timestamp: new Date(),
           emotionalTone: data.emotionalState?.primaryEmotion || 'insightful'
         };
 
         setMessages(prev => [...prev, newAiMessage]);
-        // Auto-save disabled - conversations only save when user clicks "Finish conversation"
+        setActiveSession(data.threadId);
       }
     } catch (error) {
       toast({
@@ -238,13 +238,13 @@ export default function TherapeuticChat() {
         const newAiMessage: Message = {
           id: Date.now().toString(),
           type: 'ai',
-          content: data.response,
+          content: data.analysis?.professionalAnalysis || data.question || data.response || 'Let me explore this further with you.',
           timestamp: new Date(),
           emotionalTone: data.emotionalState?.primaryEmotion || 'curious'
         };
 
         setMessages(prev => [...prev, newAiMessage]);
-        // Auto-save disabled - conversations only save when user clicks "Finish conversation"
+        setActiveSession(data.threadId);
       }
     } catch (error) {
       toast({
@@ -558,10 +558,10 @@ export default function TherapeuticChat() {
                       </AvatarFallback>
                     </Avatar>
                     
-                    <div className="flex-1 max-w-2xl">
-                      <div className={`p-4 rounded-2xl ${
+                    <div className="flex-1">
+                      <div className={`p-4 rounded-2xl max-w-2xl ${
                         message.type === 'user'
-                          ? 'bg-blue-500 text-white max-w-md ml-auto'
+                          ? 'bg-blue-500 text-white ml-auto'
                           : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
                       }`}>
                         <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
