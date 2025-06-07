@@ -5,6 +5,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory } from "@shared/schema";
 import { aiInteractionHistory } from "@shared/ai-interaction-schema";
 import { z } from "zod";
+import jwt from "jsonwebtoken";
 import { registerAuthRoutes } from "./routes/auth-routes";
 import { registerChallengeRoutes } from "./routes/challenge-routes";
 import { registerProgressRoutes } from "./routes/progress-routes";
@@ -184,6 +185,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware
   await setupAuth(app);
+
+  // Cross-domain authentication for Vision Board app
+  app.post('/api/auth/generate-vision-token', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Get user data for the Vision Board app
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Create JWT token with user data and permissions
+      const tokenPayload = {
+        userId,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours
+        aud: 'vision-board-app',
+        iss: 'quantum-challenges-app'
+      };
+
+      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'your-secret-key');
+      
+      res.json({ 
+        token, 
+        redirectUrl: 'https://512db387-5e5e-48d6-b6f6-0dc504422590-00-1mwcu5ml07laq.kirk.replit.dev',
+        user: {
+          id: userId,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName
+        }
+      });
+    } catch (error) {
+      console.error('Error generating vision token:', error);
+      res.status(500).json({ error: 'Failed to generate authentication token' });
+    }
+  });
+
+  // API endpoint to provide user data to Vision Board app
+  app.get('/api/cross-domain/user/:userId', async (req, res) => {
+    try {
+      // Verify JWT token from Vision Board app
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'No valid token provided' });
+      }
+
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      
+      if (decoded.aud !== 'vision-board-app' || decoded.iss !== 'quantum-challenges-app') {
+        return res.status(401).json({ error: 'Invalid token audience or issuer' });
+      }
+
+      const userId = req.params.userId;
+      if (decoded.userId !== userId) {
+        return res.status(403).json({ error: 'Token userId mismatch' });
+      }
+
+      // Get comprehensive user data
+      const user = await storage.getUser(userId);
+      const journalEntries = await storage.getJournalEntries(userId);
+      const userProgress = await storage.getUserProgress(userId);
+      const userProfile = await storage.getUserProfile(userId);
+      const affirmations = await storage.getUserAffirmations(userId);
+
+      res.json({
+        user,
+        journalEntries,
+        progress: userProgress,
+        profile: userProfile,
+        affirmations,
+        goals: userProfile?.goals || [],
+        preferences: {
+          communicationStyle: userProfile?.communicationStyle,
+          primaryGoals: userProfile?.primaryGoals,
+          healingReadiness: userProfile?.healingReadiness
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching cross-domain user data:', error);
+      res.status(401).json({ error: 'Invalid or expired token' });
+    }
+  });
 
   // User initialization function
   async function initializeNewUser(userId: string) {

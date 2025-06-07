@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette } from "lucide-react";
+import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette, ExternalLink } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
 import MoodThemeSwitcher from "@/components/mood-theme-switcher";
@@ -19,6 +19,31 @@ import MoodThemeSwitcher from "@/components/mood-theme-switcher";
 export default function Navbar() {
   const { user } = useAuth();
   const [location] = useLocation();
+  const [isOpeningVisionBoard, setIsOpeningVisionBoard] = useState(false);
+
+  const handleVisionBoardClick = async () => {
+    if (!user) return;
+    
+    setIsOpeningVisionBoard(true);
+    try {
+      const response = await fetch('/api/auth/generate-vision-token', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const { token, redirectUrl } = await response.json();
+        const visionBoardUrl = `${redirectUrl}?token=${encodeURIComponent(token)}`;
+        window.open(visionBoardUrl, '_blank');
+      } else {
+        console.error('Failed to generate vision board token');
+      }
+    } catch (error) {
+      console.error('Error opening Vision Board:', error);
+    } finally {
+      setIsOpeningVisionBoard(false);
+    }
+  };
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -28,7 +53,6 @@ export default function Navbar() {
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Progress", href: "/progress", icon: BarChart3 },
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
-    { name: "Vision Board", href: "/vision-board", icon: Palette },
   ];
 
   const getUserInitials = (user: User | undefined | null) => {
@@ -89,6 +113,17 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            
+            {/* Vision Board App - External Link */}
+            <button
+              onClick={handleVisionBoardClick}
+              disabled={isOpeningVisionBoard}
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+            >
+              <Palette className="w-4 h-4" />
+              <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
           </div>
 
           {/* Right Side */}
