@@ -48,6 +48,10 @@ interface VisionBoardToolbarProps {
   onImageGenerate: () => void;
   onScreenCapture: () => void;
   onMobileWallpaper: () => void;
+  onVirtualTour?: () => void;
+  onPersonalizedSuggestions?: () => void;
+  onIconsPicker?: () => void;
+  onBoardEditor?: () => void;
   elementCount: number;
   isSaving?: boolean;
 }
@@ -74,6 +78,10 @@ export default function VisionBoardToolbar({
   onImageGenerate,
   onScreenCapture,
   onMobileWallpaper,
+  onVirtualTour,
+  onPersonalizedSuggestions,
+  onIconsPicker,
+  onBoardEditor,
   elementCount,
   isSaving = false
 }: VisionBoardToolbarProps) {

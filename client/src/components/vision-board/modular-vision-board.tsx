@@ -507,12 +507,13 @@ export default function ModularVisionBoard() {
         onClose={() => setShowPersonalizedSuggestions(false)}
         currentBoard={board}
         onApplySuggestion={handleSuggestionApplied}
+        onAddElement={addElement}
       />
 
       <IconsElementsPicker
         isOpen={showIconsPicker}
         onClose={() => setShowIconsPicker(false)}
-        onElementSelected={(element) => {
+        onElementAdded={(element) => {
           addElement(element);
           setShowIconsPicker(false);
         }}
@@ -522,13 +523,29 @@ export default function ModularVisionBoard() {
         isOpen={showBoardEditor}
         onClose={() => setShowBoardEditor(false)}
         board={editingBoard || board}
-        onBoardUpdate={(updatedBoard) => {
+        onBoardUpdated={(updatedBoard) => {
           setBoard(updatedBoard);
           setEditingBoard(null);
           setShowBoardEditor(false);
         }}
-        onStartEdit={(boardToEdit) => {
-          setEditingBoard(boardToEdit);
+        onBoardDeleted={() => {
+          setBoard({
+            title: "My Vision Board",
+            description: "",
+            canvasData: {
+              items: [],
+              canvasWidth: 800,
+              canvasHeight: 600,
+              backgroundColor: "#ffffff",
+              gridVisible: false,
+              snapToGrid: false
+            },
+            templateCategory: "personal",
+            tags: [],
+            isPublic: false
+          });
+          setEditingBoard(null);
+          setShowBoardEditor(false);
         }}
       />
     </div>
