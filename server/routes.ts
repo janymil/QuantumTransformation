@@ -38,6 +38,7 @@ import { advancedMemory } from "./advanced-memory";
 import { predictiveIntelligence } from "./predictive-intelligence";
 import { modelRouter } from "./intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
+import { registerDeepJournalingRoutes } from "./deep-journaling";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
   
@@ -4003,6 +4004,9 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
       res.status(500).json({ message: 'Failed to fetch AI usage statistics' });
     }
   });
+
+  // Register deep journaling routes
+  registerDeepJournalingRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

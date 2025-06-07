@@ -1,3 +1,5 @@
+// Type definitions for the deep journaling system
+
 export interface DeepJournalingRequest {
   userId: string;
   threadId?: number;
@@ -22,7 +24,7 @@ export interface DeepJournalingResponse {
     professionalAnalysis: string;
   };
   question: string;
-  suggestions?: string[];
+  suggestions: string[];
   emotionalState: {
     primaryEmotion: string;
     intensity: number;
@@ -32,32 +34,24 @@ export interface DeepJournalingResponse {
   remainingRequests?: number;
 }
 
-export interface TherapeuticFramework {
-  name: string;
-  description: string;
-  questioningStyle: string[];
-  focusAreas: string[];
-  techniques: string[];
+export interface VoiceTranscriptionResult {
+  text: string;
+  confidence: number;
+  duration: number;
+  emotionalTone: {
+    primary: string;
+    intensity: number;
+    confidence: number;
+  };
 }
 
 export interface PsychologicalAnalysis {
-  emotionalPatterns: Record<string, any>;
+  emotionalPatterns: any;
   cognitivePatterns: string[];
   behavioralInsights: string[];
   growthOpportunities: string[];
   strengthAreas: string[];
   riskFactors: string[];
-}
-
-export interface VoiceTranscriptionResult {
-  text: string;
-  confidence: number;
-  duration: number;
-  emotionalTone?: {
-    primary: string;
-    intensity: number;
-    confidence: number;
-  };
 }
 
 export interface EmotionalStateAnalysis {
@@ -69,9 +63,10 @@ export interface EmotionalStateAnalysis {
   context: string;
 }
 
-export interface ThreadCustomization {
-  mode: 'conversational' | 'therapeutic' | 'analytical';
-  tone: 'supportive' | 'challenging' | 'neutral' | 'empathetic';
-  perspective: 'psychologist' | 'life_coach' | 'cbt_therapist' | 'philosopher' | 'stoic';
-  customInstructions?: string;
+export interface TherapeuticFramework {
+  name: string;
+  description: string;
+  questioningStyle: string[];
+  focusAreas: string[];
+  techniques: string[];
 }
