@@ -1,8 +1,0 @@
-[workflows.main]
-name = "Quantum Challenge App"
-command = "npm run dev"
-
-[workflows.vision-board]
-name = "Vision Board Server"
-command = "cd vision-board-app && node simple-server.cjs"
-port = 3001

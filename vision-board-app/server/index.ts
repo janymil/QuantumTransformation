@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// import { createServer } from 'vite';
+import visionBoardRoutes from './routes/vision-board-routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,42 +18,18 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Vision Board API Routes
+app.use('/api/vb', visionBoardRoutes);
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'Vision Board App is running', port: PORT });
 });
 
-// Basic API endpoints for testing
-app.get('/api/vb/status', (req, res) => {
-  res.json({ status: 'Vision Board API is working', timestamp: new Date().toISOString() });
-});
-
-// Mock endpoints for development
-app.get('/api/vb/vision-boards', (req, res) => {
-  res.json([]);
-});
-
-app.post('/api/vb/ai/suggest-life-areas', (req, res) => {
-  res.json({ 
-    suggestions: [
-      { area: 'health', confidence: 0.9, reason: 'Based on your wellness goals' },
-      { area: 'career', confidence: 0.8, reason: 'Based on your professional aspirations' },
-      { area: 'relationships', confidence: 0.7, reason: 'Based on your social connections' }
-    ]
-  });
-});
-
-// Serve static files from dist or fallback to the simple HTML
-if (process.env.NODE_ENV === 'development') {
-  // Development: serve from dist if available, otherwise serve simple HTML
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
-  app.get('*', (req, res) => {
-    const htmlPath = path.join(__dirname, '../dist/index.html');
-    res.sendFile(htmlPath);
-  });
-} else {
-  // Production: serve built files
-  app.use(express.static(path.join(__dirname, '../dist')));
+  
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
@@ -61,6 +37,5 @@ if (process.env.NODE_ENV === 'development') {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎨 Vision Board App server running on port ${PORT}`);
-  console.log(`🔗 Access the app at http://localhost:${PORT}`);
-  console.log(`📁 Serving from: ${process.env.NODE_ENV === 'development' ? 'client' : 'dist'}`);
+  console.log(`🔗 API available at http://localhost:${PORT}/api/vb`);
 });

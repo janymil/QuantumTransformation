@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette, Wand2 } from "lucide-react";
+import { Bell, Settings, LogOut, User as UserIcon, BookOpen, BarChart3, Target, Sparkles, Heart, Brain, Zap, MessageSquare, Palette } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import OnboardingTour from "@/components/onboarding-tour";
 import MoodThemeSwitcher from "@/components/mood-theme-switcher";
@@ -25,12 +25,10 @@ export default function Navbar() {
     { name: "Challenges", href: "/challenges", icon: Target },
     { name: "AI Coach", href: "/ai-coaching", icon: Brain },
     // { name: "AI Couch", href: "/ai-couch-dashboard", icon: Sparkles }, // Hidden for testing
-    { name: "Vision Board", href: "/vision-board", icon: Palette },
-    { name: "Vision App", href: "/vision-app", icon: Wand2 },
     { name: "Journal", href: "/journal", icon: BookOpen },
     { name: "Progress", href: "/progress", icon: BarChart3 },
     { name: "Saved Affirmations", href: "/saved-affirmations", icon: Heart },
-    { name: "Vision Transform", href: "/vision-transform", icon: Wand2 },
+    { name: "Vision Board", href: "/vision-board", icon: Palette },
   ];
 
   const getUserInitials = (user: User | undefined | null) => {

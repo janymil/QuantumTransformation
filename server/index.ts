@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { spawn } from "child_process";
 
 const app = express();
 app.use(express.json());
@@ -67,45 +66,5 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
-    
-    // Start Vision Board server automatically
-    startVisionBoardServer();
   });
 })();
-
-// Function to start Vision Board server
-function startVisionBoardServer() {
-  const visionBoardProcess = spawn('node', ['simple-server.cjs'], {
-    cwd: './vision-board-app',
-    stdio: 'inherit',
-    env: { ...process.env, PORT: '3001' }
-  });
-
-  visionBoardProcess.on('spawn', () => {
-    log('Vision Board server started on port 3001');
-  });
-
-  visionBoardProcess.on('error', (err) => {
-    console.error('Vision Board server error:', err);
-  });
-
-  visionBoardProcess.on('exit', (code) => {
-    if (code !== 0) {
-      console.error(`Vision Board server exited with code ${code}`);
-      // Restart after 5 seconds if it crashes
-      setTimeout(() => {
-        log('Restarting Vision Board server...');
-        startVisionBoardServer();
-      }, 5000);
-    }
-  });
-
-  // Graceful shutdown
-  process.on('SIGTERM', () => {
-    visionBoardProcess.kill();
-  });
-
-  process.on('SIGINT', () => {
-    visionBoardProcess.kill();
-  });
-}
