@@ -3056,7 +3056,10 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
   // Vision Board API Routes
   app.get('/api/vision-boards', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.claims?.sub || req.user?.id || req.session?.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
       const visionBoards = await storage.getVisionBoards(userId);
       res.json(visionBoards);
     } catch (error) {
@@ -3067,7 +3070,7 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
 
   app.post('/api/vision-boards', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.session?.user?.id;
+      const userId = req.user?.claims?.sub || req.user?.id || req.session?.user?.id;
       if (!userId) {
         return res.status(401).json({ message: "User not authenticated" });
       }

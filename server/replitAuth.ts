@@ -130,28 +130,32 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user?.expires_at) {
+  if (!req.isAuthenticated() || !user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
-    return next();
+  // If user has expires_at, check if token is still valid
+  if (user.expires_at) {
+    const now = Math.floor(Date.now() / 1000);
+    if (now <= user.expires_at) {
+      return next();
+    }
+
+    // Try to refresh the token
+    const refreshToken = user.refresh_token;
+    if (refreshToken) {
+      try {
+        const config = await getOidcConfig();
+        const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
+        updateUserSession(user, tokenResponse);
+        return next();
+      } catch (error) {
+        console.error("Token refresh failed:", error);
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+    }
   }
 
-  const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
-
-  try {
-    const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
-    return next();
-  } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
+  // If no expires_at or refresh failed, but user is authenticated, proceed
+  return next();
 };
