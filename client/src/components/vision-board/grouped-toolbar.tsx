@@ -3,7 +3,8 @@ import { useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
   Type, Upload, Save, FolderOpen, Download, Brain, Sparkles, Layout,
-  Undo, Redo, ZoomIn, ZoomOut, Grid3X3
+  Undo, Redo, ZoomIn, ZoomOut, Grid3X3, Camera, Smartphone, Play,
+  Star, Palette, Settings, MousePointer, Square
 } from "lucide-react";
 
 interface GroupedToolbarProps {
