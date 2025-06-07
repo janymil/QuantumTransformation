@@ -124,21 +124,20 @@ export default function TherapeuticChat() {
         timestamp: new Date()
       };
       
-      // Add AI response with deep journaling format
+      // Add AI response with deep journaling format - extract the actual therapeutic content
       const aiMessage: Message = {
         id: response.exchangeId?.toString() || `ai-${Date.now()}`,
         type: 'ai',
-        content: response.question || response.response || '',
+        content: response.analysis?.professionalAnalysis || response.question || response.response || 'I understand. Please tell me more.',
         timestamp: new Date(),
-        emotionalTone: response.emotionalState?.primaryEmotion || 'neutral'
+        emotionalTone: response.emotionalState?.primaryEmotion || 'curious'
       };
       
       setMessages(prev => [...prev, userMessage, aiMessage]);
       setCurrentMessage("");
       setActiveSession(response.threadId);
       
-      // Invalidate queries to refresh session list
-      queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+      // Auto-save disabled - only manual save on "Finish conversation"
     },
     onError: (error) => {
       toast({
@@ -559,10 +558,10 @@ export default function TherapeuticChat() {
                       </AvatarFallback>
                     </Avatar>
                     
-                    <div className="flex-1">
-                      <div className={`w-full p-4 rounded-2xl ${
+                    <div className="flex-1 max-w-2xl">
+                      <div className={`p-4 rounded-2xl ${
                         message.type === 'user'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-blue-500 text-white max-w-md ml-auto'
                           : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
                       }`}>
                         <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>

@@ -145,32 +145,22 @@ export class DeepJournalingEngine {
         ],
         temperature: 0.7,
         max_tokens: 2000,
-        response_format: { type: "json_object" }
+        // Remove JSON format constraint to get natural therapeutic response
+        temperature: 0.8
       });
 
-      const responseContent = completion.choices[0].message.content;
-      let parsedResponse;
+      const responseContent = completion.choices[0].message.content || "I'm here to listen and support you. What would you like to explore?";
       
-      try {
-        parsedResponse = JSON.parse(responseContent || '{}');
-      } catch (parseError) {
-        // Fallback if JSON parsing fails
-        parsedResponse = {
-          analysis: { professionalAnalysis: responseContent || "Unable to process response" },
-          question: "What would you like to explore further?",
-          emotionalState: { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 }
-        };
-      }
-      
+      // Use the therapeutic response directly - no JSON parsing needed
       aiResponse = {
-        analysis: parsedResponse.analysis || { professionalAnalysis: parsedResponse.professionalAnalysis || "Deep psychological analysis not available" },
-        question: parsedResponse.question || parsedResponse.followUpQuestion || "What aspects of this would you like to explore further?",
-        patternInsights: parsedResponse.patternInsights || {},
-        emotionalAssessment: parsedResponse.emotionalAssessment || {},
-        emotionalState: parsedResponse.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
-        suggestions: parsedResponse.suggestions || [],
+        analysis: { professionalAnalysis: responseContent },
+        question: "What would you like to explore further?", // Simple fallback question
+        patternInsights: {},
+        emotionalAssessment: {},
+        emotionalState: { primaryEmotion: 'curious', intensity: 0.7, clarity: 0.8 },
+        suggestions: [],
         tokenCount: completion.usage?.total_tokens || 0,
-        cost: (completion.usage?.total_tokens || 0) * 0.00001, // Rough cost calculation
+        cost: (completion.usage?.total_tokens || 0) * 0.00001,
         modelUsed: "gpt-4o",
         provider: "openai"
       };
