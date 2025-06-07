@@ -8,22 +8,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Save, FolderOpen, Plus, Download } from "lucide-react";
+import { Save, FolderOpen, Plus, Download, Upload, Trash2, Type, Image as ImageIcon, Loader2 } from "lucide-react";
 
 interface VisionBoardItem {
   id: string;
-  type: 'image' | 'text' | 'svg';
+  type: 'image' | 'text';
   content: string;
   x: number;
   y: number;
   width: number;
   height: number;
-  rotation?: number;
-  opacity?: number;
-  zIndex?: number;
   fontSize?: number;
   color?: string;
-  styling?: any;
 }
 
 interface VisionBoard {
@@ -40,7 +36,9 @@ interface VisionBoard {
 
 export default function EnhancedVisionBoard() {
   const { toast } = useToast();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
   
   const [board, setBoard] = useState<VisionBoard>({
     title: "My Vision Board",
@@ -55,6 +53,9 @@ export default function EnhancedVisionBoard() {
   });
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [newText, setNewText] = useState("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [currentBoardId, setCurrentBoardId] = useState<number | null>(null);
