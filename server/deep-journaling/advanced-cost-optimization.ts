@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { threadExchanges, psychologicalProfile } from "@shared/schema";
+import { threadExchanges, psychologicalProfile, journalingThreads } from "@shared/schema";
 import { eq, desc, and, gte, sql } from "drizzle-orm";
 import { intelligentModelRouter } from "./intelligent-model-router";
 
@@ -85,19 +85,27 @@ export class AdvancedCostOptimization {
 
     // Check for semantically similar exchanges
     try {
-      const recentExchanges = await db.select()
+      const recentExchanges = await db
+        .select({
+          id: threadExchanges.id,
+          userInput: threadExchanges.userInput,
+          aiAnalysis: threadExchanges.aiAnalysis,
+          aiQuestion: threadExchanges.aiQuestion,
+          createdAt: threadExchanges.createdAt
+        })
         .from(threadExchanges)
-        .where(eq(threadExchanges.userId, userId))
+        .innerJoin(journalingThreads, eq(threadExchanges.threadId, journalingThreads.id))
+        .where(eq(journalingThreads.userId, userId))
         .orderBy(desc(threadExchanges.createdAt))
         .limit(20);
 
       for (const exchange of recentExchanges) {
         const similarity = this.calculateSemanticSimilarity(userInput, exchange.userInput || '');
-        if (similarity > 0.85 && exchange.aiResponse) {
+        if (similarity > 0.85 && exchange.aiAnalysis) {
           // Cache this response for future use
           this.responseCache.set(queryHash, {
             queryHash,
-            response: JSON.parse(exchange.aiResponse),
+            response: exchange.aiAnalysis,
             usage: 1,
             lastUsed: new Date(),
             effectiveness: 0.8
