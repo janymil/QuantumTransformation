@@ -20,6 +20,7 @@ import AiCouchOnboarding from "@/pages/ai-couch-onboarding";
 import AiCouchNewDashboard from "@/pages/ai-couch-new-dashboard";
 import VisionBoard from "@/pages/vision-board";
 import VisionTransformPage from "@/pages/VisionTransformPage";
+import EnhancedVisionBoard from "@/components/vision-board/enhanced-vision-board";
 import { ElevenLabsVoiceTest } from "@/components/voice/elevenlabs-voice-test";
 
 import NotFound from "@/pages/not-found";
@@ -102,6 +103,7 @@ function Router() {
         <Route path="/progress" component={Progress} />
         <Route path="/saved-affirmations" component={SavedAffirmations} />
         <Route path="/vision-board" component={VisionBoard} />
+        <Route path="/vision-app" component={() => <EnhancedVisionBoard />} />
         <Route path="/vision-transform" component={VisionTransformPage} />
         <Route path="/voice-test" component={ElevenLabsVoiceTest} />
         
