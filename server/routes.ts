@@ -3144,8 +3144,12 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
 
   app.delete('/api/vision-boards/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.claims?.sub || req.user?.id || req.session?.user?.id;
       const boardId = parseInt(req.params.id);
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
 
       const deleted = await storage.deleteVisionBoard(boardId, userId);
       if (!deleted) {
