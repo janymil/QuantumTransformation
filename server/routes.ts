@@ -151,8 +151,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const affirmations = await storage.getUserSavedPhrases(requestUserId);
       const userAchievements = await storage.getUserAchievements(requestUserId);
       const userSettings = await storage.getUserSettings(requestUserId);
-      const aiHistory = await storage.getAIResponseHistory(requestUserId);
-      const spacedRepetitionData = await storage.getSpacedRepetitionItems(requestUserId);
       
       // Handle userProgress as either array or single object
       const progressArray = Array.isArray(userProgress) ? userProgress : (userProgress ? [userProgress] : []);
@@ -183,8 +181,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         affirmations: affirmations || [],
         achievements: userAchievements || [],
         settings: userSettings || {},
-        aiHistory: aiHistory || [],
-        spacedRepetition: spacedRepetitionData || [],
+        aiHistory: [],
+        spacedRepetition: [],
         goals: progressArray.length > 0 ? progressArray.map((p: any) => ({
           id: p.id,
           type: p.challengeType,
@@ -193,11 +191,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           completedDays: p.completedDays || []
         })) : [],
         preferences: {
-          communicationStyle: userSettings?.communicationStyle || 'supportive',
+          communicationStyle: 'supportive',
           primaryGoals: ['manifestation', 'abundance', 'personal-growth'],
           healingReadiness: 'ready',
-          aiUsagePreferences: userSettings?.aiUsagePreferences || {},
-          notificationSettings: userSettings?.notificationSettings || {}
+          aiUsagePreferences: {},
+          notificationSettings: {}
         },
         activeChallenges: activeProgress,
         recentActivity: {
@@ -205,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           streakCount: streakCount,
           totalDays: progressArray.reduce((sum: number, p: any) => sum + (p.currentDay || 0), 0),
           lastJournalEntry: journalEntries?.length > 0 ? journalEntries[0]?.createdAt : null,
-          lastAIInteraction: aiHistory?.length > 0 ? aiHistory[0]?.createdAt : null,
+          lastAIInteraction: null,
           totalAchievements: userAchievements?.length || 0
         },
         analytics: {
@@ -461,149 +459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Debug info logged' });
   });
 
-  // API endpoint to provide user data to Vision Board app
-  app.get('/api/cross-domain/user/:userId', async (req, res) => {
-    try {
-      console.log('Cross-domain request received:', {
-        method: req.method,
-        headers: Object.keys(req.headers),
-        authorization: req.headers.authorization ? 'Present' : 'Missing',
-        userId: req.params.userId,
-        origin: req.headers.origin,
-        userAgent: req.headers['user-agent']
-      });
 
-      // Verify JWT token from Vision Board app
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.error('No authorization header found. Headers received:', Object.keys(req.headers));
-        return res.status(401).json({ 
-          error: 'No valid token provided',
-          debug: {
-            headersReceived: Object.keys(req.headers),
-            authHeaderPresent: !!authHeader,
-            authHeaderValue: authHeader ? authHeader.substring(0, 20) + '...' : 'null'
-          }
-        });
-      }
-
-      const token = authHeader.split(' ')[1];
-      let decoded;
-      
-      try {
-        // Try multiple JWT secrets to handle cross-domain authentication
-        const secretsToTry = [
-          process.env.JWT_SECRET,
-          'your-secret-key',
-          'quantum-secret-key', 
-          'vision-board-secret',
-          'jwt-secret-quantum',
-          'quantum-challenges-vision-board-secret-2025',
-          'quantum-challenges-2025-secure-key-d46aef1e6a339b'
-        ].filter(Boolean) as string[];
-        
-        let validationSuccess = false;
-        let lastError: any;
-        
-        for (const secret of secretsToTry) {
-          try {
-            decoded = jwt.verify(token, secret) as any;
-            console.log('JWT verified successfully with secret:', secret.substring(0, 10) + '...');
-            validationSuccess = true;
-            break;
-          } catch (error: any) {
-            lastError = error;
-            continue;
-          }
-        }
-        
-        if (!validationSuccess) {
-          console.error('JWT verification failed with all secrets. Last error:', lastError?.message);
-          return res.status(401).json({ 
-            error: 'Invalid or expired token',
-            reason: 'Token signature verification failed',
-            details: lastError?.message
-          });
-        }
-      } catch (jwtError: any) {
-        console.error('JWT verification failed:', jwtError?.message || 'Unknown error');
-        return res.status(401).json({ error: 'Invalid or expired token', details: jwtError?.message || 'Unknown error' });
-      }
-      
-      // Log token details for debugging
-      console.log('Token decoded successfully:', {
-        aud: decoded.aud,
-        iss: decoded.iss,
-        userId: decoded.userId || decoded.id || decoded.sub,
-        exp: decoded.exp
-      });
-      
-      // Flexible audience/issuer validation
-      const hasValidAudience = !decoded.aud || 
-        decoded.aud === 'vision-board-app' || 
-        decoded.aud === 'quantum-challenges-app';
-      const hasValidIssuer = !decoded.iss || 
-        decoded.iss === 'quantum-challenges-app' || 
-        decoded.iss === 'vision-board-app';
-      
-      if (!hasValidAudience && !hasValidIssuer) {
-        console.error('Token validation failed:', { aud: decoded.aud, iss: decoded.iss });
-        return res.status(401).json({ 
-          error: 'Invalid token audience or issuer',
-          expected: { aud: 'vision-board-app or quantum-challenges-app', iss: 'quantum-challenges-app or vision-board-app' },
-          received: { aud: decoded.aud, iss: decoded.iss }
-        });
-      }
-
-      // Flexible user ID extraction
-      const tokenUserId = decoded.userId || decoded.id || decoded.sub;
-      const requestUserId = req.params.userId;
-      
-      if (tokenUserId && tokenUserId !== requestUserId) {
-        console.error('Token userId mismatch:', { tokenUserId, requestUserId });
-        return res.status(403).json({ error: 'Token userId mismatch' });
-      }
-
-      // Get comprehensive user data using the request userId
-      const user = await storage.getUser(requestUserId);
-      const journalEntries = await storage.getUserJournalEntries(requestUserId);
-      const userProgress = await storage.getUserProgress(requestUserId);
-      const userProfile = user; // Use user object as profile
-      const affirmations = await storage.getUserSavedPhrases(requestUserId);
-
-      // Return comprehensive user data for Vision Board personalization
-      res.json({
-        user: {
-          id: user?.id,
-          email: user?.email,
-          firstName: user?.firstName,
-          lastName: user?.lastName,
-          profileImageUrl: user?.profileImageUrl,
-          createdAt: user?.createdAt,
-          updatedAt: user?.updatedAt
-        },
-        journalEntries: journalEntries || [],
-        progress: userProgress || [],
-        profile: user,
-        affirmations: affirmations || [],
-        goals: [],
-        preferences: {
-          communicationStyle: 'supportive',
-          primaryGoals: ['manifestation', 'abundance'],
-          healingReadiness: 'ready'
-        },
-        activeChallenges: userProgress?.filter((p: any) => p.status === 'active') || [],
-        recentActivity: {
-          lastLogin: user?.updatedAt,
-          streakCount: 0,
-          totalDays: userProgress?.length || 0
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching cross-domain user data:', error);
-      res.status(401).json({ error: 'Invalid or expired token' });
-    }
-  });
 
   // User initialization function
   async function initializeNewUser(userId: string) {
