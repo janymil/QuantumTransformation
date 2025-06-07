@@ -318,49 +318,50 @@ export default function TherapeuticChat() {
     }
   };
 
-  // Voice recording functions
-  const handleStartRecording = async () => {
-    if (isRecording) return;
-    
+  // Voice recording functions - restored from original working implementation
+  const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
-      
+      const chunks: Blob[] = [];
+
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          setAudioChunks(prev => [...prev, event.data]);
+          chunks.push(event.data);
         }
       };
-      
-      recorder.onstop = () => {
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        await processVoiceRecording(audioBlob);
+        
+        // Clean up
         stream.getTracks().forEach(track => track.stop());
-        // Process voice recording here if needed
+        setAudioChunks([]);
       };
-      
-      setMediaRecorder(recorder);
+
       recorder.start();
+      setMediaRecorder(recorder);
       setIsRecording(true);
-      
-      toast({
-        title: "Recording Started",
-        description: "Speak your message now. Click the microphone again to stop.",
-      });
+      setAudioChunks(chunks);
     } catch (error) {
       toast({
-        title: "Recording Error",
-        description: "Could not access microphone. Please check permissions.",
+        title: "Microphone Access",
+        description: "Unable to access microphone. Please check permissions.",
         variant: "destructive",
       });
     }
   };
 
-  const handleStopRecording = () => {
+  const stopRecording = () => {
     if (mediaRecorder && isRecording) {
       mediaRecorder.stop();
       setIsRecording(false);
       setMediaRecorder(null);
     }
   };
+
+
 
   const deleteMessage = (messageId: string) => {
     setMessages(prev => prev.filter(msg => msg.id !== messageId));
@@ -385,20 +386,27 @@ export default function TherapeuticChat() {
   }, [audioChunks, isRecording]);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen flex bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       {/* Sidebar */}
-      <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Deep Journaling</h2>
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              New Session
-            </Button>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+              <Brain className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Therapeutic Chat</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">AI-powered therapeutic companion</p>
+            </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            AI-powered therapeutic conversations for self-discovery and emotional growth
-          </p>
+          
+          <Button 
+            onClick={startNewSession}
+            className="w-full"
+            variant="default"
+          >
+            Start New Conversation
+          </Button>
         </div>
 
         <ScrollArea className="flex-1">
@@ -537,8 +545,8 @@ export default function TherapeuticChat() {
               onMessageChange={setCurrentMessage}
               onKeyPress={handleKeyPress}
               onSendMessage={handleSendMessage}
-              onStartRecording={handleStartRecording}
-              onStopRecording={handleStopRecording}
+              onStartRecording={startRecording}
+              onStopRecording={stopRecording}
             />
           
             {sendMessageMutation.isPending && (
