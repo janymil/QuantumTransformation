@@ -103,10 +103,10 @@ export default function VisionBoard({ onSave, initialItems = [], onClose, boardI
 
   // Load board data when currentBoard changes
   useEffect(() => {
-    if (currentBoard) {
+    if (currentBoard && typeof currentBoard === 'object') {
       setBoardTitle(currentBoard.title || "");
       setBoardDescription(currentBoard.description || "");
-      if (currentBoard.canvasData?.elements) {
+      if (currentBoard.canvasData && currentBoard.canvasData.elements) {
         setItems(currentBoard.canvasData.elements);
       }
     }
