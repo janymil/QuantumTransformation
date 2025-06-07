@@ -270,7 +270,7 @@ export default function TherapeuticChat() {
               </div>
             ) : (
               <div className="space-y-2">
-                {sessions?.map((session: ConversationSession) => (
+                {sessions && Array.isArray(sessions) && sessions.map((session: any) => (
                   <Card 
                     key={session.id}
                     className={`cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
@@ -280,21 +280,21 @@ export default function TherapeuticChat() {
                   >
                     <CardContent className="p-3">
                       <h4 className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                        {session.title}
+                        {session.title || 'Therapeutic Session'}
                       </h4>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                        {session.lastMessage}
+                        {session.currentTopic || 'Deep therapeutic conversation'}
                       </p>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs text-gray-400">
                           {new Date(session.createdAt).toLocaleDateString()}
                         </span>
                         <div className="flex gap-1">
-                          {session.emotionalJourney.slice(0, 3).map((emotion, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs px-1">
-                              {emotion}
+                          {session.currentEmotionalState && (
+                            <Badge variant="secondary" className="text-xs px-1">
+                              {session.currentEmotionalState}
                             </Badge>
-                          ))}
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -474,7 +474,7 @@ export default function TherapeuticChat() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleTherapeuticAction('go_deeper')}
+                    onClick={() => handleSendMessage('go_deeper')}
                     className="h-7 px-3 text-xs bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
                     disabled={sendMessageMutation.isPending}
                   >
@@ -483,7 +483,7 @@ export default function TherapeuticChat() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleTherapeuticAction('new_direction')}
+                    onClick={() => handleSendMessage('new_direction')}
                     className="h-7 px-3 text-xs bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
                     disabled={sendMessageMutation.isPending}
                   >
@@ -492,7 +492,7 @@ export default function TherapeuticChat() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleTherapeuticAction('customize_response')}
+                    onClick={() => handleSendMessage('customize_response')}
                     className="h-7 px-3 text-xs bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40"
                     disabled={sendMessageMutation.isPending}
                   >
