@@ -66,6 +66,126 @@ export default function EnhancedVisionBoard() {
     enabled: showLoadDialog
   });
 
+  // Add text item functionality
+  const addTextItem = () => {
+    if (!newText.trim()) return;
+    
+    const newItem: VisionBoardItem = {
+      id: Date.now().toString(),
+      type: 'text',
+      content: newText,
+      x: 50,
+      y: 50,
+      width: 200,
+      height: 50,
+      fontSize: 16,
+      color: '#000000'
+    };
+    
+    setBoard(prev => ({
+      ...prev,
+      canvasData: {
+        ...prev.canvasData,
+        items: [...prev.canvasData.items, newItem]
+      }
+    }));
+    setNewText("");
+  };
+
+  // Handle image upload functionality
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) throw new Error('Failed to upload image');
+      
+      const data = await response.json();
+      
+      const newItem: VisionBoardItem = {
+        id: Date.now().toString(),
+        type: 'image',
+        content: data.url,
+        x: 100,
+        y: 100,
+        width: 150,
+        height: 150
+      };
+      
+      setBoard(prev => ({
+        ...prev,
+        canvasData: {
+          ...prev.canvasData,
+          items: [...prev.canvasData.items, newItem]
+        }
+      }));
+      toast({ title: "Image uploaded successfully!" });
+    } catch (error) {
+      toast({ 
+        title: "Failed to upload image", 
+        description: "Please try again",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Generate AI image function
+  const generateAIImage = async (prompt: string) => {
+    if (!prompt.trim()) return;
+    
+    setIsGeneratingImage(true);
+    try {
+      const response = await fetch('/api/ai/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          size: "1024x1024",
+          quality: "standard"
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to generate image');
+      
+      const data = await response.json();
+      
+      const newItem: VisionBoardItem = {
+        id: Date.now().toString(),
+        type: 'image',
+        content: data.imageUrl,
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 200
+      };
+      
+      setBoard(prev => ({
+        ...prev,
+        canvasData: {
+          ...prev.canvasData,
+          items: [...prev.canvasData.items, newItem]
+        }
+      }));
+      toast({ title: "AI image generated successfully!" });
+    } catch (error) {
+      toast({ 
+        title: "Failed to generate AI image", 
+        description: "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   // Load board functionality
   const loadVisionBoard = async (boardId: number) => {
     try {
@@ -198,17 +318,69 @@ export default function EnhancedVisionBoard() {
     }
   };
 
+  // Delete item functionality
+  const deleteItem = (id: string) => {
+    setBoard(prev => ({
+      ...prev,
+      canvasData: {
+        ...prev.canvasData,
+        items: prev.canvasData.items.filter(item => item.id !== id)
+      }
+    }));
+    setSelectedItem(null);
+  };
+
+  // Update item functionality
+  const updateItem = (id: string, updates: Partial<VisionBoardItem>) => {
+    setBoard(prev => ({
+      ...prev,
+      canvasData: {
+        ...prev.canvasData,
+        items: prev.canvasData.items.map(item => 
+          item.id === id ? { ...item, ...updates } : item
+        )
+      }
+    }));
+  };
+
+  // Mouse interaction handlers
+  const handleMouseDown = (e: React.MouseEvent, itemId: string) => {
+    setDraggedItem(itemId);
+    setSelectedItem(itemId);
+  };
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!draggedItem) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    updateItem(draggedItem, { x: Math.max(0, x - 75), y: Math.max(0, y - 25) });
+  }, [draggedItem]);
+
+  const handleMouseUp = () => {
+    setDraggedItem(null);
+  };
+
   // Export board functionality
   const exportBoard = async (format: 'png' | 'jpg' | 'pdf') => {
-    if (!canvasRef.current) return;
-
     try {
-      const canvas = canvasRef.current as HTMLCanvasElement;
-      const dataUrl = canvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : format}`);
-      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = 800;
+      canvas.height = 600;
+      ctx.fillStyle = board.canvasData.backgroundColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       const link = document.createElement('a');
       link.download = `${board.title || 'vision-board'}.${format}`;
-      link.href = dataUrl;
+      link.href = canvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : format}`);
       link.click();
       
       toast({
@@ -223,6 +395,8 @@ export default function EnhancedVisionBoard() {
       });
     }
   };
+
+  const selectedItemData = board.canvasData.items.find(item => item.id === selectedItem);
 
   return (
     <Card className="w-full max-w-7xl mx-auto">
@@ -246,15 +420,249 @@ export default function EnhancedVisionBoard() {
         </CardTitle>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="space-y-6">
+        {/* Board Settings */}
+        <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="board-title" className="text-sm font-medium">Vision Board Title</Label>
+              <Input
+                id="board-title"
+                placeholder="My Vision Board"
+                value={board.title}
+                onChange={(e) => setBoard(prev => ({ ...prev, title: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="board-description" className="text-sm font-medium">Description (Optional)</Label>
+              <Input
+                id="board-description"
+                placeholder="Describe your vision..."
+                value={board.description}
+                onChange={(e) => setBoard(prev => ({ ...prev, description: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
         <div className="space-y-4">
-          <canvas
-            ref={canvasRef}
-            width={board.canvasData.canvasWidth}
-            height={board.canvasData.canvasHeight}
-            className="border border-gray-300 rounded-lg mx-auto block"
-            style={{ backgroundColor: board.canvasData.backgroundColor }}
-          />
+          <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Add text to your vision board..."
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                className="w-64"
+                onKeyPress={(e) => e.key === 'Enter' && addTextItem()}
+              />
+              <Button onClick={addTextItem} size="sm">
+                <Type className="w-4 h-4 mr-1" />
+                Add Text
+              </Button>
+            </div>
+            
+            <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline">
+              <ImageIcon className="w-4 h-4 mr-1" />
+              Upload Image
+            </Button>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </div>
+
+          {/* AI Image Generation */}
+          <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border">
+            <h3 className="text-sm font-semibold mb-2 text-purple-700">AI Image Generator</h3>
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Describe the image you want to generate..."
+                className="flex-1"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    generateAIImage((e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+              />
+              <Button 
+                onClick={(e) => {
+                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  generateAIImage(input.value);
+                  input.value = '';
+                }}
+                disabled={isGeneratingImage}
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {isGeneratingImage ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-4 h-4 mr-1" />
+                )}
+                Generate
+              </Button>
+            </div>
+            <p className="text-xs text-purple-600 mt-1">
+              Create custom images using AI to enhance your vision board
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-6">
+          {/* Canvas */}
+          <div className="flex-1">
+            <div
+              ref={canvasRef}
+              className="relative bg-white border-2 border-dashed border-muted-foreground/30 rounded-lg"
+              style={{ width: '600px', height: '450px' }}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              {board.canvasData.items.map((item) => (
+                <div
+                  key={item.id}
+                  className={`absolute cursor-move select-none ${
+                    selectedItem === item.id ? 'ring-2 ring-primary' : ''
+                  }`}
+                  style={{
+                    left: item.x,
+                    top: item.y,
+                    width: item.width,
+                    height: item.height
+                  }}
+                  onMouseDown={(e) => handleMouseDown(e, item.id)}
+                >
+                  {item.type === 'text' ? (
+                    <div
+                      className="w-full h-full flex items-center justify-center p-2 bg-white/80 rounded border"
+                      style={{
+                        fontSize: item.fontSize,
+                        color: item.color
+                      }}
+                    >
+                      {item.content}
+                    </div>
+                  ) : (
+                    <img
+                      src={item.content}
+                      alt="Vision board item"
+                      className="w-full h-full object-cover rounded border"
+                      draggable={false}
+                    />
+                  )}
+                </div>
+              ))}
+              
+              {board.canvasData.items.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Plus className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Start adding images and text to create your vision board</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Properties Panel */}
+          {selectedItemData && (
+            <div className="w-64 space-y-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Item Properties</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {selectedItemData.type === 'text' && (
+                    <>
+                      <div>
+                        <Label htmlFor="text-content" className="text-xs">Text</Label>
+                        <Textarea
+                          id="text-content"
+                          value={selectedItemData.content}
+                          onChange={(e) => updateItem(selectedItemData.id, { content: e.target.value })}
+                          className="text-xs"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="font-size" className="text-xs">Font Size</Label>
+                        <Input
+                          id="font-size"
+                          type="number"
+                          value={selectedItemData.fontSize}
+                          onChange={(e) => updateItem(selectedItemData.id, { fontSize: parseInt(e.target.value) })}
+                          className="text-xs"
+                          min="8"
+                          max="72"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="text-color" className="text-xs">Color</Label>
+                        <Input
+                          id="text-color"
+                          type="color"
+                          value={selectedItemData.color}
+                          onChange={(e) => updateItem(selectedItemData.id, { color: e.target.value })}
+                          className="h-8"
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="width" className="text-xs">Width</Label>
+                      <Input
+                        id="width"
+                        type="number"
+                        value={selectedItemData.width}
+                        onChange={(e) => updateItem(selectedItemData.id, { width: parseInt(e.target.value) })}
+                        className="text-xs"
+                        min="50"
+                        max="400"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="height" className="text-xs">Height</Label>
+                      <Input
+                        id="height"
+                        type="number"
+                        value={selectedItemData.height}
+                        onChange={(e) => updateItem(selectedItemData.id, { height: parseInt(e.target.value) })}
+                        className="text-xs"
+                        min="30"
+                        max="300"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button
+                    onClick={() => deleteItem(selectedItemData.id)}
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Delete
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+
+        {/* Status */}
+        <div className="text-sm text-muted-foreground">
+          {board.canvasData.items.length} items • Click items to select and drag to move
         </div>
       </CardContent>
 
