@@ -49,6 +49,7 @@ export default function Navbar() {
     { name: "Dashboard", href: "/", icon: BarChart3 },
     { name: "Challenges", href: "/challenges", icon: Target },
     { name: "Journal", href: "/journal", icon: BookOpen },
+    { name: "Deep Journaling", href: "/deep-journaling", icon: Brain },
     { name: "Progress", href: "/progress", icon: BarChart3 },
   ];
 

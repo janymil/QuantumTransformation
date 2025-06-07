@@ -39,6 +39,8 @@ import { predictiveIntelligence } from "./predictive-intelligence";
 import { modelRouter } from "./intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
 import { registerDeepJournalingRoutes } from "./deep-journaling";
+import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
+import { responseQualityTiering } from "./response-quality-tiering";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
   
