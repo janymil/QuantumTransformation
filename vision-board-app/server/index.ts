@@ -43,16 +43,14 @@ app.post('/api/vb/ai/suggest-life-areas', (req, res) => {
   });
 });
 
-// Development server setup
+// Serve static files from dist or fallback to the simple HTML
 if (process.env.NODE_ENV === 'development') {
-  const vite = await createServer({
-    server: { middlewareMode: true },
-    root: path.join(__dirname, '../client'),
-    appType: 'spa'
+  // Development: serve from dist if available, otherwise serve simple HTML
+  app.use(express.static(path.join(__dirname, '../dist')));
+  app.get('*', (req, res) => {
+    const htmlPath = path.join(__dirname, '../dist/index.html');
+    res.sendFile(htmlPath);
   });
-  
-  app.use(vite.ssrFixStacktrace);
-  app.use(vite.middlewares);
 } else {
   // Production: serve built files
   app.use(express.static(path.join(__dirname, '../dist')));
