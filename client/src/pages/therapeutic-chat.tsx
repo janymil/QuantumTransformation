@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Mic, MicOff, Send, Settings, Heart, Brain, ChevronDown, Trash2, Plus, Target, ArrowRight } from "lucide-react";
+import { Mic, MicOff, Send, Settings, Heart, Brain, ChevronDown, Trash2, Plus, Target, ArrowRight, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -58,6 +59,7 @@ export default function TherapeuticChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [showCustomizationModal, setShowCustomizationModal] = useState(false);
   
   // Therapeutic settings
   const [therapeuticMode, setTherapeuticMode] = useState('empathetic');
@@ -182,6 +184,68 @@ export default function TherapeuticChat() {
     if (!currentMessage.trim()) return;
     
     sendMessageMutation.mutate({ message: currentMessage, actionType });
+  };
+
+  // Handle Go Deeper button - automatically generate deeper therapeutic response
+  const handleGoDeeper = async (aiMessage: string) => {
+    const deeperPrompt = `Based on my previous response: "${aiMessage}", please provide a much deeper, more insightful therapeutic exploration. Ask probing questions that help me uncover underlying patterns, beliefs, or emotions. Use techniques from depth psychology, CBT, or somatic therapy to guide me toward profound self-discovery.`;
+    
+    try {
+      const response = await apiRequest('/api/deep-journaling/process', {
+        method: 'POST',
+        body: { userInput: deeperPrompt, actionType: 'go_deeper' }
+      });
+
+      if (response.response) {
+        const newAiMessage: Message = {
+          id: Date.now().toString(),
+          type: 'ai',
+          content: response.response,
+          timestamp: new Date(),
+          emotionalTone: response.emotionalState?.primaryEmotion || 'insightful'
+        };
+
+        setMessages(prev => [...prev, newAiMessage]);
+        queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate deeper response. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle New Direction button - automatically generate new questioning approach
+  const handleNewDirection = async (aiMessage: string) => {
+    const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
+    
+    try {
+      const response = await apiRequest('/api/deep-journaling/process', {
+        method: 'POST',
+        body: { userInput: newDirectionPrompt, actionType: 'new_direction' }
+      });
+
+      if (response.response) {
+        const newAiMessage: Message = {
+          id: Date.now().toString(),
+          type: 'ai',
+          content: response.response,
+          timestamp: new Date(),
+          emotionalTone: response.emotionalState?.primaryEmotion || 'curious'
+        };
+
+        setMessages(prev => [...prev, newAiMessage]);
+        queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate new direction. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle key press
@@ -520,87 +584,93 @@ export default function TherapeuticChat() {
                       {/* Go Deeper button with submenu for AI messages */}
                       {message.type === 'ai' && (
                         <div className="mt-3 flex items-center gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="text-xs">
-                                Go Deeper
-                                <ChevronDown className="h-3 w-3 ml-1" />
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs"
+                            onClick={() => handleGoDeeper(message.content)}
+                            disabled={sendMessageMutation.isPending}
+                          >
+                            Go Deeper
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-xs"
+                            onClick={() => handleNewDirection(message.content)}
+                            disabled={sendMessageMutation.isPending}
+                          >
+                            New Direction
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-xs"
+                            onClick={() => setShowCustomizationModal(true)}
+                          >
+                            <Settings className="h-3 w-3 mr-1" />
+                            Customize
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Input field positioned directly below AI responses - Mindsera style */}
+                      {message.type === 'ai' && messages.indexOf(message) === messages.length - 1 && (
+                        <div className="mt-4">
+                          <div className="relative">
+                            <Textarea
+                              value={currentMessage}
+                              onChange={(e) => setCurrentMessage(e.target.value)}
+                              onKeyDown={handleKeyPress}
+                              placeholder="Can you customize your response to be more"
+                              className="min-h-[80px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 bg-gray-50 dark:bg-gray-900 rounded-lg"
+                              disabled={sendMessageMutation.isPending}
+                            />
+                            
+                            {/* Voice and Send buttons inside textarea */}
+                            <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={isRecording ? stopRecording : startRecording}
+                                className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
+                                disabled={sendMessageMutation.isPending}
+                              >
+                                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                              <DropdownMenuItem onClick={() => {
-                                setCurrentMessage("Let's explore this from a different angle. ");
-                              }}>
-                                <ArrowRight className="h-4 w-4 mr-2" />
-                                New Direction
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                setCurrentMessage("Can you customize your response to be more ");
-                              }}>
-                                <Settings className="h-4 w-4 mr-2" />
-                                Customize Response
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              <Button
+                                size="sm"
+                                onClick={() => handleSendMessage()}
+                                disabled={!currentMessage.trim() || sendMessageMutation.isPending}
+                                className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Voice recording indicator */}
+                          {isRecording && (
+                            <div className="flex items-center gap-2 mt-2 text-sm text-red-500 animate-pulse">
+                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              Recording... Click the microphone to stop
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-4 mt-3">
+                            <Button variant="outline" size="sm" className="text-xs">
+                              Refresh
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-xs text-gray-500">
+                              Finish entry
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Direct writing area after AI responses - Mindsera style */}
-                {message.type === 'ai' && messages.indexOf(message) === messages.length - 1 && (
-                  <div className="mt-6 ml-12">
-                    <div className="relative">
-                      <Textarea
-                        value={currentMessage}
-                        onChange={(e) => setCurrentMessage(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        placeholder="Write here..."
-                        className="min-h-[80px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 bg-gray-50 dark:bg-gray-900"
-                        disabled={sendMessageMutation.isPending}
-                      />
-                      
-                      {/* Voice and Send buttons inside textarea */}
-                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={isRecording ? stopRecording : startRecording}
-                          className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
-                          disabled={sendMessageMutation.isPending}
-                        >
-                          {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleSendMessage()}
-                          disabled={!currentMessage.trim() || sendMessageMutation.isPending}
-                          className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Voice recording indicator */}
-                    {isRecording && (
-                      <div className="flex items-center gap-2 mt-2 text-sm text-red-500 animate-pulse">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        Recording... Click the microphone to stop
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-4 mt-3">
-                      <Button variant="outline" size="sm" className="text-xs">
-                        Refresh
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-xs text-gray-500">
-                        Finish entry
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
 
