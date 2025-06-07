@@ -134,6 +134,8 @@ export class DeepJournalingEngine {
       apiKey: process.env.OPENAI_API_KEY 
     });
     
+    let aiResponse;
+    
     try {
       const completion = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -160,7 +162,7 @@ export class DeepJournalingEngine {
         };
       }
       
-      const aiResponse = {
+      aiResponse = {
         analysis: parsedResponse.analysis || { professionalAnalysis: parsedResponse.professionalAnalysis || "Deep psychological analysis not available" },
         question: parsedResponse.question || parsedResponse.followUpQuestion || "What aspects of this would you like to explore further?",
         patternInsights: parsedResponse.patternInsights || {},
@@ -182,26 +184,12 @@ export class DeepJournalingEngine {
     } catch (openaiError) {
       console.error('Direct OpenAI call failed:', openaiError);
       // Fallback to original routing
-      const aiResponse = await intelligentModelRouter.routeTherapeuticRequest(
+      aiResponse = await intelligentModelRouter.routeTherapeuticRequest(
         request,
         systemPrompt,
         `${contextPrompt}\n\n${analysisPrompt}`,
         'complex'
       );
-      
-      return {
-        analysis: aiResponse.analysis || {},
-        question: aiResponse.question || "What would you like to explore further?",
-        patternInsights: aiResponse.patternInsights || {},
-        emotionalAssessment: aiResponse.emotionalAssessment || {},
-        emotionalState: aiResponse.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
-        suggestions: aiResponse.suggestions || [],
-        tokenCount: aiResponse.tokenCount,
-        cost: aiResponse.cost,
-        modelUsed: aiResponse.modelUsed,
-        provider: aiResponse.provider,
-        remainingRequests: undefined
-      };
     }
 
     return {
