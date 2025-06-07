@@ -13,6 +13,7 @@ import { DeepJournalingRequest, DeepJournalingResponse } from "./types";
 import { therapeuticFrameworks } from "./therapeutic-frameworks";
 import { psychologicalAnalyzer } from "./psychological-analyzer";
 import { intelligentModelRouter } from "./intelligent-model-router";
+import { advancedCostOptimization } from "./advanced-cost-optimization";
 
 export class DeepJournalingEngine {
   
@@ -20,6 +21,20 @@ export class DeepJournalingEngine {
    * Main entry point for deep journaling interactions
    */
   async processJournalingRequest(request: DeepJournalingRequest): Promise<DeepJournalingResponse> {
+    // Check for cached user profile first
+    const cachedProfile = await advancedCostOptimization.getCachedUserProfile(request.userId);
+    
+    // Check for similar responses to avoid redundant AI calls
+    const similarResponse = await advancedCostOptimization.findSimilarResponse(request.userId, request.userInput);
+    if (similarResponse && request.actionType !== 'new_direction') {
+      // Return cached response with slight variation
+      return {
+        ...similarResponse,
+        isCached: true,
+        cost: 0, // No cost for cached responses
+        cacheHit: true
+      };
+    }
     const startTime = Date.now();
     
     // Get or create thread

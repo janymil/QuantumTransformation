@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { deepJournalingEngine } from "./engine";
+import { monthlyCostSimulation } from "./monthly-cost-simulation";
+import { advancedCostOptimization } from "./advanced-cost-optimization";
 import { voiceTranscriptionService } from "./voice-service";
 import { psychologicalAnalyzer } from "./psychological-analyzer";
 import { therapeuticFrameworks } from "./therapeutic-frameworks";
