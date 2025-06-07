@@ -10,7 +10,7 @@ import {
   type ThreadExchange,
   type PsychologicalProfile
 } from "@shared/schema";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, sql } from "drizzle-orm";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -573,12 +573,20 @@ RESPONSE FORMAT (JSON):
    * Update thread metadata
    */
   private async updateThreadMetadata(threadId: number, emotionalState: any, userInput: string) {
+    // Get current exchange count
+    const exchangeCount = await db
+      .select({ count: sql`COUNT(*)`.as('count') })
+      .from(threadExchanges)
+      .where(eq(threadExchanges.threadId, threadId));
+    
+    const totalExchanges = exchangeCount[0]?.count || 0;
+    
     await db
       .update(journalingThreads)
       .set({
         currentEmotionalState: emotionalState.primaryEmotion,
         lastActiveAt: new Date(),
-        totalExchanges: db.$count(),
+        totalExchanges: Number(totalExchanges),
         updatedAt: new Date()
       })
       .where(eq(journalingThreads.id, threadId));

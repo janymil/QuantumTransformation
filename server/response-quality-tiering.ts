@@ -280,11 +280,12 @@ export class ResponseQualityTiering {
    */
   private async getUserQualityHistory(userId: string): Promise<any> {
     try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const history = await db.select()
         .from(aiUsageTracking)
         .where(and(
           eq(aiUsageTracking.userId, userId),
-          gte(aiUsageTracking.timestamp, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) // Last 30 days
+          gte(aiUsageTracking.timestamp, thirtyDaysAgo)
         ))
         .orderBy(desc(aiUsageTracking.timestamp))
         .limit(50);
@@ -316,11 +317,12 @@ export class ResponseQualityTiering {
    */
   private async getUserModelPerformance(userId: string): Promise<any> {
     try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const history = await db.select()
         .from(aiUsageTracking)
         .where(and(
           eq(aiUsageTracking.userId, userId),
-          gte(aiUsageTracking.timestamp, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+          gte(aiUsageTracking.timestamp, thirtyDaysAgo)
         ))
         .limit(100);
       
