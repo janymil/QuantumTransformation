@@ -386,6 +386,13 @@ export default function EnhancedVisionBoard() {
           description: "Vision board has been permanently deleted.",
         });
         refetchBoards();
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Deletion Failed",
+          description: errorData.message || "Failed to delete vision board.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       toast({
@@ -400,26 +407,29 @@ export default function EnhancedVisionBoard() {
     if (!canvasRef.current) return;
 
     try {
-      let dataUrl: string;
+      const canvas = canvasRef.current as HTMLCanvasElement;
+      const dataUrl = canvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : format}`);
       
-      if (format === 'pdf') {
-        // For PDF export, we'll create a high-quality image first
-        const canvas = canvasRef.current;
-        dataUrl = canvas.toDataURL('image/png', 1.0);
-        
-        // Create a simple PDF-like download by opening the image
-        const link = document.createElement('a');
-        link.download = `${board.title || 'vision-board'}.png`;
-        link.href = dataUrl;
-        link.click();
-      } else {
-        const canvas = canvasRef.current;
-        const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-        dataUrl = canvas.toDataURL(mimeType, 0.9);
-        
-        const link = document.createElement('a');
-        link.download = `${board.title || 'vision-board'}.${format}`;
-        link.href = dataUrl;
+      const link = document.createElement('a');
+      link.download = `${board.title || 'vision-board'}.${format}`;
+      link.href = dataUrl;
+      link.click();
+      
+      toast({
+        title: "Export Successful",
+        description: `Vision board exported as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export vision board. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Load board functionality
+  const loadVisionBoard = async (boardId: number) => {
         link.click();
       }
 
@@ -520,7 +530,7 @@ export default function EnhancedVisionBoard() {
 
   const { data: savedBoards = [], refetch: refetchBoards } = useQuery({
     queryKey: ['/api/vision-boards'],
-    enabled: false
+    enabled: showLoadDialog
   });
 
   const saveBoardMutation = useMutation({
