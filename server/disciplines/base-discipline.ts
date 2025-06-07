@@ -27,6 +27,11 @@ export interface DisciplineResponse {
 export abstract class BaseDiscipline {
   abstract expertise: DisciplineExpertise;
   
+  get name(): string { return this.expertise.name; }
+  get description(): string { return this.expertise.description; }
+  get techniques(): string[] { return this.expertise.interventions; }
+  get applications(): string[] { return this.expertise.applications; }
+  
   /**
    * Assess user situation from this discipline's perspective
    */
