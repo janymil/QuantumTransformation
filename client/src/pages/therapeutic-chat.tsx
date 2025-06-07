@@ -679,47 +679,48 @@ export default function TherapeuticChat() {
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
           <div className="max-w-2xl mx-auto">
             {!sendMessageMutation.isPending && (
-              <div className="relative">
-                <Textarea
-                  value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Write directly here... Press Enter to send, Shift+Enter for new line"
-                  className="min-h-[120px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400"
-                  disabled={sendMessageMutation.isPending}
-                />
-                
-                {/* Voice and Send buttons inside textarea */}
-                <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={isRecording ? stopRecording : startRecording}
-                    className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
+              <>
+                <div className="relative">
+                  <Textarea
+                    value={currentMessage}
+                    onChange={(e) => setCurrentMessage(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Write directly here... Press Enter to send, Shift+Enter for new line"
+                    className="min-h-[120px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400"
                     disabled={sendMessageMutation.isPending}
-                  >
-                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleSendMessage()}
-                    disabled={!currentMessage.trim() || sendMessageMutation.isPending}
-                    className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                  />
+                  
+                  {/* Voice and Send buttons inside textarea */}
+                  <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
+                      disabled={sendMessageMutation.isPending}
+                    >
+                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSendMessage()}
+                      disabled={!currentMessage.trim() || sendMessageMutation.isPending}
+                      className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Voice recording indicator */}
-              {isRecording && (
-                <div className="flex items-center justify-center gap-2 mt-3 text-sm text-red-500 animate-pulse">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  Recording... Click the microphone to stop
-                </div>
-              )}
-            </div>
-          )}
+                {/* Voice recording indicator */}
+                {isRecording && (
+                  <div className="flex items-center justify-center gap-2 mt-3 text-sm text-red-500 animate-pulse">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    Recording... Click the microphone to stop
+                  </div>
+                )}
+              </>
+            )}
           
           {sendMessageMutation.isPending && (
             <div className="flex justify-center">
