@@ -2790,6 +2790,18 @@ Focus on practical, implementable suggestions that directly support their ${focu
       // Calculate cost (DALL-E pricing: ~$0.04 for standard, ~$0.08 for HD)
       const cost = quality === 'hd' ? 0.08 : 0.04;
 
+      // Save generated image to user's gallery
+      const savedImage = await storage.saveGeneratedImage({
+        userId: userId.toString(),
+        imageUrl,
+        prompt,
+        size,
+        quality,
+        model: 'dall-e-3',
+        cost,
+        generationType: 'ai_generation'
+      });
+
       const result = {
         imageUrl,
         prompt,
@@ -2797,14 +2809,16 @@ Focus on practical, implementable suggestions that directly support their ${focu
         quality,
         model: 'dall-e-3',
         cost,
-        remainingRequests: validation.remainingRequests
+        remainingRequests: validation.remainingRequests,
+        savedToGallery: true,
+        galleryId: savedImage.id
       };
 
       // Cache the response
       await cacheResponse(inputHash, 'image_generation', result, 24); // 24 hour cache
       
       // Track usage
-      await trackUsage(userId, 'image_generation', inputHash, responseTime, cost);
+      await trackUsage(userId.toString(), 'image_generation', inputHash, responseTime, cost);
 
       res.json(result);
       
@@ -3053,11 +3067,15 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
 
   app.post('/api/vision-boards', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.id || req.session?.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
       const { title, description, canvasData, templateCategory } = req.body;
 
       const visionBoard = await storage.createVisionBoard({
-        userId,
+        userId: userId.toString(),
         title: title || "My Vision Board",
         description: description || "",
         canvasData,
