@@ -51,8 +51,41 @@ app.get('*', (req, res) => {
   res.sendFile(htmlPath);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎨 Vision Board App server running on port ${PORT}`);
   console.log(`🔗 Access the app at http://localhost:${PORT}`);
   console.log(`📁 Serving from: dist directory`);
 });
+
+// Keep the process alive
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('Received SIGINT, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // Don't exit the process, just log the error
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit the process, just log the error
+});
+
+// Keep alive heartbeat
+setInterval(() => {
+  console.log(`Vision Board server heartbeat - ${new Date().toISOString()}`);
+}, 60000); // Every minute
