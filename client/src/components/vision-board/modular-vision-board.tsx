@@ -28,6 +28,8 @@ import { ImageUpload, ImageDropZone } from "./image-upload";
 export default function ModularVisionBoard() {
   const { toast } = useToast();
   
+
+  
   // Use the modular state management hook
   const {
     // State
@@ -339,6 +341,13 @@ export default function ModularVisionBoard() {
         onImageAdd={addElement}
         elementCount={board.canvasData.items.length}
         isSaving={isSaving}
+        onAISuggestions={() => setShowSuggestionsDialog(true)}
+        onScreenCapture={() => setShowScreenCaptureDialog(true)}
+        onMobileWallpaper={() => setShowMobileWallpaperDialog(true)}
+        onVirtualTour={() => setShowVirtualTour(true)}
+        onPersonalizedSuggestions={() => setShowPersonalizedSuggestions(true)}
+        onIconsPicker={() => setShowIconsPicker(true)}
+        onBoardEditor={() => setShowBoardEditor(true)}
       />
 
       {/* Main Canvas Area */}
