@@ -4005,6 +4005,121 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
+  // AI Coaching Hub with Response Quality Tiering
+  app.post('/api/ai-coaching/coaching-session', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userInput, sessionType = 'multidisciplinary_coaching' } = req.body;
+
+      // Process through enhanced multidisciplinary engine with quality tiering
+      const response = await multidisciplinaryAIEngine.processCoachingRequest(
+        userId, 
+        userInput, 
+        sessionType
+      );
+
+      res.json({
+        ...response,
+        optimizationApplied: 'response_quality_tiering',
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: unknown) {
+      console.error("Error in AI coaching session:", error);
+      res.status(500).json({ 
+        message: "Failed to process coaching session", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Deep Journaling with Response Quality Tiering
+  app.post('/api/deep-journaling/analyze', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userInput, threadId, actionType, customizations } = req.body;
+
+      const { deepJournalingEngine } = await import('./deep-journaling-engine');
+      
+      const response = await deepJournalingEngine.processJournalingRequest({
+        userId,
+        threadId,
+        userInput,
+        actionType,
+        customizations
+      });
+
+      res.json({
+        ...response,
+        optimizationApplied: 'response_quality_tiering',
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: unknown) {
+      console.error("Error in deep journaling analysis:", error);
+      res.status(500).json({ 
+        message: "Failed to process journaling request", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Response Quality Assessment endpoint
+  app.post('/api/ai-coaching/quality-assessment', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userInput, response, modelUsed } = req.body;
+
+      const qualityMetrics = await responseQualityTiering.assessResponseQuality(
+        userInput,
+        response,
+        userId
+      );
+
+      res.json({
+        qualityMetrics,
+        modelUsed,
+        assessmentDate: new Date().toISOString()
+      });
+
+    } catch (error: unknown) {
+      console.error("Error in quality assessment:", error);
+      res.status(500).json({ 
+        message: "Failed to assess response quality", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Cost Optimization Analytics
+  app.get('/api/ai-coaching/optimization-analytics', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { days = 30 } = req.query;
+
+      const analytics = await responseQualityTiering.calculateQualityTieringSavings(
+        { tier: 'premium', requiredQuality: 8, preferredModels: ['gpt-4o'], costMultiplier: 1.0, useCases: [] },
+        { tier: 'standard', requiredQuality: 6, preferredModels: ['gpt-3.5-turbo'], costMultiplier: 0.1, useCases: [] },
+        userId,
+        parseInt(days as string)
+      );
+
+      res.json({
+        analytics,
+        period: `${days} days`,
+        userId: userId.slice(0, 8) + '...',
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: unknown) {
+      console.error("Error fetching optimization analytics:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch analytics", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Register deep journaling routes
   registerDeepJournalingRoutes(app);
 
