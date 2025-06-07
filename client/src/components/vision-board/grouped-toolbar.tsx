@@ -27,6 +27,13 @@ interface GroupedToolbarProps {
   onImageAdd: (item: any) => void;
   elementCount: number;
   isSaving?: boolean;
+  onAISuggestions?: () => void;
+  onScreenCapture?: () => void;
+  onMobileWallpaper?: () => void;
+  onVirtualTour?: () => void;
+  onPersonalizedSuggestions?: () => void;
+  onIconsPicker?: () => void;
+  onBoardEditor?: () => void;
 }
 
 export default function GroupedToolbar({
@@ -48,7 +55,14 @@ export default function GroupedToolbar({
   onTemplateSelect,
   onImageAdd,
   elementCount,
-  isSaving
+  isSaving,
+  onAISuggestions,
+  onScreenCapture,
+  onMobileWallpaper,
+  onVirtualTour,
+  onPersonalizedSuggestions,
+  onIconsPicker,
+  onBoardEditor
 }: GroupedToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,7 +137,7 @@ export default function GroupedToolbar({
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-6 w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         
         {/* Basic Tools Box */}
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
@@ -236,6 +250,82 @@ export default function GroupedToolbar({
               <Layout className="w-4 h-4 mr-2" />
               Templates
             </Button>
+            {onAISuggestions && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onAISuggestions}
+                className="w-full justify-start"
+              >
+                <Star className="w-4 h-4 mr-2" />
+                AI Suggestions
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Advanced Features Box */}
+        <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800">
+          <h3 className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-3 flex items-center gap-2">
+            <Camera className="w-4 h-4" />
+            Advanced Features
+          </h3>
+          <div className="space-y-2">
+            {onScreenCapture && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onScreenCapture}
+                className="w-full justify-start"
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Screen Capture
+              </Button>
+            )}
+            {onMobileWallpaper && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onMobileWallpaper}
+                className="w-full justify-start"
+              >
+                <Smartphone className="w-4 h-4 mr-2" />
+                Mobile Wallpaper
+              </Button>
+            )}
+            {onVirtualTour && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onVirtualTour}
+                className="w-full justify-start"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Virtual Tour
+              </Button>
+            )}
+            {onIconsPicker && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onIconsPicker}
+                className="w-full justify-start"
+              >
+                <Palette className="w-4 h-4 mr-2" />
+                Elements Picker
+              </Button>
+            )}
+            {onBoardEditor && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onBoardEditor}
+                className="w-full justify-start"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Board Editor
+              </Button>
+            )}
           </div>
         </div>
 

@@ -321,7 +321,7 @@ export default function ModularVisionBoard() {
       {/* Toolbar */}
       <GroupedToolbar
         activeTool={activeTool}
-        onToolChange={setActiveTool}
+        onToolChange={(tool: string) => setActiveTool(tool as any)}
         zoomLevel={zoomLevel}
         onZoomChange={setZoomLevel}
         canUndo={canUndo}
