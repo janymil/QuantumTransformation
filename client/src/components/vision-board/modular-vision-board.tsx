@@ -28,7 +28,8 @@ import { ImageUpload, ImageDropZone } from "./image-upload";
 export default function ModularVisionBoard() {
   const { toast } = useToast();
   
-
+  // Additional state for image generation dialog
+  const [showImageGenerationDialog, setShowImageGenerationDialog] = useState(false);
   
   // Use the modular state management hook
   const {
@@ -468,12 +469,9 @@ export default function ModularVisionBoard() {
 
       {/* All Dialog Components */}
       <ImageGeneration
-        isOpen={showScreenCaptureDialog}
-        onClose={() => setShowScreenCaptureDialog(false)}
+        isOpen={showImageGenerationDialog}
+        onClose={() => setShowImageGenerationDialog(false)}
         onImageGenerated={handleImageGenerated}
-        onImageUploaded={handleImageUploaded}
-        onScreenCapture={handleScreenCapture}
-        isCapturingScreen={isCapturingScreen}
       />
 
       <AISuggestions
