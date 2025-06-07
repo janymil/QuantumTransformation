@@ -128,10 +128,7 @@ export default function DeepJournaling() {
   // Process journaling request mutation
   const journalingMutation = useMutation({
     mutationFn: async (request: DeepJournalingRequest) => {
-      return await apiRequest('/api/deep-journaling/analyze', {
-        method: 'POST',
-        body: JSON.stringify(request),
-      });
+      return await apiRequest('POST', '/api/deep-journaling/analyze', request);
     },
     onSuccess: (response: DeepJournalingResponse) => {
       setCurrentThread(response.threadId);
