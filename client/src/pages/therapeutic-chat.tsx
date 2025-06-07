@@ -70,57 +70,53 @@ export default function TherapeuticChat() {
     },
   });
 
-  // Send message mutation
+  // Send message mutation - using deep journaling engine
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: { 
-      message: string; 
-      threadId?: number; 
-      conversationStyle?: string; 
-      focusArea?: string; 
-      responseLength?: string;
-      wasVoiceInput?: boolean;
-    }) => {
-      const response = await fetch('/api/therapeutic-chat/message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: messageData.message,
-          sessionId: messageData.threadId,
-          therapeuticMode: 'supportive',
-          conversationStyle: messageData.conversationStyle || 'compassionate',
-          focusArea: messageData.focusArea || 'general'
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    mutationFn: async ({ message, actionType }: { message: string; actionType?: 'go_deeper' | 'new_direction' | 'customize_response' }) => {
+      const requestBody: any = {
+        userInput: message.trim(),
+        customizations: {
+          mode: conversationStyle === 'socratic' ? 'therapeutic' : 
+                conversationStyle === 'cbt' ? 'analytical' : 'conversational',
+          tone: 'supportive',
+          perspective: conversationStyle === 'socratic' ? 'psychologist' :
+                      conversationStyle === 'cbt' ? 'cbt_therapist' :
+                      conversationStyle === 'humanistic' ? 'life_coach' : 'psychologist'
+        }
+      };
+
+      // Only include threadId if we have an active session
+      if (activeSession) {
+        requestBody.threadId = activeSession.id;
       }
-      
-      return response.json();
+
+      if (actionType) {
+        requestBody.actionType = actionType;
+      }
+
+      return await apiRequest('POST', '/api/deep-journaling/process', requestBody);
     },
-    onSuccess: (data: TherapeuticResponse) => {
-      const aiMessage: Message = {
-        id: data.messageId,
-        type: 'ai',
-        content: data.response,
-        timestamp: new Date(),
-        emotionalTone: data.emotionalState?.primaryEmotion
+    onSuccess: (response: any) => {
+      // Add user message
+      const userMessage: Message = {
+        id: `user-${Date.now()}`,
+        type: 'user',
+        content: currentMessage,
+        timestamp: new Date()
       };
       
-      setMessages(prev => [...prev, aiMessage]);
+      // Add AI response with deep journaling format - extract the actual therapeutic content
+      const aiMessage: Message = {
+        id: response.exchangeId?.toString() || `ai-${Date.now()}`,
+        type: 'ai',
+        content: response.analysis?.professionalAnalysis || response.question || response.response || 'I understand. Please tell me more.',
+        timestamp: new Date(),
+        emotionalTone: response.emotionalState?.primaryEmotion || 'curious'
+      };
       
-      if (data.sessionId && !activeSession) {
-        setActiveSession({
-          id: data.sessionId,
-          title: `Session ${new Date().toLocaleDateString()}`,
-          messages: [],
-          lastMessage: data.response.substring(0, 100) + "...",
-          createdAt: new Date().toISOString(),
-          emotionalJourney: []
-        });
-      }
+      setMessages(prev => [...prev, userMessage, aiMessage]);
+      setCurrentMessage("");
+      setActiveSession(response.threadId);
       
       queryClient.invalidateQueries({ queryKey: ['/api/deep-journaling/threads'] });
     },
@@ -155,26 +151,11 @@ export default function TherapeuticChat() {
   const handleSendMessage = async () => {
     if (!currentMessage.trim() || sendMessageMutation.isPending) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: currentMessage,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    
     const messageToSend = currentMessage;
-    setCurrentMessage("");
-
+    
     try {
       await sendMessageMutation.mutateAsync({
-        message: messageToSend,
-        threadId: activeSession?.id,
-        conversationStyle,
-        focusArea,
-        responseLength,
-        wasVoiceInput: false
+        message: messageToSend
       });
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -191,63 +172,203 @@ export default function TherapeuticChat() {
   const handleGoDeeper = async (lastAiMessage: string) => {
     const deeperPrompt = `I'd like to explore this further. Can you help me go deeper into what we just discussed: "${lastAiMessage.substring(0, 100)}..."`;
     
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: deeperPrompt,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-
     try {
-      await sendMessageMutation.mutateAsync({
-        message: deeperPrompt,
-        threadId: activeSession?.id,
-        conversationStyle: 'socratic',
-        focusArea: 'patterns',
-        responseLength,
-        wasVoiceInput: false
+      const response = await fetch('/api/deep-journaling/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userInput: deeperPrompt, actionType: 'go_deeper' })
       });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newAiMessage: Message = {
+          id: Date.now().toString(),
+          type: 'ai',
+          content: data.analysis?.professionalAnalysis || data.question || data.response || 'Let me explore this deeper with you.',
+          timestamp: new Date(),
+          emotionalTone: data.emotionalState?.primaryEmotion || 'insightful'
+        };
+
+        setMessages(prev => [...prev, newAiMessage]);
+        setActiveSession(data.threadId);
+      }
     } catch (error) {
-      console.error('Failed to go deeper:', error);
-    }
-  };
-
-  const handleNewDirection = async (lastAiMessage: string) => {
-    const newDirectionPrompt = `Let's explore a different angle. Based on our conversation, what other perspectives or aspects should we consider?`;
-    
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: newDirectionPrompt,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-
-    try {
-      await sendMessageMutation.mutateAsync({
-        message: newDirectionPrompt,
-        threadId: activeSession?.id,
-        conversationStyle: 'collaborative',
-        focusArea: 'general',
-        responseLength,
-        wasVoiceInput: false
-      });
-    } catch (error) {
-      console.error('Failed to explore new direction:', error);
-    }
-  };
-
-  const handleFinishConversation = () => {
-    if (activeSession) {
       toast({
-        title: "Session Completed",
-        description: "Your therapeutic conversation has been saved.",
+        title: "Error",
+        description: "Failed to generate deeper response. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNewDirection = async (aiMessage: string) => {
+    const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
+    
+    try {
+      const response = await fetch('/api/deep-journaling/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userInput: newDirectionPrompt, actionType: 'new_direction' })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newAiMessage: Message = {
+          id: Date.now().toString(),
+          type: 'ai',
+          content: data.analysis?.professionalAnalysis || data.question || data.response || 'Let me explore this further with you.',
+          timestamp: new Date(),
+          emotionalTone: data.emotionalState?.primaryEmotion || 'curious'
+        };
+
+        setMessages(prev => [...prev, newAiMessage]);
+        setActiveSession(data.threadId);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate new direction. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFinishConversation = async () => {
+    if (!activeSession) return;
+    
+    try {
+      toast({
+        title: "Conversation Saved",
+        description: "Your therapeutic session has been saved successfully.",
       });
       
+      queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+      
       setActiveSession(null);
+      setMessages([]);
+      startNewSession();
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Unable to save conversation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startNewSession = () => {
+    setMessages([{
+      id: 'welcome',
+      type: 'ai',
+      content: "Hello! I'm here to listen and support you. Feel free to share whatever is on your mind - there's no judgment here, just genuine understanding. What would you like to explore together today?",
+      timestamp: new Date(),
+      emotionalTone: 'welcoming'
+    }]);
+    setActiveSession(null);
+    setCurrentMessage("");
+  };
+
+  // Load session function to match original
+  const loadSession = async (sessionId: number) => {
+    try {
+      const response = await fetch(`/api/deep-journaling/threads/${sessionId}/exchanges`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.exchanges) {
+          const formattedMessages: Message[] = [];
+          
+          data.exchanges.forEach((exchange: any) => {
+            formattedMessages.push({
+              id: `user-${exchange.id}`,
+              type: 'user',
+              content: exchange.userInput,
+              timestamp: new Date(exchange.createdAt)
+            });
+            
+            formattedMessages.push({
+              id: `ai-${exchange.id}`,
+              type: 'ai',
+              content: exchange.analysis?.professionalAnalysis || exchange.question || 'Continuing our conversation...',
+              timestamp: new Date(exchange.createdAt),
+              emotionalTone: exchange.emotionalState?.primaryEmotion || 'supportive'
+            });
+          });
+          
+          setMessages(formattedMessages);
+          setActiveSession(sessionId);
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load session. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        // Here you would typically send the audio to your speech-to-text service
+        toast({
+          title: "Voice Recording Complete",
+          description: "Processing your voice message...",
+        });
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+
+      toast({
+        title: "Recording Started",
+        description: "Speak your message now. Click the microphone again to stop.",
+      });
+    } catch (error) {
+      toast({
+        title: "Recording Error",
+        description: "Unable to access microphone. Please check permissions.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+    }
+  };
+
+  // Voice recording functions
+  const handleStartRecording = async () => {
+    if (!isRecording) {
+      startRecording();
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (isRecording && audioChunks.length === 0) {
+      stopRecording();
+      setAudioChunks([]);
+    }
+  };
       setMessages([]);
       queryClient.invalidateQueries({ queryKey: ['/api/deep-journaling/threads'] });
     }
