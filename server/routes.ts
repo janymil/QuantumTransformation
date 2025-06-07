@@ -241,10 +241,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const token = authHeader.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'quantum-challenges-vision-board-secret-2025') as any;
+      let decoded;
       
-      if (decoded.aud !== 'vision-board-app' || decoded.iss !== 'quantum-challenges-app') {
-        return res.status(401).json({ error: 'Invalid token audience or issuer' });
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET || 'quantum-challenges-vision-board-secret-2025') as any;
+      } catch (jwtError) {
+        console.error('JWT verification failed:', jwtError.message);
+        return res.status(401).json({ error: 'Invalid or expired token', details: jwtError.message });
+      }
+      
+      // Log token details for debugging
+      console.log('Token decoded successfully:', {
+        aud: decoded.aud,
+        iss: decoded.iss,
+        userId: decoded.userId,
+        exp: decoded.exp
+      });
+      
+      // Flexible validation - accept various formats
+      const validAudience = decoded.aud === 'vision-board-app' || decoded.aud === 'vision-board' || !decoded.aud;
+      const validIssuer = decoded.iss === 'quantum-challenges-app' || decoded.iss === 'quantum-challenges' || !decoded.iss;
+      
+      if (!validAudience || !validIssuer) {
+        console.error('Token validation failed:', { aud: decoded.aud, iss: decoded.iss });
+        return res.status(401).json({ 
+          error: 'Invalid token audience or issuer',
+          expected: { aud: 'vision-board-app', iss: 'quantum-challenges-app' },
+          received: { aud: decoded.aud, iss: decoded.iss }
+        });
       }
 
       const userId = req.params.userId;
