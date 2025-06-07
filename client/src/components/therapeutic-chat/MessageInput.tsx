@@ -34,7 +34,7 @@ export function MessageInput({
                 onChange={(e) => onMessageChange(e.target.value)}
                 onKeyDown={onKeyPress}
                 placeholder="Write directly here... Press Enter to send, Shift+Enter for new line"
-                className="min-h-[120px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400"
+                className="min-h-[120px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
                 disabled={isLoading}
               />
               

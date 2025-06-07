@@ -70,31 +70,28 @@ export default function TherapeuticChat() {
     },
   });
 
-  // Send message mutation - using deep journaling engine
+  // Send message mutation - therapeutic chat only (no database save until finish)
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, actionType }: { message: string; actionType?: 'go_deeper' | 'new_direction' | 'customize_response' }) => {
-      const requestBody: any = {
-        userInput: message.trim(),
-        customizations: {
-          mode: conversationStyle === 'socratic' ? 'therapeutic' : 
-                conversationStyle === 'cbt' ? 'analytical' : 'conversational',
-          tone: 'supportive',
-          perspective: conversationStyle === 'socratic' ? 'psychologist' :
-                      conversationStyle === 'cbt' ? 'cbt_therapist' :
-                      conversationStyle === 'humanistic' ? 'life_coach' : 'psychologist'
-        }
-      };
+      // Call therapeutic chat endpoint directly without saving to database
+      const response = await fetch('/api/therapeutic-chat/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userInput: message.trim(),
+          conversationStyle,
+          focusArea,
+          actionType
+        })
+      });
 
-      // Only include threadId if we have an active session
-      if (activeSession) {
-        requestBody.threadId = activeSession.id;
+      if (!response.ok) {
+        throw new Error('Failed to process message');
       }
 
-      if (actionType) {
-        requestBody.actionType = actionType;
-      }
-
-      return await apiRequest('POST', '/api/deep-journaling/process', requestBody);
+      return await response.json();
     },
     onSuccess: (response: any) => {
       // Add user message
@@ -105,20 +102,19 @@ export default function TherapeuticChat() {
         timestamp: new Date()
       };
       
-      // Add AI response with therapeutic chat format - use the correct response fields
+      // Add AI response with therapeutic chat format
       const aiMessage: Message = {
-        id: response.messageId || `ai-${Date.now()}`,
+        id: `ai-${Date.now()}`,
         type: 'ai',
-        content: response.response || response.therapeuticResponse || response.analysis?.professionalAnalysis || 'I understand. Please tell me more.',
+        content: response.response || 'I understand. Please tell me more.',
         timestamp: new Date(),
-        emotionalTone: response.emotionalInsight || response.emotionalState?.primaryEmotion || 'curious'
+        emotionalTone: response.emotionalInsight || 'curious'
       };
       
       setMessages(prev => [...prev, userMessage, aiMessage]);
       setCurrentMessage("");
-      setActiveSession(response.threadId);
       
-      queryClient.invalidateQueries({ queryKey: ['/api/deep-journaling/threads'] });
+      // Do NOT save to database or update threads here
     },
     onError: (error: any) => {
       toast({
@@ -245,19 +241,46 @@ export default function TherapeuticChat() {
   };
 
   const handleFinishConversation = async () => {
-    if (!activeSession) return;
+    if (messages.length <= 1) {
+      toast({
+        title: "No Conversation to Save",
+        description: "Please have a conversation first before finishing.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
-      toast({
-        title: "Conversation Saved",
-        description: "Your therapeutic session has been saved successfully.",
+      // Save the entire conversation to database
+      const conversationData = {
+        title: messages.find(m => m.type === 'user')?.content?.slice(0, 50) + '...' || 'Therapeutic Chat',
+        messages: messages.filter(m => m.type !== 'ai' || m.id !== 'welcome'), // Exclude welcome message
+        conversationStyle,
+        focusArea
+      };
+
+      const response = await fetch('/api/therapeutic-chat/save-conversation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(conversationData)
       });
-      
-      queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
-      
-      setActiveSession(null);
-      setMessages([]);
-      startNewSession();
+
+      if (response.ok) {
+        toast({
+          title: "Conversation Saved",
+          description: "Your therapeutic session has been saved successfully.",
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+        
+        setActiveSession(null);
+        setMessages([]);
+        startNewSession();
+      } else {
+        throw new Error('Failed to save conversation');
+      }
     } catch (error) {
       toast({
         title: "Save Failed",

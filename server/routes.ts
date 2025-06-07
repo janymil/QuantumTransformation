@@ -4147,6 +4147,78 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
+  // Therapeutic Chat Processing endpoint (no database save)
+  app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userInput: message, conversationStyle = 'supportive', focusArea = 'general', actionType } = req.body;
+
+      if (!message?.trim()) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      // Generate therapeutic response using AI without saving to database
+      const therapeuticPrompt = `You are a professional therapeutic companion engaging in a flowing conversation. Your role is to:
+
+1. Respond with empathy and genuine understanding
+2. Provide thoughtful insights when appropriate  
+3. Ask meaningful follow-up questions to deepen the conversation
+4. Maintain a warm, supportive tone while being professionally helpful
+
+Conversation Style: ${conversationStyle}  
+Focus Area: ${focusArea}
+
+The user just shared: "${message}"
+
+Respond as a therapeutic companion would - with understanding, insight, and a thoughtful question that continues the conversation naturally. Keep your response conversational and engaging, not clinical.
+
+Provide your response in this JSON format:
+{
+  "response": "Your empathetic response with insights",
+  "followUpQuestion": "A thoughtful question to continue the conversation",
+  "emotionalInsight": "Brief emotional insight (1-3 words like 'exploring vulnerability' or 'processing change')"
+}`;
+
+      console.log("Therapeutic Chat - Processing message:", message);
+
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: therapeuticPrompt },
+          { role: "user", content: message }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 800
+      });
+
+      console.log("Therapeutic Chat - OpenAI Raw Response:", aiResponse.choices[0].message.content);
+      
+      let therapeuticData;
+      try {
+        therapeuticData = JSON.parse(aiResponse.choices[0].message.content || '{}');
+        console.log("Therapeutic Chat - Parsed data:", therapeuticData);
+      } catch (parseError) {
+        console.error("Therapeutic Chat - JSON parse error:", parseError);
+        therapeuticData = {
+          response: "I understand what you're sharing with me. That sounds really challenging.",
+          followUpQuestion: "Can you tell me more about how this is affecting you?",
+          emotionalInsight: "processing"
+        };
+      }
+
+      res.json({
+        response: therapeuticData.response,
+        followUpQuestion: therapeuticData.followUpQuestion,
+        emotionalInsight: therapeuticData.emotionalInsight
+      });
+
+    } catch (error) {
+      console.error("Error in therapeutic chat processing:", error);
+      res.status(500).json({ message: "Failed to process message" });
+    }
+  });
+
   app.post('/api/therapeutic-chat/message', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
