@@ -575,11 +575,11 @@ RESPONSE FORMAT (JSON):
   private async updateThreadMetadata(threadId: number, emotionalState: any, userInput: string) {
     // Get current exchange count
     const exchangeCount = await db
-      .select({ count: sql`COUNT(*)`.as('count') })
+      .select()
       .from(threadExchanges)
       .where(eq(threadExchanges.threadId, threadId));
     
-    const totalExchanges = exchangeCount[0]?.count || 0;
+    const totalExchanges = exchangeCount.length;
     
     await db
       .update(journalingThreads)
