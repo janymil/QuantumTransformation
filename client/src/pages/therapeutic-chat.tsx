@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Mic, MicOff, Send, Settings, Heart, Brain, ChevronDown, Trash2, Plus, Target } from "lucide-react";
+import { Mic, MicOff, Send, Settings, Heart, Brain, ChevronDown, Trash2, Plus, Target, ArrowRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -516,11 +516,151 @@ export default function TherapeuticChat() {
                           </Button>
                         )}
                       </div>
+
+                      {/* Go Deeper button with submenu for AI messages */}
+                      {message.type === 'ai' && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="text-xs">
+                                Go Deeper
+                                <ChevronDown className="h-3 w-3 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem onClick={() => {
+                                setCurrentMessage("Let's explore this from a different angle. ");
+                              }}>
+                                <ArrowRight className="h-4 w-4 mr-2" />
+                                New Direction
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                setCurrentMessage("Can you customize your response to be more ");
+                              }}>
+                                <Settings className="h-4 w-4 mr-2" />
+                                Customize Response
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
+
+                {/* Direct writing area after AI responses - Mindsera style */}
+                {message.type === 'ai' && messages.indexOf(message) === messages.length - 1 && (
+                  <div className="mt-6 ml-12">
+                    <div className="relative">
+                      <Textarea
+                        value={currentMessage}
+                        onChange={(e) => setCurrentMessage(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        placeholder="Write here..."
+                        className="min-h-[80px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 bg-gray-50 dark:bg-gray-900"
+                        disabled={sendMessageMutation.isPending}
+                      />
+                      
+                      {/* Voice and Send buttons inside textarea */}
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={isRecording ? stopRecording : startRecording}
+                          className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
+                          disabled={sendMessageMutation.isPending}
+                        >
+                          {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSendMessage()}
+                          disabled={!currentMessage.trim() || sendMessageMutation.isPending}
+                          className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Voice recording indicator */}
+                    {isRecording && (
+                      <div className="flex items-center gap-2 mt-2 text-sm text-red-500 animate-pulse">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        Recording... Click the microphone to stop
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4 mt-3">
+                      <Button variant="outline" size="sm" className="text-xs">
+                        Refresh
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-xs text-gray-500">
+                        Finish entry
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
+
+            {/* Initial input area when no messages */}
+            {messages.length === 0 && (
+              <div className="text-center py-12">
+                <div className="mb-6">
+                  <Avatar className="w-16 h-16 mx-auto mb-4">
+                    <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400">
+                      <Heart className="h-8 w-8" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-gray-600 dark:text-gray-300 mb-6">
+                    Hello! I'm here to listen and support you. Feel free to share whatever is on your mind - there's no judgment here, just genuine understanding. What would you like to explore together today?
+                  </p>
+                </div>
+                
+                <div className="max-w-2xl mx-auto">
+                  <div className="relative">
+                    <Textarea
+                      value={currentMessage}
+                      onChange={(e) => setCurrentMessage(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder="Write directly here... Press Enter to send, Shift+Enter for new line"
+                      className="min-h-[120px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400"
+                      disabled={sendMessageMutation.isPending}
+                    />
+                    
+                    {/* Voice and Send buttons inside textarea */}
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={isRecording ? stopRecording : startRecording}
+                        className={`h-8 w-8 p-0 ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-600'}`}
+                        disabled={sendMessageMutation.isPending}
+                      >
+                        {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSendMessage()}
+                        disabled={!currentMessage.trim() || sendMessageMutation.isPending}
+                        className="h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Voice recording indicator */}
+                  {isRecording && (
+                    <div className="flex items-center justify-center gap-2 mt-3 text-sm text-red-500 animate-pulse">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      Recording... Click the microphone to stop
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             {sendMessageMutation.isPending && (
               <div className="flex justify-start">
