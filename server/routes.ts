@@ -4203,7 +4203,7 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
-  // Therapeutic Chat Processing endpoint using advanced DeepJournalingEngine
+  // Therapeutic Chat Processing endpoint - Routes through AI Intelligence Layer
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -4213,38 +4213,80 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Import the advanced therapeutic engine
-      const { deepJournalingEngine } = require('./therapeutic-chat/therapeutic-chat-engine');
+      // Import AI Intelligence Layer therapeutic adapter
+      const { therapeuticChatAdapter } = require('../shared/ai-intelligence/adapters/therapeutic-chat-adapter');
+      
+      // Helper function to build therapeutic system prompt
+      function buildTherapeuticSystemPrompt(customizations: any, focusArea: string): string {
+        return `You are an advanced AI therapeutic assistant specializing in ${focusArea}. 
+        
+Use a ${customizations.tone || 'empathetic'} approach with ${customizations.approach || 'balanced'} therapeutic techniques.
+Provide ${customizations.responseLength || 'balanced'} responses that are professionally therapeutic yet warm and supportive.
 
-      // Map frontend customization to advanced engine format
+Focus on:
+- Active listening and validation
+- Gentle guidance and insight
+- Emotional support and understanding
+- Evidence-based therapeutic principles
+- Creating a safe, non-judgmental space
+
+Remember to maintain professional boundaries while being genuinely helpful and supportive.`;
+      }
+
+      // Map frontend customization to therapeutic request format
       const customizations = mapFrontendToEngineCustomizations(conversationStyle, focusArea, responseLength);
 
-      // Build request for advanced engine
-      const engineRequest = {
+      // Build request for AI Intelligence Layer -> Therapeutic-Chat-Adapter -> TherapeuticChatEngine
+      const therapeuticRequest = {
         userId,
         userInput: message,
-        threadId,
-        actionType,
-        customizations,
-        wasVoiceInput: false
+        systemPrompt: buildTherapeuticSystemPrompt(customizations, focusArea),
+        userTier: 'premium', // Therapeutic chat is premium tier
+        sessionContext: {
+          threadId,
+          conversationHistory: [], // Will be populated by adapter
+          therapeuticGoals: [focusArea],
+          currentTherapeuticStyle: conversationStyle,
+          emotionalState: 'processing',
+          sessionType: actionType || 'chat'
+        },
+        personalization: {
+          preferredResponseStyle: customizations.tone,
+          effectivePatterns: [],
+          avoidancePatterns: [],
+          personalizedContext: customizations
+        },
+        options: {
+          temperature: 0.7,
+          maxTokens: 2000,
+          enableAdaptiveLanguage: true,
+          enableContextualMemory: true
+        }
       };
 
-      console.log("Therapeutic Chat - Using advanced engine with request:", engineRequest);
+      console.log("Therapeutic Chat - Routing through AI Intelligence Layer:", { userId, conversationStyle, focusArea });
 
-      // Process through advanced therapeutic engine
-      const engineResponse = await deepJournalingEngine.processJournalingRequest(engineRequest);
+      // Process through AI Intelligence Layer -> Therapeutic-Chat-Adapter -> TherapeuticChatEngine
+      const adapterResponse = await therapeuticChatAdapter.processTherapeuticRequest(therapeuticRequest);
 
-      console.log("Therapeutic Chat - Advanced engine response:", engineResponse);
+      console.log("Therapeutic Chat - AI Intelligence Layer response:", adapterResponse);
 
       // Format response for frontend compatibility
       const formattedResponse = {
-        response: engineResponse.analysis?.professionalAnalysis || engineResponse.question || "I understand what you're sharing with me.",
-        followUpQuestion: engineResponse.question || "Can you tell me more about how this is affecting you?",
-        emotionalInsight: engineResponse.emotionalState?.primaryEmotion || "processing",
-        threadId: engineResponse.threadId,
-        exchangeId: engineResponse.exchangeId,
-        cost: engineResponse.cost,
-        remainingRequests: engineResponse.remainingRequests
+        response: adapterResponse.content || "I understand what you're sharing with me.",
+        followUpQuestion: adapterResponse.therapeuticInsights?.recommendedFollowUp?.[0] || "Can you tell me more about how this is affecting you?",
+        emotionalInsight: adapterResponse.therapeuticInsights?.detectedEmotionalState || "processing",
+        threadId: threadId,
+        exchangeId: `exchange_${Date.now()}`,
+        cost: adapterResponse.metadata.cost,
+        remainingRequests: 50, // Will be calculated properly later
+        aiResponse: {
+          analysis: { professionalAnalysis: adapterResponse.content },
+          question: adapterResponse.content,
+          cost: adapterResponse.metadata.cost,
+          modelUsed: adapterResponse.metadata.modelUsed,
+          provider: adapterResponse.metadata.provider
+        }
       };
 
       res.json(formattedResponse);
