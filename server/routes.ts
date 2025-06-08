@@ -2089,49 +2089,6 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // ===================================
-  // AI COUCH SYSTEM ROUTES - INDEPENDENT MODULE
-  // ===================================
-
-  // AI Couch onboarding assessment
-  app.post('/api/ai-couch/assessment', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
-      
-      const assessmentData = req.body;
-      const profile = await aiCouchEngine.createUserProfile(userId, assessmentData);
-      
-      res.json({ 
-        success: true, 
-        profile,
-        message: "AI Couch profile created successfully" 
-      });
-    } catch (error) {
-      console.error("Error creating AI Couch profile:", error);
-      res.status(500).json({ message: "Failed to create profile", error: (error as Error).message });
-    }
-  });
-
-  // Get AI Couch profile
-  app.get('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      
-      // Get existing profile from database
-      const profile = await storage.getAICouchProfile(userId);
-      
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-      
-      res.json(profile);
-    } catch (error) {
-      console.error("Error getting AI Couch profile:", error);
-      res.status(500).json({ message: "Failed to get profile", error: (error as Error).message });
-    }
-  });
-
   // Update AI Couch profile
   app.put('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
     try {
