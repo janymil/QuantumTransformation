@@ -4132,9 +4132,9 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
         messages.push({
           id: `ai-${exchange.id}`,
           type: 'ai',
-          content: exchange.aiAnalysis + (exchange.aiQuestion ? `\n\n${exchange.aiQuestion}` : ''),
+          content: typeof exchange.aiAnalysis === 'string' ? exchange.aiAnalysis : (exchange.aiAnalysis as any)?.response || exchange.aiAnalysis,
           timestamp: exchange.createdAt,
-          emotionalTone: exchange.aiEmotionalAssessment?.insight || 'supportive'
+          emotionalTone: (exchange.aiEmotionalAssessment as any)?.insight || 'supportive'
         });
       }
 

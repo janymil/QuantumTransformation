@@ -434,7 +434,7 @@ export default function TherapeuticChat() {
 
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-3">
-            {threads.map((thread: any) => (
+            {threads && Array.isArray(threads) && threads.map((thread: any) => (
               <Card key={thread.id} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
