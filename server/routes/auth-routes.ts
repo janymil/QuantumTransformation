@@ -3,6 +3,34 @@ import { isAuthenticated } from "../replitAuth";
 import { storage } from "../storage";
 
 export function registerAuthRoutes(app: Express) {
+  // Development login endpoint for testing
+  app.post('/api/auth/dev-login', async (req, res) => {
+    try {
+      // Create a test user session for development
+      const testUser = {
+        id: 'dev-user-123',
+        email: 'dev@test.com',
+        firstName: 'Dev',
+        lastName: 'User',
+        created: new Date()
+      };
+      
+      // Set up session
+      (req as any).user = testUser;
+      
+      // Initialize user data
+      await initializeNewUser(testUser.id);
+      
+      res.json({ 
+        message: "Development login successful", 
+        user: testUser 
+      });
+    } catch (error) {
+      console.error("Dev login error:", error);
+      res.status(500).json({ message: "Dev login failed" });
+    }
+  });
+
   // Mock registration endpoint for testing
   app.post('/api/auth/register', async (req, res) => {
     try {
