@@ -81,6 +81,7 @@ export default function TherapeuticChat() {
         },
         body: JSON.stringify({
           userInput: message.trim(),
+          threadId: activeSession?.threadId, // Include threadId to continue existing conversation
           conversationStyle,
           focusArea,
           actionType
@@ -251,8 +252,9 @@ export default function TherapeuticChat() {
     }
     
     try {
-      // Save the entire conversation to database
+      // Prepare conversation data for saving
       const conversationData = {
+        threadId: activeSession?.threadId, // Include threadId if continuing existing conversation
         title: messages.find(m => m.type === 'user')?.content?.slice(0, 50) + '...' || 'Therapeutic Chat',
         messages: messages.filter(m => m.type !== 'ai' || m.id !== 'welcome'), // Exclude welcome message
         conversationStyle,
@@ -308,18 +310,10 @@ export default function TherapeuticChat() {
       const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}/messages`);
       if (response.ok) {
         const data = await response.json();
-        if (data?.exchanges) {
+        if (data?.exchanges && data.exchanges.length > 0) {
           const formattedMessages: Message[] = [];
           
-          // Add welcome message for continuing conversation
-          formattedMessages.push({
-            id: 'continue-welcome',
-            type: 'ai',
-            content: "Welcome back! I can see we had a meaningful conversation before. Feel free to continue sharing or explore new topics. How are you feeling today?",
-            timestamp: new Date(),
-            emotionalTone: 'welcoming'
-          });
-          
+          // Load conversation history directly without welcome message
           data.exchanges.forEach((exchange: any) => {
             if (exchange.userInput) {
               formattedMessages.push({
@@ -341,17 +335,27 @@ export default function TherapeuticChat() {
             }
           });
           
+          // Set the loaded conversation history
           setMessages(formattedMessages);
           setActiveSession({
             id: sessionId,
             threadId: sessionId,
-            title: `Continued Session ${sessionId}`,
+            title: data.session?.title || `Session ${sessionId}`,
             isActive: true
           });
           
           toast({
             title: "Conversation Loaded",
-            description: "You can now continue your previous conversation.",
+            description: "Continue where you left off.",
+          });
+        } else {
+          // If no exchanges found, start fresh but with session context
+          setMessages([]);
+          setActiveSession({
+            id: sessionId,
+            threadId: sessionId,
+            title: data.session?.title || `Session ${sessionId}`,
+            isActive: true
           });
         }
       } else {
