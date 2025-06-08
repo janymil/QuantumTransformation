@@ -94,12 +94,12 @@ export default function TherapeuticChat() {
 
       return await response.json();
     },
-    onSuccess: (response: any, variables: any) => {
+    onSuccess: (response: any) => {
       // Add user message
       const userMessage: Message = {
         id: `user-${Date.now()}`,
         type: 'user',
-        content: variables.message,
+        content: currentMessage,
         timestamp: new Date()
       };
       
@@ -148,13 +148,13 @@ export default function TherapeuticChat() {
   const handleSendMessage = async () => {
     if (!currentMessage.trim() || sendMessageMutation.isPending) return;
 
-    const messageToSend = currentMessage.trim();
+    const messageToSend = currentMessage;
+    setCurrentMessage(""); // Clear input immediately
     
     try {
       await sendMessageMutation.mutateAsync({
         message: messageToSend
       });
-      setCurrentMessage(""); // Clear input only after successful send
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({
@@ -162,6 +162,7 @@ export default function TherapeuticChat() {
         description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
+      setCurrentMessage(messageToSend); // Restore message on error
     }
   };
 

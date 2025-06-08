@@ -46,10 +46,8 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-white leading-relaxed">
-                      {message.content}
-                    </div>
-                  )}</div>
+                    <p>{message.content}</p>
+                  )}
                 </div>
               </div>
               
