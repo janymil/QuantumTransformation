@@ -1041,6 +1041,43 @@ export default function Journal() {
               ) : therapeuticSessions && therapeuticSessions.length > 0 ? (
                 <div className="space-y-4">
                   {therapeuticSessions
+                    .filter(session => {
+                      // Search filter
+                      if (conversationSearchQuery) {
+                        const searchLower = conversationSearchQuery.toLowerCase();
+                        const titleMatch = session.title?.toLowerCase().includes(searchLower);
+                        const messageMatch = session.lastMessage?.toLowerCase().includes(searchLower);
+                        const topicsMatch = session.topicsDiscussed?.toLowerCase().includes(searchLower);
+                        if (!titleMatch && !messageMatch && !topicsMatch) return false;
+                      }
+
+                      // Status filter
+                      if (conversationStatusFilter !== 'all') {
+                        if (conversationStatusFilter !== session.status) return false;
+                      }
+
+                      // Date filter
+                      if (conversationDateFilter !== 'all') {
+                        const sessionDate = new Date(session.updatedAt || session.createdAt);
+                        const now = new Date();
+                        
+                        switch (conversationDateFilter) {
+                          case 'today':
+                            if (sessionDate.toDateString() !== now.toDateString()) return false;
+                            break;
+                          case 'week':
+                            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            if (sessionDate < weekAgo) return false;
+                            break;
+                          case 'month':
+                            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            if (sessionDate < monthAgo) return false;
+                            break;
+                        }
+                      }
+
+                      return true;
+                    })
                     .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
                     .map((session, index) => (
                       <Card key={session.id} className="hover:shadow-lg transition-shadow duration-300">
@@ -1129,6 +1166,72 @@ export default function Journal() {
                       </Card>
                     ))
                   }
+                  
+                  {/* Show filtered empty state */}
+                  {therapeuticSessions.filter(session => {
+                      // Same filter logic as above
+                      if (conversationSearchQuery) {
+                        const searchLower = conversationSearchQuery.toLowerCase();
+                        const titleMatch = session.title?.toLowerCase().includes(searchLower);
+                        const messageMatch = session.lastMessage?.toLowerCase().includes(searchLower);
+                        const topicsMatch = session.topicsDiscussed?.toLowerCase().includes(searchLower);
+                        if (!titleMatch && !messageMatch && !topicsMatch) return false;
+                      }
+                      if (conversationStatusFilter !== 'all' && conversationStatusFilter !== session.status) return false;
+                      if (conversationDateFilter !== 'all') {
+                        const sessionDate = new Date(session.updatedAt || session.createdAt);
+                        const now = new Date();
+                        switch (conversationDateFilter) {
+                          case 'today':
+                            if (sessionDate.toDateString() !== now.toDateString()) return false;
+                            break;
+                          case 'week':
+                            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            if (sessionDate < weekAgo) return false;
+                            break;
+                          case 'month':
+                            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            if (sessionDate < monthAgo) return false;
+                            break;
+                        }
+                      }
+                      return true;
+                    }).length === 0 && (conversationSearchQuery || conversationStatusFilter !== 'all' || conversationDateFilter !== 'all') && (
+                    <Card className="text-center py-12">
+                      <CardContent>
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                            <Search className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-foreground mb-2">No conversations found</h3>
+                            <p className="text-muted-foreground mb-4">
+                              Try adjusting your search terms or filters to find conversations.
+                            </p>
+                            <div className="flex gap-2 justify-center">
+                              <Button 
+                                variant="outline"
+                                onClick={() => {
+                                  setConversationSearchQuery('');
+                                  setConversationStatusFilter('all');
+                                  setConversationDateFilter('all');
+                                }}
+                              >
+                                Clear Filters
+                              </Button>
+                              <Button 
+                                onClick={() => window.location.href = '/therapeutic-chat'}
+                                className="flex items-center gap-2"
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                                New Session
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               ) : (
                 <Card className="text-center py-12">
