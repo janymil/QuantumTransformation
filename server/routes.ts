@@ -4315,6 +4315,50 @@ Provide your response in this JSON format:
     }
   });
 
+  // Voice Transcription endpoint for Therapeutic Chat
+  app.post('/api/therapeutic-chat/transcribe', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+
+      if (!req.files || !req.files.audio) {
+        return res.status(400).json({ message: "No audio file provided" });
+      }
+
+      const audioFile = req.files.audio;
+      
+      // Create a temporary file for OpenAI Whisper API
+      const tempFilePath = `/tmp/audio_${Date.now()}.wav`;
+      await audioFile.mv(tempFilePath);
+
+      console.log("Transcribing audio file:", tempFilePath);
+
+      // Use OpenAI Whisper API for transcription
+      const transcription = await openai.audio.transcriptions.create({
+        file: require('fs').createReadStream(tempFilePath),
+        model: "whisper-1",
+        language: "en",
+        response_format: "text"
+      });
+
+      // Clean up temporary file
+      require('fs').unlinkSync(tempFilePath);
+
+      console.log("Transcription result:", transcription);
+
+      res.json({
+        transcription: transcription,
+        success: true
+      });
+
+    } catch (error) {
+      console.error("Error in voice transcription:", error);
+      res.status(500).json({ 
+        message: "Failed to transcribe audio",
+        error: error.message 
+      });
+    }
+  });
+
   // Save Therapeutic Chat Conversation endpoint (only when user finishes)
   app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
     try {

@@ -439,11 +439,51 @@ export default function TherapeuticChat() {
 
 
   const processVoiceRecording = async (audioBlob: Blob) => {
-    // Voice processing would go here
-    toast({
-      title: "Voice Processing",
-      description: "Voice recording feature is being enhanced. Please type your message for now.",
-    });
+    try {
+      // Create FormData for audio upload
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      toast({
+        title: "Processing Voice",
+        description: "Converting your voice to text...",
+      });
+
+      // Send audio to backend for transcription
+      const response = await fetch('/api/therapeutic-chat/transcribe', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.transcription && data.transcription.trim()) {
+          // Set the transcribed text in the input field
+          setCurrentMessage(data.transcription);
+          
+          toast({
+            title: "Voice Processed",
+            description: "Your message has been transcribed. Review and send when ready.",
+          });
+        } else {
+          toast({
+            title: "No Speech Detected",
+            description: "Please try recording again with clearer speech.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        throw new Error('Transcription failed');
+      }
+    } catch (error) {
+      console.error('Voice processing error:', error);
+      toast({
+        title: "Voice Processing Error",
+        description: "Unable to process voice recording. Please type your message.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
