@@ -6,16 +6,16 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// Enable gzip compression for all responses (disabled for development debugging)
-// app.use(compression({
-//   filter: (req, res) => {
-//     if (req.headers['x-no-compression']) {
-//       return false;
-//     }
-//     return compression.filter(req, res);
-//   },
-//   level: 6 // Balanced compression level
-// }));
+// Enable gzip compression for all responses
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6 // Balanced compression level
+}));
 
 // Add CORS headers for cross-domain requests
 app.use((req, res, next) => {
