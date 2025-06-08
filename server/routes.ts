@@ -49,6 +49,7 @@ import { responseQualityTiering } from "./response-quality-tiering";
 import { knowledgeRoutes } from "@shared/ai-intelligence/advanced/api-routes";
 import multer from 'multer';
 import { integratedDocumentProcessor } from '../shared/document-processing/integrated-processor';
+import { dbConnectionManager } from './db-connection-manager';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
@@ -5042,13 +5043,15 @@ Provide your response in this JSON format:
 
       console.log(`Processing ${fileType} document: ${req.file.originalname}`);
 
-      // Process document with integrated processor
-      const result = await integratedDocumentProcessor.processDocument(
-        req.file.buffer,
-        req.file.originalname,
-        fileType,
-        discipline
-      );
+      // Process document with connection retry mechanism
+      const result = await dbConnectionManager.executeWithRetry(async () => {
+        return await integratedDocumentProcessor.processDocument(
+          req.file.buffer,
+          req.file.originalname,
+          fileType,
+          discipline
+        );
+      });
 
       if (!result.processing.success) {
         return res.status(500).json({ 

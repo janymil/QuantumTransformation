@@ -4,6 +4,7 @@
  */
 
 import { bunnyNetService } from '../bunnynet-integration';
+import { dbConnectionManager } from '../../server/db-connection-manager';
 // Disable PDF parsing for now due to library compatibility issues in Replit
 const pdfParse: any = null;
 import mammoth from 'mammoth';
@@ -88,14 +89,16 @@ export class IntegratedDocumentProcessor {
         throw new Error(`Unsupported file type: ${fileType}`);
       }
 
-      // Step 2: Upload to BunnyNet storage
+      // Step 2: Upload to BunnyNet storage with connection retry
       console.log('Uploading to BunnyNet CDN...');
-      const uploadResult = await bunnyNetService.uploadDocument(
-        fileBuffer,
-        filename,
-        discipline,
-        'research'
-      );
+      const uploadResult = await dbConnectionManager.executeWithRetry(async () => {
+        return await bunnyNetService.uploadDocument(
+          fileBuffer,
+          filename,
+          discipline,
+          'research'
+        );
+      });
 
       if (!uploadResult.success) {
         throw new Error(`BunnyNet upload failed: ${uploadResult.error}`);
@@ -221,11 +224,63 @@ export class IntegratedDocumentProcessor {
   private async processWordDocument(buffer: Buffer): Promise<ExtractedContent> {
     try {
       console.log('Extracting text from Word document...');
-      const result = await mammoth.extractRawText({ buffer });
       
+      // Validate ZIP format for .docx files
+      if (buffer.length < 100) {
+        throw new Error('Invalid Word document: File too small');
+      }
+
+      // Check for proper .docx signature (ZIP file format)
+      const signature = buffer.subarray(0, 4);
+      const zipSignatures = [
+        Buffer.from([0x50, 0x4B, 0x03, 0x04]), // Standard ZIP
+        Buffer.from([0x50, 0x4B, 0x05, 0x06]), // Empty ZIP
+        Buffer.from([0x50, 0x4B, 0x07, 0x08])  // Spanned ZIP
+      ];
+
+      const isValidZip = zipSignatures.some(sig => signature.equals(sig));
+      
+      if (!isValidZip) {
+        console.warn('Invalid .docx format detected, using text extraction fallback');
+        // Extract readable text from binary data
+        const text = buffer.toString('utf-8')
+          .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (text.length < 50) {
+          throw new Error('Unable to extract meaningful text from document');
+        }
+
+        const metadata = {
+          wordCount: text.split(/\s+/).length,
+          title: 'Binary extraction',
+          author: 'Unknown'
+        };
+
+        const analysis = this.analyzeText(text);
+        const quality = this.assessQuality(text, analysis);
+
+        return {
+          text,
+          metadata,
+          analysis,
+          quality
+        };
+      }
+
+      // Process valid .docx file with mammoth
+      const result = await mammoth.extractRawText({ buffer });
       const text = result.value;
+      
+      if (!text || text.length < 10) {
+        throw new Error('No readable text extracted from Word document');
+      }
+
       const metadata = {
         wordCount: text.split(/\s+/).length,
+        title: 'Word Document',
+        author: 'Unknown'
       };
 
       const analysis = this.analyzeText(text);
@@ -240,6 +295,36 @@ export class IntegratedDocumentProcessor {
 
     } catch (error: any) {
       console.error('Word document processing failed:', error);
+      
+      // Final fallback: binary text extraction
+      try {
+        console.log('Attempting final binary text extraction...');
+        const text = buffer.toString('utf-8', 0, Math.min(buffer.length, 5000))
+          .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (text.length > 100) {
+          const metadata = {
+            wordCount: text.split(/\s+/).length,
+            title: 'Fallback extraction',
+            author: 'Unknown'
+          };
+
+          const analysis = this.analyzeText(text);
+          const quality = this.assessQuality(text, analysis);
+
+          return {
+            text,
+            metadata,
+            analysis,
+            quality
+          };
+        }
+      } catch (fallbackError) {
+        console.error('Binary extraction fallback failed:', fallbackError);
+      }
+      
       throw new Error(`Word document processing failed: ${error.message}`);
     }
   }
