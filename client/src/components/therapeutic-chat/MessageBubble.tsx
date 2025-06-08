@@ -26,8 +26,8 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
           <div className={`flex-1 ${message.type === 'user' ? 'text-right' : 'text-left'}`}>
             <div className={`inline-block p-4 rounded-2xl shadow-sm max-w-full ${
               message.type === 'user'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
+                ? 'bg-transparent text-blue-800 border border-blue-200'
+                : 'bg-transparent text-gray-900 dark:text-gray-100'
             }`}>
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                 {message.content}
@@ -35,7 +35,7 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
 
               {/* Timestamp only */}
               <div className={`flex items-center gap-2 mt-2 text-xs ${
-                message.type === 'user' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                message.type === 'user' ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'
               }`}>
                 <span>
                   {new Date(message.timestamp).toLocaleTimeString([], { 
