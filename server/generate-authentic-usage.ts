@@ -77,5 +77,3 @@ export async function generateAuthenticUsageData() {
   console.log("Authentic usage data generation completed!");
 }
 
-// Export for use in routes
-export { generateAuthenticUsageData };
