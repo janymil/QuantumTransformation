@@ -94,12 +94,12 @@ export default function TherapeuticChat() {
 
       return await response.json();
     },
-    onSuccess: (response: any) => {
-      // Add user message
+    onSuccess: (response: any, variables: any) => {
+      // Add user message using the original message from variables
       const userMessage: Message = {
         id: `user-${Date.now()}`,
         type: 'user',
-        content: currentMessage,
+        content: variables.message,
         timestamp: new Date()
       };
       
@@ -113,7 +113,6 @@ export default function TherapeuticChat() {
       };
       
       setMessages(prev => [...prev, userMessage, aiMessage]);
-      setCurrentMessage("");
       
       // Do NOT save to database or update threads here
     },
@@ -149,6 +148,7 @@ export default function TherapeuticChat() {
     if (!currentMessage.trim() || sendMessageMutation.isPending) return;
 
     const messageToSend = currentMessage;
+    console.log('Sending message:', messageToSend);
     setCurrentMessage(""); // Clear input immediately
     
     try {
