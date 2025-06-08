@@ -1212,3 +1212,68 @@ export type UserCommunicationPatterns = typeof userCommunicationPatterns.$inferS
 
 export type InsertPersonalizationInsights = typeof personalizationInsights.$inferInsert;
 export type PersonalizationInsights = typeof personalizationInsights.$inferSelect;
+
+// ===================================
+// AI INTELLIGENCE LAYER SCHEMA
+// ===================================
+
+// AI Learning Data for continuous improvement
+export const aiLearningData = pgTable("ai_learning_data", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  requestType: varchar("request_type").notNull(),
+  inputHash: varchar("input_hash").notNull(),
+  userInput: text("user_input").notNull(),
+  systemPrompt: text("system_prompt").notNull(),
+  aiResponse: text("ai_response").notNull(),
+  userFeedback: integer("user_feedback"), // 1-5 rating
+  wasSuccessful: boolean("was_successful").default(true),
+  learningPoints: text("learning_points"), // JSON string of learning insights
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("ai_learning_data_user_idx").on(table.userId),
+  index("ai_learning_data_type_idx").on(table.requestType),
+  index("ai_learning_data_feedback_idx").on(table.userFeedback),
+  uniqueIndex("ai_learning_data_unique_idx").on(table.inputHash, table.userId),
+]);
+
+// AI Model Performance Tracking
+export const aiModelPerformance = pgTable("ai_model_performance", {
+  id: serial("id").primaryKey(),
+  modelName: varchar("model_name").notNull(),
+  provider: varchar("provider").notNull(), // local, openai, anthropic
+  requestType: varchar("request_type").notNull(),
+  
+  // Performance Metrics
+  totalRequests: integer("total_requests").default(0),
+  successfulRequests: integer("successful_requests").default(0),
+  averageResponseTime: integer("average_response_time").default(0), // milliseconds
+  averageCost: decimal("average_cost", { precision: 10, scale: 8 }).default("0"),
+  averageUserRating: real("average_user_rating").default(0), // 0-5 scale
+  
+  // Quality Metrics
+  cacheHitRate: real("cache_hit_rate").default(0), // percentage
+  errorRate: real("error_rate").default(0), // percentage
+  userSatisfactionScore: real("user_satisfaction_score").default(0), // 0-100
+  
+  // Optimization Data
+  optimalComplexityRange: varchar("optimal_complexity_range"), // simple, moderate, complex
+  recommendedUsage: text("recommended_usage"),
+  limitations: text("limitations"),
+  
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("ai_model_performance_model_idx").on(table.modelName),
+  index("ai_model_performance_provider_idx").on(table.provider),
+  index("ai_model_performance_rating_idx").on(table.averageUserRating),
+  uniqueIndex("ai_model_performance_unique_idx").on(table.modelName, table.provider, table.requestType),
+]);
+
+// AI Intelligence Layer Types (using existing tables for cache and tracking)
+export type InsertAiLearningData = typeof aiLearningData.$inferInsert;
+export type AiLearningData = typeof aiLearningData.$inferSelect;
+
+export type InsertAiModelPerformance = typeof aiModelPerformance.$inferInsert;
+export type AiModelPerformance = typeof aiModelPerformance.$inferSelect;
