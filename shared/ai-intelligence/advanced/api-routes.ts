@@ -6,7 +6,8 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { advancedKnowledgeEngine } from './knowledge-acquisition-engine';
-import { db } from '@server/storage';
+import { bunnyNetService } from '@shared/bunnynet-integration';
+import { db } from '../../../server/db';
 import { knowledgeSources, extractedKnowledge, modelTrainingData, researchQueries } from '@shared/schema';
 import { eq, desc, and, gte } from 'drizzle-orm';
 
@@ -52,14 +53,27 @@ router.post('/knowledge/upload-document', upload.single('document'), async (req,
 
     console.log(`Processing document upload: ${req.file.originalname} for ${discipline}`);
 
-    // Process document through knowledge engine
+    // Upload to BunnyNet first
+    const uploadResult = await bunnyNetService.uploadDocument(
+      req.file.buffer,
+      req.file.originalname,
+      discipline,
+      'uploaded'
+    );
+
+    if (!uploadResult.success) {
+      return res.status(500).json({ error: 'File upload to storage failed', details: uploadResult.error });
+    }
+
+    // Process document through knowledge engine with BunnyNet URL
     const knowledgeSource = await advancedKnowledgeEngine.processUploadedDocument(
       req.file.buffer,
       req.file.originalname,
       discipline,
       {
         credibilityScore: credibilityScore ? parseFloat(credibilityScore) : 0.8,
-        author: author || undefined
+        author: author || undefined,
+        bunnyNetUrl: uploadResult.url
       }
     );
 
