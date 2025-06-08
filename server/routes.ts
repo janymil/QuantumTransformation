@@ -4604,6 +4604,52 @@ Provide your response in this JSON format:
     }
   });
 
+  // Delete therapeutic chat session endpoint
+  app.delete('/api/therapeutic-chat/sessions/:sessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = parseInt(req.params.sessionId);
+
+      if (!sessionId || isNaN(sessionId)) {
+        return res.status(400).json({ message: "Valid session ID is required" });
+      }
+
+      // Verify the session belongs to the user
+      const existingSession = await db
+        .select()
+        .from(journalingThreads)
+        .where(and(
+          eq(journalingThreads.id, sessionId), 
+          eq(journalingThreads.userId, userId),
+          eq(journalingThreads.threadType, 'therapy_session')
+        ))
+        .limit(1);
+
+      if (existingSession.length === 0) {
+        return res.status(404).json({ message: "Session not found or access denied" });
+      }
+
+      // Delete all related exchanges first
+      await db
+        .delete(threadExchanges)
+        .where(eq(threadExchanges.threadId, sessionId));
+
+      // Delete the session
+      await db
+        .delete(journalingThreads)
+        .where(eq(journalingThreads.id, sessionId));
+
+      res.json({
+        success: true,
+        message: "Therapeutic chat session deleted successfully"
+      });
+
+    } catch (error) {
+      console.error("Error deleting therapeutic chat session:", error);
+      res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
   // Register deep journaling routes
   // registerDeepJournalingRoutes(app); // Function not available
 

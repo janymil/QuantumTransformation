@@ -38,10 +38,10 @@ export default function TherapeuticChat() {
     queryKey: ['/api/therapeutic-chat/sessions'],
   });
 
-  // Delete thread mutation
+  // Delete therapeutic chat session mutation
   const deleteThreadMutation = useMutation({
     mutationFn: async (threadId: number) => {
-      const response = await fetch(`/api/deep-journaling/threads/${threadId}`, {
+      const response = await fetch(`/api/therapeutic-chat/sessions/${threadId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -55,16 +55,16 @@ export default function TherapeuticChat() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/deep-journaling/threads'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapeutic-chat/sessions'] });
       toast({
-        title: "Thread Deleted",
-        description: "The conversation thread has been removed.",
+        title: "Session Deleted",
+        description: "The therapeutic chat session has been removed.",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete thread",
+        description: error.message || "Failed to delete session",
         variant: "destructive",
       });
     },
