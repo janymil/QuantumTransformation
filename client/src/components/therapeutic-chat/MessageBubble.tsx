@@ -26,8 +26,8 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
           <div className={`flex-1 ${message.type === 'user' ? 'text-right' : 'text-left'}`}>
             <div className={`inline-block p-4 rounded-2xl shadow-sm max-w-full ${
               message.type === 'user'
-                ? 'bg-transparent text-blue-800 border border-blue-200'
-                : 'bg-transparent text-gray-900 dark:text-gray-100'
+                ? 'bg-transparent text-gray-900 dark:text-gray-100'
+                : 'bg-transparent text-blue-800 border-l-4 border-blue-500'
             }`}>
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                 {message.content}
