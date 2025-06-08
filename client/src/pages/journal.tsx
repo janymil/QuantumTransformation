@@ -1377,8 +1377,8 @@ export default function Journal() {
                           </CardContent>
                         </Card>
                       );
-                    })
-                  }
+                    })}
+                  </div>
                   
                   {/* Show filtered empty state */}
                   {therapeuticSessions.filter(session => {
