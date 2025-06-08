@@ -33,7 +33,7 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
                 {message.content}
               </div>
 
-              {/* Timestamp and emotional tone */}
+              {/* Timestamp only */}
               <div className={`flex items-center gap-2 mt-2 text-xs ${
                 message.type === 'user' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
               }`}>
@@ -43,14 +43,6 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
                     minute: '2-digit' 
                   })}
                 </span>
-                {message.emotionalTone && (
-                  <>
-                    <span>•</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {message.emotionalTone}
-                    </Badge>
-                  </>
-                )}
               </div>
             </div>
 
