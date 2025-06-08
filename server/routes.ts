@@ -47,6 +47,8 @@ import { initializeUserGamification } from "./gamification";
 import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 import { knowledgeRoutes } from "@shared/ai-intelligence/advanced/api-routes";
+import multer from 'multer';
+import { integratedDocumentProcessor } from '../shared/document-processing/integrated-processor';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
