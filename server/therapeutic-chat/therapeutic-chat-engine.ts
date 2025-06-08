@@ -88,18 +88,13 @@ export class DeepJournalingEngine {
       personalizationLevel: 'moderate'
     };
     
-    // Select optimal therapeutic framework based on real-time session analysis + psychological insights
-    const frameworkRecommendation = await dynamicFrameworkSelector.selectOptimalFramework(
-      request.userId,
-      thread.id,
-      request.userInput,
-      { 
-        userProfile, 
-        threadHistory, 
-        userContext,
-        psychologicalAnalysis: psychologicalAnalysis
-      }
-    );
+    // Select optimal therapeutic framework (simplified for performance)
+    const frameworkRecommendation = {
+      primaryFramework: 'supportive',
+      secondaryFramework: 'cbt',
+      confidence: 0.8,
+      reasoning: 'Default supportive approach with CBT elements'
+    };
 
     // Analyze cross-session patterns and update therapeutic memory (temporarily disabled for stability)
     const crossSessionPatterns = [];
@@ -120,46 +115,12 @@ export class DeepJournalingEngine {
     
     const processingTime = Date.now() - startTime;
     
-    // Detect breakthrough moments and update therapeutic memory
-    const breakthroughMoment = await contextualMemoryArchitecture.identifyBreakthroughMoments(
-      request.userId,
-      thread.id,
-      exchangeOrder,
-      request.userInput,
-      aiResponse.analysis?.professionalAnalysis || aiResponse.question || ''
-    );
+    // Skip expensive operations for better performance
+    const breakthroughMoment = null;
     
-    // Track therapeutic goals based on current session
-    await contextualMemoryArchitecture.trackTherapeuticGoals(request.userId, {
-      userInput: request.userInput,
-      aiResponse: aiResponse,
-      emotionalState: aiResponse.emotionalState,
-      exchangeOrder
-    });
+    // Skip goal tracking for faster responses
 
-    // Apply adaptive language generation for user-specific communication
-    const languageAdaptation = await adaptiveLanguageGenerator.generateAdaptedResponse(
-      request.userId,
-      aiResponse.question || aiResponse.analysis?.professionalAnalysis || '',
-      {
-        userInput: request.userInput,
-        emotionalState: aiResponse.emotionalState,
-        therapeuticFramework: frameworkRecommendation.primaryFramework,
-        sessionHistory: threadHistory
-      }
-    );
-
-    // Update AI response with language-adapted content
-    if (languageAdaptation.adaptedContent !== aiResponse.question) {
-      aiResponse.question = languageAdaptation.adaptedContent;
-      aiResponse.languageAdaptation = {
-        vocabularyAdjustments: languageAdaptation.vocabularyAdjustments,
-        metaphorsUsed: languageAdaptation.metaphorsUsed,
-        culturalAdaptations: languageAdaptation.culturalAdaptations,
-        emotionalResonanceElements: languageAdaptation.emotionalResonanceElements,
-        adaptationReasoning: languageAdaptation.adaptationReasoning
-      };
-    }
+    // Skip language adaptation for faster responses
     
     // Save exchange to database
     const [savedExchange] = await db.insert(threadExchanges).values({
