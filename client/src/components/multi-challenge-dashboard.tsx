@@ -33,6 +33,7 @@ import { CHALLENGE_TYPES, getChallengeUrl } from "@shared/challenge-types";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MultiChallengeDashboardProps {}
 
@@ -40,14 +41,22 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   const [expandedChallenges, setExpandedChallenges] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
 
   const { data: progressData, isLoading } = useQuery({
     queryKey: ["/api/progress/all"],
+    enabled: isAuthenticated && !!user,
   });
 
-  const { data: userChallenges, isLoading: challengesLoading } = useQuery({
+  const { data: userChallenges, isLoading: challengesLoading, error: challengesError } = useQuery({
     queryKey: ["/api/challenges/user-challenges"],
+    enabled: isAuthenticated && !!user,
   });
+
+  // Debug authentication and query state
+  console.log("MultiChallengeDashboard - Auth state:", { isAuthenticated, user: !!user });
+  console.log("MultiChallengeDashboard - Challenges loading:", challengesLoading);
+  console.log("MultiChallengeDashboard - Challenges error:", challengesError);
 
   // Quit challenge mutation
   const quitChallengeMutation = useMutation({
