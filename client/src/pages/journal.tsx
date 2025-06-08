@@ -92,11 +92,49 @@ export default function Journal() {
   // Conversation search and filter states
   const [conversationSearchQuery, setConversationSearchQuery] = useState("");
   const [conversationDateFilter, setConversationDateFilter] = useState("all");
+  const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
 
   // Function to load therapeutic conversation in therapeutic chat page
   const loadTherapeuticConversation = (sessionId: number, sessionTitle: string) => {
     // Navigate to therapeutic chat with session parameters
     window.location.href = `/therapeutic-chat?sessionId=${sessionId}&title=${encodeURIComponent(sessionTitle)}`;
+  };
+
+  // Delete session mutation
+  const deleteSessionMutation = useMutation({
+    mutationFn: async (sessionId: number) => {
+      const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete session');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/therapeutic-chat/sessions"] });
+      toast({
+        title: "Session deleted",
+        description: "The conversation has been permanently deleted.",
+      });
+      setDeletingSessionId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete the conversation. Please try again.",
+        variant: "destructive",
+      });
+      setDeletingSessionId(null);
+    },
+  });
+
+  const handleDeleteSession = async (sessionId: number) => {
+    setDeletingSessionId(sessionId);
+    deleteSessionMutation.mutate(sessionId);
   };
 
   const toggleEntryExpansion = (entryId: string | number) => {
@@ -1028,7 +1066,7 @@ export default function Journal() {
                   </div>
                 </div>
               ) : therapeuticSessions && therapeuticSessions.length > 0 ? (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {therapeuticSessions
                     .filter(session => {
                       // Search filter
@@ -1064,87 +1102,67 @@ export default function Journal() {
                     })
                     .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
                     .map((session, index) => (
-                      <Card key={session.id} className="hover:shadow-lg transition-shadow duration-300">
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3 flex-1 min-w-0">
-                              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                <MessageSquare className="w-5 h-5 text-white" />
+                      <Card key={session.id} className="hover:shadow-lg transition-all duration-300 relative group">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <MessageSquare className="w-4 h-4 text-primary" />
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <CardTitle className="text-lg truncate">
-                                  {session.title || `Therapeutic Session #${index + 1}`}
+                              <div className="min-w-0 flex-1">
+                                <CardTitle className="text-base font-semibold line-clamp-1">
+                                  {session.title || `Session ${session.id}`}
                                 </CardTitle>
-                                <div className="flex items-center space-x-4 mt-1">
-                                  <span className="text-sm text-muted-foreground">
-                                    {format(new Date(session.updatedAt || session.createdAt), 'MMM d, yyyy • h:mm a')}
-                                  </span>
-                                  {session.messageCount && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {session.messageCount} messages
-                                    </Badge>
-                                  )}
-                                  {session.status === 'finished' && (
-                                    <Badge variant="default" className="text-xs bg-green-100 text-green-800">
-                                      Completed
-                                    </Badge>
-                                  )}
-                                  {session.status === 'active' && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      In Progress
-                                    </Badge>
-                                  )}
-                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(session.updatedAt || session.createdAt), 'MMM d')}
+                                </p>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2 flex-shrink-0">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => loadTherapeuticConversation(session.id, session.title || `Session #${index + 1}`)}
-                                className="flex items-center gap-2"
-                              >
-                                <MessageSquare className="w-4 h-4" />
-                                Load Chat
-                              </Button>
-                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSession(session.id);
+                              }}
+                              disabled={deletingSessionId === session.id}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            >
+                              {deletingSessionId === session.id ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
+                            </Button>
                           </div>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-0">
                           <div className="space-y-3">
-                            {/* Session Preview */}
-                            {session.lastMessage && (
-                              <div className="p-3 bg-muted/50 rounded-lg">
-                                <p className="text-xs text-muted-foreground mb-1">Latest message:</p>
-                                <p className="text-sm line-clamp-2">
-                                  {session.lastMessage.length > 150 
-                                    ? session.lastMessage.substring(0, 150) + '...' 
-                                    : session.lastMessage}
-                                </p>
-                              </div>
-                            )}
-                            
-                            {/* Session Statistics */}
-                            <div className="grid grid-cols-3 gap-4 pt-2 border-t border-border">
-                              <div className="text-center">
-                                <p className="text-xs text-muted-foreground">Duration</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                              {session.lastMessage || 'No messages yet'}
+                            </p>
+                            <div className="grid grid-cols-2 gap-3 text-center">
+                              <div>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Messages</p>
                                 <p className="text-sm font-medium">
-                                  {session.duration || 'N/A'}
+                                  {session.messageCount || 0}
                                 </p>
                               </div>
-                              <div className="text-center">
-                                <p className="text-xs text-muted-foreground">Topics</p>
-                                <p className="text-sm font-medium">
-                                  {session.topicsDiscussed || 'Various'}
-                                </p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-xs text-muted-foreground">Insights</p>
+                              <div>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Insights</p>
                                 <p className="text-sm font-medium">
                                   {session.insightsCount || 0}
                                 </p>
                               </div>
                             </div>
+                            <Button
+                              onClick={() => loadTherapeuticConversation(session.id, session.title || `Session ${session.id}`)}
+                              size="sm"
+                              className="w-full h-8 text-xs"
+                            >
+                              <Play className="w-3 h-3 mr-1" />
+                              {session.status === 'finished' ? 'Review' : 'Continue'}
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
