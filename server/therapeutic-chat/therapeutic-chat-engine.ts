@@ -136,13 +136,29 @@ export class DeepJournalingEngine {
     thread: JournalingThread, 
     history: ThreadExchange[], 
     userProfile: PsychologicalProfile | null,
-    userContext: any
+    userContext: any,
+    personalizationRecs: PersonalizationRecommendations
   ) {
-    const mode = request.customizations?.mode || thread.preferredMode || 'conversational';
-    const tone = request.customizations?.tone || thread.preferredTone || 'supportive';
-    const perspective = request.customizations?.perspective || thread.preferredPerspective || 'psychologist';
+    // Use personalization recommendations for premium-level customization
+    const mode = request.customizations?.mode || personalizationRecs.communicationAdjustments.tone || thread.preferredMode || 'conversational';
+    const tone = request.customizations?.tone || personalizationRecs.communicationAdjustments.tone || thread.preferredTone || 'supportive';
+    const perspective = request.customizations?.perspective || personalizationRecs.therapeuticStyle || thread.preferredPerspective || 'psychologist';
 
-    const systemPrompt = buildTherapeuticSystemPrompt([], request.userInput, { mode, tone, perspective });
+    // Build enhanced system prompt with personalization
+    const systemPrompt = buildTherapeuticSystemPrompt(
+      personalizationRecs.therapeuticFrameworks,
+      request.userInput, 
+      { 
+        mode, 
+        tone, 
+        perspective,
+        responseLength: personalizationRecs.communicationAdjustments.responseLength,
+        metaphorTypes: personalizationRecs.communicationAdjustments.metaphorTypes,
+        avoidanceFactors: personalizationRecs.avoidanceFactors,
+        customInstructions: personalizationRecs.customInstructions
+      }
+    );
+    
     const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext);
     const analysisPrompt = this.buildAnalysisPrompt(request.userInput, request.actionType);
 
@@ -226,7 +242,8 @@ export class DeepJournalingEngine {
     request: DeepJournalingRequest,
     thread: JournalingThread,
     userProfile: PsychologicalProfile | null,
-    userContext: any
+    userContext: any,
+    personalizationRecs: PersonalizationRecommendations
   ) {
     const systemPrompt = getNewDirectionSystemPrompt({});
 
@@ -264,7 +281,8 @@ export class DeepJournalingEngine {
     request: DeepJournalingRequest,
     thread: JournalingThread,
     lastExchange: ThreadExchange,
-    userProfile: PsychologicalProfile | null
+    userProfile: PsychologicalProfile | null,
+    personalizationRecs: PersonalizationRecommendations
   ) {
     const mode = request.customizations?.mode || 'conversational';
     const tone = request.customizations?.tone || 'supportive';
