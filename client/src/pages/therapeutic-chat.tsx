@@ -258,6 +258,19 @@ export default function TherapeuticChat() {
     const safeMessage = aiMessage || "our current discussion";
     const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${safeMessage}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
 
+    setIsProcessingAction(true);
+    
+    // Add thinking indicator message
+    const thinkingMessage: Message = {
+      id: Date.now().toString(),
+      type: 'ai',
+      content: 'Exploring new therapeutic perspectives and alternative approaches...',
+      timestamp: new Date(),
+      emotionalTone: 'thinking',
+      isThinking: true
+    };
+    setMessages(prev => [...prev, thinkingMessage]);
+
     try {
       const response = await fetch('/api/deep-journaling/process', {
         method: 'POST',
@@ -277,17 +290,25 @@ export default function TherapeuticChat() {
           emotionalTone: data.emotionalState?.primaryEmotion || 'curious'
         };
 
-        setMessages(prev => [...prev, newAiMessage]);
+        // Replace thinking message with actual response
+        setMessages(prev => prev.map(msg => 
+          msg.isThinking ? newAiMessage : msg
+        ));
+        
         if (data.threadId) {
           setActiveSession(data.threadId);
         }
       }
     } catch (error) {
+      // Remove thinking message on error
+      setMessages(prev => prev.filter(msg => !msg.isThinking));
       toast({
         title: "Error",
         description: "Failed to generate new direction. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessingAction(false);
     }
   };
 

@@ -4,6 +4,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   emotionalTone?: string;
+  isThinking?: boolean;
 }
 
 export interface ConversationSession {

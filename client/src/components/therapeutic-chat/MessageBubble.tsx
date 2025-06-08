@@ -9,6 +9,7 @@ interface Message {
   content: string;
   timestamp: Date;
   emotionalTone?: string;
+  isThinking?: boolean;
 }
 
 interface MessageBubbleProps {
@@ -42,7 +43,18 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
                   {message.type === 'ai' ? (
                     <div className="space-y-3">
                       <div className="text-gray-800 dark:text-gray-200 leading-7">
-                        {message.content}
+                        {message.isThinking ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-purple-600 dark:text-purple-400">{message.content}</span>
+                            <div className="flex space-x-1">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            </div>
+                          </div>
+                        ) : (
+                          message.content
+                        )}
                       </div>
                     </div>
                   ) : (
