@@ -4278,50 +4278,127 @@ Provide your response in this JSON format:
   app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { title, messages, conversationStyle, focusArea } = req.body;
+      const { threadId, title, messages, conversationStyle, focusArea } = req.body;
 
       if (!messages || messages.length === 0) {
         return res.status(400).json({ message: "No messages to save" });
       }
 
-      // Create new thread for the finished conversation
-      const [newSession] = await db
-        .insert(journalingThreads)
-        .values({
-          userId,
-          title: title || 'Therapeutic Chat Session',
-          threadType: 'therapy_session',
-          currentTopic: 'therapeutic_chat'
-        })
-        .returning();
+      let sessionId = threadId;
 
-      // Save all message exchanges to database
-      let exchangeOrder = 1;
-      for (let i = 0; i < messages.length; i += 2) {
-        const userMessage = messages[i];
-        const aiMessage = messages[i + 1];
+      if (threadId) {
+        // Update existing conversation
+        console.log(`Updating existing conversation ${threadId}`);
+        
+        // Verify the thread belongs to the user
+        const existingThread = await db
+          .select()
+          .from(journalingThreads)
+          .where(and(eq(journalingThreads.id, threadId), eq(journalingThreads.userId, userId)))
+          .limit(1);
 
-        if (userMessage && userMessage.type === 'user') {
-          await db
-            .insert(threadExchanges)
-            .values({
-              threadId: newSession.id,
-              exchangeOrder: exchangeOrder,
-              userInput: userMessage.content,
-              aiAnalysis: aiMessage?.content || '',
-              aiQuestion: aiMessage?.content || '',
-              aiEmotionalAssessment: { insight: aiMessage?.emotionalTone || 'supportive' },
-              processingTime: 1000
-            });
-          
-          exchangeOrder++;
+        if (existingThread.length === 0) {
+          return res.status(404).json({ message: "Thread not found or access denied" });
         }
+
+        // Update thread title and metadata
+        await db
+          .update(journalingThreads)
+          .set({
+            title: title || existingThread[0].title,
+            currentTopic: 'therapeutic_chat',
+            updatedAt: new Date(),
+            lastActiveAt: new Date()
+          })
+          .where(eq(journalingThreads.id, threadId));
+
+        // Get current exchange count to continue ordering
+        const [exchangeCount] = await db
+          .select({ count: count() })
+          .from(threadExchanges)
+          .where(eq(threadExchanges.threadId, threadId));
+
+        let exchangeOrder = (exchangeCount.count || 0) + 1;
+
+        // Save new message exchanges only (ones not already in database)
+        for (let i = 0; i < messages.length; i += 2) {
+          const userMessage = messages[i];
+          const aiMessage = messages[i + 1];
+
+          if (userMessage && userMessage.type === 'user') {
+            // Check if this exchange already exists
+            const existingExchange = await db
+              .select()
+              .from(threadExchanges)
+              .where(and(
+                eq(threadExchanges.threadId, threadId),
+                eq(threadExchanges.userInput, userMessage.content || ''),
+                eq(threadExchanges.aiAnalysis, aiMessage?.content || '')
+              ))
+              .limit(1);
+
+            if (existingExchange.length === 0) {
+              // Only insert new exchanges
+              await db
+                .insert(threadExchanges)
+                .values({
+                  threadId: threadId,
+                  exchangeOrder: exchangeOrder,
+                  userInput: userMessage.content || '',
+                  aiAnalysis: aiMessage?.content || '',
+                  aiQuestion: aiMessage?.content || '',
+                  aiEmotionalAssessment: { insight: aiMessage?.emotionalTone || 'supportive' },
+                  processingTime: 1000
+                });
+              
+              exchangeOrder++;
+            }
+          }
+        }
+
+        sessionId = threadId;
+      } else {
+        // Create new thread for the finished conversation
+        const [newSession] = await db
+          .insert(journalingThreads)
+          .values({
+            userId,
+            title: title || 'Therapeutic Chat Session',
+            threadType: 'therapy_session',
+            currentTopic: 'therapeutic_chat'
+          })
+          .returning();
+
+        // Save all message exchanges to database
+        let exchangeOrder = 1;
+        for (let i = 0; i < messages.length; i += 2) {
+          const userMessage = messages[i];
+          const aiMessage = messages[i + 1];
+
+          if (userMessage && userMessage.type === 'user') {
+            await db
+              .insert(threadExchanges)
+              .values({
+                threadId: newSession.id,
+                exchangeOrder: exchangeOrder,
+                userInput: userMessage.content || '',
+                aiAnalysis: aiMessage?.content || '',
+                aiQuestion: aiMessage?.content || '',
+                aiEmotionalAssessment: { insight: aiMessage?.emotionalTone || 'supportive' },
+                processingTime: 1000
+              });
+            
+            exchangeOrder++;
+          }
+        }
+
+        sessionId = newSession.id;
       }
 
       res.json({
         success: true,
-        threadId: newSession.id,
-        message: "Conversation saved successfully"
+        threadId: sessionId,
+        message: threadId ? "Conversation updated successfully" : "Conversation saved successfully"
       });
 
     } catch (error) {

@@ -337,12 +337,12 @@ export default function TherapeuticChat() {
             console.log('Processing item:', item);
             
             // Handle different data structures
-            if (item.type === 'user' && item.content) {
-              // Already formatted message from server/routes.ts
+            if (item.type === 'user') {
+              // Already formatted message from server/routes.ts - include even if content is empty
               formattedMessages.push({
                 id: item.id,
                 type: 'user',
-                content: item.content,
+                content: item.content || '[Message content not saved]',
                 timestamp: new Date(item.timestamp || Date.now())
               });
             } else if (item.type === 'ai' && item.content) {
