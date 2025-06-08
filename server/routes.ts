@@ -46,6 +46,8 @@ import { initializeUserGamification } from "./gamification";
 import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 export async function registerRoutes(app: Express): Promise<Server> {
+  const server = createServer(app);
+  
   // Cross-domain authentication endpoints (must be before auth middleware)
   
   // API endpoint to provide user data to Vision Board app
