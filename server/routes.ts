@@ -4207,7 +4207,7 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { userInput: message, conversationStyle = 'supportive', focusArea = 'general', actionType } = req.body;
+      const { userInput: message, conversationStyle = 'socratic', focusArea = 'general', responseLength = 'balanced', actionType } = req.body;
 
       if (!message?.trim()) {
         return res.status(400).json({ message: "Message is required" });
@@ -4253,27 +4253,83 @@ Provide your response in this JSON format:
 }`;
 
       } else {
-        // Regular therapeutic conversation
-        therapeuticPrompt = `You are a professional therapeutic companion engaging in a flowing conversation. Your role is to:
+        // Build style-specific therapeutic approach
+        const styleInstructions = getStyleInstructions(conversationStyle);
+        const focusInstructions = getFocusInstructions(focusArea);
+        const lengthInstructions = getLengthInstructions(responseLength);
+        
+        therapeuticPrompt = `You are a professional therapeutic companion. ${styleInstructions}
 
-1. Respond with empathy and genuine understanding
-2. Provide thoughtful insights when appropriate  
-3. Ask meaningful follow-up questions to deepen the conversation
-4. Maintain a warm, supportive tone while being professionally helpful
+FOCUS AREA: ${focusInstructions}
 
-Conversation Style: ${conversationStyle}  
-Focus Area: ${focusArea}
+RESPONSE LENGTH: ${lengthInstructions}
 
 The user just shared: "${message}"
 
-Respond as a therapeutic companion would - with understanding, insight, and a thoughtful question that continues the conversation naturally. Keep your response conversational and engaging, not clinical.
+${getStyleSpecificPrompt(conversationStyle)}
 
 Provide your response in this JSON format:
 {
-  "response": "Your empathetic response with insights",
-  "followUpQuestion": "A thoughtful question to continue the conversation",
-  "emotionalInsight": "Brief emotional insight (1-3 words like 'exploring vulnerability' or 'processing change')"
+  "response": "Your therapeutic response following the ${conversationStyle} style",
+  "followUpQuestion": "A ${conversationStyle}-style question focused on ${focusArea}",
+  "emotionalInsight": "Brief emotional insight (1-3 words)"
 }`;
+      }
+
+      function getStyleInstructions(style: string) {
+        switch(style) {
+          case 'socratic':
+            return 'Use the Socratic method - guide the client to self-discovery through thoughtful questioning. Avoid giving direct advice. Instead, ask probing questions that help them examine their thoughts, beliefs, and assumptions. Help them discover insights themselves through your questions.';
+          case 'directive':
+            return 'Take a direct, guidance-focused approach. Provide clear advice, specific strategies, and actionable recommendations. Be authoritative yet supportive, offering concrete steps and techniques they can implement.';
+          case 'reflective':
+            return 'Use reflective listening techniques. Mirror back their emotions and thoughts to help them gain clarity. Paraphrase what they\'ve shared, reflect their feelings, and help them see patterns through your reflections.';
+          case 'collaborative':
+            return 'Work as partners in the therapeutic process. Use "we" language, invite their input on direction, and create a team approach to exploring their concerns. Share responsibility for insights and solutions.';
+          default:
+            return 'Respond with empathy and genuine understanding, providing thoughtful insights when appropriate.';
+        }
+      }
+
+      function getFocusInstructions(focus: string) {
+        switch(focus) {
+          case 'emotions':
+            return 'Focus specifically on emotional processing - help them identify, understand, and work through their emotions. Guide them toward emotional awareness and regulation.';
+          case 'patterns':
+            return 'Focus on identifying recurring behaviors, thoughts, or situations. Help them recognize cycles, habits, and connections between past and present patterns.';
+          case 'goals':
+            return 'Focus on future-oriented work - goal setting, creating actionable plans, and building motivation for positive change and achievement.';
+          case 'relationships':
+            return 'Focus on interpersonal dynamics, communication patterns, and relationship challenges. Explore their connections with others and social interactions.';
+          default:
+            return 'Take a broad, exploratory approach to their overall wellbeing and life situation.';
+        }
+      }
+
+      function getLengthInstructions(length: string) {
+        switch(length) {
+          case 'brief':
+            return 'Keep your response concise and focused - 1-2 sentences maximum. Be direct and impactful.';
+          case 'detailed':
+            return 'Provide a comprehensive response - 4-6 sentences that thoroughly explore multiple perspectives and offer deep insights.';
+          default:
+            return 'Provide a balanced response - 2-4 sentences that offer moderate depth and exploration.';
+        }
+      }
+
+      function getStyleSpecificPrompt(style: string) {
+        switch(style) {
+          case 'socratic':
+            return 'Ask questions that lead them to discover insights themselves. Use phrases like "What do you think might be behind...?", "How does this connect to...?", "What would happen if...?"';
+          case 'directive':
+            return 'Provide specific advice and recommendations. Use phrases like "I recommend...", "You should try...", "The best approach would be..."';
+          case 'reflective':
+            return 'Reflect their emotions and thoughts back to them. Use phrases like "It sounds like you\'re feeling...", "What I\'m hearing is...", "You seem to be experiencing..."';
+          case 'collaborative':
+            return 'Use collaborative language and invite partnership. Use phrases like "Let\'s explore this together...", "What do you think we should focus on?", "How can we work on this together?"';
+          default:
+            return 'Respond naturally and supportively to continue the conversation.';
+        }
       }
 
       console.log("Therapeutic Chat - Processing message:", message);
