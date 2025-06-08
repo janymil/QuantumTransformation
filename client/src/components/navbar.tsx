@@ -49,8 +49,6 @@ export default function Navbar() {
     { name: "Dashboard", href: "/", icon: BarChart3 },
     { name: "Challenges", href: "/challenges", icon: Target },
     { name: "Journal", href: "/journal", icon: BookOpen },
-    { name: "Deep Journaling", href: "/deep-journaling", icon: Brain },
-    { name: "Therapeutic Chat", href: "/therapeutic-chat", icon: MessageCircle },
     { name: "Progress", href: "/progress", icon: BarChart3 },
   ];
 
@@ -127,6 +125,12 @@ export default function Navbar() {
                   <Link href="/ai-coaching">
                     <Brain className="mr-2 h-4 w-4" />
                     <span>AI Coach</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/therapeutic-chat">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    <span>Therapeutic Chat</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleVisionBoardClick} disabled={isOpeningVisionBoard}>
@@ -240,6 +244,12 @@ export default function Navbar() {
                   <Link href="/ai-coaching">
                     <Brain className="mr-2 h-4 w-4" />
                     <span>AI Coach</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/therapeutic-chat">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    <span>Therapeutic Chat</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleVisionBoardClick} disabled={isOpeningVisionBoard}>
