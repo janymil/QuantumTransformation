@@ -2218,6 +2218,66 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Get messages for a specific therapeutic chat session (frontend expects this endpoint)
+  app.get('/api/therapeutic-chat/sessions/:sessionId/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { sessionId } = req.params;
+
+      // Get the session info
+      const session = await db
+        .select()
+        .from(journalingThreads)
+        .where(and(
+          eq(journalingThreads.id, parseInt(sessionId)),
+          eq(journalingThreads.userId, userId)
+        ))
+        .limit(1);
+
+      if (session.length === 0) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Get all exchanges for this thread
+      const exchanges = await db
+        .select()
+        .from(threadExchanges)
+        .where(eq(threadExchanges.threadId, parseInt(sessionId)))
+        .orderBy(threadExchanges.exchangeOrder);
+
+      // Convert exchanges to message format expected by frontend
+      const messages = [];
+      for (const exchange of exchanges) {
+        // Add user message
+        if (exchange.userInput) {
+          messages.push({
+            id: `user-${exchange.id}`,
+            type: 'user',
+            content: exchange.userInput,
+            timestamp: exchange.createdAt || new Date()
+          });
+        }
+
+        // Add AI response - check multiple possible fields for AI content
+        const aiContent = exchange.aiAnalysis || exchange.aiResponse || exchange.analysis || exchange.question;
+        if (aiContent) {
+          messages.push({
+            id: `ai-${exchange.id}`,
+            type: 'ai',
+            content: aiContent,
+            timestamp: exchange.createdAt || new Date(),
+            emotionalTone: exchange.currentEmotionalState || 'supportive'
+          });
+        }
+      }
+
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching therapeutic chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
   // Close registerRoutes function
   return server;
 }
