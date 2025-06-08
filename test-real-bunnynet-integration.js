@@ -114,13 +114,14 @@ and are recommended by the American Psychological Association.
 
 async function uploadToBunnyNet(buffer, fileName, accessKey, storageZone) {
   try {
-    const url = `https://storage.bunnycdn.com/${storageZone}/${fileName}`;
+    // Use the correct BunnyNet storage endpoint format
+    const url = `https://ny.storage.bunnycdn.com/${storageZone}/${fileName}`;
     
     const response = await fetch(url, {
       method: 'PUT',
       headers: {
         'AccessKey': accessKey,
-        'Content-Type': 'application/octet-stream'
+        'Content-Type': 'text/plain'
       },
       body: buffer
     });
