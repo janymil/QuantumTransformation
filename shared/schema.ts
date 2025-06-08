@@ -1277,3 +1277,90 @@ export type AiLearningData = typeof aiLearningData.$inferSelect;
 
 export type InsertAiModelPerformance = typeof aiModelPerformance.$inferInsert;
 export type AiModelPerformance = typeof aiModelPerformance.$inferSelect;
+
+// Knowledge Sources for advanced learning system
+export const knowledgeSources = pgTable("knowledge_sources", {
+  id: varchar("id").primaryKey(),
+  type: varchar("type").notNull(), // 'web_research', 'uploaded_document', 'academic_paper', 'clinical_study'
+  discipline: varchar("discipline").notNull(),
+  title: text("title").notNull(),
+  url: text("url"),
+  content: text("content").notNull(),
+  processedContent: text("processed_content"),
+  author: varchar("author"),
+  publishDate: timestamp("publish_date"),
+  credibilityScore: decimal("credibility_score", { precision: 3, scale: 2 }).notNull(),
+  relevanceScore: decimal("relevance_score", { precision: 3, scale: 2 }).notNull(),
+  citations: integer("citations"),
+  peerReviewed: boolean("peer_reviewed").default(false),
+  source: varchar("source").notNull(),
+  bunnyNetUrl: text("bunny_net_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+// Extracted Knowledge from sources
+export const extractedKnowledge = pgTable("extracted_knowledge", {
+  id: serial("id").primaryKey(),
+  sourceId: varchar("source_id").notNull().references(() => knowledgeSources.id),
+  keyPoints: text("key_points").array(),
+  therapeuticTechniques: text("therapeutic_techniques").array(),
+  evidenceBased: boolean("evidence_based").default(false),
+  applicableScenarios: text("applicable_scenarios").array(),
+  contraindications: text("contraindications").array(),
+  clinicalEvidence: text("clinical_evidence").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Model Training Data
+export const modelTrainingData = pgTable("model_training_data", {
+  id: serial("id").primaryKey(),
+  modelName: varchar("model_name").notNull(),
+  discipline: varchar("discipline").notNull(),
+  inputText: text("input_text").notNull(),
+  expectedOutput: text("expected_output").notNull(),
+  confidence: decimal("confidence", { precision: 3, scale: 2 }).notNull(),
+  sourceId: varchar("source_id").references(() => knowledgeSources.id),
+  isValidated: boolean("is_validated").default(false),
+  performanceScore: decimal("performance_score", { precision: 3, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Research Queries for autonomous research
+export const researchQueries = pgTable("research_queries", {
+  id: serial("id").primaryKey(),
+  topic: varchar("topic").notNull(),
+  discipline: varchar("discipline").notNull(),
+  keywords: text("keywords").array(),
+  dateRangeStart: timestamp("date_range_start"),
+  dateRangeEnd: timestamp("date_range_end"),
+  sourceTypes: text("source_types").array(),
+  maxResults: integer("max_results").default(10),
+  status: varchar("status").default('pending'), // 'pending', 'in_progress', 'completed', 'failed'
+  resultsFound: integer("results_found").default(0),
+  lastExecuted: timestamp("last_executed"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Knowledge Integration Tracking
+export const knowledgeIntegration = pgTable("knowledge_integration", {
+  id: serial("id").primaryKey(),
+  sourceId: varchar("source_id").notNull().references(() => knowledgeSources.id),
+  modelName: varchar("model_name").notNull(),
+  integratedAt: timestamp("integrated_at").defaultNow(),
+  performanceImprovement: decimal("performance_improvement", { precision: 5, scale: 4 }),
+  validatedInPractice: boolean("validated_in_practice").default(false),
+  userFeedbackScore: decimal("user_feedback_score", { precision: 3, scale: 2 }),
+  effectivenessRating: decimal("effectiveness_rating", { precision: 3, scale: 2 }),
+});
+
+export type InsertKnowledgeSource = typeof knowledgeSources.$inferInsert;
+export type KnowledgeSource = typeof knowledgeSources.$inferSelect;
+export type InsertExtractedKnowledge = typeof extractedKnowledge.$inferInsert;
+export type ExtractedKnowledge = typeof extractedKnowledge.$inferSelect;
+export type InsertModelTrainingData = typeof modelTrainingData.$inferInsert;
+export type ModelTrainingData = typeof modelTrainingData.$inferSelect;
+export type InsertResearchQuery = typeof researchQueries.$inferInsert;
+export type ResearchQuery = typeof researchQueries.$inferSelect;
+export type InsertKnowledgeIntegration = typeof knowledgeIntegration.$inferInsert;
+export type KnowledgeIntegration = typeof knowledgeIntegration.$inferSelect;
