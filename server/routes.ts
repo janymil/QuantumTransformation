@@ -4253,82 +4253,130 @@ Provide your response in this JSON format:
 }`;
 
       } else {
-        // Build style-specific therapeutic approach
-        const styleInstructions = getStyleInstructions(conversationStyle);
-        const focusInstructions = getFocusInstructions(focusArea);
-        const lengthInstructions = getLengthInstructions(responseLength);
-        
-        therapeuticPrompt = `You are a professional therapeutic companion. ${styleInstructions}
+        // Build completely different prompts for each style
+        therapeuticPrompt = buildStyleSpecificPrompt(conversationStyle, focusArea, responseLength, message);
+      }
 
-FOCUS AREA: ${focusInstructions}
+      function buildStyleSpecificPrompt(style: string, focus: string, length: string, message: string) {
+        const lengthGuidance: { [key: string]: string } = {
+          'brief': 'Keep responses very concise (1-2 sentences). Be direct and impactful.',
+          'balanced': 'Provide moderate-length responses (2-4 sentences) with good depth.',
+          'detailed': 'Give comprehensive responses (4-6 sentences) with thorough exploration.'
+        };
 
-RESPONSE LENGTH: ${lengthInstructions}
+        const focusGuidance: { [key: string]: string } = {
+          'emotions': 'Focus specifically on emotional processing, feelings identification, and emotional regulation.',
+          'patterns': 'Focus on identifying recurring behaviors, thoughts, cycles, and connecting past to present.',
+          'goals': 'Focus on future planning, goal setting, motivation, and actionable steps.',
+          'relationships': 'Focus on interpersonal dynamics, communication, and relationship patterns.',
+          'general': 'Take a broad exploratory approach to overall wellbeing and life situation.'
+        };
 
-The user just shared: "${message}"
+        switch(style) {
+          case 'socratic':
+            return `You are a Socratic therapist. Your ONLY job is to ask probing questions that lead the client to discover insights themselves. 
 
-${getStyleSpecificPrompt(conversationStyle)}
+CRITICAL RULES:
+- NEVER give direct advice or tell them what to do
+- ALWAYS respond with 2-4 thoughtful questions
+- Use "What do you think...?", "How might...?", "What would happen if...?"
+- Challenge their assumptions gently through questions
+- Help them examine their beliefs and thought patterns
 
-Provide your response in this JSON format:
+${lengthGuidance[length]}
+${focusGuidance[focus]}
+
+User shared: "${message}"
+
+Respond ONLY with questions that guide self-discovery. Format:
 {
-  "response": "Your therapeutic response following the ${conversationStyle} style",
-  "followUpQuestion": "A ${conversationStyle}-style question focused on ${focusArea}",
-  "emotionalInsight": "Brief emotional insight (1-3 words)"
+  "response": "Your response consisting primarily of probing questions",
+  "followUpQuestion": "Another Socratic question that deepens exploration",
+  "emotionalInsight": "questioning"
 }`;
-      }
 
-      function getStyleInstructions(style: string) {
-        switch(style) {
-          case 'socratic':
-            return 'Use the Socratic method - guide the client to self-discovery through thoughtful questioning. Avoid giving direct advice. Instead, ask probing questions that help them examine their thoughts, beliefs, and assumptions. Help them discover insights themselves through your questions.';
           case 'directive':
-            return 'Take a direct, guidance-focused approach. Provide clear advice, specific strategies, and actionable recommendations. Be authoritative yet supportive, offering concrete steps and techniques they can implement.';
+            return `You are a directive therapist who provides clear, actionable guidance and specific strategies.
+
+CRITICAL RULES:
+- Give concrete advice and recommendations
+- Use "I recommend...", "You should...", "Try this approach..."
+- Offer specific techniques and step-by-step solutions
+- Be authoritative yet supportive
+- Provide actionable next steps
+
+${lengthGuidance[length]}
+${focusGuidance[focus]}
+
+User shared: "${message}"
+
+Provide clear directive guidance and specific recommendations. Format:
+{
+  "response": "Your directive response with specific advice and strategies",
+  "followUpQuestion": "A question about implementing your recommendations",
+  "emotionalInsight": "guidance"
+}`;
+
           case 'reflective':
-            return 'Use reflective listening techniques. Mirror back their emotions and thoughts to help them gain clarity. Paraphrase what they\'ve shared, reflect their feelings, and help them see patterns through your reflections.';
+            return `You are a reflective therapist who mirrors back emotions and thoughts to help clients gain clarity.
+
+CRITICAL RULES:
+- Mirror their emotions and thoughts back to them
+- Use "It sounds like...", "I'm hearing...", "You seem to be..."
+- Paraphrase and reflect what they've shared
+- Validate their feelings and experiences
+- Help them see patterns through reflection
+
+${lengthGuidance[length]}
+${focusGuidance[focus]}
+
+User shared: "${message}"
+
+Reflect their emotions and thoughts back to help them gain clarity. Format:
+{
+  "response": "Your reflective response mirroring their emotions and thoughts",
+  "followUpQuestion": "A reflective question that validates and explores their experience",
+  "emotionalInsight": "reflecting"
+}`;
+
           case 'collaborative':
-            return 'Work as partners in the therapeutic process. Use "we" language, invite their input on direction, and create a team approach to exploring their concerns. Share responsibility for insights and solutions.';
-          default:
-            return 'Respond with empathy and genuine understanding, providing thoughtful insights when appropriate.';
-        }
-      }
+            return `You are a collaborative therapist who works as an equal partner with the client.
 
-      function getFocusInstructions(focus: string) {
-        switch(focus) {
-          case 'emotions':
-            return 'Focus specifically on emotional processing - help them identify, understand, and work through their emotions. Guide them toward emotional awareness and regulation.';
-          case 'patterns':
-            return 'Focus on identifying recurring behaviors, thoughts, or situations. Help them recognize cycles, habits, and connections between past and present patterns.';
-          case 'goals':
-            return 'Focus on future-oriented work - goal setting, creating actionable plans, and building motivation for positive change and achievement.';
-          case 'relationships':
-            return 'Focus on interpersonal dynamics, communication patterns, and relationship challenges. Explore their connections with others and social interactions.';
-          default:
-            return 'Take a broad, exploratory approach to their overall wellbeing and life situation.';
-        }
-      }
+CRITICAL RULES:
+- Use "we", "us", "together", "our" language frequently
+- Invite their input on therapeutic direction
+- Create a team approach to problem-solving
+- Ask for their thoughts on next steps
+- Share responsibility for insights and solutions
 
-      function getLengthInstructions(length: string) {
-        switch(length) {
-          case 'brief':
-            return 'Keep your response concise and focused - 1-2 sentences maximum. Be direct and impactful.';
-          case 'detailed':
-            return 'Provide a comprehensive response - 4-6 sentences that thoroughly explore multiple perspectives and offer deep insights.';
-          default:
-            return 'Provide a balanced response - 2-4 sentences that offer moderate depth and exploration.';
-        }
-      }
+${lengthGuidance[length]}
+${focusGuidance[focus]}
 
-      function getStyleSpecificPrompt(style: string) {
-        switch(style) {
-          case 'socratic':
-            return 'Ask questions that lead them to discover insights themselves. Use phrases like "What do you think might be behind...?", "How does this connect to...?", "What would happen if...?"';
-          case 'directive':
-            return 'Provide specific advice and recommendations. Use phrases like "I recommend...", "You should try...", "The best approach would be..."';
-          case 'reflective':
-            return 'Reflect their emotions and thoughts back to them. Use phrases like "It sounds like you\'re feeling...", "What I\'m hearing is...", "You seem to be experiencing..."';
-          case 'collaborative':
-            return 'Use collaborative language and invite partnership. Use phrases like "Let\'s explore this together...", "What do you think we should focus on?", "How can we work on this together?"';
+User shared: "${message}"
+
+Work collaboratively as partners in their therapeutic journey. Format:
+{
+  "response": "Your collaborative response using partnership language",
+  "followUpQuestion": "A collaborative question inviting their input and partnership",
+  "emotionalInsight": "partnering"
+}`;
+
           default:
-            return 'Respond naturally and supportively to continue the conversation.';
+            return `You are a supportive therapeutic companion providing empathetic understanding.
+
+Respond with warmth and understanding while maintaining professional boundaries.
+
+${lengthGuidance[length]}
+${focusGuidance[focus]}
+
+User shared: "${message}"
+
+Format:
+{
+  "response": "Your supportive therapeutic response",
+  "followUpQuestion": "A caring follow-up question",
+  "emotionalInsight": "supporting"
+}`;
         }
       }
 
