@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -105,6 +105,8 @@ export default function Journal() {
     psychologicalAnalysis?: string;
     therapeuticThemes?: string[];
   } | null>(null);
+  const [popupHovered, setPopupHovered] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Utility function to format date and time according to user's locale with 24h format
   const formatDateTime = (dateString: string) => {
@@ -1184,10 +1186,15 @@ export default function Journal() {
                   {hoveredSession && sessionPreview && (
                     <div 
                       className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-6 max-w-lg w-96 z-50"
-                      onMouseEnter={() => setHoveredSession(hoveredSession)}
+                      onMouseEnter={() => setPopupHovered(true)}
                       onMouseLeave={() => {
-                        setHoveredSession(null);
-                        setSessionPreview(null);
+                        setPopupHovered(false);
+                        setTimeout(() => {
+                          if (!popupHovered) {
+                            setHoveredSession(null);
+                            setSessionPreview(null);
+                          }
+                        }, 100);
                       }}
                     >
                       <div className="space-y-4">
@@ -1297,8 +1304,12 @@ export default function Journal() {
                             fetchSessionPreview(session.id);
                           }}
                           onMouseLeave={() => {
-                            setHoveredSession(null);
-                            setSessionPreview(null);
+                            setTimeout(() => {
+                              if (!popupHovered) {
+                                setHoveredSession(null);
+                                setSessionPreview(null);
+                              }
+                            }, 150);
                           }}
                         >
                           <CardHeader className="pb-3">
