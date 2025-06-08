@@ -228,6 +228,47 @@ export function registerDeepJournalingRoutes(app: Express) {
   });
 
   /**
+   * Get messages for a specific therapeutic chat session
+   */
+  app.get('/api/therapeutic-chat/sessions/:sessionId/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = parseInt(req.params.sessionId);
+
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ message: 'Invalid session ID' });
+      }
+
+      // Fetch the thread and all its exchanges
+      const thread = await db.select()
+        .from(journalingThreads)
+        .where(and(
+          eq(journalingThreads.id, sessionId),
+          eq(journalingThreads.userId, userId)
+        ))
+        .limit(1);
+
+      if (thread.length === 0) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+
+      // Fetch all exchanges for this thread
+      const exchanges = await db.select()
+        .from(threadExchanges)
+        .where(eq(threadExchanges.threadId, sessionId))
+        .orderBy(threadExchanges.createdAt);
+
+      res.json({
+        session: thread[0],
+        exchanges: exchanges
+      });
+    } catch (error) {
+      console.error('Error fetching session messages:', error);
+      res.status(500).json({ message: 'Failed to fetch session messages' });
+    }
+  });
+
+  /**
    * Archive a thread
    */
   app.delete('/api/deep-journaling/threads/:threadId', isAuthenticated, async (req: any, res) => {

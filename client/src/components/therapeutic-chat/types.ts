@@ -8,11 +8,13 @@ export interface Message {
 
 export interface ConversationSession {
   id: number;
+  threadId?: number;
   title: string;
-  messages: Message[];
-  lastMessage: string;
-  createdAt: string;
-  emotionalJourney: string[];
+  messages?: Message[];
+  lastMessage?: string;
+  createdAt?: string;
+  emotionalJourney?: string[];
+  isActive?: boolean;
 }
 
 export interface TherapeuticResponse {

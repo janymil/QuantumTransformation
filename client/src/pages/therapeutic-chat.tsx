@@ -302,40 +302,65 @@ export default function TherapeuticChat() {
     setCurrentMessage("");
   };
 
-  // Load session function to match original
+  // Load session function to continue chatting with saved conversations
   const loadSession = async (sessionId: number) => {
     try {
-      const response = await fetch(`/api/deep-journaling/threads/${sessionId}/exchanges`);
+      const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}/messages`);
       if (response.ok) {
         const data = await response.json();
         if (data?.exchanges) {
           const formattedMessages: Message[] = [];
           
+          // Add welcome message for continuing conversation
+          formattedMessages.push({
+            id: 'continue-welcome',
+            type: 'ai',
+            content: "Welcome back! I can see we had a meaningful conversation before. Feel free to continue sharing or explore new topics. How are you feeling today?",
+            timestamp: new Date(),
+            emotionalTone: 'welcoming'
+          });
+          
           data.exchanges.forEach((exchange: any) => {
-            formattedMessages.push({
-              id: `user-${exchange.id}`,
-              type: 'user',
-              content: exchange.userInput,
-              timestamp: new Date(exchange.createdAt)
-            });
+            if (exchange.userInput) {
+              formattedMessages.push({
+                id: `user-${exchange.id}`,
+                type: 'user',
+                content: exchange.userInput,
+                timestamp: new Date(exchange.createdAt)
+              });
+            }
             
-            formattedMessages.push({
-              id: `ai-${exchange.id}`,
-              type: 'ai',
-              content: exchange.analysis?.professionalAnalysis || exchange.question || 'Continuing our conversation...',
-              timestamp: new Date(exchange.createdAt),
-              emotionalTone: exchange.emotionalState?.primaryEmotion || 'supportive'
-            });
+            if (exchange.aiAnalysis) {
+              formattedMessages.push({
+                id: `ai-${exchange.id}`,
+                type: 'ai',
+                content: exchange.aiAnalysis,
+                timestamp: new Date(exchange.createdAt),
+                emotionalTone: 'supportive'
+              });
+            }
           });
           
           setMessages(formattedMessages);
-          setActiveSession(null);
+          setActiveSession({
+            id: sessionId,
+            threadId: sessionId,
+            title: `Continued Session ${sessionId}`,
+            isActive: true
+          });
+          
+          toast({
+            title: "Conversation Loaded",
+            description: "You can now continue your previous conversation.",
+          });
         }
+      } else {
+        throw new Error('Failed to load conversation');
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to load session. Please try again.",
+        description: "Failed to load conversation. Please try again.",
         variant: "destructive",
       });
     }
