@@ -107,10 +107,7 @@ async function testAdvancedTherapeuticEngine() {
     
     const response = await fetch('http://localhost:5000/api/therapeutic-chat/process', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': sessionCookie || 'session=test'
-      },
+      headers,
       body: JSON.stringify({
         userInput: "Let's explore this from a different angle",
         conversationStyle: 'collaborative',
