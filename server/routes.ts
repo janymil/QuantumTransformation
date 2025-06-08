@@ -27,7 +27,7 @@ const openai = new OpenAI({
 });
 import { db } from "./db";
 import { eq, desc, and, ilike, or, gte, count, avg, sum, sql } from "drizzle-orm";
-import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
+
 import { 
   determineCacheStrategy, 
   getEnhancedCachedResponse, 
