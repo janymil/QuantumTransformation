@@ -57,7 +57,6 @@ import HealthJournal from "@/pages/challenges/health-transformation/journal";
 import HealthProgress from "@/pages/challenges/health-transformation/progress";
 import HealthDay from "@/pages/challenges/health-transformation/day";
 
-import { lazy } from 'react';
 
 
 function Router() {
@@ -107,24 +106,23 @@ function Router() {
         <Route path="/saved-affirmations" component={SavedAffirmations} />
         <Route path="/vision-board" component={VisionBoard} />
         <Route path="/voice-test" component={ElevenLabsVoiceTest} />
-        <Route path="/conversation-restore" component={lazy(() => import('./pages/conversation-restore'))} />
-
+        
         {/* AI Couch Premium System */}
         <Route path="/ai-couch" component={AiCouchNewDashboard} />
         <Route path="/ai-couch-onboarding" component={AiCouchOnboarding} />
         <Route path="/ai-couch-dashboard" component={AiCouchNewDashboard} />
-
+        
         {/* Legacy challenge routes - keep for backwards compatibility */}
         <Route path="/challenge/:day" component={() => <ChallengeDay />} />
         <Route path="/challenge-day" component={() => <ChallengeDay />} />
         <Route path="/challenge-progress" component={() => <ChallengeProgress />} />
-
+        
         {/* Quantum Consciousness Challenge */}
         <Route path="/quantum-consciousness" component={QuantumDashboard} />
         <Route path="/quantum-consciousness/journal" component={QuantumJournal} />
         <Route path="/quantum-consciousness/progress" component={QuantumProgress} />
         <Route path="/quantum-consciousness/day/:day" component={QuantumDay} />
-
+        
         {/* Money Blocks Challenge */}
         <Route path="/money-blocks" component={MoneyDashboard} />
         <Route path="/money-blocks/journal" component={MoneyJournal} />
@@ -134,27 +132,27 @@ function Router() {
         <Route path="/money-blocks-clearing/journal" component={MoneyBlocksClearingJournal} />
         <Route path="/money-blocks-clearing/progress" component={MoneyBlocksClearingProgress} />
         <Route path="/money-blocks-clearing/day/:day" component={MoneyBlocksClearingDay} />
-
+        
         {/* Money Manifestation Challenge */}
         <Route path="/money-manifestation" component={MoneyManifestationDashboard} />
         <Route path="/money-manifestation/journal" component={MoneyManifestationJournal} />
         <Route path="/money-manifestation/progress" component={MoneyManifestationProgress} />
         <Route path="/money-manifestation/day/:day" component={MoneyManifestationDay} />
-
+        
         {/* Relationships Challenge */}
         <Route path="/relationships" component={RelationshipsDashboard} />
         <Route path="/relationships/journal" component={RelationshipsJournal} />
         <Route path="/relationships/progress" component={RelationshipsProgress} />
         <Route path="/relationships/day/:day" component={RelationshipsDay} />
-
+        
         {/* Health Transformation Challenge */}
         <Route path="/health-transformation" component={HealthDashboard} />
         <Route path="/health-transformation/journal" component={HealthJournal} />
         <Route path="/health-transformation/progress" component={HealthProgress} />
         <Route path="/health-transformation/day/:day" component={HealthDay} />
+        
 
-
-
+        
         <Route component={NotFound} />
       </Switch>
     </>

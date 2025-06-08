@@ -29,8 +29,6 @@ export default function TherapeuticChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [isProcessingDeeper, setIsProcessingDeeper] = useState(false);
-  const [isProcessingNewDirection, setIsProcessingNewDirection] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -75,16 +73,6 @@ export default function TherapeuticChat() {
   // Send message mutation - therapeutic chat only (no database save until finish)
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, actionType }: { message: string; actionType?: 'go_deeper' | 'new_direction' | 'customize_response' }) => {
-      // Add user message immediately before API call
-      const userMessage: Message = {
-        id: `user-${Date.now()}`,
-        type: 'user',
-        content: message.trim(),
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
-      
       // Call therapeutic chat endpoint directly without saving to database
       const response = await fetch('/api/therapeutic-chat/process', {
         method: 'POST',
@@ -106,6 +94,14 @@ export default function TherapeuticChat() {
       return await response.json();
     },
     onSuccess: (response: any) => {
+      // Add user message
+      const userMessage: Message = {
+        id: `user-${Date.now()}`,
+        type: 'user',
+        content: currentMessage,
+        timestamp: new Date()
+      };
+      
       // Add AI response with therapeutic chat format
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
@@ -115,7 +111,7 @@ export default function TherapeuticChat() {
         emotionalTone: response.emotionalInsight || 'curious'
       };
       
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => [...prev, userMessage, aiMessage]);
       setCurrentMessage("");
       
       // Do NOT save to database or update threads here
@@ -179,8 +175,6 @@ export default function TherapeuticChat() {
   const handleGoDeeper = async (lastAiMessage: string) => {
     const deeperPrompt = `I'd like to explore this further. Can you help me go deeper into what we just discussed: "${lastAiMessage.substring(0, 100)}..."`;
     
-    setIsProcessingDeeper(true);
-    
     try {
       const response = await fetch('/api/deep-journaling/process', {
         method: 'POST',
@@ -209,15 +203,11 @@ export default function TherapeuticChat() {
         description: "Failed to generate deeper response. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsProcessingDeeper(false);
     }
   };
 
   const handleNewDirection = async (aiMessage: string) => {
     const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
-    
-    setIsProcessingNewDirection(true);
     
     try {
       const response = await fetch('/api/deep-journaling/process', {
@@ -247,8 +237,6 @@ export default function TherapeuticChat() {
         description: "Failed to generate new direction. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsProcessingNewDirection(false);
     }
   };
 
@@ -534,7 +522,7 @@ export default function TherapeuticChat() {
                           size="sm" 
                           className="text-xs"
                           onClick={() => handleGoDeeper(message.content)}
-                          disabled={sendMessageMutation.isPending || isProcessingDeeper || isProcessingNewDirection}
+                          disabled={sendMessageMutation.isPending}
                         >
                           Go Deeper
                         </Button>
@@ -543,7 +531,7 @@ export default function TherapeuticChat() {
                           size="sm" 
                           className="text-xs"
                           onClick={() => handleNewDirection(message.content)}
-                          disabled={sendMessageMutation.isPending || isProcessingDeeper || isProcessingNewDirection}
+                          disabled={sendMessageMutation.isPending}
                         >
                           New Direction
                         </Button>
@@ -584,22 +572,11 @@ export default function TherapeuticChat() {
               onStopRecording={stopRecording}
             />
           
-            {/* Loading indicators should show when AI is processing */}
             {sendMessageMutation.isPending && (
-              <div className="w-full">
-                <LoadingIndicator stage="responding" />
-              </div>
-            )}
-
-            {isProcessingDeeper && (
-              <div className="w-full">
-                <LoadingIndicator stage="analyzing" />
-              </div>
-            )}
-
-            {isProcessingNewDirection && (
-              <div className="w-full">
-                <LoadingIndicator stage="thinking" />
+              <div className="flex justify-center">
+                <div className="w-full max-w-2xl">
+                  <LoadingIndicator />
+                </div>
               </div>
             )}
             

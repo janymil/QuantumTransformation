@@ -4219,68 +4219,6 @@ Provide your response in this JSON format:
     }
   });
 
-  // Save therapeutic conversation to database
-  app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { title, messages, conversationStyle, focusArea } = req.body;
-
-      if (!messages || messages.length === 0) {
-        return res.status(400).json({ message: "No messages to save" });
-      }
-
-      // Create new journaling thread
-      const [newThread] = await db
-        .insert(journalingThreads)
-        .values({
-          userId,
-          title: title || 'Therapeutic Chat Session',
-          threadType: 'therapy_session',
-          currentTopic: focusArea || 'general'
-        })
-        .returning();
-
-      // Save each exchange
-      let exchangeOrder = 1;
-      for (let i = 0; i < messages.length; i += 2) {
-        const userMessage = messages[i];
-        const aiMessage = messages[i + 1];
-
-        if (userMessage && userMessage.type === 'user') {
-          await db
-            .insert(threadExchanges)
-            .values({
-              threadId: newThread.id,
-              exchangeOrder: exchangeOrder,
-              userInput: userMessage.content,
-              aiAnalysis: aiMessage?.content || '',
-              aiQuestion: 'Continue exploring...',
-              aiEmotionalAssessment: { 
-                insight: aiMessage?.emotionalTone || 'supportive',
-                conversationStyle,
-                focusArea 
-              },
-              processingTime: 1000
-            });
-          
-          exchangeOrder++;
-        }
-      }
-
-      console.log(`Saved therapeutic conversation with ${exchangeOrder - 1} exchanges`);
-
-      res.json({
-        success: true,
-        threadId: newThread.id,
-        exchangesSaved: exchangeOrder - 1
-      });
-
-    } catch (error) {
-      console.error("Error saving therapeutic conversation:", error);
-      res.status(500).json({ message: "Failed to save conversation" });
-    }
-  });
-
   app.post('/api/therapeutic-chat/message', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

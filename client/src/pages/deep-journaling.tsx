@@ -88,24 +88,24 @@ export default function DeepJournaling() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
+  
   // Core state
   const [userInput, setUserInput] = useState("");
   const [currentThread, setCurrentThread] = useState<number | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("write");
-
+  
   // Customization state
   const [mode, setMode] = useState<'conversational' | 'therapeutic' | 'analytical'>('conversational');
   const [tone, setTone] = useState<'supportive' | 'challenging' | 'neutral' | 'empathetic'>('supportive');
   const [perspective, setPerspective] = useState<'psychologist' | 'life_coach' | 'cbt_therapist' | 'philosopher' | 'stoic'>('psychologist');
   const [customInstructions, setCustomInstructions] = useState("");
-
+  
   // Voice recording state
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-
+  
   // Get user's journaling threads
   const { data: threads, isLoading: threadsLoading } = useQuery({
     queryKey: ["/api/deep-journaling/threads"],
@@ -135,7 +135,7 @@ export default function DeepJournaling() {
       setUserInput("");
       queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
       queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads", response.threadId] });
-
+      
       toast({
         title: "Analysis Complete",
         description: `Emotional state: ${response.emotionalState.primaryEmotion} (${response.emotionalState.intensity}/10)`,
@@ -344,7 +344,7 @@ export default function DeepJournaling() {
                           </div>
                         </DialogContent>
                       </Dialog>
-
+                      
                       {currentThread && (
                         <Button variant="outline" size="sm" onClick={startNewThread}>
                           <BookOpen className="w-4 h-4 mr-2" />
@@ -375,7 +375,7 @@ export default function DeepJournaling() {
                         )}
                       </Button>
                     </div>
-
+                    
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-2">
                       <Button 
@@ -395,7 +395,7 @@ export default function DeepJournaling() {
                           </>
                         )}
                       </Button>
-
+                      
                       {currentThread && (
                         <>
                           <Button 
@@ -406,7 +406,7 @@ export default function DeepJournaling() {
                             <ArrowRight className="w-4 h-4 mr-2" />
                             Go Deeper
                           </Button>
-
+                          
                           <Button 
                             variant="outline"
                             onClick={() => handleSubmit('new_direction')}
@@ -447,7 +447,7 @@ export default function DeepJournaling() {
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">You wrote:</p>
                                 <p className="text-sm">{exchange.userInput}</p>
                               </div>
-
+                              
                               {/* AI Response */}
                               <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
                                 <div className="flex items-center gap-2 mb-2">
@@ -461,7 +461,7 @@ export default function DeepJournaling() {
                                     </Badge>
                                   )}
                                 </div>
-
+                                
                                 {exchange.analysis?.professionalAnalysis && (
                                   <div className="mb-3">
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Professional Analysis:</p>
@@ -470,12 +470,12 @@ export default function DeepJournaling() {
                                     </p>
                                   </div>
                                 )}
-
+                                
                                 <div>
                                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Therapeutic Question:</p>
                                   <p className="text-sm font-medium">{exchange.question}</p>
                                 </div>
-
+                                
                                 {exchange.suggestions && exchange.suggestions.length > 0 && (
                                   <div className="mt-2">
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Suggestions:</p>
