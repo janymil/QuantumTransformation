@@ -4046,9 +4046,9 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
       const userId = req.user.claims.sub;
       const { userInput, threadId, actionType, customizations } = req.body;
 
-      const { intelligentCoachingEngine } = await import('./deep-journaling/deep-journaling-engine');
+      const { multidisciplinaryAIEngine } = await import('./deep-journaling/multidisciplinary-ai-engine');
       
-      const response = await intelligentCoachingEngine.processCoachingRequest(
+      const response = await multidisciplinaryAIEngine.processCoachingRequest(
         userId,
         userInput,
         'deep_journaling'
