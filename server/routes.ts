@@ -4212,8 +4212,48 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Generate therapeutic response using AI without saving to database
-      const therapeuticPrompt = `You are a professional therapeutic companion engaging in a flowing conversation. Your role is to:
+      // Generate specialized therapeutic prompts based on action type
+      let therapeuticPrompt;
+      
+      if (actionType === 'go_deeper') {
+        therapeuticPrompt = `You are a professional therapist conducting deep therapeutic exploration. The user wants to go deeper into their previous discussion. Your role is to:
+
+1. Ask probing, insightful follow-up questions that uncover underlying patterns
+2. Guide them to examine root causes, beliefs, and emotional connections
+3. Help them discover insights they might not have considered
+4. Use therapeutic techniques to explore deeper layers of their experience
+5. Challenge them gently to explore different perspectives
+
+The user's deeper exploration request: "${message}"
+
+Provide your response in this JSON format:
+{
+  "response": "Deep therapeutic response with follow-up questions that guide deeper exploration",
+  "followUpQuestion": "A profound question that uncovers underlying patterns or beliefs",
+  "emotionalInsight": "deeper understanding"
+}`;
+
+      } else if (actionType === 'new_direction') {
+        therapeuticPrompt = `You are a professional therapist shifting therapeutic direction. The user wants to explore their concerns from a completely different angle. Your role is to:
+
+1. Take a fresh, innovative approach to their situation
+2. Challenge assumptions and reveal new perspectives
+3. Ask questions that explore unexplored aspects
+4. Use creative therapeutic techniques to reframe their experience
+5. Guide them toward breakthrough insights
+
+The user's direction change request: "${message}"
+
+Provide your response in this JSON format:
+{
+  "response": "A fresh therapeutic response that shifts perspective and explores new angles",
+  "followUpQuestion": "An innovative question that reveals unexplored aspects or challenges assumptions",
+  "emotionalInsight": "new perspective"
+}`;
+
+      } else {
+        // Regular therapeutic conversation
+        therapeuticPrompt = `You are a professional therapeutic companion engaging in a flowing conversation. Your role is to:
 
 1. Respond with empathy and genuine understanding
 2. Provide thoughtful insights when appropriate  
@@ -4233,6 +4273,7 @@ Provide your response in this JSON format:
   "followUpQuestion": "A thoughtful question to continue the conversation",
   "emotionalInsight": "Brief emotional insight (1-3 words like 'exploring vulnerability' or 'processing change')"
 }`;
+      }
 
       console.log("Therapeutic Chat - Processing message:", message);
 

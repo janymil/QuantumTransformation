@@ -174,30 +174,13 @@ export default function TherapeuticChat() {
   };
 
   const handleGoDeeper = async (lastAiMessage: string) => {
-    const deeperPrompt = `I'd like to explore this further. Can you help me go deeper into what we just discussed: "${lastAiMessage.substring(0, 100)}..."`;
+    const deeperPrompt = `You said: "${lastAiMessage.substring(0, 200)}...". I want to explore this more deeply. Please ask me follow-up questions that help me understand the underlying patterns, emotions, or beliefs connected to this. Guide me to examine this from different angles and help me discover insights I might not have considered.`;
     
     try {
-      const response = await fetch('/api/deep-journaling/process', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userInput: deeperPrompt, actionType: 'go_deeper' })
+      await sendMessageMutation.mutateAsync({
+        message: deeperPrompt,
+        actionType: 'go_deeper'
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        const newAiMessage: Message = {
-          id: Date.now().toString(),
-          type: 'ai',
-          content: data.analysis?.professionalAnalysis || data.question || data.response || 'Let me explore this deeper with you.',
-          timestamp: new Date(),
-          emotionalTone: data.emotionalState?.primaryEmotion || 'insightful'
-        };
-
-        setMessages(prev => [...prev, newAiMessage]);
-        setActiveSession(data.threadId);
-      }
     } catch (error) {
       toast({
         title: "Error",
@@ -208,30 +191,13 @@ export default function TherapeuticChat() {
   };
 
   const handleNewDirection = async (aiMessage: string) => {
-    const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
+    const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage.substring(0, 200)}...", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
     
     try {
-      const response = await fetch('/api/deep-journaling/process', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userInput: newDirectionPrompt, actionType: 'new_direction' })
+      await sendMessageMutation.mutateAsync({
+        message: newDirectionPrompt,
+        actionType: 'new_direction'
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        const newAiMessage: Message = {
-          id: Date.now().toString(),
-          type: 'ai',
-          content: data.analysis?.professionalAnalysis || data.question || data.response || 'Let me explore this further with you.',
-          timestamp: new Date(),
-          emotionalTone: data.emotionalState?.primaryEmotion || 'curious'
-        };
-
-        setMessages(prev => [...prev, newAiMessage]);
-        setActiveSession(data.threadId);
-      }
     } catch (error) {
       toast({
         title: "Error",
