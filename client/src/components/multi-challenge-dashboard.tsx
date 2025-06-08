@@ -33,7 +33,6 @@ import { CHALLENGE_TYPES, getChallengeUrl } from "@shared/challenge-types";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 
 interface MultiChallengeDashboardProps {}
 
@@ -41,56 +40,10 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   const [expandedChallenges, setExpandedChallenges] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const { data: progressData, isLoading: progressLoading } = useQuery({
+  const { data: progressData, isLoading } = useQuery({
     queryKey: ["/api/progress/all"],
-    enabled: isAuthenticated && !!user,
   });
-
-  const { data: userChallenges, isLoading: challengesLoading, error: challengesError } = useQuery({
-    queryKey: ["/api/challenges/user-challenges", user?.id],
-    enabled: isAuthenticated && !!user && !authLoading,
-    retry: 3,
-    retryDelay: 1000,
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: true,
-    queryFn: async () => {
-      console.log("Making API call to /api/challenges/user-challenges");
-      const res = await fetch("/api/challenges/user-challenges", {
-        credentials: "include",
-      });
-      console.log("API response status:", res.status);
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("API error:", res.status, errorText);
-        throw new Error(`${res.status}: ${errorText}`);
-      }
-      const data = await res.json();
-      console.log("API response data:", data);
-      return data;
-    },
-  });
-
-  // Debug authentication and query state
-  console.log("MultiChallengeDashboard - Auth state:", { isAuthenticated, user: !!user });
-  console.log("MultiChallengeDashboard - Challenges loading:", challengesLoading);
-  console.log("MultiChallengeDashboard - Challenges error:", challengesError);
-
-  // Don't render until authentication is confirmed
-  if (!isAuthenticated || !user) {
-    console.log("MultiChallengeDashboard - Waiting for authentication");
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <div className="loading-shimmer h-6 w-48 mx-auto mb-4"></div>
-            <div className="loading-shimmer h-4 w-32 mx-auto"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Quit challenge mutation
   const quitChallengeMutation = useMutation({
@@ -126,7 +79,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
     );
   };
 
-  if (isLoading || challengesLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="h-32 bg-muted rounded-lg animate-pulse" />
@@ -139,13 +92,6 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   const rawProgress = (progressData as any)?.allProgress || [];
   const completions = (progressData as any)?.completions || [];
   const achievements = (progressData as any)?.achievements || [];
-  const activeChallenges = (userChallenges as any[]) || [];
-
-  // Debug logging
-  console.log("MultiChallengeDashboard - progressData:", progressData);
-  console.log("MultiChallengeDashboard - userChallenges:", userChallenges);
-  console.log("MultiChallengeDashboard - rawProgress:", rawProgress);
-  console.log("MultiChallengeDashboard - activeChallenges:", activeChallenges);
 
   // Deduplicate challenges by keeping only the latest entry for each challenge type
   const uniqueProgressMap = new Map();
@@ -157,12 +103,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   });
   const allProgress = Array.from(uniqueProgressMap.values());
 
-  // Always prioritize user challenges data since it's working
-  const displayChallenges = activeChallenges.length > 0 ? activeChallenges : allProgress;
-  
-  console.log("MultiChallengeDashboard - displayChallenges:", displayChallenges);
-
-  if (displayChallenges.length === 0) {
+  if (allProgress.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -185,21 +126,13 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Active Challenges</h2>
         <Badge variant="secondary" className="text-lg px-3 py-1">
-          {displayChallenges.length} Active
+          {allProgress.length} Active
         </Badge>
       </div>
 
       <div className="space-y-4">
-        {displayChallenges.map((progress: any, index: number) => {
-          console.log("Rendering challenge:", progress);
+        {allProgress.map((progress: any, index: number) => {
           const challengeType = CHALLENGE_TYPES[progress.challengeType];
-          console.log("Challenge type found:", challengeType);
-          
-          if (!challengeType) {
-            console.warn("No challenge type found for:", progress.challengeType);
-            return null;
-          }
-          
           const isExpanded = expandedChallenges.includes(progress.challengeType);
           const challengeCompletions = completions.filter(
             (c: any) => c.challengeType === progress.challengeType

@@ -3,22 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
 import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
-import { Play, BookOpen, Brain, Target, Zap, Calendar } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Play, BookOpen, Brain, Target, Zap } from "lucide-react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { challengeContent } from "@/data/challenge-content";
-
-// Helper function to check if error is unauthorized
-function isUnauthorizedError(error: Error): boolean {
-  return error.message.includes('401') || error.message.includes('Unauthorized');
-}
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { toast } = useToast();
 
   const { data: progressData, isLoading, error } = useQuery({
     queryKey: ["/api/progress"],
@@ -164,7 +153,7 @@ export default function Dashboard() {
           {/* Additional Learning Tools */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Spaced Repetition Learning */}
-            <SpacedRepetitionWidget challengeType="general_quantum" />
+            <SpacedRepetitionWidget />
             
             {/* Quick Actions */}
             <Card>
@@ -277,34 +266,11 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Progress</span>
-                    <span className="text-sm font-medium">{completionPercentage}%</span>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${completionPercentage}%` }}
-                    />
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
-                      <div
-                        key={day}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                          completedDays.includes(day)
-                            ? 'bg-primary text-primary-foreground'
-                            : day === currentDay
-                            ? 'bg-secondary text-foreground border-2 border-primary'
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        {day}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <ChallengeTimeline 
+                  currentDay={currentDay}
+                  completedDays={completedDays}
+                  content={challengeContent}
+                />
               </CardContent>
             </Card>
 
@@ -316,19 +282,12 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {achievements.slice(0, 4).map((achievement: any) => (
-                      <div 
+                    {achievements.slice(0, 4).map((achievement) => (
+                      <AchievementBadge 
                         key={achievement.id}
-                        className="flex flex-col items-center p-4 bg-secondary rounded-lg"
-                      >
-                        <Target className="w-8 h-8 text-primary mb-2" />
-                        <span className="text-sm font-medium text-center">
-                          {achievement.achievementId}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(achievement.unlockedAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                        achievementId={achievement.achievementId}
+                        unlockedAt={achievement.unlockedAt}
+                      />
                     ))}
                   </div>
                   {achievements.length > 4 && (

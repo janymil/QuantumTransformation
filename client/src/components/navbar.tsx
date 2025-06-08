@@ -17,7 +17,7 @@ import OnboardingTour from "@/components/onboarding-tour";
 import MoodThemeSwitcher from "@/components/mood-theme-switcher";
 
 export default function Navbar() {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [location] = useLocation();
   const [isOpeningVisionBoard, setIsOpeningVisionBoard] = useState(false);
 
