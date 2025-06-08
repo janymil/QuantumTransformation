@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate cross-domain JWT token for Vision Board app
   app.post('/api/cross-domain/generate-token', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       const user = await storage.getUser(userId);
       
       if (!user) {
