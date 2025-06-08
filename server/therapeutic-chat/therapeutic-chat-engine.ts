@@ -25,14 +25,14 @@ import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
 import { therapeuticChatAdapter, TherapeuticRequest } from '@shared/ai-intelligence/adapters/therapeutic-chat-adapter';
 
 export class DeepJournalingEngine {
-  
+
   /**
    * Main entry point for deep journaling interactions
    */
   async processJournalingRequest(request: DeepJournalingRequest): Promise<DeepJournalingResponse> {
     // Temporarily disable all cost optimization to test AI quality
     // const cachedProfile = await advancedCostOptimization.getCachedUserProfile(request.userId);
-    
+
     // Temporarily disable caching for therapeutic chat to ensure response quality
     // const similarResponse = await advancedCostOptimization.findSimilarResponse(request.userId, request.userInput);
     // if (similarResponse && request.actionType !== 'new_direction') {
@@ -44,15 +44,15 @@ export class DeepJournalingEngine {
     //   };
     // }
     const startTime = Date.now();
-    
+
     // Get or create thread
     let thread = await this.getOrCreateThread(request.userId, request.threadId);
-    
+
     // Get user's psychological profile and history
     const userProfile = await this.getUserPsychologicalProfile(request.userId);
     const threadHistory = await this.getThreadHistory(thread.id);
     const userContext = await this.getUserContext(request.userId);
-    
+
     // Comprehensive psychological analysis integration - Full orchestration
     const emotionalState = psychologicalAnalyzer.analyzeEmotionalState(request.userInput, threadHistory.map(h => ({ primary: h.currentEmotionalState || 'neutral' })) as any[]);
     const cognitivePatterns = psychologicalAnalyzer.analyzeCognitivePatterns(request.userInput);
@@ -63,7 +63,7 @@ export class DeepJournalingEngine {
       cognitivePatterns,
       copingStrategies
     );
-    
+
     const psychologicalAnalysis = {
       emotionalState,
       cognitivePatterns,
@@ -77,7 +77,7 @@ export class DeepJournalingEngine {
         exchangeOrder: threadHistory.length + 1
       }
     };
-    
+
     // Get personalization recommendations for premium-level responses (temporarily disabled for stability)
     const personalizationRecs = {
       therapeuticStyle: 'supportive',
@@ -94,7 +94,7 @@ export class DeepJournalingEngine {
       customInstructions: [],
       confidence: 0.8
     };
-    
+
     // Select optimal therapeutic framework based on real-time session analysis + psychological insights
     const frameworkRecommendation = await dynamicFrameworkSelector.selectOptimalFramework(
       request.userId,
@@ -111,10 +111,10 @@ export class DeepJournalingEngine {
     // Analyze cross-session patterns and update therapeutic memory (temporarily disabled for stability)
     const crossSessionPatterns = [];
     const therapeuticMemory = null;
-    
+
     // Determine exchange order
     const exchangeOrder = threadHistory.length + 1;
-    
+
     // Generate AI response based on action type
     let aiResponse;
     if (request.actionType === 'new_direction') {
@@ -124,16 +124,16 @@ export class DeepJournalingEngine {
     } else {
       aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs, frameworkRecommendation, therapeuticMemory, crossSessionPatterns, psychologicalAnalysis);
     }
-    
+
     const processingTime = Date.now() - startTime;
-    
+
     // Skip expensive operations for better performance
     const breakthroughMoment = null;
-    
+
     // Skip goal tracking for faster responses
 
     // Skip language adaptation for faster responses
-    
+
     // Save exchange to database
     const [savedExchange] = await db.insert(threadExchanges).values({
       threadId: thread.id,
@@ -155,16 +155,16 @@ export class DeepJournalingEngine {
       tokenCount: aiResponse.tokenCount,
       cost: aiResponse.cost
     }).returning();
-    
+
     // Update thread metadata
     await this.updateThreadMetadata(thread.id, aiResponse.emotionalState, request.userInput);
-    
+
     // Track emotional state
     await this.trackEmotionalState(request.userId, thread.id, savedExchange.id, aiResponse.emotionalState);
-    
+
     // Update psychological profile
     await this.updatePsychologicalProfile(request.userId, request.userInput, aiResponse, userProfile);
-    
+
     // Analyze interaction for user modeling and personalization improvements
     await userModelingEngine.analyzeInteraction({
       userId: request.userId,
@@ -181,7 +181,7 @@ export class DeepJournalingEngine {
         interventionType: this.determineInterventionType(request, aiResponse)
       }
     });
-    
+
     return {
       threadId: thread.id,
       exchangeId: savedExchange.id,
@@ -235,7 +235,7 @@ export class DeepJournalingEngine {
         expectedOutcomes: frameworkRec.expectedOutcomes
       }
     );
-    
+
     // Integrate comprehensive psychological analysis into system prompt
     const psychologicalContext = psychologicalAnalysis ? `
 
@@ -249,9 +249,9 @@ COMPREHENSIVE PSYCHOLOGICAL ANALYSIS:
 - Strengths: ${psychologicalAnalysis.psychologicalInsights.strengths?.join(', ') || 'To be explored'}
 
 Use this analysis to provide highly personalized, psychologically-informed therapeutic responses.` : '';
-    
+
     const systemPrompt = enhancedSystemPrompt + psychologicalContext;
-    
+
     const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext, therapeuticMemory, crossSessionPatterns);
     const analysisPrompt = this.buildAnalysisPrompt(request.userInput, request.actionType);
 
@@ -262,7 +262,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
 
     // Use therapeutic-chat-adapter for AI Intelligence Layer integration while preserving therapeutic quality
     let aiResponse;
-    
+
     try {
       const therapeuticRequest: TherapeuticRequest = {
         userId: request.userId,
@@ -303,7 +303,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
       const adapterResponse = await therapeuticChatAdapter.processTherapeuticRequest(therapeuticRequest);
 
       const responseContent = adapterResponse.content || "I'm here to listen and support you. What would you like to explore?";
-      
+
       // Use the therapeutic response directly from adapter - includes AI Intelligence Layer benefits
       aiResponse = {
         analysis: { professionalAnalysis: responseContent },
@@ -321,13 +321,13 @@ Use this analysis to provide highly personalized, psychologically-informed thera
         modelUsed: adapterResponse.metadata.modelUsed,
         provider: adapterResponse.metadata.provider
       };
-      
+
       console.log('Direct OpenAI Response Quality Check:', {
         hasAnalysis: !!aiResponse.analysis?.professionalAnalysis,
         analysisLength: aiResponse.analysis?.professionalAnalysis?.length || 0,
         questionQuality: aiResponse.question?.length || 0
       });
-      
+
     } catch (openaiError) {
       console.error('Direct OpenAI call failed:', openaiError);
       // Fallback to original routing
@@ -453,11 +453,11 @@ Use this analysis to provide highly personalized, psychologically-informed thera
     let context = `CONVERSATION CONTEXT:\n`;
     context += `Thread: ${thread.title}\n`;
     context += `Thread Type: ${thread.threadType}\n`;
-    
+
     if (thread.currentEmotionalState) {
       context += `Current Emotional State: ${thread.currentEmotionalState}\n`;
     }
-    
+
     if (thread.currentTopic) {
       context += `Current Topic: ${thread.currentTopic}\n`;
     }
@@ -494,28 +494,28 @@ Use this analysis to provide highly personalized, psychologically-informed thera
     // Add therapeutic memory and cross-session insights
     if (therapeuticMemory) {
       context += `\nTHERAPEUTIC MEMORY & PROGRESS:\n`;
-      
+
       if (therapeuticMemory.goals.length > 0) {
         context += `Active Therapeutic Goals:\n`;
         therapeuticMemory.goals.slice(0, 3).forEach(goal => {
           context += `- ${goal.title}: ${goal.currentProgress}% complete (${goal.category})\n`;
         });
       }
-      
+
       if (therapeuticMemory.breakthroughs.length > 0) {
         context += `Recent Breakthroughs:\n`;
         therapeuticMemory.breakthroughs.slice(0, 2).forEach(breakthrough => {
           context += `- ${breakthrough.type}: ${breakthrough.description} (significance: ${breakthrough.significance}/10)\n`;
         });
       }
-      
+
       if (therapeuticMemory.resistancePatterns.length > 0) {
         context += `Resistance Patterns:\n`;
         therapeuticMemory.resistancePatterns.slice(0, 2).forEach(pattern => {
           context += `- "${pattern.pattern}" (frequency: ${pattern.frequency}, trend: ${pattern.trend})\n`;
         });
       }
-      
+
       context += `Progress Velocity: ${therapeuticMemory.progressVelocity.predictedTrajectory} (${therapeuticMemory.progressVelocity.engagementTrend} engagement)\n`;
       context += `Therapeutic Alliance Score: ${Math.round(therapeuticMemory.therapeuticAlliance * 100)}%\n`;
     }
@@ -535,7 +535,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
    */
   private buildAnalysisPrompt(userInput: string, actionType?: string): string {
     let prompt = `USER'S NEW WRITING:\n"${userInput}"\n\n`;
-    
+
     if (actionType === 'go_deeper') {
       prompt += `The user clicked "Go Deeper" - they want you to analyze their writing and ask a question that helps them explore this topic more deeply. Focus on:
 - Underlying emotions and motivations
@@ -545,9 +545,9 @@ Use this analysis to provide highly personalized, psychologically-informed thera
     } else {
       prompt += `Analyze this writing and provide a therapeutic response that helps the user explore their thoughts and emotions more deeply.`;
     }
-    
+
     prompt += `\n\nGenerate your response in the specified JSON format.`;
-    
+
     return prompt;
   }
 
@@ -560,7 +560,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
         .select()
         .from(journalingThreads)
         .where(and(eq(journalingThreads.id, threadId), eq(journalingThreads.userId, userId)));
-      
+
       if (existingThread) {
         return existingThread;
       }
@@ -596,7 +596,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
       .select()
       .from(psychologicalProfile)
       .where(eq(psychologicalProfile.userId, userId));
-    
+
     return profile || null;
   }
 
@@ -679,7 +679,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
       'gpt-4o': { input: 0.0025, output: 0.01 }, // per 1K tokens
       'gpt-4o-mini': { input: 0.00015, output: 0.0006 }
     };
-    
+
     const rate = pricing[model as keyof typeof pricing] || pricing['gpt-4o'];
     return (tokens / 1000) * ((rate.input + rate.output) / 2); // Simplified average
   }
@@ -693,6 +693,43 @@ Use this analysis to provide highly personalized, psychologically-informed thera
       .from(journalingThreads)
       .where(and(eq(journalingThreads.userId, userId), eq(journalingThreads.isActive, true)))
       .orderBy(desc(journalingThreads.lastActiveAt));
+  }
+
+  /**
+   * Humanize AI response formatting
+   */
+  private humanizeResponse(response: string): string {
+    if (!response || typeof response !== 'string') {
+      return response;
+    }
+
+    // Remove any JSON formatting artifacts
+    let humanized = response.replace(/^["']|["']$/g, '').trim();
+
+    // Fix common truncation patterns
+    if (humanized.endsWith(' This pat') || humanized.endsWith('This pat')) {
+      humanized = humanized.replace(/ This pat$|This pat$/, '. This pattern of urgency around ideas can feel overwhelming and exhausting.');
+    }
+
+    // Ensure proper sentence completion
+    if (!humanized.match(/[.!?]$/)) {
+      // If it ends mid-word or incomplete thought, try to complete it naturally
+      if (humanized.endsWith(' feel') || humanized.endsWith('feel')) {
+        humanized += 's deeply significant to you.';
+      } else if (humanized.endsWith(' this ') || humanized.endsWith('this')) {
+        humanized += ' experience you\'re having.';
+      } else if (humanized.match(/\w$/)) {
+        humanized += '.';
+      }
+    }
+
+    // Add natural paragraph breaks for better readability
+    humanized = humanized.replace(/\. ([A-Z])/g, '.\n\n$1');
+
+    // Remove excessive line breaks and normalize spacing
+    humanized = humanized.replace(/\n{3,}/g, '\n\n').trim();
+
+    return humanized;
   }
 
   /**
@@ -760,29 +797,29 @@ Use this analysis to provide highly personalized, psychologically-informed thera
    */
   private determineComplexity(request: DeepJournalingRequest, thread: JournalingThread): 'simple' | 'moderate' | 'complex' {
     let complexityScore = 0;
-    
+
     // Input length complexity
     if (request.userInput.length > 500) complexityScore += 2;
     else if (request.userInput.length > 200) complexityScore += 1;
-    
+
     // Action type complexity
     if (request.actionType === 'go_deeper') complexityScore += 2;
     else if (request.actionType === 'customize_response') complexityScore += 1;
-    
+
     // Thread history complexity
     if (thread.exchangeCount && thread.exchangeCount > 10) complexityScore += 2;
     else if (thread.exchangeCount && thread.exchangeCount > 5) complexityScore += 1;
-    
+
     // Emotional complexity indicators
     const emotionalWords = ['trauma', 'anxiety', 'depression', 'grief', 'anger', 'fear', 'overwhelmed'];
     const hasEmotionalComplexity = emotionalWords.some(word => 
       request.userInput.toLowerCase().includes(word)
     );
     if (hasEmotionalComplexity) complexityScore += 2;
-    
+
     // Customization complexity
     if (request.customizations?.customInstructions) complexityScore += 1;
-    
+
     if (complexityScore >= 5) return 'complex';
     if (complexityScore >= 2) return 'moderate';
     return 'simple';
@@ -796,7 +833,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
     const baseEfficiency = 0.8;
     const costFactor = Math.max(0, 1 - (aiResponse.cost / 0.01)); // Penalty for high cost
     const qualityFactor = aiResponse.analysis && aiResponse.question ? 1.2 : 0.8;
-    
+
     return Math.min(1, baseEfficiency * costFactor * qualityFactor);
   }
 
@@ -813,10 +850,10 @@ Use this analysis to provide highly personalized, psychologically-informed thera
 
   private extractTechniquesUsed(aiResponse: any): string[] {
     const techniques = [];
-    
+
     // Analyze the response to identify therapeutic techniques used
     const responseText = aiResponse.question?.toLowerCase() || '';
-    
+
     if (responseText.includes('what if') || responseText.includes('imagine')) {
       techniques.push('hypothetical_questioning');
     }
@@ -832,7 +869,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
     if (responseText.includes('reframe') || responseText.includes('another way')) {
       techniques.push('cognitive_reframing');
     }
-    
+
     return techniques.length > 0 ? techniques : ['supportive_questioning'];
   }
 
@@ -840,9 +877,9 @@ Use this analysis to provide highly personalized, psychologically-informed thera
     // Determine intervention type based on request and response characteristics
     if (request.actionType === 'new_direction') return 'redirection';
     if (request.actionType === 'customize_response') return 'adaptation';
-    
+
     const responseText = aiResponse.question?.toLowerCase() || '';
-    
+
     if (responseText.includes('challenge') || responseText.includes('push')) {
       return 'confrontation';
     }
@@ -855,7 +892,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
     if (responseText.includes('insight') || responseText.includes('meaning')) {
       return 'interpretation';
     }
-    
+
     return 'support';
   }
 
