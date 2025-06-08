@@ -4203,222 +4203,115 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
-  // Therapeutic Chat Processing endpoint (no database save)
+  // Therapeutic Chat Processing endpoint using advanced DeepJournalingEngine
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { userInput: message, conversationStyle = 'socratic', focusArea = 'general', responseLength = 'balanced', actionType } = req.body;
+      const { userInput: message, conversationStyle = 'socratic', focusArea = 'general', responseLength = 'balanced', actionType, threadId } = req.body;
 
       if (!message?.trim()) {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Generate specialized therapeutic prompts based on action type
-      let therapeuticPrompt;
-      
-      if (actionType === 'go_deeper') {
-        therapeuticPrompt = `You are a professional therapist conducting deep therapeutic exploration. The user wants to go deeper into their previous discussion. Your role is to:
+      // Import the advanced therapeutic engine
+      const { deepJournalingEngine } = require('./therapeutic-chat/therapeutic-chat-engine');
 
-1. Ask probing, insightful follow-up questions that uncover underlying patterns
-2. Guide them to examine root causes, beliefs, and emotional connections
-3. Help them discover insights they might not have considered
-4. Use therapeutic techniques to explore deeper layers of their experience
-5. Challenge them gently to explore different perspectives
+      // Map frontend customization to advanced engine format
+      const customizations = mapFrontendToEngineCustomizations(conversationStyle, focusArea, responseLength);
 
-The user's deeper exploration request: "${message}"
+      // Build request for advanced engine
+      const engineRequest = {
+        userId,
+        userInput: message,
+        threadId,
+        actionType,
+        customizations,
+        wasVoiceInput: false
+      };
 
-Provide your response in this JSON format:
-{
-  "response": "Deep therapeutic response with follow-up questions that guide deeper exploration",
-  "followUpQuestion": "A profound question that uncovers underlying patterns or beliefs",
-  "emotionalInsight": "deeper understanding"
-}`;
+      console.log("Therapeutic Chat - Using advanced engine with request:", engineRequest);
 
-      } else if (actionType === 'new_direction') {
-        therapeuticPrompt = `You are a professional therapist shifting therapeutic direction. The user wants to explore their concerns from a completely different angle. Your role is to:
+      // Process through advanced therapeutic engine
+      const engineResponse = await deepJournalingEngine.processJournalingRequest(engineRequest);
 
-1. Take a fresh, innovative approach to their situation
-2. Challenge assumptions and reveal new perspectives
-3. Ask questions that explore unexplored aspects
-4. Use creative therapeutic techniques to reframe their experience
-5. Guide them toward breakthrough insights
+      console.log("Therapeutic Chat - Advanced engine response:", engineResponse);
 
-The user's direction change request: "${message}"
+      // Format response for frontend compatibility
+      const formattedResponse = {
+        response: engineResponse.analysis?.professionalAnalysis || engineResponse.question || "I understand what you're sharing with me.",
+        followUpQuestion: engineResponse.question || "Can you tell me more about how this is affecting you?",
+        emotionalInsight: engineResponse.emotionalState?.primaryEmotion || "processing",
+        threadId: engineResponse.threadId,
+        exchangeId: engineResponse.exchangeId,
+        cost: engineResponse.cost,
+        remainingRequests: engineResponse.remainingRequests
+      };
 
-Provide your response in this JSON format:
-{
-  "response": "A fresh therapeutic response that shifts perspective and explores new angles",
-  "followUpQuestion": "An innovative question that reveals unexplored aspects or challenges assumptions",
-  "emotionalInsight": "new perspective"
-}`;
-
-      } else {
-        // Build completely different prompts for each style
-        therapeuticPrompt = buildStyleSpecificPrompt(conversationStyle, focusArea, responseLength, message);
-      }
-
-      function buildStyleSpecificPrompt(style: string, focus: string, length: string, message: string) {
-        const lengthGuidance: { [key: string]: string } = {
-          'brief': 'Keep responses very concise (1-2 sentences). Be direct and impactful.',
-          'balanced': 'Provide moderate-length responses (2-4 sentences) with good depth.',
-          'detailed': 'Give comprehensive responses (4-6 sentences) with thorough exploration.'
-        };
-
-        const focusGuidance: { [key: string]: string } = {
-          'emotions': 'Focus specifically on emotional processing, feelings identification, and emotional regulation.',
-          'patterns': 'Focus on identifying recurring behaviors, thoughts, cycles, and connecting past to present.',
-          'goals': 'Focus on future planning, goal setting, motivation, and actionable steps.',
-          'relationships': 'Focus on interpersonal dynamics, communication, and relationship patterns.',
-          'general': 'Take a broad exploratory approach to overall wellbeing and life situation.'
-        };
-
-        switch(style) {
-          case 'socratic':
-            return `You are a Socratic therapist. Your ONLY job is to ask probing questions that lead the client to discover insights themselves. 
-
-CRITICAL RULES:
-- NEVER give direct advice or tell them what to do
-- ALWAYS respond with 2-4 thoughtful questions
-- Use "What do you think...?", "How might...?", "What would happen if...?"
-- Challenge their assumptions gently through questions
-- Help them examine their beliefs and thought patterns
-
-${lengthGuidance[length]}
-${focusGuidance[focus]}
-
-User shared: "${message}"
-
-Respond ONLY with questions that guide self-discovery. Format:
-{
-  "response": "Your response consisting primarily of probing questions",
-  "followUpQuestion": "Another Socratic question that deepens exploration",
-  "emotionalInsight": "questioning"
-}`;
-
-          case 'directive':
-            return `You are a directive therapist who provides clear, actionable guidance and specific strategies.
-
-CRITICAL RULES:
-- Give concrete advice and recommendations
-- Use "I recommend...", "You should...", "Try this approach..."
-- Offer specific techniques and step-by-step solutions
-- Be authoritative yet supportive
-- Provide actionable next steps
-
-${lengthGuidance[length]}
-${focusGuidance[focus]}
-
-User shared: "${message}"
-
-Provide clear directive guidance and specific recommendations. Format:
-{
-  "response": "Your directive response with specific advice and strategies",
-  "followUpQuestion": "A question about implementing your recommendations",
-  "emotionalInsight": "guidance"
-}`;
-
-          case 'reflective':
-            return `You are a reflective therapist who mirrors back emotions and thoughts to help clients gain clarity.
-
-CRITICAL RULES:
-- Mirror their emotions and thoughts back to them
-- Use "It sounds like...", "I'm hearing...", "You seem to be..."
-- Paraphrase and reflect what they've shared
-- Validate their feelings and experiences
-- Help them see patterns through reflection
-
-${lengthGuidance[length]}
-${focusGuidance[focus]}
-
-User shared: "${message}"
-
-Reflect their emotions and thoughts back to help them gain clarity. Format:
-{
-  "response": "Your reflective response mirroring their emotions and thoughts",
-  "followUpQuestion": "A reflective question that validates and explores their experience",
-  "emotionalInsight": "reflecting"
-}`;
-
-          case 'collaborative':
-            return `You are a collaborative therapist who works as an equal partner with the client.
-
-CRITICAL RULES:
-- Use "we", "us", "together", "our" language frequently
-- Invite their input on therapeutic direction
-- Create a team approach to problem-solving
-- Ask for their thoughts on next steps
-- Share responsibility for insights and solutions
-
-${lengthGuidance[length]}
-${focusGuidance[focus]}
-
-User shared: "${message}"
-
-Work collaboratively as partners in their therapeutic journey. Format:
-{
-  "response": "Your collaborative response using partnership language",
-  "followUpQuestion": "A collaborative question inviting their input and partnership",
-  "emotionalInsight": "partnering"
-}`;
-
-          default:
-            return `You are a supportive therapeutic companion providing empathetic understanding.
-
-Respond with warmth and understanding while maintaining professional boundaries.
-
-${lengthGuidance[length]}
-${focusGuidance[focus]}
-
-User shared: "${message}"
-
-Format:
-{
-  "response": "Your supportive therapeutic response",
-  "followUpQuestion": "A caring follow-up question",
-  "emotionalInsight": "supporting"
-}`;
-        }
-      }
-
-      console.log("Therapeutic Chat - Processing message:", message);
-
-      const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: therapeuticPrompt },
-          { role: "user", content: message }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 800
-      });
-
-      console.log("Therapeutic Chat - OpenAI Raw Response:", aiResponse.choices[0].message.content);
-      
-      let therapeuticData;
-      try {
-        therapeuticData = JSON.parse(aiResponse.choices[0].message.content || '{}');
-        console.log("Therapeutic Chat - Parsed data:", therapeuticData);
-      } catch (parseError) {
-        console.error("Therapeutic Chat - JSON parse error:", parseError);
-        therapeuticData = {
-          response: "I understand what you're sharing with me. That sounds really challenging.",
-          followUpQuestion: "Can you tell me more about how this is affecting you?",
-          emotionalInsight: "processing"
-        };
-      }
-
-      res.json({
-        response: therapeuticData.response,
-        followUpQuestion: therapeuticData.followUpQuestion,
-        emotionalInsight: therapeuticData.emotionalInsight
-      });
+      res.json(formattedResponse);
 
     } catch (error) {
-      console.error("Error in therapeutic chat processing:", error);
+      console.error("Error in advanced therapeutic chat processing:", error);
       res.status(500).json({ message: "Failed to process message" });
     }
   });
+
+  // Helper function to map frontend customization to engine format
+  function mapFrontendToEngineCustomizations(conversationStyle: string, focusArea: string, responseLength: string) {
+    // Map conversation style to therapeutic mode and tone using valid type values
+    let mode: 'conversational' | 'therapeutic' | 'analytical' = 'therapeutic';
+    let tone: 'supportive' | 'challenging' | 'neutral' | 'empathetic' = 'supportive';
+    let perspective: 'psychologist' | 'life_coach' | 'cbt_therapist' | 'philosopher' | 'stoic' = 'psychologist';
+    let customInstructions = '';
+
+    switch(conversationStyle) {
+      case 'socratic':
+        mode = 'analytical';
+        tone = 'neutral';
+        customInstructions = 'Use Socratic questioning method. Ask probing questions that lead to self-discovery. Avoid giving direct advice.';
+        break;
+      case 'directive':
+        mode = 'therapeutic';
+        tone = 'challenging';
+        perspective = 'life_coach';
+        customInstructions = 'Provide clear, actionable advice and specific strategies. Be directive and solution-focused.';
+        break;
+      case 'reflective':
+        mode = 'conversational';
+        tone = 'empathetic';
+        customInstructions = 'Mirror emotions and thoughts back. Use reflective listening techniques. Validate their experiences.';
+        break;
+      case 'collaborative':
+        mode = 'conversational';
+        tone = 'supportive';
+        customInstructions = 'Work as partners. Use "we" language. Invite their input on therapeutic direction.';
+        break;
+    }
+
+    // Add focus area to custom instructions
+    const focusInstructions: { [key: string]: string } = {
+      'emotions': 'Focus specifically on emotional processing, feelings identification, and emotional regulation.',
+      'patterns': 'Focus on identifying recurring behaviors, thoughts, cycles, and connecting past to present.',
+      'goals': 'Focus on future planning, goal setting, motivation, and actionable steps.',
+      'relationships': 'Focus on interpersonal dynamics, communication, and relationship patterns.',
+      'general': 'Take a broad exploratory approach to overall wellbeing and life situation.'
+    };
+
+    // Add response length to custom instructions
+    const lengthInstructions: { [key: string]: string } = {
+      'brief': 'Keep responses very concise (1-2 sentences). Be direct and impactful.',
+      'balanced': 'Provide moderate-length responses (2-4 sentences) with good depth.',
+      'detailed': 'Give comprehensive responses (4-6 sentences) with thorough exploration.'
+    };
+
+    customInstructions += ` ${focusInstructions[focusArea] || focusInstructions['general']} ${lengthInstructions[responseLength] || lengthInstructions['balanced']}`;
+
+    return {
+      mode,
+      tone,
+      perspective,
+      customInstructions
+    };
+  }
 
   // Voice Transcription endpoint for Therapeutic Chat
   app.post('/api/therapeutic-chat/transcribe', isAuthenticated, async (req: any, res) => {
