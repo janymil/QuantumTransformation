@@ -454,6 +454,182 @@ export const emotionalStateHistory = pgTable("emotional_state_history", {
   index("emotional_state_history_primary_emotion_idx").on(table.primaryEmotion),
 ]);
 
+// Multi-Dimensional User Modeling System - Premium Personalization
+export const userTherapeuticProfile = pgTable("user_therapeutic_profile", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Therapeutic Response Patterns - What works for this specific user
+  effectiveTherapeuticStyles: jsonb("effective_therapeutic_styles").default({}), // { "socratic": 0.85, "directive": 0.65, "reflective": 0.90, "collaborative": 0.70 }
+  preferredQuestioningDepth: integer("preferred_questioning_depth").default(5), // 1-10 scale
+  responsiveToFrameworks: jsonb("responsive_to_frameworks").default({}), // { "cbt": 0.8, "dbt": 0.6, "act": 0.9 }
+  breakthroughPatterns: jsonb("breakthrough_patterns").default([]), // Session patterns that led to insights
+  resistanceIndicators: jsonb("resistance_indicators").default([]), // Patterns showing user resistance
+  
+  // Communication Style Preferences
+  preferredMetaphorTypes: jsonb("preferred_metaphor_types").default([]), // ["nature", "technology", "sports", "music"]
+  effectiveExampleTypes: jsonb("effective_example_types").default([]), // ["personal_stories", "analogies", "practical_scenarios"]
+  languageComplexityLevel: integer("language_complexity_level").default(5), // 1-10 scale
+  culturalContextFactors: jsonb("cultural_context_factors").default({}), // Cultural considerations
+  communicationTone: varchar("communication_tone").default("balanced"), // "gentle", "direct", "balanced", "challenging"
+  
+  // Adaptive Language Generation Profile
+  languageAdaptationProfile: jsonb("language_adaptation_profile").default({}), // Complete language adaptation preferences and patterns
+  
+  // Emotional Triggers and Comfort Zones
+  emotionalTriggers: jsonb("emotional_triggers").default([]), // Words/topics that cause strong reactions
+  comfortZoneThemes: jsonb("comfort_zone_themes").default([]), // Topics user feels safe discussing
+  emotionalRegulationCapacity: integer("emotional_regulation_capacity").default(5), // 1-10 scale
+  crisisEscalationRisk: integer("crisis_escalation_risk").default(1), // 1-10 scale
+  supportSystemStrength: integer("support_system_strength").default(5), // 1-10 scale
+  
+  // Learning Pace and Depth Preferences
+  cognitiveProcessingSpeed: integer("cognitive_processing_speed").default(5), // 1-10 scale
+  preferredInsightDelivery: varchar("preferred_insight_delivery").default("gradual"), // "gradual", "direct", "exploratory"
+  conceptualVsExperiential: real("conceptual_vs_experiential").default(0.5), // 0=experiential, 1=conceptual
+  sessionLengthPreference: integer("session_length_preference").default(15), // minutes
+  challengeLevelTolerance: integer("challenge_level_tolerance").default(5), // 1-10 scale
+  
+  // Therapeutic Progress Indicators
+  overallProgressVelocity: real("overall_progress_velocity").default(0.5), // Progress rate 0-1
+  stagnationRiskFactors: jsonb("stagnation_risk_factors").default([]),
+  motivationalDrivers: jsonb("motivational_drivers").default([]), // What motivates this user
+  sessionEngagementPatterns: jsonb("session_engagement_patterns").default({}),
+  goalAchievementHistory: jsonb("goal_achievement_history").default([]),
+  
+  // Analytics and Quality Metrics
+  totalInteractionCount: integer("total_interaction_count").default(0),
+  averageSessionSatisfaction: real("average_session_satisfaction").default(0.5), // 0-1 scale
+  therapeuticRelationshipStrength: real("therapeutic_relationship_strength").default(0.5), // 0-1 scale
+  lastProfileUpdateAt: timestamp("last_profile_update_at").defaultNow(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("user_therapeutic_profile_user_idx").on(table.userId),
+  index("user_therapeutic_profile_progress_idx").on(table.overallProgressVelocity),
+  index("user_therapeutic_profile_satisfaction_idx").on(table.averageSessionSatisfaction),
+]);
+
+// Therapeutic Interaction Analysis - Track what works for each user
+export const therapeuticInteractionAnalysis = pgTable("therapeutic_interaction_analysis", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  threadId: integer("thread_id").references(() => journalingThreads.id),
+  exchangeId: integer("exchange_id").references(() => threadExchanges.id),
+  
+  // Interaction Effectiveness Metrics
+  userEngagementScore: real("user_engagement_score"), // 0-1 scale based on response length, time spent, etc.
+  emotionalResonanceScore: real("emotional_resonance_score"), // 0-1 scale based on emotional response
+  insightGenerationScore: real("insight_generation_score"), // 0-1 scale based on user's insights
+  therapeuticAllianceStrength: real("therapeutic_alliance_strength"), // 0-1 scale
+  sessionSatisfactionRating: integer("session_satisfaction_rating"), // 1-10 user rating
+  
+  // Technique Effectiveness
+  techniquesUsed: jsonb("techniques_used").default([]), // ["socratic_questioning", "reframing", "validation"]
+  frameworksApplied: jsonb("frameworks_applied").default([]), // ["cbt", "dbt", "act"]
+  questioningStyle: varchar("questioning_style"), // "open_ended", "focused", "challenging", "supportive"
+  interventionType: varchar("intervention_type"), // "clarification", "interpretation", "confrontation", "support"
+  
+  // User Response Analysis
+  userResponseLength: integer("user_response_length"), // Character count of user's response
+  emotionalShiftDetected: boolean("emotional_shift_detected").default(false),
+  newInsightsIdentified: boolean("new_insights_identified").default(false),
+  resistanceEncountered: boolean("resistance_encountered").default(false),
+  breakthroughMomentDetected: boolean("breakthrough_moment_detected").default(false),
+  
+  // Context Factors
+  sessionTimeOfDay: varchar("session_time_of_day"), // "morning", "afternoon", "evening", "night"
+  userMoodAtStart: integer("user_mood_at_start"), // 1-10 scale
+  userMoodAtEnd: integer("user_mood_at_end"), // 1-10 scale
+  sessionDuration: integer("session_duration"), // minutes
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("therapeutic_interaction_analysis_user_idx").on(table.userId),
+  index("therapeutic_interaction_analysis_engagement_idx").on(table.userEngagementScore),
+  index("therapeutic_interaction_analysis_satisfaction_idx").on(table.sessionSatisfactionRating),
+  index("therapeutic_interaction_analysis_created_at_idx").on(table.createdAt),
+]);
+
+// User Communication Patterns - Learn how each user communicates best
+export const userCommunicationPatterns = pgTable("user_communication_patterns", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Language and Communication Style
+  vocabularyComplexity: integer("vocabulary_complexity").default(5), // 1-10 scale
+  sentenceStructurePreference: varchar("sentence_structure_preference").default("balanced"), // "simple", "complex", "balanced"
+  communicationRhythm: varchar("communication_rhythm").default("moderate"), // "fast", "moderate", "slow"
+  
+  // Metaphor and Example Preferences
+  effectiveMetaphors: jsonb("effective_metaphors").default([]), // Specific metaphors that resonated
+  preferredExampleCategories: jsonb("preferred_example_categories").default([]), // ["nature", "technology", "relationships"]
+  analogyReceptiveness: real("analogy_receptiveness").default(0.5), // 0-1 scale
+  
+  // Cultural and Personal Context
+  culturalBackground: jsonb("cultural_background").default({}), // Cultural factors affecting communication
+  personalValueSystem: jsonb("personal_value_system").default([]), // Core values identified
+  worldviewOrientation: varchar("worldview_orientation").default("balanced"), // "optimistic", "realistic", "pessimistic", "balanced"
+  
+  // Response Patterns
+  typicalResponseLength: integer("typical_response_length"), // Average character count
+  emotionalExpressionStyle: varchar("emotional_expression_style").default("moderate"), // "reserved", "moderate", "expressive"
+  introspectionCapacity: integer("introspection_capacity").default(5), // 1-10 scale
+  
+  // Learning and Processing Style
+  informationProcessingStyle: varchar("information_processing_style").default("sequential"), // "visual", "auditory", "kinesthetic", "sequential", "random"
+  feedbackReceptiveness: real("feedback_receptiveness").default(0.5), // 0-1 scale
+  changeReadiness: real("change_readiness").default(0.5), // 0-1 scale
+  
+  // Quality Metrics
+  communicationEffectivenessScore: real("communication_effectiveness_score").default(0.5), // 0-1 scale
+  lastAnalysisUpdate: timestamp("last_analysis_update").defaultNow(),
+  totalSamplesAnalyzed: integer("total_samples_analyzed").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("user_communication_patterns_user_idx").on(table.userId),
+  index("user_communication_patterns_effectiveness_idx").on(table.communicationEffectivenessScore),
+]);
+
+// Personalization Insights - Store discovered patterns and preferences
+export const personalizationInsights = pgTable("personalization_insights", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Insight Classification
+  insightType: varchar("insight_type").notNull(), // "communication_preference", "therapeutic_response", "emotional_pattern", "behavioral_trend"
+  insightCategory: varchar("insight_category").notNull(), // "effectiveness", "preference", "trigger", "strength", "challenge"
+  
+  // Insight Details
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  confidence: real("confidence").notNull(), // 0-1 scale
+  evidence: jsonb("evidence").default([]), // Supporting data points
+  
+  // Application Guidelines
+  recommendedActions: jsonb("recommended_actions").default([]), // How to apply this insight
+  contraindications: jsonb("contraindications").default([]), // When not to apply
+  contextFactors: jsonb("context_factors").default([]), // Conditions that affect this insight
+  
+  // Validation and Quality
+  isValidated: boolean("is_validated").default(false),
+  validationDate: timestamp("validation_date"),
+  effectiveness: real("effectiveness"), // 0-1 scale based on outcomes
+  lastApplied: timestamp("last_applied"),
+  applicationCount: integer("application_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("personalization_insights_user_idx").on(table.userId),
+  index("personalization_insights_type_idx").on(table.insightType),
+  index("personalization_insights_confidence_idx").on(table.confidence),
+  index("personalization_insights_effectiveness_idx").on(table.effectiveness),
+]);
+
 // Schema types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -1023,3 +1199,168 @@ export type EmotionalPattern = typeof emotionalPatterns.$inferSelect;
 
 export type InsertAiCouchKnowledge = typeof aiCouchKnowledge.$inferInsert;
 export type AiCouchKnowledge = typeof aiCouchKnowledge.$inferSelect;
+
+// Multi-Dimensional User Modeling Types
+export type InsertUserTherapeuticProfile = typeof userTherapeuticProfile.$inferInsert;
+export type UserTherapeuticProfile = typeof userTherapeuticProfile.$inferSelect;
+
+export type InsertTherapeuticInteractionAnalysis = typeof therapeuticInteractionAnalysis.$inferInsert;
+export type TherapeuticInteractionAnalysis = typeof therapeuticInteractionAnalysis.$inferSelect;
+
+export type InsertUserCommunicationPatterns = typeof userCommunicationPatterns.$inferInsert;
+export type UserCommunicationPatterns = typeof userCommunicationPatterns.$inferSelect;
+
+export type InsertPersonalizationInsights = typeof personalizationInsights.$inferInsert;
+export type PersonalizationInsights = typeof personalizationInsights.$inferSelect;
+
+// ===================================
+// AI INTELLIGENCE LAYER SCHEMA
+// ===================================
+
+// AI Learning Data for continuous improvement
+export const aiLearningData = pgTable("ai_learning_data", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  requestType: varchar("request_type").notNull(),
+  inputHash: varchar("input_hash").notNull(),
+  userInput: text("user_input").notNull(),
+  systemPrompt: text("system_prompt").notNull(),
+  aiResponse: text("ai_response").notNull(),
+  userFeedback: integer("user_feedback"), // 1-5 rating
+  wasSuccessful: boolean("was_successful").default(true),
+  learningPoints: text("learning_points"), // JSON string of learning insights
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("ai_learning_data_user_idx").on(table.userId),
+  index("ai_learning_data_type_idx").on(table.requestType),
+  index("ai_learning_data_feedback_idx").on(table.userFeedback),
+  uniqueIndex("ai_learning_data_unique_idx").on(table.inputHash, table.userId),
+]);
+
+// AI Model Performance Tracking
+export const aiModelPerformance = pgTable("ai_model_performance", {
+  id: serial("id").primaryKey(),
+  modelName: varchar("model_name").notNull(),
+  provider: varchar("provider").notNull(), // local, openai, anthropic
+  requestType: varchar("request_type").notNull(),
+  
+  // Performance Metrics
+  totalRequests: integer("total_requests").default(0),
+  successfulRequests: integer("successful_requests").default(0),
+  averageResponseTime: integer("average_response_time").default(0), // milliseconds
+  averageCost: decimal("average_cost", { precision: 10, scale: 8 }).default("0"),
+  averageUserRating: real("average_user_rating").default(0), // 0-5 scale
+  
+  // Quality Metrics
+  cacheHitRate: real("cache_hit_rate").default(0), // percentage
+  errorRate: real("error_rate").default(0), // percentage
+  userSatisfactionScore: real("user_satisfaction_score").default(0), // 0-100
+  
+  // Optimization Data
+  optimalComplexityRange: varchar("optimal_complexity_range"), // simple, moderate, complex
+  recommendedUsage: text("recommended_usage"),
+  limitations: text("limitations"),
+  
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("ai_model_performance_model_idx").on(table.modelName),
+  index("ai_model_performance_provider_idx").on(table.provider),
+  index("ai_model_performance_rating_idx").on(table.averageUserRating),
+  uniqueIndex("ai_model_performance_unique_idx").on(table.modelName, table.provider, table.requestType),
+]);
+
+// AI Intelligence Layer Types (using existing tables for cache and tracking)
+export type InsertAiLearningData = typeof aiLearningData.$inferInsert;
+export type AiLearningData = typeof aiLearningData.$inferSelect;
+
+export type InsertAiModelPerformance = typeof aiModelPerformance.$inferInsert;
+export type AiModelPerformance = typeof aiModelPerformance.$inferSelect;
+
+// Knowledge Sources for advanced learning system
+export const knowledgeSources = pgTable("knowledge_sources", {
+  id: varchar("id").primaryKey(),
+  type: varchar("type").notNull(), // 'web_research', 'uploaded_document', 'academic_paper', 'clinical_study'
+  discipline: varchar("discipline").notNull(),
+  title: text("title").notNull(),
+  url: text("url"),
+  content: text("content").notNull(),
+  processedContent: text("processed_content"),
+  author: varchar("author"),
+  publishDate: timestamp("publish_date"),
+  credibilityScore: decimal("credibility_score", { precision: 3, scale: 2 }).notNull(),
+  relevanceScore: decimal("relevance_score", { precision: 3, scale: 2 }).notNull(),
+  citations: integer("citations"),
+  peerReviewed: boolean("peer_reviewed").default(false),
+  source: varchar("source").notNull(),
+  bunnyNetUrl: text("bunny_net_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+// Extracted Knowledge from sources
+export const extractedKnowledge = pgTable("extracted_knowledge", {
+  id: serial("id").primaryKey(),
+  sourceId: varchar("source_id").notNull().references(() => knowledgeSources.id),
+  keyPoints: text("key_points").array(),
+  therapeuticTechniques: text("therapeutic_techniques").array(),
+  evidenceBased: boolean("evidence_based").default(false),
+  applicableScenarios: text("applicable_scenarios").array(),
+  contraindications: text("contraindications").array(),
+  clinicalEvidence: text("clinical_evidence").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Model Training Data
+export const modelTrainingData = pgTable("model_training_data", {
+  id: serial("id").primaryKey(),
+  modelName: varchar("model_name").notNull(),
+  discipline: varchar("discipline").notNull(),
+  inputText: text("input_text").notNull(),
+  expectedOutput: text("expected_output").notNull(),
+  confidence: decimal("confidence", { precision: 3, scale: 2 }).notNull(),
+  sourceId: varchar("source_id").references(() => knowledgeSources.id),
+  isValidated: boolean("is_validated").default(false),
+  performanceScore: decimal("performance_score", { precision: 3, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Research Queries for autonomous research
+export const researchQueries = pgTable("research_queries", {
+  id: serial("id").primaryKey(),
+  topic: varchar("topic").notNull(),
+  discipline: varchar("discipline").notNull(),
+  keywords: text("keywords").array(),
+  dateRangeStart: timestamp("date_range_start"),
+  dateRangeEnd: timestamp("date_range_end"),
+  sourceTypes: text("source_types").array(),
+  maxResults: integer("max_results").default(10),
+  status: varchar("status").default('pending'), // 'pending', 'in_progress', 'completed', 'failed'
+  resultsFound: integer("results_found").default(0),
+  lastExecuted: timestamp("last_executed"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Knowledge Integration Tracking
+export const knowledgeIntegration = pgTable("knowledge_integration", {
+  id: serial("id").primaryKey(),
+  sourceId: varchar("source_id").notNull().references(() => knowledgeSources.id),
+  modelName: varchar("model_name").notNull(),
+  integratedAt: timestamp("integrated_at").defaultNow(),
+  performanceImprovement: decimal("performance_improvement", { precision: 5, scale: 4 }),
+  validatedInPractice: boolean("validated_in_practice").default(false),
+  userFeedbackScore: decimal("user_feedback_score", { precision: 3, scale: 2 }),
+  effectivenessRating: decimal("effectiveness_rating", { precision: 3, scale: 2 }),
+});
+
+export type InsertKnowledgeSource = typeof knowledgeSources.$inferInsert;
+export type KnowledgeSource = typeof knowledgeSources.$inferSelect;
+export type InsertExtractedKnowledge = typeof extractedKnowledge.$inferInsert;
+export type ExtractedKnowledge = typeof extractedKnowledge.$inferSelect;
+export type InsertModelTrainingData = typeof modelTrainingData.$inferInsert;
+export type ModelTrainingData = typeof modelTrainingData.$inferSelect;
+export type InsertResearchQuery = typeof researchQueries.$inferInsert;
+export type ResearchQuery = typeof researchQueries.$inferSelect;
+export type InsertKnowledgeIntegration = typeof knowledgeIntegration.$inferInsert;
+export type KnowledgeIntegration = typeof knowledgeIntegration.$inferSelect;

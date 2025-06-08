@@ -226,6 +226,35 @@ export default function TherapeuticChat() {
     }
   };
 
+  const handleCustomizeResponse = async () => {
+    // Get the last AI message to customize
+    const lastAiMessage = messages.filter(m => m.type === 'ai').pop();
+    if (!lastAiMessage) {
+      toast({
+        title: "No Response to Customize",
+        description: "Please have a conversation first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const customizePrompt = `Please regenerate your previous response using these new therapeutic parameters: Conversation Style: ${conversationStyle}, Focus Area: ${focusArea}, Response Length: ${responseLength}. Maintain the same therapeutic content but adjust the style, focus, and length according to these preferences.`;
+
+    try {
+      await sendMessageMutation.mutateAsync({
+        message: customizePrompt,
+        actionType: 'customize_response'
+      });
+      setShowCustomizationModal(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to customize response. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleFinishConversation = async () => {
     if (messages.length <= 1) {
       toast({
@@ -802,10 +831,11 @@ export default function TherapeuticChat() {
             </div>
 
             <Button 
-              onClick={() => setShowCustomizationModal(false)}
+              onClick={handleCustomizeResponse}
               className="w-full"
+              disabled={sendMessageMutation.isPending}
             >
-              Apply Settings
+              {sendMessageMutation.isPending ? "Customizing..." : "Apply & Regenerate Response"}
             </Button>
           </div>
         </DialogContent>

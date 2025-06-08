@@ -46,6 +46,8 @@ import { initializeUserGamification } from "./gamification";
 // import { registerDeepJournalingRoutes } from "./deep-journaling-engine"; // Function not available
 import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
+import { knowledgeRoutes } from "@shared/ai-intelligence/advanced/api-routes";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
   
@@ -4203,118 +4205,102 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
-  // Therapeutic Chat Processing endpoint (no database save)
+  // Therapeutic Chat Processing endpoint using advanced DeepJournalingEngine
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { userInput: message, conversationStyle = 'supportive', focusArea = 'general', actionType } = req.body;
+      const { userInput: message, conversationStyle = 'socratic', focusArea = 'general', responseLength = 'balanced', actionType, threadId } = req.body;
 
       if (!message?.trim()) {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Generate specialized therapeutic prompts based on action type
-      let therapeuticPrompt;
-      
-      if (actionType === 'go_deeper') {
-        therapeuticPrompt = `You are a professional therapist conducting deep therapeutic exploration. The user wants to go deeper into their previous discussion. Your role is to:
+      // Import the advanced therapeutic engine
+      const { deepJournalingEngine } = require('./therapeutic-chat/therapeutic-chat-engine');
 
-1. Ask probing, insightful follow-up questions that uncover underlying patterns
-2. Guide them to examine root causes, beliefs, and emotional connections
-3. Help them discover insights they might not have considered
-4. Use therapeutic techniques to explore deeper layers of their experience
-5. Challenge them gently to explore different perspectives
+      // Map frontend customization to advanced engine format
+      const customizations = mapFrontendToEngineCustomizations(conversationStyle, focusArea, responseLength);
 
-The user's deeper exploration request: "${message}"
+      // Build request for advanced engine
+      const engineRequest = {
+        userId,
+        userInput: message,
+        threadId,
+        actionType,
+        customizations,
+        wasVoiceInput: false
+      };
 
-Provide your response in this JSON format:
-{
-  "response": "Deep therapeutic response with follow-up questions that guide deeper exploration",
-  "followUpQuestion": "A profound question that uncovers underlying patterns or beliefs",
-  "emotionalInsight": "deeper understanding"
-}`;
+      console.log("Therapeutic Chat - Using advanced engine with request:", engineRequest);
 
-      } else if (actionType === 'new_direction') {
-        therapeuticPrompt = `You are a professional therapist shifting therapeutic direction. The user wants to explore their concerns from a completely different angle. Your role is to:
+      // Process through advanced therapeutic engine
+      const engineResponse = await deepJournalingEngine.processJournalingRequest(engineRequest);
 
-1. Take a fresh, innovative approach to their situation
-2. Challenge assumptions and reveal new perspectives
-3. Ask questions that explore unexplored aspects
-4. Use creative therapeutic techniques to reframe their experience
-5. Guide them toward breakthrough insights
+      console.log("Therapeutic Chat - Advanced engine response:", engineResponse);
 
-The user's direction change request: "${message}"
+      // Format response for frontend compatibility
+      const formattedResponse = {
+        response: engineResponse.analysis?.professionalAnalysis || engineResponse.question || "I understand what you're sharing with me.",
+        followUpQuestion: engineResponse.question || "Can you tell me more about how this is affecting you?",
+        emotionalInsight: engineResponse.emotionalState?.primaryEmotion || "processing",
+        threadId: engineResponse.threadId,
+        exchangeId: engineResponse.exchangeId,
+        cost: engineResponse.cost,
+        remainingRequests: engineResponse.remainingRequests
+      };
 
-Provide your response in this JSON format:
-{
-  "response": "A fresh therapeutic response that shifts perspective and explores new angles",
-  "followUpQuestion": "An innovative question that reveals unexplored aspects or challenges assumptions",
-  "emotionalInsight": "new perspective"
-}`;
-
-      } else {
-        // Regular therapeutic conversation
-        therapeuticPrompt = `You are a professional therapeutic companion engaging in a flowing conversation. Your role is to:
-
-1. Respond with empathy and genuine understanding
-2. Provide thoughtful insights when appropriate  
-3. Ask meaningful follow-up questions to deepen the conversation
-4. Maintain a warm, supportive tone while being professionally helpful
-
-Conversation Style: ${conversationStyle}  
-Focus Area: ${focusArea}
-
-The user just shared: "${message}"
-
-Respond as a therapeutic companion would - with understanding, insight, and a thoughtful question that continues the conversation naturally. Keep your response conversational and engaging, not clinical.
-
-Provide your response in this JSON format:
-{
-  "response": "Your empathetic response with insights",
-  "followUpQuestion": "A thoughtful question to continue the conversation",
-  "emotionalInsight": "Brief emotional insight (1-3 words like 'exploring vulnerability' or 'processing change')"
-}`;
-      }
-
-      console.log("Therapeutic Chat - Processing message:", message);
-
-      const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: therapeuticPrompt },
-          { role: "user", content: message }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 800
-      });
-
-      console.log("Therapeutic Chat - OpenAI Raw Response:", aiResponse.choices[0].message.content);
-      
-      let therapeuticData;
-      try {
-        therapeuticData = JSON.parse(aiResponse.choices[0].message.content || '{}');
-        console.log("Therapeutic Chat - Parsed data:", therapeuticData);
-      } catch (parseError) {
-        console.error("Therapeutic Chat - JSON parse error:", parseError);
-        therapeuticData = {
-          response: "I understand what you're sharing with me. That sounds really challenging.",
-          followUpQuestion: "Can you tell me more about how this is affecting you?",
-          emotionalInsight: "processing"
-        };
-      }
-
-      res.json({
-        response: therapeuticData.response,
-        followUpQuestion: therapeuticData.followUpQuestion,
-        emotionalInsight: therapeuticData.emotionalInsight
-      });
+      res.json(formattedResponse);
 
     } catch (error) {
-      console.error("Error in therapeutic chat processing:", error);
+      console.error("Error in advanced therapeutic chat processing:", error);
       res.status(500).json({ message: "Failed to process message" });
     }
   });
+
+  // Helper function to map frontend customization to engine format with enhanced therapeutic styles
+  function mapFrontendToEngineCustomizations(conversationStyle: string, focusArea: string, responseLength: string) {
+    // Import enhanced customization functions
+    const { getCustomizationSystemPrompt } = require('./therapeutic-chat/therapeutic-frameworks');
+    
+    // Map conversation style to therapeutic mode and tone using valid type values
+    let mode: 'conversational' | 'therapeutic' | 'analytical' = 'therapeutic';
+    let tone: 'supportive' | 'challenging' | 'neutral' | 'empathetic' = 'supportive';
+    let perspective: 'psychologist' | 'life_coach' | 'cbt_therapist' | 'philosopher' | 'stoic' = 'psychologist';
+
+    // Map styles to engine parameters while preserving advanced functionality
+    switch(conversationStyle) {
+      case 'socratic':
+        mode = 'analytical';
+        tone = 'neutral';
+        perspective = 'philosopher';
+        break;
+      case 'directive':
+        mode = 'therapeutic';
+        tone = 'challenging';
+        perspective = 'life_coach';
+        break;
+      case 'reflective':
+        mode = 'conversational';
+        tone = 'empathetic';
+        perspective = 'psychologist';
+        break;
+      case 'collaborative':
+        mode = 'conversational';
+        tone = 'supportive';
+        perspective = 'psychologist';
+        break;
+    }
+
+    // Generate comprehensive customization instructions using enhanced system
+    const customInstructions = getCustomizationSystemPrompt(conversationStyle, focusArea, responseLength);
+
+    return {
+      mode,
+      tone,
+      perspective,
+      customInstructions
+    };
+  }
 
   // Voice Transcription endpoint for Therapeutic Chat
   app.post('/api/therapeutic-chat/transcribe', isAuthenticated, async (req: any, res) => {
@@ -4997,6 +4983,9 @@ Provide your response in this JSON format:
 
   // Register deep journaling routes
   // registerDeepJournalingRoutes(app); // Function not available
+
+  // Register knowledge acquisition routes
+  app.use('/api', knowledgeRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

@@ -24,8 +24,15 @@ export function registerChallengeRoutes(app: Express) {
   // Get user's active challenges
   app.get('/api/challenges/user-challenges', isAuthenticated, async (req: any, res) => {
     try {
+      console.log("Challenge route - req.user:", req.user);
+      console.log("Challenge route - req.isAuthenticated():", req.isAuthenticated?.());
+      
       const userId = req.user.claims.sub;
+      console.log("Challenge route - userId:", userId);
+      
       const userChallenges = await storage.getUserChallenges(userId);
+      console.log("Challenge route - userChallenges:", userChallenges);
+      
       res.json(userChallenges);
     } catch (error) {
       console.error("Error fetching user challenges:", error);
