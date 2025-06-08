@@ -48,7 +48,7 @@ import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 import { knowledgeRoutes } from "@shared/ai-intelligence/advanced/api-routes";
 import multer from 'multer';
-import { simpleDocumentProcessor } from '../shared/document-processing/simple-processor';
+import { integratedDocumentProcessor } from '../shared/document-processing/integrated-processor';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
@@ -4996,11 +4996,16 @@ Provide your response in this JSON format:
       fileSize: 10 * 1024 * 1024, // 10MB limit
     },
     fileFilter: (req, file, cb) => {
-      const allowedTypes = ['text/plain', 'application/json'];
+      const allowedTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+        'application/json'
+      ];
       if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error('Only text and JSON files supported'), false);
+        cb(new Error('Unsupported file type. Only PDF, Word, text and JSON files are supported.'), false);
       }
     }
   });
@@ -5018,15 +5023,30 @@ Provide your response in this JSON format:
 
       const { discipline = 'general' } = req.body;
       
-      // Extract text content from uploaded file
-      const textContent = req.file.buffer.toString('utf-8');
-      
-      console.log(`Processing text document: ${req.file.originalname}`);
+      // Determine file type
+      let fileType: 'pdf' | 'docx' | 'txt' | 'image';
+      switch (req.file.mimetype) {
+        case 'application/pdf':
+          fileType = 'pdf';
+          break;
+        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+          fileType = 'docx';
+          break;
+        case 'text/plain':
+        case 'application/json':
+          fileType = 'txt';
+          break;
+        default:
+          return res.status(400).json({ error: 'Unsupported file type' });
+      }
 
-      // Process document with simple text processor
-      const result = await simpleDocumentProcessor.processTextDocument(
-        textContent,
+      console.log(`Processing ${fileType} document: ${req.file.originalname}`);
+
+      // Process document with integrated processor
+      const result = await integratedDocumentProcessor.processDocument(
+        req.file.buffer,
         req.file.originalname,
+        fileType,
         discipline
       );
 
@@ -5050,7 +5070,15 @@ Provide your response in this JSON format:
           discipline,
           processingTime: result.processing.processingTime,
           qualityScore: result.processing.qualityScore,
-          analysis: result.analysis,
+          extractedContent: {
+            wordCount: result.extractedContent.metadata.wordCount,
+            concepts: result.extractedContent.analysis.concepts.slice(0, 10),
+            clinicalTerms: result.extractedContent.analysis.clinicalTerms.slice(0, 5),
+            citations: result.extractedContent.analysis.citations.slice(0, 3),
+            readabilityScore: result.extractedContent.analysis.readabilityScore,
+            credibilityIndicators: result.extractedContent.quality.credibilityIndicators
+          },
+          knowledgeBase: result.knowledgeBase,
           storage: result.storage
         }
       });

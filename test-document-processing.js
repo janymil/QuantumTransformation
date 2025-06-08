@@ -3,7 +3,7 @@
  * Tests text document upload, processing, and BunnyNet storage
  */
 
-import { simpleDocumentProcessor } from './shared/document-processing/simple-processor.js';
+import { integratedDocumentProcessor } from './shared/document-processing/integrated-processor.js';
 
 async function testDocumentProcessing() {
   console.log('🔬 Testing Document Processing System');
@@ -95,17 +95,18 @@ Cognitive behavioral therapy represents an evidence-based, effective treatment f
 3. Craske, M. G., et al. (2023). Recent developments in anxiety treatment. Nature Reviews Psychology, 2(1), 15-32.
     `;
 
-    const result = await simpleDocumentProcessor.processTextDocument(
-      sampleDocument,
+    const result = await integratedDocumentProcessor.processDocument(
+      Buffer.from(sampleDocument, 'utf-8'),
       'cbt-anxiety-research.txt',
+      'txt',
       'cognitive_behavioral_therapy'
     );
 
     if (result.processing.success) {
       console.log('✅ Text Processing Successful');
-      console.log(`📊 Word Count: ${result.analysis.wordCount}`);
-      console.log(`🧠 Concepts Extracted: ${result.analysis.concepts.length}`);
-      console.log(`⚕️ Clinical Terms: ${result.analysis.clinicalTerms.length}`);
+      console.log(`📊 Word Count: ${result.extractedContent.metadata.wordCount}`);
+      console.log(`🧠 Concepts Extracted: ${result.extractedContent.analysis.concepts.length}`);
+      console.log(`⚕️ Clinical Terms: ${result.extractedContent.analysis.clinicalTerms.length}`);
       console.log(`📈 Quality Score: ${result.processing.qualityScore}`);
       console.log(`🔗 Storage URL: ${result.bunnyNetUrl}`);
       
@@ -118,12 +119,12 @@ Cognitive behavioral therapy represents an evidence-based, effective treatment f
         console.log('✅ BunnyNet Storage Integration Working');
       }
 
-      if (result.analysis.concepts.length > 5 && result.analysis.clinicalTerms.length > 3) {
+      if (result.extractedContent.analysis.concepts.length > 5 && result.extractedContent.analysis.clinicalTerms.length > 3) {
         testResults.analysisEngine = true;
         testResults.passed++;
         console.log('✅ Analysis Engine Working');
-        console.log(`📝 Key Concepts: ${result.analysis.concepts.slice(0, 5).join(', ')}`);
-        console.log(`⚕️ Clinical Terms: ${result.analysis.clinicalTerms.slice(0, 3).join(', ')}`);
+        console.log(`📝 Key Concepts: ${result.extractedContent.analysis.concepts.slice(0, 5).join(', ')}`);
+        console.log(`⚕️ Clinical Terms: ${result.extractedContent.analysis.clinicalTerms.slice(0, 3).join(', ')}`);
       }
 
     } else {
