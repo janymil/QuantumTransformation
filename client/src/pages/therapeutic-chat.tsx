@@ -314,32 +314,65 @@ export default function TherapeuticChat() {
         const data = await response.json();
         console.log('Session data received:', data);
         
-        if (data?.exchanges && data.exchanges.length > 0) {
+        // Handle both data formats: direct array or {session, exchanges} object
+        let messagesData = [];
+        let sessionTitle = `Session ${sessionId}`;
+        
+        if (Array.isArray(data)) {
+          // Direct array format from server/routes.ts
+          messagesData = data;
+          console.log('Processing direct message array:', messagesData);
+        } else if (data?.exchanges) {
+          // Object format from server/therapeutic-chat/routes.ts
+          messagesData = data.exchanges;
+          sessionTitle = data.session?.title || sessionTitle;
+          console.log('Processing exchanges from object:', messagesData);
+        }
+        
+        if (messagesData && messagesData.length > 0) {
           const formattedMessages: Message[] = [];
           
           // Load conversation history directly without welcome message
-          data.exchanges.forEach((exchange: any) => {
-            console.log('Processing exchange:', exchange);
+          messagesData.forEach((item: any) => {
+            console.log('Processing item:', item);
             
-            if (exchange.userInput) {
+            // Handle different data structures
+            if (item.type === 'user' && item.content) {
+              // Already formatted message from server/routes.ts
               formattedMessages.push({
-                id: `user-${exchange.id}`,
+                id: item.id,
                 type: 'user',
-                content: exchange.userInput,
-                timestamp: new Date(exchange.createdAt || Date.now())
+                content: item.content,
+                timestamp: new Date(item.timestamp || Date.now())
               });
-            }
-            
-            // Check multiple possible fields for AI response
-            const aiContent = exchange.aiAnalysis || exchange.analysis || exchange.question || exchange.response;
-            if (aiContent) {
+            } else if (item.type === 'ai' && item.content) {
+              // Already formatted AI message from server/routes.ts
               formattedMessages.push({
-                id: `ai-${exchange.id}`,
+                id: item.id,
                 type: 'ai',
-                content: aiContent,
-                timestamp: new Date(exchange.createdAt || Date.now()),
-                emotionalTone: 'supportive'
+                content: item.content,
+                timestamp: new Date(item.timestamp || Date.now()),
+                emotionalTone: item.emotionalTone || 'supportive'
               });
+            } else if (item.userInput) {
+              // Raw exchange format - convert to messages
+              formattedMessages.push({
+                id: `user-${item.id}`,
+                type: 'user',
+                content: item.userInput,
+                timestamp: new Date(item.createdAt || Date.now())
+              });
+              
+              const aiContent = item.aiAnalysis || item.analysis || item.question || item.response;
+              if (aiContent) {
+                formattedMessages.push({
+                  id: `ai-${item.id}`,
+                  type: 'ai',
+                  content: aiContent,
+                  timestamp: new Date(item.createdAt || Date.now()),
+                  emotionalTone: 'supportive'
+                });
+              }
             }
           });
           
@@ -350,7 +383,7 @@ export default function TherapeuticChat() {
           setActiveSession({
             id: sessionId,
             threadId: sessionId,
-            title: data.session?.title || `Session ${sessionId}`,
+            title: sessionTitle,
             isActive: true
           });
           
@@ -359,13 +392,13 @@ export default function TherapeuticChat() {
             description: `Loaded ${formattedMessages.length} messages. Continue where you left off.`,
           });
         } else {
-          console.log('No exchanges found, starting fresh session');
-          // If no exchanges found, start fresh but with session context
+          console.log('No messages found, starting fresh session');
+          // If no messages found, start fresh but with session context
           setMessages([]);
           setActiveSession({
             id: sessionId,
             threadId: sessionId,
-            title: data.session?.title || `Session ${sessionId}`,
+            title: sessionTitle,
             isActive: true
           });
           
