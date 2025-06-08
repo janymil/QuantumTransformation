@@ -30,6 +30,8 @@ export default function TherapeuticChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -197,6 +199,19 @@ export default function TherapeuticChat() {
     const safeMessage = lastAiMessage || "our previous conversation";
     const deeperPrompt = `Based on my previous response: "${safeMessage}", please provide a much deeper, more insightful therapeutic exploration. Ask probing questions that help me uncover underlying patterns, beliefs, or emotions. Use techniques from depth psychology, CBT, or somatic therapy to guide me toward profound self-discovery.`;
 
+    setIsProcessingAction(true);
+    
+    // Add thinking indicator message
+    const thinkingMessage: Message = {
+      id: Date.now().toString(),
+      type: 'ai',
+      content: 'Analyzing your response and exploring deeper therapeutic insights...',
+      timestamp: new Date(),
+      emotionalTone: 'thinking',
+      isThinking: true
+    };
+    setMessages(prev => [...prev, thinkingMessage]);
+
     try {
       const response = await fetch('/api/deep-journaling/process', {
         method: 'POST',
@@ -216,17 +231,25 @@ export default function TherapeuticChat() {
           emotionalTone: data.emotionalState?.primaryEmotion || 'insightful'
         };
 
-        setMessages(prev => [...prev, newAiMessage]);
+        // Replace thinking message with actual response
+        setMessages(prev => prev.map(msg => 
+          msg.isThinking ? newAiMessage : msg
+        ));
+        
         if (data.threadId) {
           setActiveSession(data.threadId);
         }
       }
     } catch (error) {
+      // Remove thinking message on error
+      setMessages(prev => prev.filter(msg => !msg.isThinking));
       toast({
         title: "Error",
         description: "Failed to generate deeper response. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessingAction(false);
     }
   };
 
