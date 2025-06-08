@@ -4255,55 +4255,42 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
-  // Helper function to map frontend customization to engine format
+  // Helper function to map frontend customization to engine format with enhanced therapeutic styles
   function mapFrontendToEngineCustomizations(conversationStyle: string, focusArea: string, responseLength: string) {
+    // Import enhanced customization functions
+    const { getCustomizationSystemPrompt } = require('./therapeutic-chat/therapeutic-frameworks');
+    
     // Map conversation style to therapeutic mode and tone using valid type values
     let mode: 'conversational' | 'therapeutic' | 'analytical' = 'therapeutic';
     let tone: 'supportive' | 'challenging' | 'neutral' | 'empathetic' = 'supportive';
     let perspective: 'psychologist' | 'life_coach' | 'cbt_therapist' | 'philosopher' | 'stoic' = 'psychologist';
-    let customInstructions = '';
 
+    // Map styles to engine parameters while preserving advanced functionality
     switch(conversationStyle) {
       case 'socratic':
         mode = 'analytical';
         tone = 'neutral';
-        customInstructions = 'Use Socratic questioning method. Ask probing questions that lead to self-discovery. Avoid giving direct advice.';
+        perspective = 'philosopher';
         break;
       case 'directive':
         mode = 'therapeutic';
         tone = 'challenging';
         perspective = 'life_coach';
-        customInstructions = 'Provide clear, actionable advice and specific strategies. Be directive and solution-focused.';
         break;
       case 'reflective':
         mode = 'conversational';
         tone = 'empathetic';
-        customInstructions = 'Mirror emotions and thoughts back. Use reflective listening techniques. Validate their experiences.';
+        perspective = 'psychologist';
         break;
       case 'collaborative':
         mode = 'conversational';
         tone = 'supportive';
-        customInstructions = 'Work as partners. Use "we" language. Invite their input on therapeutic direction.';
+        perspective = 'psychologist';
         break;
     }
 
-    // Add focus area to custom instructions
-    const focusInstructions: { [key: string]: string } = {
-      'emotions': 'Focus specifically on emotional processing, feelings identification, and emotional regulation.',
-      'patterns': 'Focus on identifying recurring behaviors, thoughts, cycles, and connecting past to present.',
-      'goals': 'Focus on future planning, goal setting, motivation, and actionable steps.',
-      'relationships': 'Focus on interpersonal dynamics, communication, and relationship patterns.',
-      'general': 'Take a broad exploratory approach to overall wellbeing and life situation.'
-    };
-
-    // Add response length to custom instructions
-    const lengthInstructions: { [key: string]: string } = {
-      'brief': 'Keep responses very concise (1-2 sentences). Be direct and impactful.',
-      'balanced': 'Provide moderate-length responses (2-4 sentences) with good depth.',
-      'detailed': 'Give comprehensive responses (4-6 sentences) with thorough exploration.'
-    };
-
-    customInstructions += ` ${focusInstructions[focusArea] || focusInstructions['general']} ${lengthInstructions[responseLength] || lengthInstructions['balanced']}`;
+    // Generate comprehensive customization instructions using enhanced system
+    const customInstructions = getCustomizationSystemPrompt(conversationStyle, focusArea, responseLength);
 
     return {
       mode,

@@ -831,10 +831,11 @@ export default function TherapeuticChat() {
             </div>
 
             <Button 
-              onClick={() => setShowCustomizationModal(false)}
+              onClick={handleCustomizeResponse}
               className="w-full"
+              disabled={sendMessageMutation.isPending}
             >
-              Apply Settings
+              {sendMessageMutation.isPending ? "Customizing..." : "Apply & Regenerate Response"}
             </Button>
           </div>
         </DialogContent>
