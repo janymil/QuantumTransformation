@@ -53,16 +53,30 @@ export class DeepJournalingEngine {
     const threadHistory = await this.getThreadHistory(thread.id);
     const userContext = await this.getUserContext(request.userId);
     
-    // Advanced psychological analysis integration
-    const emotionalState = psychologicalAnalyzer.analyzeEmotionalState(request.userInput);
+    // Comprehensive psychological analysis integration - Full orchestration
+    const emotionalState = psychologicalAnalyzer.analyzeEmotionalState(request.userInput, threadHistory.map(h => ({ primary: h.currentEmotionalState || 'neutral' })) as any[]);
     const cognitivePatterns = psychologicalAnalyzer.analyzeCognitivePatterns(request.userInput);
+    const copingStrategies = psychologicalAnalyzer.assessCopingStrategies(request.userInput);
+    const comprehensiveAnalysis = psychologicalAnalyzer.analyzeComprehensively(request.userInput, threadHistory);
+    const psychologicalInsights = psychologicalAnalyzer.generateInsights(
+      emotionalState,
+      cognitivePatterns,
+      copingStrategies.adaptive,
+      copingStrategies.maladaptive,
+      userProfile
+    );
+    
     const psychologicalAnalysis = {
       emotionalState,
       cognitivePatterns,
+      copingStrategies,
+      comprehensiveAnalysis,
+      psychologicalInsights,
       userId: request.userId,
       sessionContext: {
         actionType: request.actionType,
-        threadId: thread.id
+        threadId: thread.id,
+        exchangeOrder: threadHistory.length + 1
       }
     };
     
@@ -96,7 +110,7 @@ export class DeepJournalingEngine {
     } else if (request.actionType === 'customize_response' && threadHistory.length > 0) {
       aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile, personalizationRecs, frameworkRecommendation);
     } else {
-      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs, frameworkRecommendation, therapeuticMemory, crossSessionPatterns);
+      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs, frameworkRecommendation, therapeuticMemory, crossSessionPatterns, psychologicalAnalysis);
     }
     
     const processingTime = Date.now() - startTime;
@@ -218,15 +232,16 @@ export class DeepJournalingEngine {
     personalizationRecs: PersonalizationRecommendations,
     frameworkRec: FrameworkRecommendation,
     therapeuticMemory?: TherapeuticMemory,
-    crossSessionPatterns?: any[]
+    crossSessionPatterns?: any[],
+    psychologicalAnalysis?: any
   ) {
     // Use dynamic framework recommendation with personalization for optimal therapeutic intervention
     const mode = request.customizations?.mode || personalizationRecs.communicationAdjustments.tone || thread.preferredMode || 'conversational';
     const tone = request.customizations?.tone || personalizationRecs.communicationAdjustments.tone || thread.preferredTone || 'supportive';
     const perspective = request.customizations?.perspective || frameworkRec.primaryFramework || personalizationRecs.therapeuticStyle || thread.preferredPerspective || 'psychologist';
 
-    // Build enhanced system prompt with dynamic framework selection and personalization
-    const systemPrompt = buildTherapeuticSystemPrompt(
+    // Build enhanced system prompt with comprehensive psychological analysis integration
+    const enhancedSystemPrompt = buildTherapeuticSystemPrompt(
       [frameworkRec.primaryFramework, ...frameworkRec.secondaryFrameworks],
       request.userInput, 
       { 
@@ -242,6 +257,22 @@ export class DeepJournalingEngine {
         expectedOutcomes: frameworkRec.expectedOutcomes
       }
     );
+    
+    // Integrate comprehensive psychological analysis into system prompt
+    const psychologicalContext = psychologicalAnalysis ? `
+
+COMPREHENSIVE PSYCHOLOGICAL ANALYSIS:
+- Emotional State: ${psychologicalAnalysis.emotionalState.primary} (Intensity: ${psychologicalAnalysis.emotionalState.intensity}/10, ${psychologicalAnalysis.emotionalState.valence})
+- Cognitive Patterns: ${psychologicalAnalysis.cognitivePatterns.map(p => p.content).join(', ')}
+- Adaptive Coping: ${psychologicalAnalysis.copingStrategies.adaptive.join(', ') || 'None detected'}
+- Maladaptive Patterns: ${psychologicalAnalysis.copingStrategies.maladaptive.join(', ') || 'None detected'}
+- Psychological Insights: ${psychologicalAnalysis.psychologicalInsights.therapeuticRecommendations?.join(', ') || 'Standard therapeutic approach'}
+- Risk Factors: ${psychologicalAnalysis.psychologicalInsights.riskFactors?.join(', ') || 'None identified'}
+- Strengths: ${psychologicalAnalysis.psychologicalInsights.strengths?.join(', ') || 'To be explored'}
+
+Use this analysis to provide highly personalized, psychologically-informed therapeutic responses.` : '';
+    
+    const systemPrompt = enhancedSystemPrompt + psychologicalContext;
     
     const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext, therapeuticMemory, crossSessionPatterns);
     const analysisPrompt = this.buildAnalysisPrompt(request.userInput, request.actionType);
