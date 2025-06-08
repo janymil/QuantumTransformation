@@ -158,11 +158,9 @@ export default function TherapeuticChat() {
     }
   }, [messages.length]);
 
-  // Auto scroll to bottom with null check
+  // Auto scroll to bottom
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSendMessage = async () => {
