@@ -98,6 +98,12 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   const achievements = (progressData as any)?.achievements || [];
   const activeChallenges = (userChallenges as any[]) || [];
 
+  // Debug logging
+  console.log("MultiChallengeDashboard - progressData:", progressData);
+  console.log("MultiChallengeDashboard - userChallenges:", userChallenges);
+  console.log("MultiChallengeDashboard - rawProgress:", rawProgress);
+  console.log("MultiChallengeDashboard - activeChallenges:", activeChallenges);
+
   // Deduplicate challenges by keeping only the latest entry for each challenge type
   const uniqueProgressMap = new Map();
   rawProgress.forEach((progress: any) => {
@@ -108,8 +114,10 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   });
   const allProgress = Array.from(uniqueProgressMap.values());
 
-  // Use active challenges from user-challenges API if progress data is empty
-  const displayChallenges = allProgress.length > 0 ? allProgress : activeChallenges;
+  // Always prioritize user challenges data since it's working
+  const displayChallenges = activeChallenges.length > 0 ? activeChallenges : allProgress;
+  
+  console.log("MultiChallengeDashboard - displayChallenges:", displayChallenges);
 
   if (displayChallenges.length === 0) {
     return (
@@ -140,7 +148,15 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
 
       <div className="space-y-4">
         {displayChallenges.map((progress: any, index: number) => {
+          console.log("Rendering challenge:", progress);
           const challengeType = CHALLENGE_TYPES[progress.challengeType];
+          console.log("Challenge type found:", challengeType);
+          
+          if (!challengeType) {
+            console.warn("No challenge type found for:", progress.challengeType);
+            return null;
+          }
+          
           const isExpanded = expandedChallenges.includes(progress.challengeType);
           const challengeCompletions = completions.filter(
             (c: any) => c.challengeType === progress.challengeType
