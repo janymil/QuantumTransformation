@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { db } from './db';
+import { db } from '../db';
 import { 
   aiCouchProfiles, 
   personalizedChallengePlans, 

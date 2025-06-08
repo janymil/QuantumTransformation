@@ -44,7 +44,7 @@ import { predictiveIntelligence } from "./predictive-intelligence";
 import { modelRouter } from "./intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
 import { registerDeepJournalingRoutes } from "./deep-journaling";
-import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
+import { multidisciplinaryAIEngine } from "./deep-journaling/multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
@@ -1698,7 +1698,7 @@ Provide personalized, actionable guidance that:
   app.get('/api/cache-demo', async (req: any, res) => {
     try {
       const { determineCacheStrategy, getTemplateResponse } = await import("./enhanced-caching");
-      const { createInputHash } = await import("./ai-cost-control");
+      const { createInputHash } = await import("./deep-journaling/ai-cost-control");
       
       const testQuestions = [
         "How long should I practice today's meditation?",

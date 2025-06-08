@@ -47,7 +47,11 @@ export function registerDeepJournalingRoutes(app: Express) {
       });
 
       // Process through Deep Journaling Engine
-      const response = await deepJournalingEngine.processJournalingRequest(validatedData);
+      const response = await deepJournalingEngine.processCoachingRequest(
+        validatedData.userId,
+        validatedData.userInput,
+        'deep_journaling'
+      );
       
       res.json(response);
     } catch (error: any) {
