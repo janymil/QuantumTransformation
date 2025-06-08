@@ -28,7 +28,8 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Play
 } from "lucide-react";
 import { format } from "date-fns";
 import { challengeContent } from "@/data/challenge-content";
@@ -93,11 +94,24 @@ export default function Journal() {
   const [conversationSearchQuery, setConversationSearchQuery] = useState("");
   const [conversationDateFilter, setConversationDateFilter] = useState("all");
   const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
+  const [loadingSessionId, setLoadingSessionId] = useState<number | null>(null);
 
-  // Function to load therapeutic conversation in therapeutic chat page
+  // Function to load therapeutic conversation in therapeutic chat page with loading animation
   const loadTherapeuticConversation = (sessionId: number, sessionTitle: string) => {
-    // Navigate to therapeutic chat with session parameters
-    window.location.href = `/therapeutic-chat?sessionId=${sessionId}&title=${encodeURIComponent(sessionTitle)}`;
+    // Add loading state for the specific session
+    setLoadingSessionId(sessionId);
+    
+    // Show loading toast
+    toast({
+      title: "Loading Conversation",
+      description: "Preparing your therapeutic session...",
+    });
+
+    // Animate the transition with a slight delay for better UX
+    setTimeout(() => {
+      // Navigate to therapeutic chat with session parameters
+      window.location.href = `/therapeutic-chat?sessionId=${sessionId}&title=${encodeURIComponent(sessionTitle)}`;
+    }, 800);
   };
 
   // Delete session mutation
@@ -1160,7 +1174,7 @@ export default function Journal() {
                               size="sm"
                               className="w-full h-8 text-xs"
                             >
-                              <Play className="w-3 h-3 mr-1" />
+                              <MessageSquare className="w-3 h-3 mr-1" />
                               {session.status === 'finished' ? 'Review' : 'Continue'}
                             </Button>
                           </div>
