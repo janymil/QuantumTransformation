@@ -2,11 +2,9 @@ import React from "react";
 
 function MinimalApp() {
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Application Loading</h1>
-        <p className="text-gray-600 mt-2">Testing minimal setup</p>
-      </div>
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+      <h1>Minimal Test App</h1>
+      <p>Testing if React loads without userRef errors</p>
     </div>
   );
 }
