@@ -18,6 +18,8 @@ import DeepJournaling from "@/pages/deep-journaling";
 import TherapeuticChat from "@/pages/therapeutic-chat";
 import TherapeuticAnalytics from "@/pages/therapeutic-analytics";
 import TherapeuticStylesDemo from "@/pages/therapeutic-styles-demo";
+import AIIntelligenceDemo from "@/pages/ai-intelligence-demo";
+import MinimalDemo from "@/pages/minimal-demo";
 import AdminAnalytics from "@/pages/admin-analytics";
 import AdminUnlockDays from "@/pages/admin-unlock-days";
 import AiCouchOnboarding from "@/pages/ai-couch-onboarding";
@@ -80,10 +82,12 @@ function Router() {
   }
 
   if (!isAuthenticated) {
-    console.log("Router - User not authenticated, showing Landing");
+    console.log("Router - User not authenticated, showing AI Intelligence Demo");
     return (
       <Switch>
-        <Route path="/" component={Landing} />
+        <Route path="/" component={MinimalDemo} />
+        <Route path="/ai-intelligence-demo" component={AIIntelligenceDemo} />
+        <Route path="/landing" component={Landing} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -95,7 +99,8 @@ function Router() {
       <Navbar />
       <Switch>
         {/* Main shared routes */}
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={AIIntelligenceDemo} />
+        <Route path="/dashboard" component={Dashboard} />
         <Route path="/challenges" component={Challenges} />
         <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/ai-conversation-history" component={AIConversationHistory} />
@@ -103,6 +108,7 @@ function Router() {
         <Route path="/therapeutic-chat" component={TherapeuticChat} />
         <Route path="/therapeutic-analytics" component={TherapeuticAnalytics} />
         <Route path="/therapeutic-styles-demo" component={TherapeuticStylesDemo} />
+        <Route path="/ai-intelligence-demo" component={AIIntelligenceDemo} />
         <Route path="/admin-analytics" component={AdminAnalytics} />
         <Route path="/admin-unlock-days" component={AdminUnlockDays} />
         <Route path="/journal" component={() => <Journal />} />
