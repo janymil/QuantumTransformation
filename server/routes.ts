@@ -4986,8 +4986,8 @@ Provide your response in this JSON format:
   // Register deep journaling routes
   // registerDeepJournalingRoutes(app); // Function not available
 
-  // Register knowledge acquisition routes
-  app.use('/api', knowledgeRoutes);
+  // Register knowledge acquisition routes - temporarily disabled
+  // app.use('/api', knowledgeRoutes);
 
   // Configure multer for file uploads
   const upload = multer({
