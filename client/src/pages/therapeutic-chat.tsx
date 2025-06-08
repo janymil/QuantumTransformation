@@ -34,7 +34,7 @@ export default function TherapeuticChat() {
   const queryClient = useQueryClient();
 
   // Fetch conversation threads
-  const { data: threads = [], isLoading: threadsLoading } = useQuery({
+  const { data: threads = [], isLoading: threadsLoading } = useQuery<any[]>({
     queryKey: ['/api/therapeutic-chat/sessions'],
   });
 
@@ -131,12 +131,12 @@ export default function TherapeuticChat() {
     const sessionId = urlParams.get('sessionId');
     const sessionTitle = urlParams.get('title');
 
-    if (sessionId && threads.length > 0) {
+    if (sessionId && threads && threads.length > 0) {
       // Find the session in threads
-      const targetSession = threads.find(thread => thread.id === parseInt(sessionId));
+      const targetSession = threads.find((thread: any) => thread.id === parseInt(sessionId));
       if (targetSession) {
         // Load this specific session
-        loadConversation(targetSession);
+        loadSession(targetSession.id);
         // Clear URL parameters after loading
         window.history.replaceState({}, document.title, window.location.pathname);
       }
