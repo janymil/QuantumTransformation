@@ -49,3 +49,13 @@ export function useAuth() {
     retry: 1,
     networkMode: 'online'
   });
+
+  const isAuthenticated = !!user;
+
+  return {
+    user,
+    isLoading,
+    error,
+    isAuthenticated
+  };
+}
