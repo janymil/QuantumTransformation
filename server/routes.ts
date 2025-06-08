@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate cross-domain JWT token for Vision Board app
   app.post('/api/cross-domain/generate-token', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.claims?.sub;
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -1698,8 +1698,7 @@ Provide personalized, actionable guidance that:
   app.get('/api/cache-demo', async (req: any, res) => {
     try {
       const { determineCacheStrategy, getTemplateResponse } = await import("./enhanced-caching");
-      // Temporarily disabled problematic import
-      // const { createInputHash } = await import("./deep-journaling/ai-cost-control");
+      const { createInputHash } = await import("./deep-journaling/ai-cost-control");
       
       const testQuestions = [
         "How long should I practice today's meditation?",
@@ -4047,21 +4046,13 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
       const userId = req.user.claims.sub;
       const { userInput, threadId, actionType, customizations } = req.body;
 
-      // Fallback response while AI engine is being fixed
-      const response = {
-        aiAnalysis: {
-          emotionalState: 'exploring',
-          keyThemes: [userInput.slice(0, 50) + '...'],
-          insights: ['Your thoughts show depth and self-awareness.']
-        },
-        aiQuestion: 'What would you like to explore further about this topic?',
-        suggestions: ['Continue journaling', 'Reflect on patterns'],
-        costOptimization: {
-          modelUsed: 'fallback',
-          cost: 0,
-          tokensUsed: 0
-        }
-      };
+      const { multidisciplinaryAIEngine } = await import('./deep-journaling/multidisciplinary-ai-engine');
+      
+      const response = await multidisciplinaryAIEngine.processCoachingRequest(
+        userId,
+        userInput,
+        'deep_journaling'
+      );
 
       res.json({
         ...response,

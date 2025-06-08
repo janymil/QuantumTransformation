@@ -36,8 +36,8 @@ export default function VisionBoard({ onSave, initialItems = [], onClose, boardI
   const [boardTitle, setBoardTitle] = useState("");
   const [boardDescription, setBoardDescription] = useState("");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const canvasRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -106,7 +106,7 @@ export default function VisionBoard({ onSave, initialItems = [], onClose, boardI
     if (currentBoard && typeof currentBoard === 'object') {
       setBoardTitle(currentBoard.title || "");
       setBoardDescription(currentBoard.description || "");
-      if (currentBoard.canvasData && currentBoard.canvasData.elements && Array.isArray(currentBoard.canvasData.elements)) {
+      if (currentBoard.canvasData && currentBoard.canvasData.elements) {
         setItems(currentBoard.canvasData.elements);
       }
     }
