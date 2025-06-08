@@ -51,6 +51,23 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   const { data: userChallenges, isLoading: challengesLoading, error: challengesError } = useQuery({
     queryKey: ["/api/challenges/user-challenges"],
     enabled: isAuthenticated && !!user,
+    retry: 3,
+    retryDelay: 1000,
+    queryFn: async () => {
+      console.log("Making API call to /api/challenges/user-challenges");
+      const res = await fetch("/api/challenges/user-challenges", {
+        credentials: "include",
+      });
+      console.log("API response status:", res.status);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("API error:", res.status, errorText);
+        throw new Error(`${res.status}: ${errorText}`);
+      }
+      const data = await res.json();
+      console.log("API response data:", data);
+      return data;
+    },
   });
 
   // Debug authentication and query state
