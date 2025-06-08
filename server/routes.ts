@@ -27,7 +27,7 @@ const openai = new OpenAI({
 });
 import { db } from "./db";
 import { eq, desc, and, ilike, or, gte, count, avg, sum, sql } from "drizzle-orm";
-
+import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
 import { 
   determineCacheStrategy, 
   getEnhancedCachedResponse, 
@@ -728,13 +728,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/ai/usage-stats", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      // Basic usage stats without unified analytics
-      const stats = {
-        totalRequests: 0,
-        totalCost: 0,
-        averageResponseTime: 0,
-        message: "Usage statistics tracking simplified"
-      };
+      const { unifiedAnalytics } = await import('./unified-analytics');
+      const stats = await unifiedAnalytics.getUsageStats(userId);
       res.json(stats);
     } catch (error) {
       console.error("Usage stats error:", error);
@@ -767,13 +762,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cache Verification endpoint - simplified
+  // Cache Verification endpoint - test cache system functionality
   app.get("/api/ai/verify-cache", isAuthenticated, async (req: any, res) => {
     try {
+      const { verifyCacheSystem } = await import("./cache-verification");
+      const verification = await verifyCacheSystem();
+      
       res.json({
-        status: "active",
-        testResults: ["Cache system operational"],
-        summary: "Cache verification simplified",
+        status: verification.systemStatus,
+        testResults: verification.testResults,
+        summary: verification.summary,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -785,7 +783,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cache Statistics endpoint
   app.get("/api/ai/cache-stats", isAuthenticated, async (req: any, res) => {
     try {
-      const stats = { hitRate: 0.85, totalRequests: 1000, cacheSize: "50MB" };
+      const { getCacheStatistics } = await import("./cache-verification");
+      const stats = await getCacheStatistics();
       
       if (stats) {
         res.json(stats);
