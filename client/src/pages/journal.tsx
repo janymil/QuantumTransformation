@@ -91,7 +91,6 @@ export default function Journal() {
   
   // Conversation search and filter states
   const [conversationSearchQuery, setConversationSearchQuery] = useState("");
-  const [conversationStatusFilter, setConversationStatusFilter] = useState("all");
   const [conversationDateFilter, setConversationDateFilter] = useState("all");
 
   // Function to load therapeutic conversation in therapeutic chat page
@@ -1006,16 +1005,6 @@ export default function Journal() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Select value={conversationStatusFilter} onValueChange={setConversationStatusFilter}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">In Progress</SelectItem>
-                      <SelectItem value="finished">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <Select value={conversationDateFilter} onValueChange={setConversationDateFilter}>
                     <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder="Date" />
@@ -1049,11 +1038,6 @@ export default function Journal() {
                         const messageMatch = session.lastMessage?.toLowerCase().includes(searchLower);
                         const topicsMatch = session.topicsDiscussed?.toLowerCase().includes(searchLower);
                         if (!titleMatch && !messageMatch && !topicsMatch) return false;
-                      }
-
-                      // Status filter
-                      if (conversationStatusFilter !== 'all') {
-                        if (conversationStatusFilter !== session.status) return false;
                       }
 
                       // Date filter
@@ -1177,7 +1161,6 @@ export default function Journal() {
                         const topicsMatch = session.topicsDiscussed?.toLowerCase().includes(searchLower);
                         if (!titleMatch && !messageMatch && !topicsMatch) return false;
                       }
-                      if (conversationStatusFilter !== 'all' && conversationStatusFilter !== session.status) return false;
                       if (conversationDateFilter !== 'all') {
                         const sessionDate = new Date(session.updatedAt || session.createdAt);
                         const now = new Date();
@@ -1196,7 +1179,7 @@ export default function Journal() {
                         }
                       }
                       return true;
-                    }).length === 0 && (conversationSearchQuery || conversationStatusFilter !== 'all' || conversationDateFilter !== 'all') && (
+                    }).length === 0 && (conversationSearchQuery || conversationDateFilter !== 'all') && (
                     <Card className="text-center py-12">
                       <CardContent>
                         <div className="flex flex-col items-center space-y-4">
@@ -1213,7 +1196,6 @@ export default function Journal() {
                                 variant="outline"
                                 onClick={() => {
                                   setConversationSearchQuery('');
-                                  setConversationStatusFilter('all');
                                   setConversationDateFilter('all');
                                 }}
                               >
