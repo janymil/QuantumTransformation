@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Brain, Calendar, Target, TrendingUp, Zap, BookOpen, Users, Heart, DollarSign, Sparkles, Clock, CheckCircle } from "lucide-react";
+import { Brain, Calendar, Target, TrendingUp, Zap, BookOpen, Users, Heart, DollarSign, Sparkles, Clock, CheckCircle, Play } from "lucide-react";
 import { motion } from "framer-motion";
 import { lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
