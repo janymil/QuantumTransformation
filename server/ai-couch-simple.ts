@@ -1,13 +1,17 @@
 import { openaiClient } from './openai-http-client';
 import { db } from './db';
 import { eq, desc } from 'drizzle-orm';
+import { IntelligentModelRouter } from './intelligent-model-router';
 
 /**
  * Advanced AI Couch Engine with full sophisticated features
  */
 export class AiCouchEngine {
+  private modelRouter = new IntelligentModelRouter();
+
   /**
    * Generate personalized response using AI - Main coaching interface
+   * Now uses intelligent GPT-4o/GPT-4o-mini routing for cost optimization
    */
   async generatePersonalizedResponse(
     userId: string,
@@ -36,18 +40,25 @@ USER INPUT: ${userInput}
 Provide a comprehensive coaching response that automatically integrates multiple therapeutic modalities, addresses underlying patterns, offers practical techniques, and includes consciousness expansion practices.`;
 
     try {
-      const response = await openaiClient.createChatCompletion({
-        model: 'gpt-4o',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }]
-      });
+      // Use intelligent model routing for cost optimization
+      const analysis = this.modelRouter.analyzeQuery(userInput);
+      const routingDecision = this.modelRouter.makeRoutingDecision(analysis);
+      const routedResponse = await this.modelRouter.executeWithModel(
+        routingDecision,
+        systemPrompt,
+        prompt,
+        { temperature: 0.7, maxTokens: 2000 }
+      );
 
       return {
-        response: response.choices[0].message.content,
+        response: routedResponse.response,
         type: 'ai_coaching',
         timestamp: new Date().toISOString(),
         sessionType,
-        modalities_used: this.detectUsedModalities(response.choices[0].message.content || ''),
+        modelUsed: routedResponse.modelUsed,
+        cost: routedResponse.actualCost,
+        routingDecision: routedResponse.routingDecision,
+        modalities_used: this.detectUsedModalities(routedResponse.response || ''),
         emotional_tone: this.detectEmotionalTone(userInput),
         patterns_detected: this.detectPatterns(userInput)
       };
