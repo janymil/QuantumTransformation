@@ -10,7 +10,7 @@ import {
 } from "../ai-cost-control";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "../openai";
 import { db } from "../db";
-import { aiResponseCache, aiUsageTracking } from "../ai-cost-control";
+import { aiResponseCache, aiUsageTracking } from "@shared/schema";
 import { sql, desc, count, avg } from "drizzle-orm";
 
 export function registerAIRoutes(app: Express) {

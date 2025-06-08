@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { aiResponseCache, aiUsageTracking } from "./ai-cost-control";
+import { aiResponseCache, aiUsageTracking } from "@shared/schema";
 import { sql, eq, and, desc } from "drizzle-orm";
 import { 
   determineCacheStrategy, 

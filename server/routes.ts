@@ -1693,7 +1693,7 @@ Provide personalized, actionable guidance that:
   app.get('/api/cache-demo', async (req: any, res) => {
     try {
       const { determineCacheStrategy, getTemplateResponse } = await import("./enhanced-caching");
-      const { createInputHash } = await import("./deep-journaling/ai-cost-control");
+      const { createInputHash } = await import("./ai-cost-control");
       
       const testQuestions = [
         "How long should I practice today's meditation?",
