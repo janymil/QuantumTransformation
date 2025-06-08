@@ -549,9 +549,9 @@ export default function TherapeuticChat() {
                           size="sm" 
                           className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                           onClick={() => handleFinishConversation()}
-                          disabled={!activeSession}
+                          disabled={messages.length <= 1}
                         >
-                          Finish Entry
+                          Finish Conversation
                         </Button>
                       </div>
                     </div>

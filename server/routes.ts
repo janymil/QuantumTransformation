@@ -4078,12 +4078,12 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
         .select({
           id: journalingThreads.id,
           title: journalingThreads.title,
-          lastMessage: journalingThreads.lastMessage,
+          lastMessage: journalingThreads.currentTopic,
           createdAt: journalingThreads.createdAt,
-          emotionalJourney: journalingThreads.currentTopics
+          emotionalJourney: journalingThreads.emotionalJourney
         })
         .from(journalingThreads)
-        .where(and(eq(journalingThreads.userId, userId), eq(journalingThreads.sessionType, 'therapeutic_chat')))
+        .where(and(eq(journalingThreads.userId, userId), eq(journalingThreads.threadType, 'therapy_session')))
         .orderBy(desc(journalingThreads.updatedAt))
         .limit(20);
 
@@ -4132,9 +4132,9 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
         messages.push({
           id: `ai-${exchange.id}`,
           type: 'ai',
-          content: exchange.therapeuticResponse + (exchange.followUpQuestion ? `\n\n${exchange.followUpQuestion}` : ''),
+          content: exchange.aiAnalysis + (exchange.aiQuestion ? `\n\n${exchange.aiQuestion}` : ''),
           timestamp: exchange.createdAt,
-          emotionalTone: exchange.emotionalInsight
+          emotionalTone: exchange.aiEmotionalAssessment?.insight || 'supportive'
         });
       }
 
@@ -4390,12 +4390,13 @@ Provide your response in this JSON format:
         })
         .returning();
 
-      // Update session last message
+      // Update session current topic and last active
       await db
         .update(journalingThreads)
         .set({
-          lastMessage: message,
-          updatedAt: new Date()
+          currentTopic: message.slice(0, 50),
+          updatedAt: new Date(),
+          lastActiveAt: new Date()
         })
         .where(eq(journalingThreads.id, currentSessionId));
 
