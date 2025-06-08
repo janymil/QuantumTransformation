@@ -80,6 +80,23 @@ export class DeepJournalingEngine {
     
     const processingTime = Date.now() - startTime;
     
+    // Detect breakthrough moments and update therapeutic memory
+    const breakthroughMoment = await contextualMemoryArchitecture.identifyBreakthroughMoments(
+      request.userId,
+      thread.id,
+      exchangeOrder,
+      request.userInput,
+      aiResponse.analysis?.professionalAnalysis || aiResponse.question || ''
+    );
+    
+    // Track therapeutic goals based on current session
+    await contextualMemoryArchitecture.trackTherapeuticGoals(request.userId, {
+      userInput: request.userInput,
+      aiResponse: aiResponse,
+      emotionalState: aiResponse.emotionalState,
+      exchangeOrder
+    });
+    
     // Save exchange to database
     const [savedExchange] = await db.insert(threadExchanges).values({
       threadId: thread.id,
@@ -181,7 +198,7 @@ export class DeepJournalingEngine {
       }
     );
     
-    const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext);
+    const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext, therapeuticMemory, crossSessionPatterns);
     const analysisPrompt = this.buildAnalysisPrompt(request.userInput, request.actionType);
 
     const messages = [
@@ -349,7 +366,9 @@ export class DeepJournalingEngine {
     thread: JournalingThread, 
     history: ThreadExchange[], 
     userProfile: PsychologicalProfile | null,
-    userContext: any
+    userContext: any,
+    therapeuticMemory?: TherapeuticMemory,
+    crossSessionPatterns?: any[]
   ): string {
     let context = `CONVERSATION CONTEXT:\n`;
     context += `Thread: ${thread.title}\n`;
@@ -389,6 +408,42 @@ export class DeepJournalingEngine {
       context += `\nRECENT JOURNAL CONTEXT:\n`;
       userContext.journalEntries.slice(-2).forEach((entry: any) => {
         context += `Day ${entry.day}: ${entry.experience || entry.insights}\n`;
+      });
+    }
+
+    // Add therapeutic memory and cross-session insights
+    if (therapeuticMemory) {
+      context += `\nTHERAPEUTIC MEMORY & PROGRESS:\n`;
+      
+      if (therapeuticMemory.goals.length > 0) {
+        context += `Active Therapeutic Goals:\n`;
+        therapeuticMemory.goals.slice(0, 3).forEach(goal => {
+          context += `- ${goal.title}: ${goal.currentProgress}% complete (${goal.category})\n`;
+        });
+      }
+      
+      if (therapeuticMemory.breakthroughs.length > 0) {
+        context += `Recent Breakthroughs:\n`;
+        therapeuticMemory.breakthroughs.slice(0, 2).forEach(breakthrough => {
+          context += `- ${breakthrough.type}: ${breakthrough.description} (significance: ${breakthrough.significance}/10)\n`;
+        });
+      }
+      
+      if (therapeuticMemory.resistancePatterns.length > 0) {
+        context += `Resistance Patterns:\n`;
+        therapeuticMemory.resistancePatterns.slice(0, 2).forEach(pattern => {
+          context += `- "${pattern.pattern}" (frequency: ${pattern.frequency}, trend: ${pattern.trend})\n`;
+        });
+      }
+      
+      context += `Progress Velocity: ${therapeuticMemory.progressVelocity.predictedTrajectory} (${therapeuticMemory.progressVelocity.engagementTrend} engagement)\n`;
+      context += `Therapeutic Alliance Score: ${Math.round(therapeuticMemory.therapeuticAlliance * 100)}%\n`;
+    }
+
+    if (crossSessionPatterns && crossSessionPatterns.length > 0) {
+      context += `\nCROSS-SESSION PATTERNS:\n`;
+      crossSessionPatterns.slice(0, 3).forEach(pattern => {
+        context += `- ${pattern.pattern}: ${pattern.occurrences} occurrences over ${pattern.timeSpan} days (significance: ${pattern.significance}/10)\n`;
       });
     }
 
