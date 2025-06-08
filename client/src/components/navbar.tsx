@@ -23,14 +23,14 @@ export default function Navbar() {
 
   const handleVisionBoardClick = async () => {
     if (!user) return;
-    
+
     setIsOpeningVisionBoard(true);
     try {
       const response = await fetch('/api/auth/generate-vision-token', {
         method: 'POST',
         credentials: 'include'
       });
-      
+
       if (response.ok) {
         const { token, redirectUrl } = await response.json();
         const visionBoardUrl = `${redirectUrl}?token=${encodeURIComponent(token)}`;
@@ -82,7 +82,7 @@ export default function Navbar() {
       <nav className="bg-white dark:bg-background shadow-sm border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          
+
           {/* Logo */}
           <Link href="/">
             <div className="flex items-center cursor-pointer">
@@ -112,7 +112,7 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            
+
             {/* Advanced Dropdown Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -134,16 +134,22 @@ export default function Navbar() {
                   <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
                   <ExternalLink className="ml-auto h-3 w-3" />
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/conversation-archival">
+                    <Zap className="mr-2 h-4 w-4" />
+                    <span>Conversation Archival</span>
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
           {/* Right Side */}
           <div className="flex items-center space-x-4">
-            
+
             {/* Mood Theme Switcher */}
             <MoodThemeSwitcher />
-            
+
             {/* Notifications */}
             <Button variant="ghost" size="sm" className="relative">
               <Bell className="w-5 h-5" />
@@ -226,7 +232,7 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            
+
             {/* Advanced Dropdown Menu - Mobile */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -247,13 +253,19 @@ export default function Navbar() {
                   <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
                   <ExternalLink className="ml-auto h-3 w-3" />
                 </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                  <Link href="/conversation-archival">
+                    <Zap className="mr-2 h-4 w-4" />
+                    <span>Conversation Archival</span>
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
       </div>
       </nav>
-      
+
       {/* Onboarding Tour */}
       <OnboardingTour />
     </div>
