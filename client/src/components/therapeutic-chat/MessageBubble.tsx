@@ -35,8 +35,8 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
             <div className="flex-1 min-w-0">
               <div className={`p-4 rounded-2xl ${
                 message.type === 'user'
-                  ? 'bg-transparent border border-blue-200 text-blue-800'
-                  : 'bg-transparent border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                  ? 'bg-transparent text-gray-900 dark:text-white'
+                  : 'bg-transparent border-l-4 border-l-blue-500 pl-4 text-blue-800 dark:text-blue-300'
               }`}>
                 <div className="whitespace-pre-wrap leading-relaxed">
                   {message.type === 'ai' ? (
