@@ -53,15 +53,33 @@ export class DeepJournalingEngine {
     const threadHistory = await this.getThreadHistory(thread.id);
     const userContext = await this.getUserContext(request.userId);
     
+    // Advanced psychological analysis integration
+    const emotionalState = psychologicalAnalyzer.analyzeEmotionalState(request.userInput);
+    const cognitivePatterns = psychologicalAnalyzer.analyzeCognitivePatterns(request.userInput);
+    const psychologicalAnalysis = {
+      emotionalState,
+      cognitivePatterns,
+      userId: request.userId,
+      sessionContext: {
+        actionType: request.actionType,
+        threadId: thread.id
+      }
+    };
+    
     // Get personalization recommendations for premium-level responses
     const personalizationRecs = await userModelingEngine.getPersonalizationRecommendations(request.userId);
     
-    // Select optimal therapeutic framework based on real-time session analysis
+    // Select optimal therapeutic framework based on real-time session analysis + psychological insights
     const frameworkRecommendation = await dynamicFrameworkSelector.selectOptimalFramework(
       request.userId,
       thread.id,
       request.userInput,
-      { userProfile, threadHistory, userContext }
+      { 
+        userProfile, 
+        threadHistory, 
+        userContext,
+        psychologicalAnalysis: psychologicalAnalysis
+      }
     );
 
     // Analyze cross-session patterns and update therapeutic memory
