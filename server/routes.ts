@@ -45,18 +45,6 @@ import { initializeUserGamification } from "./gamification";
 // import { registerDeepJournalingRoutes } from "./deep-journaling-engine"; // Function not available
 import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
-// Helper function to extract user ID from authenticated request
-function getUserId(req: any): string {
-  const user = req.user as any;
-  // Handle different authentication formats
-  const userId = user?.id || user?.userId || user?.claims?.sub || user?.sub;
-  if (!userId) {
-    console.error("User ID not found. User object:", user);
-    throw new Error("User ID not found in authenticated request");
-  }
-  return userId;
-}
-
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
   
@@ -658,7 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced AI Routes with Smart Caching System
   app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { topic, day, userQuestion, challengeType, userTier = 'basic' } = req.body;
 
       const inputHash = createInputHash(userQuestion || topic, 'explanation', challengeType, day);
@@ -739,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Usage Statistics endpoint
   app.get("/api/ai/usage-stats", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { unifiedAnalytics } = await import('./unified-analytics');
       const stats = await unifiedAnalytics.getUsageStats(userId);
       res.json(stats);
@@ -812,7 +800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Advanced Vector-Based AI Personalization endpoint
   app.post("/api/ai/vector-coaching", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { query, challengeType = 'general_quantum', userTier = 'basic' } = req.body;
 
       if (!query) {
@@ -883,7 +871,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Vector Personalization System endpoint
   app.post("/api/ai/initialize-vector-system", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
 
       await vectorPersonalization.initialize();
       await vectorPersonalization.indexChallengeContent();
@@ -909,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Emotional Intelligence Analysis endpoint
   app.get("/api/ai/emotional-profile/:challengeType", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { challengeType } = req.params;
 
       const emotionalProfile = await emotionalIntelligence.analyzeEmotionalProfile(userId, challengeType);
@@ -930,7 +918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Response Management Routes
   app.get('/api/ai/responses', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { 
         search, 
         challengeType, 
@@ -999,7 +987,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/ai/analytics', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
 
       // Get total responses
       const totalResponses = await db
@@ -1078,7 +1066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User conversation history management endpoints
   app.patch('/api/ai/responses/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const responseId = parseInt(req.params.id);
       const { userInput } = req.body;
 
@@ -1100,7 +1088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/ai/responses/:id/favorite', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const responseId = parseInt(req.params.id);
       const { isFavorited } = req.body;
 
@@ -1122,7 +1110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/ai/responses/:id/archive', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const responseId = parseInt(req.params.id);
       const { isArchived } = req.body;
 
@@ -1249,7 +1237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Assessment reflections endpoints
   app.post('/api/assessment-reflections', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const reflectionData = {
         ...req.body,
         userId,
@@ -1267,7 +1255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/assessment-reflections', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const reflections = await storage.getUserAssessmentReflections(userId);
       res.json(reflections);
     } catch (error) {
@@ -1278,7 +1266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/assessment-reflections/:type', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { type } = req.params;
       const reflections = await storage.getAssessmentReflectionsByType(userId, type);
       res.json(reflections);
@@ -1304,7 +1292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced AI Coaching with Emotional Intelligence
   app.post("/api/ai/enhanced-coaching", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { query, challengeType = 'general_quantum', userTier = 'basic' } = req.body;
 
       if (!query) {
@@ -1403,7 +1391,7 @@ Provide personalized, actionable guidance that:
   // Emotional Evolution Tracking endpoint
   app.get("/api/ai/emotional-evolution", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { days = 30 } = req.query;
 
       const emotionalEvolution = await emotionalIntelligence.trackEmotionalEvolution(
@@ -1426,7 +1414,7 @@ Provide personalized, actionable guidance that:
   // Advanced Memory System endpoints
   app.get("/api/ai/memory-profile/:challengeType", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { challengeType } = req.params;
 
       const longTermMemory = await advancedMemory.buildLongTermMemory(userId);
@@ -1447,7 +1435,7 @@ Provide personalized, actionable guidance that:
   // Predictive Intelligence endpoints
   app.get("/api/ai/predictive-insights/:challengeType", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { challengeType } = req.params;
 
       const behaviorPatterns = await predictiveIntelligence.analyzeBehaviorPatterns(userId, challengeType);
@@ -1472,7 +1460,7 @@ Provide personalized, actionable guidance that:
   // Proactive Coaching Message endpoint
   app.post("/api/ai/proactive-message", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { challengeType = 'general_quantum' } = req.body;
 
       const proactiveMessage = await predictiveIntelligence.generateProactiveMessage(userId, challengeType);
@@ -1492,7 +1480,7 @@ Provide personalized, actionable guidance that:
   // Supreme AI Coaching endpoint - combines all systems
   app.post("/api/ai/supreme-coaching", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { query, challengeType = 'general_quantum', userTier = 'basic' } = req.body;
 
       if (!query) {
@@ -1574,7 +1562,7 @@ Provide personalized, actionable guidance that:
   // Intelligent Cost-Optimized AI Coaching endpoint
   app.post("/api/ai/smart-coaching", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { query, challengeType = 'general_quantum', userTier = 'basic' } = req.body;
 
       if (!query) {
@@ -1661,7 +1649,7 @@ Provide personalized, actionable guidance that:
   // Model routing analytics endpoint
   app.get("/api/ai/routing-stats", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { days = 30 } = req.query;
 
       const routingStats = await modelRouter.getRoutingStats(userId, parseInt(days as string));
@@ -1774,7 +1762,7 @@ Provide personalized, actionable guidance that:
   // Saved phrases routes
   app.get('/api/saved-phrases', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const phrases = await storage.getUserSavedPhrases(userId);
       res.json(phrases);
     } catch (error) {
@@ -1785,7 +1773,7 @@ Provide personalized, actionable guidance that:
 
   app.post('/api/saved-phrases', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const phraseData = insertSavedPhraseSchema.parse({
         ...req.body,
         userId,
@@ -1801,7 +1789,7 @@ Provide personalized, actionable guidance that:
 
   app.delete('/api/saved-phrases/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const phraseId = parseInt(req.params.id);
       await storage.deleteSavedPhrase(userId, phraseId);
       res.json({ message: "Phrase deleted successfully" });
@@ -1814,7 +1802,7 @@ Provide personalized, actionable guidance that:
   // User settings routes
   app.get('/api/settings', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const settings = await storage.getUserSettings(userId);
       res.json(settings);
     } catch (error) {
@@ -1825,7 +1813,7 @@ Provide personalized, actionable guidance that:
 
   app.patch('/api/settings', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const settingsData = insertUserSettingsSchema.partial().parse(req.body);
       const settings = await storage.upsertUserSettings(userId, settingsData);
       res.json(settings);
@@ -1838,7 +1826,7 @@ Provide personalized, actionable guidance that:
   // Saved phrases endpoints
   app.get('/api/saved-phrases', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const savedPhrases = await storage.getUserSavedPhrases(userId);
       res.json(savedPhrases);
     } catch (error) {
@@ -1849,7 +1837,7 @@ Provide personalized, actionable guidance that:
 
   app.post('/api/saved-phrases', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { text, category, day, challengeType } = req.body;
       
       const savedPhrase = await storage.createSavedPhrase({
@@ -1868,7 +1856,7 @@ Provide personalized, actionable guidance that:
 
   app.delete('/api/saved-phrases/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const phraseId = parseInt(req.params.id);
       await storage.deleteSavedPhrase(userId, phraseId);
       res.json({ success: true });
@@ -1881,7 +1869,7 @@ Provide personalized, actionable guidance that:
   // AI personalized coaching endpoint - Advanced AI Couch Engine
   app.post('/api/ai/coaching', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { userGoals, currentChallenges, mood, challengeType, currentDay } = req.body;
       
       console.log("Generating advanced AI coaching with sophisticated engine:", { userId, challengeType, currentDay });
@@ -1973,7 +1961,7 @@ Provide personalized, actionable guidance that:
   // AI Response History endpoints
   app.get('/api/ai/response-history', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { 
         sessionType, 
         challengeType, 
@@ -2023,7 +2011,7 @@ Provide personalized, actionable guidance that:
   // Toggle favorite status
   app.patch('/api/ai/response-history/:id/favorite', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const responseId = parseInt(req.params.id);
       const { isFavorited } = req.body;
 
@@ -2045,7 +2033,7 @@ Provide personalized, actionable guidance that:
   // Rate AI response
   app.patch('/api/ai/response-history/:id/rate', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const responseId = parseInt(req.params.id);
       const { rating } = req.body;
 
@@ -2067,7 +2055,7 @@ Provide personalized, actionable guidance that:
   // Delete AI response from history
   app.delete('/api/ai/response-history/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const responseId = parseInt(req.params.id);
 
       await db
@@ -2101,7 +2089,7 @@ Provide personalized, actionable guidance that:
   // Deep Journaling with Response Quality Tiering
   app.post('/api/deep-journaling/analyze', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { userInput, threadId, actionType, customizations } = req.body;
 
       // Route through AI Intelligence Layer for deep journaling analysis
@@ -2135,7 +2123,7 @@ Provide personalized, actionable guidance that:
   // Therapeutic Chat Routes - Conversational Interface Like Mindsera
   app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       
       const sessions = await db
         .select({
@@ -2161,7 +2149,7 @@ Provide personalized, actionable guidance that:
   // Create new therapeutic chat session
   app.post('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { title } = req.body;
 
       const [newThread] = await db
@@ -2184,7 +2172,7 @@ Provide personalized, actionable guidance that:
   // Process therapeutic chat message through AI Intelligence Layer
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { message, threadId, conversationStyle, focusArea, responseLength } = req.body;
 
       // Route through AI Intelligence Layer for therapeutic chat
@@ -2212,7 +2200,7 @@ Provide personalized, actionable guidance that:
   // Get conversation history for a specific thread
   app.get('/api/therapeutic-chat/sessions/:threadId/history', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { threadId } = req.params;
 
       const exchanges = await db
