@@ -23,7 +23,6 @@ import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-
 import { adaptiveLanguageGenerator } from "./adaptive-language-generator";
 import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
 import { therapeuticChatAdapter, TherapeuticRequest } from '@shared/ai-intelligence/adapters/therapeutic-chat-adapter';
-import { unifiedResearchIntegration } from '../unified-research-integration';
 
 export class DeepJournalingEngine {
   
@@ -241,8 +240,8 @@ export class DeepJournalingEngine {
     const tone = request.customizations?.tone || personalizationRecs.communicationAdjustments.tone || thread.preferredTone || 'supportive';
     const perspective = request.customizations?.perspective || frameworkRec.primaryFramework || personalizationRecs.therapeuticStyle || thread.preferredPerspective || 'psychologist';
 
-    // Build base therapeutic system prompt
-    const baseSystemPrompt = buildTherapeuticSystemPrompt(
+    // Build enhanced system prompt with comprehensive psychological analysis integration
+    const enhancedSystemPrompt = buildTherapeuticSystemPrompt(
       [frameworkRec.primaryFramework, ...frameworkRec.secondaryFrameworks],
       request.userInput, 
       { 
@@ -258,20 +257,6 @@ export class DeepJournalingEngine {
         expectedOutcomes: frameworkRec.expectedOutcomes
       }
     );
-
-    // Enhance system prompt with research integration (preserve knowledge enhancements for premium)
-    const researchEnhancedPrompt = await unifiedResearchIntegration.enhancePromptWithResearch(
-      baseSystemPrompt,
-      request.userInput,
-      {
-        userId: request.userId,
-        sessionType: 'therapeutic_chat',
-        therapeuticFramework: frameworkRec.primaryFramework,
-        userTier: 'premium'
-      }
-    );
-
-    const enhancedSystemPrompt = researchEnhancedPrompt.enhancedPrompt;
     
     // Integrate comprehensive psychological analysis into system prompt
     const psychologicalContext = psychologicalAnalysis ? `
@@ -339,18 +324,12 @@ Use this analysis to provide highly personalized, psychologically-informed thera
       // Process through therapeutic-chat-adapter (bypasses cost optimization, preserves quality)
       const adapterResponse = await therapeuticChatAdapter.processTherapeuticRequest(therapeuticRequest);
 
-      const rawResponseContent = adapterResponse.content || "I'm here to listen and support you. What would you like to explore?";
+      const responseContent = adapterResponse.content || "I'm here to listen and support you. What would you like to explore?";
       
-      // Post-process response with research citations (preserve knowledge enhancements for premium)
-      const finalResponseContent = unifiedResearchIntegration.postProcessResponse(
-        rawResponseContent,
-        researchEnhancedPrompt.researchContext
-      );
-      
-      // Use the research-enhanced therapeutic response
+      // Use the therapeutic response directly from adapter - includes AI Intelligence Layer benefits
       aiResponse = {
-        analysis: { professionalAnalysis: finalResponseContent },
-        question: finalResponseContent, // Use the full research-enhanced therapeutic response
+        analysis: { professionalAnalysis: responseContent },
+        question: responseContent, // Use the full therapeutic response
         patternInsights: adapterResponse.therapeuticInsights?.progressIndicators || [],
         emotionalAssessment: adapterResponse.therapeuticInsights?.detectedEmotionalState || 'neutral',
         emotionalState: { 
@@ -359,7 +338,7 @@ Use this analysis to provide highly personalized, psychologically-informed thera
           clarity: 0.8 
         },
         suggestions: adapterResponse.therapeuticInsights?.recommendedFollowUp || [],
-        tokenCount: Math.ceil(finalResponseContent.length / 4), // Estimate from enhanced response length
+        tokenCount: Math.ceil(responseContent.length / 4), // Estimate from response length
         cost: adapterResponse.metadata.cost,
         modelUsed: adapterResponse.metadata.modelUsed,
         provider: adapterResponse.metadata.provider

@@ -7,6 +7,7 @@
 import { intelligentRouter, AIRequest, AIResponse } from '../core/intelligent-router';
 import { costOptimizer } from '../core/cost-optimizer';
 import { learningEngine } from '../core/learning-engine';
+import { unifiedResearchIntegration } from '../../../server/unified-research-integration';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -88,9 +89,21 @@ export class TherapeuticChatAdapter {
         request.systemPrompt
       );
 
+      // Enhance with research integration (preserve knowledge enhancements for premium)
+      const researchEnhancedPrompt = await unifiedResearchIntegration.enhancePromptWithResearch(
+        therapeuticEnhancedPrompt,
+        request.userInput,
+        {
+          userId: request.userId,
+          sessionType: 'therapeutic_chat',
+          therapeuticFramework: request.sessionContext.currentTherapeuticStyle,
+          userTier: 'premium'
+        }
+      );
+
       // Enhanced system prompt with personalization
       const enhancedSystemPrompt = await this.enhanceSystemPrompt(
-        therapeuticEnhancedPrompt,
+        researchEnhancedPrompt.enhancedPrompt,
         request.personalization,
         request.sessionContext
       );
@@ -125,17 +138,23 @@ export class TherapeuticChatAdapter {
       const content = engineResponse.analysis?.professionalAnalysis || engineResponse.question || "I understand what you're sharing with me.";
 
       // Apply adaptive language generation if enabled
-      let finalContent = content;
+      let processedContent = content;
       let adaptiveLanguageApplied = false;
       
       if (request.options?.enableAdaptiveLanguage) {
-        finalContent = await this.applyAdaptiveLanguage(
+        processedContent = await this.applyAdaptiveLanguage(
           content,
           request.personalization?.preferredResponseStyle,
           request.sessionContext.currentTherapeuticStyle
         );
         adaptiveLanguageApplied = true;
       }
+
+      // Post-process response with research citations (preserve knowledge enhancements for premium)
+      const finalContent = unifiedResearchIntegration.postProcessResponse(
+        processedContent,
+        researchEnhancedPrompt.researchContext
+      );
 
       // Track usage for analytics only (no cost optimization applied)
       await this.trackTherapeuticUsage(request.userId, {
