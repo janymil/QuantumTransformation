@@ -81,11 +81,18 @@ export class DeepJournalingEngine {
     // Get personalization recommendations for premium-level responses (temporarily disabled for stability)
     const personalizationRecs = {
       therapeuticStyle: 'supportive',
-      communicationAdjustments: { tone: 'balanced', complexity: 5 },
+      communicationAdjustments: { 
+        tone: 'balanced', 
+        complexity: 5,
+        metaphorTypes: ['nature', 'journey'],
+        responseLength: 'moderate'
+      },
       therapeuticFrameworks: ['cbt', 'supportive'],
       avoidanceFactors: [],
       enhancementFactors: [],
-      personalizationLevel: 'moderate'
+      personalizationLevel: 'moderate',
+      customInstructions: [],
+      confidence: 0.8
     };
     
     // Select optimal therapeutic framework based on real-time session analysis + psychological insights
