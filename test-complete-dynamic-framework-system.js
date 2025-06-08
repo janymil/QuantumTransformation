@@ -4,7 +4,7 @@
  * Verifies real-time framework switching based on session analysis and user engagement metrics
  */
 
-const axios = require('axios');
+import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5000';
 
