@@ -75,17 +75,17 @@ export default function OnboardingTour() {
 
   // Make startTour available globally for navbar button
   useEffect(() => {
-    const handleTourStart = () => startTour();
-    
-    // Add event listener instead of creating DOM elements
-    window.addEventListener('start-tour', handleTourStart);
-    
-    // Also expose function globally for navbar access
-    (window as any).startOnboardingTour = startTour;
+    const startButton = document.createElement('button');
+    startButton.setAttribute('data-start-tour', 'true');
+    startButton.style.display = 'none';
+    startButton.onclick = startTour;
+    document.body.appendChild(startButton);
 
     return () => {
-      window.removeEventListener('start-tour', handleTourStart);
-      delete (window as any).startOnboardingTour;
+      const existingButton = document.querySelector('[data-start-tour]');
+      if (existingButton) {
+        document.body.removeChild(existingButton);
+      }
     };
   }, []);
 
