@@ -23,6 +23,13 @@ export interface AIRequest {
     complexity?: 'simple' | 'moderate' | 'complex';
     emotionalIntensity?: number; // 0-1 scale
     requiresPersonalization?: boolean;
+    therapeuticContext?: {
+      threadId?: string;
+      conversationStyle?: string;
+      focusArea?: string;
+      actionType?: string;
+      customizations?: any;
+    };
   };
   options?: {
     temperature?: number;
@@ -82,13 +89,22 @@ export class IntelligentRouter {
       // Step 2: Analyze request and make routing decision
       const routingDecision = await this.makeRoutingDecision(request);
 
-      // Step 3: Execute request based on routing decision
+      // Step 3: Route to appropriate adapter based on session type
       let response: AIResponse;
       
-      if (routingDecision.useLocal) {
-        response = await this.executeLocalModel(request, routingDecision);
+      if (request.context.sessionType === 'therapeutic_chat') {
+        // Route therapeutic chat through therapeutic-chat-adapter
+        response = await this.routeToTherapeuticAdapter(request);
+      } else if (request.context.sessionType === 'ai_coaching') {
+        // Route AI coaching through ai-coaching-adapter
+        response = await this.routeToAICoachingAdapter(request);
       } else {
-        response = await this.executeExternalAPI(request, routingDecision);
+        // Default routing for other requests
+        if (routingDecision.useLocal) {
+          response = await this.executeLocalModel(request, routingDecision);
+        } else {
+          response = await this.executeExternalAPI(request, routingDecision);
+        }
       }
 
       // Step 4: Apply learning and cache response
@@ -282,6 +298,86 @@ export class IntelligentRouter {
       model: 'gpt-4o-mini',
       reasoning: 'Standard query with cost optimization',
       estimatedCost: 0.002
+    };
+  }
+
+  /**
+   * Route therapeutic chat requests through therapeutic-chat-adapter
+   */
+  private async routeToTherapeuticAdapter(request: AIRequest): Promise<AIResponse> {
+    const { therapeuticChatAdapter } = await import('../adapters/therapeutic-chat-adapter');
+    
+    // Convert AI request to therapeutic request format
+    const therapeuticRequest = {
+      userId: request.context.userId,
+      userInput: request.prompt,
+      systemPrompt: request.systemPrompt,
+      userTier: (request.context.userTier === 'basic' ? 'premium' : request.context.userTier) as 'premium' | 'ultra',
+      sessionContext: {
+        threadId: request.context.therapeuticContext?.threadId,
+        conversationHistory: [],
+        therapeuticGoals: [request.context.therapeuticContext?.focusArea || 'general'],
+        currentTherapeuticStyle: request.context.therapeuticContext?.conversationStyle || 'empathetic',
+        emotionalState: 'processing',
+        sessionType: request.context.therapeuticContext?.actionType || 'chat'
+      },
+      personalization: {
+        preferredResponseStyle: request.context.therapeuticContext?.customizations?.tone || 'empathetic',
+        effectivePatterns: [],
+        avoidancePatterns: [],
+        personalizedContext: request.context.therapeuticContext?.customizations || {}
+      },
+      options: {
+        temperature: request.options?.temperature || 0.7,
+        maxTokens: request.options?.maxTokens || 2000,
+        enableAdaptiveLanguage: true,
+        enableContextualMemory: true
+      }
+    };
+
+    const adapterResponse = await therapeuticChatAdapter.processTherapeuticRequest(therapeuticRequest);
+
+    // Convert adapter response to AI response format
+    return {
+      content: adapterResponse.content,
+      metadata: {
+        modelUsed: adapterResponse.metadata.modelUsed,
+        provider: adapterResponse.metadata.provider,
+        cost: adapterResponse.metadata.cost,
+        processingTime: adapterResponse.metadata.processingTime,
+        fromCache: adapterResponse.metadata.fromCache,
+        learningApplied: false,
+        routingReason: 'routed_through_therapeutic_adapter'
+      }
+    };
+  }
+
+  /**
+   * Route AI coaching requests through ai-coaching-adapter
+   */
+  private async routeToAICoachingAdapter(request: AIRequest): Promise<AIResponse> {
+    const { aiCoachingAdapter } = await import('../adapters/ai-coaching-adapter');
+    
+    const coachingResponse = await aiCoachingAdapter.processCoachingRequest({
+      userId: request.context.userId,
+      prompt: request.prompt,
+      systemPrompt: request.systemPrompt,
+      userTier: request.context.userTier || 'basic',
+      context: request.context,
+      options: request.options
+    });
+
+    return {
+      content: coachingResponse.content,
+      metadata: {
+        modelUsed: coachingResponse.metadata.modelUsed,
+        provider: coachingResponse.metadata.provider,
+        cost: coachingResponse.metadata.cost,
+        processingTime: coachingResponse.metadata.processingTime,
+        fromCache: coachingResponse.metadata.fromCache,
+        learningApplied: coachingResponse.metadata.learningApplied,
+        routingReason: 'routed_through_ai_coaching_adapter'
+      }
     };
   }
 
