@@ -473,6 +473,9 @@ export const userTherapeuticProfile = pgTable("user_therapeutic_profile", {
   culturalContextFactors: jsonb("cultural_context_factors").default({}), // Cultural considerations
   communicationTone: varchar("communication_tone").default("balanced"), // "gentle", "direct", "balanced", "challenging"
   
+  // Adaptive Language Generation Profile
+  languageAdaptationProfile: jsonb("language_adaptation_profile").default({}), // Complete language adaptation preferences and patterns
+  
   // Emotional Triggers and Comfort Zones
   emotionalTriggers: jsonb("emotional_triggers").default([]), // Words/topics that cause strong reactions
   comfortZoneThemes: jsonb("comfort_zone_themes").default([]), // Topics user feels safe discussing

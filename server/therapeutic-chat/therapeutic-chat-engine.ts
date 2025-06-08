@@ -20,6 +20,8 @@ import { dynamicFrameworkSelector } from "./dynamic-framework-selector";
 import type { FrameworkRecommendation } from "./dynamic-framework-selector";
 import { contextualMemoryArchitecture } from "./contextual-memory-architecture";
 import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-architecture";
+import { adaptiveLanguageGenerator } from "./adaptive-language-generator";
+import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
 
 export class DeepJournalingEngine {
   
@@ -96,6 +98,30 @@ export class DeepJournalingEngine {
       emotionalState: aiResponse.emotionalState,
       exchangeOrder
     });
+
+    // Apply adaptive language generation for user-specific communication
+    const languageAdaptation = await adaptiveLanguageGenerator.generateAdaptedResponse(
+      request.userId,
+      aiResponse.question || aiResponse.analysis?.professionalAnalysis || '',
+      {
+        userInput: request.userInput,
+        emotionalState: aiResponse.emotionalState,
+        therapeuticFramework: frameworkRecommendation.primaryFramework,
+        sessionHistory: threadHistory
+      }
+    );
+
+    // Update AI response with language-adapted content
+    if (languageAdaptation.adaptedContent !== aiResponse.question) {
+      aiResponse.question = languageAdaptation.adaptedContent;
+      aiResponse.languageAdaptation = {
+        vocabularyAdjustments: languageAdaptation.vocabularyAdjustments,
+        metaphorsUsed: languageAdaptation.metaphorsUsed,
+        culturalAdaptations: languageAdaptation.culturalAdaptations,
+        emotionalResonanceElements: languageAdaptation.emotionalResonanceElements,
+        adaptationReasoning: languageAdaptation.adaptationReasoning
+      };
+    }
     
     // Save exchange to database
     const [savedExchange] = await db.insert(threadExchanges).values({
