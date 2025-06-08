@@ -4814,9 +4814,9 @@ Provide your response in this JSON format:
   });
 
   // Habit Tracking Analytics
-  app.get('/api/therapeutic-analytics/habits', requireAuth, async (req, res) => {
+  app.get('/api/therapeutic-analytics/habits', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.id;
+      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
       const { timeFilter = 'month' } = req.query;
       
       let dateFilter = sql`1=1`;
@@ -4901,7 +4901,7 @@ Provide your response in this JSON format:
   });
 
   // Personality Insights (placeholder for now)
-  app.get('/api/therapeutic-analytics/personality', requireAuth, async (req, res) => {
+  app.get('/api/therapeutic-analytics/personality', isAuthenticated, async (req, res) => {
     try {
       // This would require more sophisticated analysis
       res.json({
@@ -4915,9 +4915,9 @@ Provide your response in this JSON format:
   });
 
   // Recurring Topics Analysis
-  app.get('/api/therapeutic-analytics/topics', requireAuth, async (req, res) => {
+  app.get('/api/therapeutic-analytics/topics', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.id;
+      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
       const { timeFilter = 'month' } = req.query;
       
       let dateFilter = sql`1=1`;
@@ -4983,7 +4983,7 @@ Provide your response in this JSON format:
   });
 
   // AI Suggestions (placeholder for now)
-  app.get('/api/therapeutic-analytics/suggestions', requireAuth, async (req, res) => {
+  app.get('/api/therapeutic-analytics/suggestions', isAuthenticated, async (req, res) => {
     try {
       res.json({
         suggestions: [],
