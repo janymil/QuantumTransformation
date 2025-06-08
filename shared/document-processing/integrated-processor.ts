@@ -3,9 +3,34 @@
  * Combines PDF/Word processing with BunnyNet storage and AI knowledge extraction
  */
 
-import { documentProcessor, ExtractedContent } from './pdf-processor';
 import { bunnyNetService } from '../bunnynet-integration';
-import { knowledgeAcquisitionEngine } from '../ai-intelligence/advanced/knowledge-acquisition-engine';
+import pdfParse from 'pdf-parse';
+import mammoth from 'mammoth';
+
+export interface ExtractedContent {
+  text: string;
+  metadata: {
+    pages?: number;
+    wordCount: number;
+    author?: string;
+    title?: string;
+    creationDate?: Date;
+  };
+  analysis: {
+    concepts: string[];
+    keyPhrases: string[];
+    clinicalTerms: string[];
+    citations: string[];
+    readabilityScore: number;
+    credibilityScore: number;
+  };
+  quality: {
+    textQuality: number;
+    structureScore: number;
+    completeness: number;
+    credibilityIndicators: string[];
+  };
+}
 
 export interface ProcessedDocument {
   id: string;

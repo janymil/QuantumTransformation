@@ -48,7 +48,7 @@ import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 import { knowledgeRoutes } from "@shared/ai-intelligence/advanced/api-routes";
 import multer from 'multer';
-import { integratedDocumentProcessor } from '../shared/document-processing/integrated-processor';
+import { simpleDocumentProcessor } from '../shared/document-processing/simple-processor';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
@@ -4988,6 +4988,231 @@ Provide your response in this JSON format:
 
   // Register knowledge acquisition routes
   app.use('/api', knowledgeRoutes);
+
+  // Configure multer for file uploads
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = ['text/plain', 'application/json'];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only text and JSON files supported'), false);
+      }
+    }
+  });
+
+  // Document Processing API Routes
+  
+  // Upload and process document
+  app.post('/api/documents/upload', isAuthenticated, upload.single('document'), async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const { discipline = 'general' } = req.body;
+      
+      // Extract text content from uploaded file
+      const textContent = req.file.buffer.toString('utf-8');
+      
+      console.log(`Processing text document: ${req.file.originalname}`);
+
+      // Process document with simple text processor
+      const result = await simpleDocumentProcessor.processTextDocument(
+        textContent,
+        req.file.originalname,
+        discipline
+      );
+
+      if (!result.processing.success) {
+        return res.status(500).json({ 
+          error: 'Document processing failed',
+          details: result.processing.errors
+        });
+      }
+
+      // Store processing record in database (optional - could add schema for this)
+      console.log(`Document processed successfully: ${result.bunnyNetUrl}`);
+
+      res.json({
+        success: true,
+        document: {
+          id: result.id,
+          filename: result.originalFilename,
+          url: result.bunnyNetUrl,
+          fileType: result.fileType,
+          discipline,
+          processingTime: result.processing.processingTime,
+          qualityScore: result.processing.qualityScore,
+          analysis: result.analysis,
+          storage: result.storage
+        }
+      });
+
+    } catch (error) {
+      console.error('Document upload error:', error);
+      res.status(500).json({ 
+        error: 'Failed to process document',
+        message: error.message 
+      });
+    }
+  });
+
+  // Process multiple documents in batch
+  app.post('/api/documents/batch-upload', isAuthenticated, upload.array('documents', 10), async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
+      
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded' });
+      }
+
+      const { discipline = 'general' } = req.body;
+      const files = req.files as Express.Multer.File[];
+
+      console.log(`Processing batch of ${files.length} documents`);
+
+      const documentsToProcess = files.map(file => {
+        let fileType: 'pdf' | 'docx' | 'txt' | 'image';
+        switch (file.mimetype) {
+          case 'application/pdf':
+            fileType = 'pdf';
+            break;
+          case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+            fileType = 'docx';
+            break;
+          case 'text/plain':
+            fileType = 'txt';
+            break;
+          case 'image/png':
+          case 'image/jpeg':
+          case 'image/jpg':
+            fileType = 'image';
+            break;
+          default:
+            throw new Error(`Unsupported file type: ${file.mimetype}`);
+        }
+
+        return {
+          buffer: file.buffer,
+          filename: file.originalname,
+          fileType,
+          discipline
+        };
+      });
+
+      const results = await integratedDocumentProcessor.processBatch(documentsToProcess);
+
+      const successfulResults = results.filter(r => r.processing.success);
+      const failedResults = results.filter(r => !r.processing.success);
+
+      res.json({
+        success: true,
+        processed: successfulResults.length,
+        failed: failedResults.length,
+        total: results.length,
+        results: results.map(result => ({
+          id: result.id,
+          filename: result.originalFilename,
+          url: result.bunnyNetUrl,
+          success: result.processing.success,
+          qualityScore: result.processing.qualityScore,
+          processingTime: result.processing.processingTime,
+          errors: result.processing.errors || []
+        }))
+      });
+
+    } catch (error) {
+      console.error('Batch upload error:', error);
+      res.status(500).json({ 
+        error: 'Failed to process documents',
+        message: error.message 
+      });
+    }
+  });
+
+  // Retrieve document content
+  app.get('/api/documents/:documentId', isAuthenticated, async (req, res) => {
+    try {
+      const { documentId } = req.params;
+      const { url } = req.query;
+
+      if (!url) {
+        return res.status(400).json({ error: 'Document URL required' });
+      }
+
+      const content = await integratedDocumentProcessor.retrieveDocument(url as string);
+      
+      res.json({
+        success: true,
+        documentId,
+        content,
+        url
+      });
+
+    } catch (error) {
+      console.error('Document retrieval error:', error);
+      res.status(500).json({ 
+        error: 'Failed to retrieve document',
+        message: error.message 
+      });
+    }
+  });
+
+  // Search processed documents
+  app.get('/api/documents/search', isAuthenticated, async (req, res) => {
+    try {
+      const { query, discipline, limit = 10 } = req.query;
+
+      if (!query) {
+        return res.status(400).json({ error: 'Search query required' });
+      }
+
+      const results = await integratedDocumentProcessor.searchDocuments(
+        query as string,
+        discipline as string,
+        parseInt(limit as string)
+      );
+
+      res.json({
+        success: true,
+        query,
+        results
+      });
+
+    } catch (error) {
+      console.error('Document search error:', error);
+      res.status(500).json({ 
+        error: 'Failed to search documents',
+        message: error.message 
+      });
+    }
+  });
+
+  // Get processing statistics
+  app.get('/api/documents/stats', isAuthenticated, async (req, res) => {
+    try {
+      const stats = await integratedDocumentProcessor.getProcessingStats();
+      
+      res.json({
+        success: true,
+        stats
+      });
+
+    } catch (error) {
+      console.error('Stats retrieval error:', error);
+      res.status(500).json({ 
+        error: 'Failed to retrieve statistics',
+        message: error.message 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
