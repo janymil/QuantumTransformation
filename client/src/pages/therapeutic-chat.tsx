@@ -329,7 +329,7 @@ export default function TherapeuticChat() {
           });
           
           setMessages(formattedMessages);
-          setActiveSession(sessionId);
+          setActiveSession(null);
         }
       }
     } catch (error) {
@@ -434,40 +434,80 @@ export default function TherapeuticChat() {
 
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-3">
-            {threads && Array.isArray(threads) && threads.map((thread: any) => (
-              <Card key={thread.id} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-1">
-                        {thread.title}
-                      </h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                        {thread.lastMessage}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Clock className="h-3 w-3 text-gray-400" />
-                        <span className="text-xs text-gray-500">
-                          {new Date(thread.createdAt).toLocaleDateString()}
-                        </span>
+            {threads && Array.isArray(threads) && threads.length > 0 ? (
+              threads.map((thread: any) => (
+                <Card 
+                  key={thread.id} 
+                  className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  onClick={() => loadSession(thread.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MessageCircle className="h-4 w-4 text-blue-500" />
+                          <h3 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-1">
+                            {thread.title || 'Therapeutic Session'}
+                          </h3>
+                        </div>
+                        
+                        {/* Emotional insight badge */}
+                        {thread.emotionalJourney && thread.emotionalJourney.length > 0 && (
+                          <div className="mb-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              <Heart className="h-3 w-3 mr-1" />
+                              {thread.emotionalJourney[0] || 'Processing emotions'}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Brief analysis */}
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                          {thread.lastMessage ? 
+                            `Topic: ${thread.lastMessage.slice(0, 50)}${thread.lastMessage.length > 50 ? '...' : ''}` :
+                            'Therapeutic conversation about personal growth and self-reflection'
+                          }
+                        </p>
+                        
+                        {/* Statistics */}
+                        <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{new Date(thread.createdAt).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MessageCircle className="h-3 w-3" />
+                            <span>Session</span>
+                          </div>
+                        </div>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteThreadMutation.mutate(thread.id);
+                        }}
+                        disabled={deleteThreadMutation.isPending}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-6 w-6 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteThreadMutation.mutate(thread.id);
-                      }}
-                      disabled={deleteThreadMutation.isPending}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No conversations yet
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Start your first therapeutic chat session
+                </p>
+              </div>
+            )}
           </div>
         </ScrollArea>
 
