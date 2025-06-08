@@ -158,16 +158,22 @@ export default function TherapeuticChat() {
     }
   }, [messages.length]);
 
-  // Auto scroll to bottom with null safety
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
-      try {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-      } catch (error) {
-        console.warn('Scroll error:', error);
-      }
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // Focus input on mount with null check
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim() || sendMessageMutation.isPending) return;
@@ -511,11 +517,11 @@ export default function TherapeuticChat() {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         if (data.transcription && data.transcription.trim()) {
           // Set the transcribed text in the input field
           setCurrentMessage(data.transcription);
-          
+
           toast({
             title: "Voice Processed",
             description: "Your message has been transcribed. Review and send when ready.",
