@@ -22,7 +22,7 @@ import { contextualMemoryArchitecture } from "./contextual-memory-architecture";
 import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-architecture";
 import { adaptiveLanguageGenerator } from "./adaptive-language-generator";
 import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
-import { therapeuticChatAdapter } from '@shared/ai-intelligence/adapters/therapeutic-chat-adapter';
+import { therapeuticChatAdapter, TherapeuticRequest } from '@shared/ai-intelligence/adapters/therapeutic-chat-adapter';
 
 export class DeepJournalingEngine {
   
@@ -233,29 +233,51 @@ export class DeepJournalingEngine {
       { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
     ];
 
-    // Direct OpenAI call for maximum quality - bypassing optimization layer
-    const openai = new (await import('openai')).default({ 
-      apiKey: process.env.OPENAI_API_KEY 
-    });
-    
+    // Use therapeutic-chat-adapter for AI Intelligence Layer integration while preserving therapeutic quality
     let aiResponse;
     
     try {
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `${contextPrompt}\n\n${analysisPrompt}` }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-        // Remove JSON format constraint to get natural therapeutic response
-        temperature: 0.8
-      });
+      const therapeuticRequest: TherapeuticRequest = {
+        userId: request.userId,
+        userInput: `${contextPrompt}\n\n${analysisPrompt}`,
+        systemPrompt,
+        userTier: 'premium', // Therapeutic chat is premium tier
+        sessionContext: {
+          threadId: thread.id,
+          conversationHistory: history.map(h => ({
+            role: 'user' as const,
+            content: h.userInput || ''
+          })),
+          therapeuticGoals: frameworkRec.expectedOutcomes,
+          currentTherapeuticStyle: frameworkRec.primaryFramework,
+          emotionalState: userProfile?.currentEmotionalState || 'neutral',
+          sessionType: 'therapeutic_analysis'
+        },
+        personalization: {
+          preferredResponseStyle: personalizationRecs.communicationAdjustments.tone,
+          effectivePatterns: personalizationRecs.therapeuticFrameworks,
+          avoidancePatterns: personalizationRecs.avoidanceFactors,
+          personalizedContext: {
+            mode,
+            tone,
+            perspective,
+            responseLength: personalizationRecs.communicationAdjustments.responseLength
+          }
+        },
+        options: {
+          temperature: 0.7,
+          maxTokens: 2000,
+          enableAdaptiveLanguage: true,
+          enableContextualMemory: true
+        }
+      };
 
-      const responseContent = completion.choices[0].message.content || "I'm here to listen and support you. What would you like to explore?";
+      // Process through therapeutic-chat-adapter (bypasses cost optimization, preserves quality)
+      const adapterResponse = await therapeuticChatAdapter.processTherapeuticRequest(therapeuticRequest);
+
+      const responseContent = adapterResponse.content || "I'm here to listen and support you. What would you like to explore?";
       
-      // Use the therapeutic response directly - no JSON parsing needed
+      // Use the therapeutic response directly from adapter - no JSON parsing needed
       aiResponse = {
         analysis: { professionalAnalysis: responseContent },
         question: "What would you like to explore further?", // Simple fallback question

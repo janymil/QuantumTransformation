@@ -7,6 +7,8 @@
 import { intelligentRouter, AIRequest, AIResponse } from '../core/intelligent-router';
 import { costOptimizer } from '../core/cost-optimizer';
 import { learningEngine } from '../core/learning-engine';
+import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
 export interface TherapeuticRequest {
   userId: string;
@@ -59,9 +61,21 @@ export interface TherapeuticResponse {
 }
 
 export class TherapeuticChatAdapter {
+  private openai: OpenAI;
+  private anthropic: Anthropic;
+
+  constructor() {
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    this.anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+  }
 
   /**
    * Process therapeutic chat request with advanced personalization
+   * BYPASSES cost optimization to preserve therapeutic quality
    */
   async processTherapeuticRequest(request: TherapeuticRequest): Promise<TherapeuticResponse> {
     try {
@@ -79,23 +93,19 @@ export class TherapeuticChatAdapter {
         request.options?.enableContextualMemory
       );
 
-      // Convert to AI Intelligence Layer format
-      const aiRequest: AIRequest = {
+      // Analyze therapeutic complexity for premium model selection
+      const complexity = this.analyzeTherapeuticComplexity(request.userInput, request.sessionContext);
+      const emotionalIntensity = this.analyzeEmotionalIntensity(request.userInput);
+
+      // BYPASS cost optimization - use direct premium API calls for therapeutic quality
+      const aiResponse = await this.processDirectPremiumAPI({
         prompt: enhancedUserInput,
         systemPrompt: enhancedSystemPrompt,
-        context: {
-          userId: request.userId,
-          sessionType: 'therapeutic_chat',
-          userTier: request.userTier,
-          complexity: this.analyzeTherapeuticComplexity(request.userInput, request.sessionContext),
-          emotionalIntensity: this.analyzeEmotionalIntensity(request.userInput),
-          requiresPersonalization: true // Always true for therapeutic chat
-        },
+        userTier: request.userTier,
+        complexity,
+        emotionalIntensity,
         options: request.options
-      };
-
-      // Process through AI Intelligence Layer
-      const aiResponse = await intelligentRouter.process(aiRequest);
+      });
 
       // Apply adaptive language generation if enabled
       let finalContent = aiResponse.content;
@@ -110,11 +120,13 @@ export class TherapeuticChatAdapter {
         adaptiveLanguageApplied = true;
       }
 
-      // Track usage and learn from interaction
-      await Promise.all([
-        costOptimizer.trackUsage(request.userId, aiRequest, aiResponse),
-        learningEngine.learn(aiRequest, { ...aiResponse, content: finalContent })
-      ]);
+      // Track usage for analytics only (no cost optimization applied)
+      await this.trackTherapeuticUsage(request.userId, {
+        prompt: enhancedUserInput,
+        systemPrompt: enhancedSystemPrompt,
+        complexity,
+        emotionalIntensity
+      }, aiResponse);
 
       // Generate therapeutic insights
       const therapeuticInsights = await this.generateTherapeuticInsights(
@@ -203,11 +215,177 @@ export class TherapeuticChatAdapter {
       usageStats,
       personalizedInsights,
       costOptimization: {
-        totalSavings: usageStats.costSavings,
-        localModelUsage: usageStats.routingBreakdown.local.percentage,
+        totalSavings: 0, // No cost optimization applied for therapeutic chat
+        localModelUsage: 0, // Never use local models for therapeutic content
         averageCostPerSession: usageStats.averageCostPerRequest
       }
     };
+  }
+
+  /**
+   * Process request directly through premium APIs (bypassing cost optimization)
+   * Ensures therapeutic quality by using only GPT-4o and Claude-3.5-Sonnet
+   */
+  private async processDirectPremiumAPI(params: {
+    prompt: string;
+    systemPrompt: string;
+    userTier: 'premium' | 'ultra';
+    complexity: 'simple' | 'moderate' | 'complex';
+    emotionalIntensity: number;
+    options?: any;
+  }): Promise<AIResponse> {
+    const startTime = Date.now();
+    
+    // Select premium model based on complexity and user tier
+    const modelChoice = this.selectPremiumModel(params.complexity, params.userTier, params.emotionalIntensity);
+    
+    try {
+      let response;
+      let cost: number;
+      
+      if (modelChoice.provider === 'anthropic') {
+        // Use Claude for nuanced therapeutic conversations
+        const claudeResponse = await this.anthropic.messages.create({
+          model: modelChoice.model,
+          max_tokens: params.options?.maxTokens || 2000,
+          temperature: params.options?.temperature || 0.7,
+          messages: [
+            {
+              role: 'user',
+              content: `${params.systemPrompt}\n\nUser: ${params.prompt}`
+            }
+          ]
+        });
+        
+        response = claudeResponse.content[0].type === 'text' ? claudeResponse.content[0].text : '';
+        cost = this.calculateAnthropicCost(claudeResponse.usage?.input_tokens || 0, claudeResponse.usage?.output_tokens || 0);
+        
+      } else {
+        // Use OpenAI GPT-4o for complex therapeutic analysis
+        const openaiResponse = await this.openai.chat.completions.create({
+          model: modelChoice.model,
+          messages: [
+            { role: 'system', content: params.systemPrompt },
+            { role: 'user', content: params.prompt }
+          ],
+          temperature: params.options?.temperature || 0.7,
+          max_tokens: params.options?.maxTokens || 2000
+        });
+        
+        response = openaiResponse.choices[0]?.message?.content || '';
+        cost = this.calculateOpenAICost(
+          openaiResponse.usage?.prompt_tokens || 0, 
+          openaiResponse.usage?.completion_tokens || 0, 
+          modelChoice.model
+        );
+      }
+      
+      const processingTime = Date.now() - startTime;
+      
+      return {
+        content: response,
+        metadata: {
+          modelUsed: modelChoice.model,
+          provider: modelChoice.provider,
+          cost,
+          processingTime,
+          fromCache: false,
+          learningApplied: false,
+          routingReason: modelChoice.reasoning
+        }
+      };
+      
+    } catch (error) {
+      console.error('Direct premium API error:', error);
+      throw new Error('Failed to process therapeutic request with premium models');
+    }
+  }
+
+  /**
+   * Select optimal premium model for therapeutic content
+   */
+  private selectPremiumModel(
+    complexity: 'simple' | 'moderate' | 'complex',
+    userTier: 'premium' | 'ultra',
+    emotionalIntensity: number
+  ): { provider: 'openai' | 'anthropic'; model: string; reasoning: string } {
+    
+    // Ultra tier gets the absolute best models
+    if (userTier === 'ultra') {
+      return {
+        provider: 'openai',
+        model: 'gpt-4o',
+        reasoning: 'Ultra tier - premium GPT-4o for highest therapeutic quality'
+      };
+    }
+    
+    // High emotional intensity or complex topics get Claude for empathy
+    if (emotionalIntensity > 0.7 || complexity === 'complex') {
+      return {
+        provider: 'anthropic',
+        model: 'claude-3-5-sonnet-20241022',
+        reasoning: 'High emotional intensity/complexity - Claude for therapeutic empathy'
+      };
+    }
+    
+    // Standard therapeutic sessions use GPT-4o
+    return {
+      provider: 'openai',
+      model: 'gpt-4o',
+      reasoning: 'Standard therapeutic session - GPT-4o for clinical expertise'
+    };
+  }
+
+  /**
+   * Track therapeutic usage for analytics (no optimization applied)
+   */
+  private async trackTherapeuticUsage(
+    userId: string,
+    request: { prompt: string; systemPrompt: string; complexity: any; emotionalIntensity: number },
+    response: AIResponse
+  ): Promise<void> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const inputTokens = Math.ceil((request.prompt + request.systemPrompt).length / 4);
+      const outputTokens = Math.ceil(response.content.length / 4);
+      
+      await costOptimizer.trackUsage(userId, {
+        prompt: request.prompt,
+        systemPrompt: request.systemPrompt,
+        context: {
+          userId,
+          sessionType: 'therapeutic_chat',
+          userTier: 'premium',
+          complexity: request.complexity,
+          emotionalIntensity: request.emotionalIntensity,
+          requiresPersonalization: true
+        }
+      } as AIRequest, response);
+      
+    } catch (error) {
+      console.error('Therapeutic usage tracking error:', error);
+    }
+  }
+
+  /**
+   * Calculate OpenAI API costs
+   */
+  private calculateOpenAICost(inputTokens: number, outputTokens: number, model: string): number {
+    const costs = {
+      'gpt-4o': { input: 0.0025, output: 0.01 }, // per 1K tokens
+      'gpt-4o-mini': { input: 0.00015, output: 0.0006 }
+    };
+    
+    const modelCosts = costs[model as keyof typeof costs] || costs['gpt-4o'];
+    return ((inputTokens * modelCosts.input) + (outputTokens * modelCosts.output)) / 1000;
+  }
+
+  /**
+   * Calculate Anthropic API costs
+   */
+  private calculateAnthropicCost(inputTokens: number, outputTokens: number): number {
+    // Claude-3.5-Sonnet costs: $3/1M input tokens, $15/1M output tokens
+    return ((inputTokens * 3) + (outputTokens * 15)) / 1000000;
   }
 
   /**
