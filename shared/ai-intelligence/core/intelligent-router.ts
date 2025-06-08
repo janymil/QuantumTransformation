@@ -360,10 +360,11 @@ export class IntelligentRouter {
     
     const coachingResponse = await aiCoachingAdapter.processCoachingRequest({
       userId: request.context.userId,
-      prompt: request.prompt,
+      userInput: request.prompt,
       systemPrompt: request.systemPrompt,
       userTier: request.context.userTier || 'basic',
-      context: request.context,
+      challengeType: request.context.challengeType,
+      actionType: request.context.actionType,
       options: request.options
     });
 
@@ -375,7 +376,7 @@ export class IntelligentRouter {
         cost: coachingResponse.metadata.cost,
         processingTime: coachingResponse.metadata.processingTime,
         fromCache: coachingResponse.metadata.fromCache,
-        learningApplied: coachingResponse.metadata.learningApplied,
+        learningApplied: false,
         routingReason: 'routed_through_ai_coaching_adapter'
       }
     };
