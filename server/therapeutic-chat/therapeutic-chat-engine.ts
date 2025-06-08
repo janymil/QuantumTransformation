@@ -22,6 +22,7 @@ import { contextualMemoryArchitecture } from "./contextual-memory-architecture";
 import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-architecture";
 import { adaptiveLanguageGenerator } from "./adaptive-language-generator";
 import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
+import { therapeuticChatAdapter } from '@shared/ai-intelligence/adapters/therapeutic-chat-adapter';
 
 export class DeepJournalingEngine {
   

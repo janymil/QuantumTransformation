@@ -15,7 +15,7 @@ import {
   createInputHash,
   optimizeContext 
 } from './ai-cost-control';
-import { modelRouter } from './intelligent-model-router';
+import { aiCoachingAdapter } from '@shared/ai-intelligence/adapters/ai-coaching-adapter';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -127,20 +127,20 @@ Respond in JSON:
 `;
 
     try {
-      // Use full intelligent model routing with complexity analysis
-      const aiResult = await modelRouter.executeWithOptimalModel(
-        prompt,
-        "You are an advanced AI coaching psychologist specializing in adaptive personalized coaching.",
-        optimizedContext,
-        'daily_coaching_analysis',
-        'advanced_ai_couch',
-        'premium',
-        { temperature: 0.7, maxTokens: 800 }
-      );
+      // Use AI Intelligence Layer for optimal routing and cost optimization
+      const coachingRequest = {
+        userId: context.profile?.userId || 'unknown',
+        userInput: optimizedContext,
+        systemPrompt: "You are an advanced AI coaching psychologist specializing in adaptive personalized coaching.",
+        userTier: 'basic' as const,
+        challengeType: 'general',
+        options: { temperature: 0.7, maxTokens: 800 }
+      };
 
-      const analysisResult = JSON.parse(aiResult.response);
+      const aiResult = await aiCoachingAdapter.processCoachingRequest(coachingRequest);
+      const analysisResult = JSON.parse(aiResult.content);
       
-      console.log(`AI Analysis - Model: ${aiResult.modelUsed}, Complexity: ${aiResult.routingDecision.complexity}, Cost: $${aiResult.actualCost.toFixed(4)}`);
+      console.log(`AI Intelligence Layer - Model: ${aiResult.metadata.modelUsed}, Provider: ${aiResult.metadata.provider}, Cost: $${aiResult.metadata.cost.toFixed(4)}, Cache: ${aiResult.metadata.fromCache}`);
       
       return analysisResult;
     } catch (error) {
