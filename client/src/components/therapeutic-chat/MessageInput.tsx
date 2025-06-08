@@ -85,15 +85,27 @@ export const NewMessageInput: React.FC<NewMessageInputProps> = ({ onSendMessage,
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Focus on mount with proper null checking
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (textareaRef.current && !disabled) {
+        textareaRef.current.focus();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [disabled]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
       onSendMessage(message.trim());
       setMessage('');
       // Add null check before accessing ref
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 0);
     }
   };
 

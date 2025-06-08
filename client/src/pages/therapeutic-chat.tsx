@@ -165,15 +165,7 @@ export default function TherapeuticChat() {
     }
   }, [messages]);
 
-  // Focus input on mount with null check
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+  // Remove the undefined inputRef usage - not needed since MessageInput handles its own focus
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim() || sendMessageMutation.isPending) return;
