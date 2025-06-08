@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Brain, Calendar, Target, TrendingUp, Zap, BookOpen, Users, Heart, DollarSign, Sparkles, Clock, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
