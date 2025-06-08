@@ -1,10 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
-import compression from "compression";
-
-// Lazy loading for heavy modules
-let fileUpload: any;
-let registerRoutes: any;
-let setupVite: any, serveStatic: any, log: any;
+import fileUpload from "express-fileupload";
+import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
