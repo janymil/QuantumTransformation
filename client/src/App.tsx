@@ -82,12 +82,10 @@ function Router() {
   }
 
   if (!isAuthenticated) {
-    console.log("Router - User not authenticated, showing AI Intelligence Demo");
+    console.log("Router - User not authenticated, showing Landing");
     return (
       <Switch>
-        <Route path="/" component={MinimalDemo} />
-        <Route path="/ai-intelligence-demo" component={AIIntelligenceDemo} />
-        <Route path="/landing" component={Landing} />
+        <Route path="/" component={Landing} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -99,8 +97,7 @@ function Router() {
       <Navbar />
       <Switch>
         {/* Main shared routes */}
-        <Route path="/" component={AIIntelligenceDemo} />
-        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/" component={Dashboard} />
         <Route path="/challenges" component={Challenges} />
         <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/ai-conversation-history" component={AIConversationHistory} />
