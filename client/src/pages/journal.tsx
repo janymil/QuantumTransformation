@@ -96,7 +96,13 @@ export default function Journal() {
   const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
   const [loadingSessionId, setLoadingSessionId] = useState<number | null>(null);
   const [hoveredSession, setHoveredSession] = useState<number | null>(null);
-  const [sessionPreview, setSessionPreview] = useState<any>(null);
+  const [sessionPreview, setSessionPreview] = useState<{
+    sessionId: number;
+    messageCount: number;
+    conversationPreview: string;
+    userMessageCount: number;
+    aiResponseCount: number;
+  } | null>(null);
 
   // Utility function to format date and time according to user's locale with 24h format
   const formatDateTime = (dateString: string) => {
@@ -1274,7 +1280,7 @@ export default function Journal() {
                                     AI Responses
                                   </p>
                                   <p className="text-sm font-medium">
-                                    {Math.floor(actualMessageCount / 2)}
+                                    {actualAiResponseCount}
                                   </p>
                                 </div>
                               </div>
