@@ -1892,29 +1892,27 @@ Provide personalized, actionable guidance that:
       const userInput = `Goals: ${userGoals}. Challenges: ${Array.isArray(currentChallenges) ? currentChallenges.join(', ') : currentChallenges}. Energy level: ${mood}/10.`;
       const context = `Day ${currentDay} of ${challengeType} challenge. User seeking personalized coaching and guidance.`;
       
-      // Import the correct basic tier AI coaching engine
-      const { aiCoachingEngine } = await import('./ai-coaching-engine');
-      const basicCoaching = await aiCoachingEngine.generatePersonalizedResponse(
-        userId,
-        userInput,
-        context,
-        'daily_coaching'
-      );
+      // Import the correct basic tier AI coaching engine with GPT-4o/4o-mini routing
+      const { AdaptiveCoachingEngine } = await import('./adaptive-coaching-engine');
+      const adaptiveEngine = new AdaptiveCoachingEngine();
+      const basicCoaching = await adaptiveEngine.createPersonalizedDailyPlan(userId);
       
       // Parse the AI response and structure it for the frontend
       const structuredResponse = {
-        personalizedMessage: basicCoaching.response || "Your personalized guidance is ready.",
-        todaysRecommendation: `Based on your goals and current energy level (${mood}/10), focus on integrating multiple therapeutic approaches that support your growth today.`,
-        practiceAdjustments: [
+        personalizedMessage: basicCoaching.dailyAssessment?.description || "Your personalized guidance is ready.",
+        todaysRecommendation: `Focus: ${basicCoaching.currentFocus}. ${basicCoaching.reasoning}`,
+        practiceAdjustments: basicCoaching.dailyAssessment?.exercises?.map(ex => 
+          `${ex.title}: ${ex.description} (${ex.duration} min)`
+        ) || [
           "Apply consciousness expansion techniques suited to your current state",
           "Integrate trauma-informed practices with manifestation work", 
           "Use breathwork and energy healing as foundational support",
           "Practice quantum consciousness techniques for deeper transformation"
         ],
-        modalities_used: advancedCoaching.modalities_used || [],
-        emotional_tone: advancedCoaching.emotional_tone || 'supportive',
-        patterns_detected: advancedCoaching.patterns_detected || [],
-        timestamp: advancedCoaching.timestamp
+        modalities_used: basicCoaching.dailyAssessment?.exercises?.map(ex => ex.therapeuticBasis) || [],
+        emotional_tone: 'supportive',
+        patterns_detected: basicCoaching.progressIndicators || [],
+        timestamp: new Date().toISOString()
       };
       
       console.log("Generated advanced coaching response with modalities:", structuredResponse.modalities_used);
