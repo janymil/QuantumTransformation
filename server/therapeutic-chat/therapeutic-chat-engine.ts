@@ -61,9 +61,7 @@ export class DeepJournalingEngine {
     const psychologicalInsights = psychologicalAnalyzer.generateInsights(
       emotionalState,
       cognitivePatterns,
-      copingStrategies.adaptive,
-      copingStrategies.maladaptive,
-      userProfile
+      copingStrategies
     );
     
     const psychologicalAnalysis = {
