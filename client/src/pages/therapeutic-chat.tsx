@@ -29,9 +29,6 @@ export default function TherapeuticChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [currentMood, setCurrentMood] = useState(5);
-  const [currentTags, setCurrentTags] = useState<string[]>([]);
-  const [showMoodTracker, setShowMoodTracker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -157,11 +154,6 @@ export default function TherapeuticChat() {
       await sendMessageMutation.mutateAsync({
         message: messageToSend
       });
-      
-      // Reset mood and tags after sending
-      setCurrentMood(5);
-      setCurrentTags([]);
-      setShowMoodTracker(false);
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({
@@ -171,20 +163,6 @@ export default function TherapeuticChat() {
       });
       setCurrentMessage(messageToSend); // Restore message on error
     }
-  };
-
-  const handleAddTag = (tag: string) => {
-    if (!currentTags.includes(tag)) {
-      setCurrentTags(prev => [...prev, tag]);
-    }
-  };
-
-  const handleRemoveTag = (tag: string) => {
-    setCurrentTags(prev => prev.filter(t => t !== tag));
-  };
-
-  const handleToggleMoodTracker = () => {
-    setShowMoodTracker(!showMoodTracker);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -587,18 +565,11 @@ export default function TherapeuticChat() {
               currentMessage={currentMessage}
               isRecording={isRecording}
               isLoading={sendMessageMutation.isPending}
-              currentMood={currentMood}
-              currentTags={currentTags}
-              showMoodTracker={showMoodTracker}
               onMessageChange={setCurrentMessage}
               onKeyPress={handleKeyPress}
               onSendMessage={handleSendMessage}
               onStartRecording={startRecording}
               onStopRecording={stopRecording}
-              onMoodChange={setCurrentMood}
-              onAddTag={handleAddTag}
-              onRemoveTag={handleRemoveTag}
-              onToggleMoodTracker={handleToggleMoodTracker}
             />
           
             {sendMessageMutation.isPending && (
