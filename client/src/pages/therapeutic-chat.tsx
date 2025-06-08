@@ -125,6 +125,24 @@ export default function TherapeuticChat() {
     },
   });
 
+  // Handle URL parameters for loading specific conversations
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('sessionId');
+    const sessionTitle = urlParams.get('title');
+
+    if (sessionId && threads.length > 0) {
+      // Find the session in threads
+      const targetSession = threads.find(thread => thread.id === parseInt(sessionId));
+      if (targetSession) {
+        // Load this specific session
+        loadConversation(targetSession);
+        // Clear URL parameters after loading
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [threads]);
+
   // Initialize with welcome message
   useEffect(() => {
     if (messages.length === 0) {

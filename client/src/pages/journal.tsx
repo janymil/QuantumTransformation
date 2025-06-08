@@ -88,6 +88,12 @@ export default function Journal() {
   const [editIntention, setEditIntention] = useState("");
   const [selectedInsightType, setSelectedInsightType] = useState<string | null>(null);
 
+  // Function to load therapeutic conversation in therapeutic chat page
+  const loadTherapeuticConversation = (sessionId: number, sessionTitle: string) => {
+    // Navigate to therapeutic chat with session parameters
+    window.location.href = `/therapeutic-chat?sessionId=${sessionId}&title=${encodeURIComponent(sessionTitle)}`;
+  };
+
   const toggleEntryExpansion = (entryId: string | number) => {
     const newExpanded = new Set(expandedEntries);
     if (newExpanded.has(entryId)) {
@@ -134,6 +140,13 @@ export default function Journal() {
   // Fetch assessment reflections
   const { data: reflectionsData = [], isLoading: reflectionsLoading, error: reflectionsError } = useQuery<AssessmentReflection[]>({
     queryKey: ['/api/assessment-reflections'],
+    enabled: isAuthenticated && !!user,
+    retry: 1,
+  });
+
+  // Fetch therapeutic chat sessions for new tab
+  const { data: therapeuticSessions = [], isLoading: sessionsLoading } = useQuery<any[]>({
+    queryKey: ['/api/therapeutic-chat/sessions'],
     enabled: isAuthenticated && !!user,
     retry: 1,
   });
@@ -397,9 +410,10 @@ export default function Journal() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="write">Write Entry</TabsTrigger>
             <TabsTrigger value="history">Entry History</TabsTrigger>
+            <TabsTrigger value="conversations">Saved Conversations</TabsTrigger>
             <TabsTrigger value="insights">AI Insights</TabsTrigger>
           </TabsList>
 
@@ -947,6 +961,156 @@ export default function Journal() {
                 </Card>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="conversations" className="space-y-6">
+            <div className="grid gap-6">
+              {/* Therapeutic Conversations Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Saved Conversations</h2>
+                  <p className="text-muted-foreground">Your therapeutic chat sessions with AI insights</p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Total Sessions</p>
+                    <p className="text-2xl font-bold text-primary">{therapeuticSessions?.length || 0}</p>
+                  </div>
+                  <Button 
+                    onClick={() => window.location.href = '/therapeutic-chat'}
+                    className="flex items-center gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    New Session
+                  </Button>
+                </div>
+              </div>
+
+              {/* Sessions List */}
+              {sessionsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading conversations...</p>
+                  </div>
+                </div>
+              ) : therapeuticSessions && therapeuticSessions.length > 0 ? (
+                <div className="space-y-4">
+                  {therapeuticSessions
+                    .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+                    .map((session, index) => (
+                      <Card key={session.id} className="hover:shadow-lg transition-shadow duration-300">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3 flex-1 min-w-0">
+                              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <MessageSquare className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <CardTitle className="text-lg truncate">
+                                  {session.title || `Therapeutic Session #${index + 1}`}
+                                </CardTitle>
+                                <div className="flex items-center space-x-4 mt-1">
+                                  <span className="text-sm text-muted-foreground">
+                                    {format(new Date(session.updatedAt || session.createdAt), 'MMM d, yyyy • h:mm a')}
+                                  </span>
+                                  {session.messageCount && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {session.messageCount} messages
+                                    </Badge>
+                                  )}
+                                  {session.status === 'finished' && (
+                                    <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+                                      Completed
+                                    </Badge>
+                                  )}
+                                  {session.status === 'active' && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      In Progress
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2 flex-shrink-0">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => loadTherapeuticConversation(session.id, session.title || `Session #${index + 1}`)}
+                                className="flex items-center gap-2"
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                                Load Chat
+                              </Button>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {/* Session Preview */}
+                            {session.lastMessage && (
+                              <div className="p-3 bg-muted/50 rounded-lg">
+                                <p className="text-xs text-muted-foreground mb-1">Latest message:</p>
+                                <p className="text-sm line-clamp-2">
+                                  {session.lastMessage.length > 150 
+                                    ? session.lastMessage.substring(0, 150) + '...' 
+                                    : session.lastMessage}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {/* Session Statistics */}
+                            <div className="grid grid-cols-3 gap-4 pt-2 border-t border-border">
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground">Duration</p>
+                                <p className="text-sm font-medium">
+                                  {session.duration || 'N/A'}
+                                </p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground">Topics</p>
+                                <p className="text-sm font-medium">
+                                  {session.topicsDiscussed || 'Various'}
+                                </p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground">Insights</p>
+                                <p className="text-sm font-medium">
+                                  {session.insightsCount || 0}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  }
+                </div>
+              ) : (
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                        <MessageSquare className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">No conversations yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Start your first therapeutic chat session to see it here.
+                        </p>
+                        <Button 
+                          onClick={() => window.location.href = '/therapeutic-chat'}
+                          className="flex items-center gap-2"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          Start First Session
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
 
