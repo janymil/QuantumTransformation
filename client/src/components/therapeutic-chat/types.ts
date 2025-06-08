@@ -4,6 +4,11 @@ export interface Message {
   content: string;
   timestamp: Date;
   emotionalTone?: string;
+  moodRating?: number; // 1-10 scale for user messages
+  tags?: string[]; // Topic tags for categorization
+  isVoiceMessage?: boolean;
+  audioUrl?: string;
+  transcriptionConfidence?: number;
 }
 
 export interface ConversationSession {

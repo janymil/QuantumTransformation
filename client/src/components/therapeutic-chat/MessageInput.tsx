@@ -1,16 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, MicOff, Send } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Mic, MicOff, Send, Smile, Tag, X } from "lucide-react";
 
 interface MessageInputProps {
   currentMessage: string;
   isRecording: boolean;
   isLoading: boolean;
+  currentMood: number;
+  currentTags: string[];
+  showMoodTracker: boolean;
   onMessageChange: (value: string) => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
   onSendMessage: () => void;
   onStartRecording: () => void;
   onStopRecording: () => void;
+  onMoodChange: (mood: number) => void;
+  onAddTag: (tag: string) => void;
+  onRemoveTag: (tag: string) => void;
+  onToggleMoodTracker: () => void;
 }
 
 export function MessageInput({
