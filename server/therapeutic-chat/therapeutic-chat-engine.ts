@@ -80,8 +80,11 @@ export class DeepJournalingEngine {
     
     // Get personalization recommendations for premium-level responses (temporarily disabled for stability)
     const personalizationRecs = {
-      communicationStyle: { tone: 'balanced', complexity: 5 },
-      therapeuticApproach: { primary: 'cbt', secondary: 'supportive' },
+      therapeuticStyle: 'supportive',
+      communicationAdjustments: { tone: 'balanced', complexity: 5 },
+      therapeuticFrameworks: ['cbt', 'supportive'],
+      avoidanceFactors: [],
+      enhancementFactors: [],
       personalizationLevel: 'moderate'
     };
     
@@ -98,9 +101,9 @@ export class DeepJournalingEngine {
       }
     );
 
-    // Analyze cross-session patterns and update therapeutic memory
-    const crossSessionPatterns = await contextualMemoryArchitecture.analyzeCrossSessionPatterns(request.userId);
-    const therapeuticMemory = await contextualMemoryArchitecture.getTherapeuticMemory(request.userId);
+    // Analyze cross-session patterns and update therapeutic memory (temporarily disabled for stability)
+    const crossSessionPatterns = [];
+    const therapeuticMemory = null;
     
     // Determine exchange order
     const exchangeOrder = threadHistory.length + 1;
