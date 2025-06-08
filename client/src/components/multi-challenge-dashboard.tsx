@@ -45,6 +45,10 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
     queryKey: ["/api/progress/all"],
   });
 
+  const { data: userChallenges, isLoading: challengesLoading } = useQuery({
+    queryKey: ["/api/challenges/user-challenges"],
+  });
+
   // Quit challenge mutation
   const quitChallengeMutation = useMutation({
     mutationFn: async (challengeType: string) => {
@@ -79,7 +83,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
     );
   };
 
-  if (isLoading) {
+  if (isLoading || challengesLoading) {
     return (
       <div className="space-y-4">
         <div className="h-32 bg-muted rounded-lg animate-pulse" />
@@ -92,6 +96,7 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   const rawProgress = (progressData as any)?.allProgress || [];
   const completions = (progressData as any)?.completions || [];
   const achievements = (progressData as any)?.achievements || [];
+  const activeChallenges = (userChallenges as any[]) || [];
 
   // Deduplicate challenges by keeping only the latest entry for each challenge type
   const uniqueProgressMap = new Map();
@@ -103,7 +108,10 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   });
   const allProgress = Array.from(uniqueProgressMap.values());
 
-  if (allProgress.length === 0) {
+  // Use active challenges from user-challenges API if progress data is empty
+  const displayChallenges = allProgress.length > 0 ? allProgress : activeChallenges;
+
+  if (displayChallenges.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -126,12 +134,12 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Active Challenges</h2>
         <Badge variant="secondary" className="text-lg px-3 py-1">
-          {allProgress.length} Active
+          {displayChallenges.length} Active
         </Badge>
       </div>
 
       <div className="space-y-4">
-        {allProgress.map((progress: any, index: number) => {
+        {displayChallenges.map((progress: any, index: number) => {
           const challengeType = CHALLENGE_TYPES[progress.challengeType];
           const isExpanded = expandedChallenges.includes(progress.challengeType);
           const challengeCompletions = completions.filter(
