@@ -182,7 +182,7 @@ export class DynamicFrameworkSelector {
       const recentEmotions = await db.select()
         .from(emotionalStateHistory)
         .where(eq(emotionalStateHistory.userId, userId))
-        .orderBy(desc(emotionalStateHistory.recordedAt))
+        .orderBy(emotionalStateHistory.recordedAt)
         .limit(10);
 
       // Analyze current input for emotional indicators
