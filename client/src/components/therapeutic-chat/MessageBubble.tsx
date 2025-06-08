@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, User, Bot } from "lucide-react";
+import { Trash2, User, Heart } from "lucide-react";
 import { Message } from "./types";
 
 interface MessageBubbleProps {
@@ -19,7 +19,7 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
               ? 'bg-blue-500 text-white' 
               : 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400'
           }`}>
-            {message.type === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+            {message.type === 'user' ? <User className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
           </div>
 
           {/* Message Content */}
