@@ -4,7 +4,7 @@
  * Includes BunnyNet integration for scalable storage
  */
 
-import { db } from "../../../server/db";
+import { db } from "@server/storage";
 
 export interface KnowledgeSource {
   id: string;

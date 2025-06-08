@@ -46,8 +46,6 @@ import { initializeUserGamification } from "./gamification";
 // import { registerDeepJournalingRoutes } from "./deep-journaling-engine"; // Function not available
 import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
-import { knowledgeRoutes } from "@shared/ai-intelligence/advanced/api-routes";
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
   
@@ -4983,9 +4981,6 @@ Provide your response in this JSON format:
 
   // Register deep journaling routes
   // registerDeepJournalingRoutes(app); // Function not available
-
-  // Register knowledge acquisition routes
-  app.use('/api', knowledgeRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

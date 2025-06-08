@@ -17,9 +17,14 @@ import OnboardingTour from "@/components/onboarding-tour";
 import MoodThemeSwitcher from "@/components/mood-theme-switcher";
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [location] = useLocation();
   const [isOpeningVisionBoard, setIsOpeningVisionBoard] = useState(false);
+
+  // Prevent render if auth is still loading
+  if (isLoading) {
+    return null;
+  }
 
   const handleVisionBoardClick = async () => {
     if (!user) return;
@@ -193,8 +198,9 @@ export default function Navbar() {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
-                  const tourElement = document.querySelector('[data-start-tour]') as HTMLElement;
-                  tourElement?.click();
+                  if ((window as any).startOnboardingTour) {
+                    (window as any).startOnboardingTour();
+                  }
                 }}>
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Tour Guide</span>
