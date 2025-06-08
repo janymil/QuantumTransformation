@@ -78,8 +78,12 @@ export class DeepJournalingEngine {
       }
     };
     
-    // Get personalization recommendations for premium-level responses
-    const personalizationRecs = await userModelingEngine.getPersonalizationRecommendations(request.userId);
+    // Get personalization recommendations for premium-level responses (temporarily disabled for stability)
+    const personalizationRecs = {
+      communicationStyle: { tone: 'balanced', complexity: 5 },
+      therapeuticApproach: { primary: 'cbt', secondary: 'supportive' },
+      personalizationLevel: 'moderate'
+    };
     
     // Select optimal therapeutic framework based on real-time session analysis + psychological insights
     const frameworkRecommendation = await dynamicFrameworkSelector.selectOptimalFramework(
