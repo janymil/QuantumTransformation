@@ -29,6 +29,8 @@ export default function TherapeuticChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [isProcessingDeeper, setIsProcessingDeeper] = useState(false);
+  const [isProcessingNewDirection, setIsProcessingNewDirection] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -177,6 +179,8 @@ export default function TherapeuticChat() {
   const handleGoDeeper = async (lastAiMessage: string) => {
     const deeperPrompt = `I'd like to explore this further. Can you help me go deeper into what we just discussed: "${lastAiMessage.substring(0, 100)}..."`;
     
+    setIsProcessingDeeper(true);
+    
     try {
       const response = await fetch('/api/deep-journaling/process', {
         method: 'POST',
@@ -205,11 +209,15 @@ export default function TherapeuticChat() {
         description: "Failed to generate deeper response. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessingDeeper(false);
     }
   };
 
   const handleNewDirection = async (aiMessage: string) => {
     const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
+    
+    setIsProcessingNewDirection(true);
     
     try {
       const response = await fetch('/api/deep-journaling/process', {
@@ -239,6 +247,8 @@ export default function TherapeuticChat() {
         description: "Failed to generate new direction. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessingNewDirection(false);
     }
   };
 
@@ -524,7 +534,7 @@ export default function TherapeuticChat() {
                           size="sm" 
                           className="text-xs"
                           onClick={() => handleGoDeeper(message.content)}
-                          disabled={sendMessageMutation.isPending}
+                          disabled={sendMessageMutation.isPending || isProcessingDeeper || isProcessingNewDirection}
                         >
                           Go Deeper
                         </Button>
@@ -533,7 +543,7 @@ export default function TherapeuticChat() {
                           size="sm" 
                           className="text-xs"
                           onClick={() => handleNewDirection(message.content)}
-                          disabled={sendMessageMutation.isPending}
+                          disabled={sendMessageMutation.isPending || isProcessingDeeper || isProcessingNewDirection}
                         >
                           New Direction
                         </Button>
@@ -577,7 +587,23 @@ export default function TherapeuticChat() {
             {sendMessageMutation.isPending && (
               <div className="flex justify-center">
                 <div className="w-full max-w-2xl">
-                  <LoadingIndicator />
+                  <LoadingIndicator stage="responding" />
+                </div>
+              </div>
+            )}
+
+            {isProcessingDeeper && (
+              <div className="flex justify-center">
+                <div className="w-full max-w-2xl">
+                  <LoadingIndicator stage="analyzing" />
+                </div>
+              </div>
+            )}
+
+            {isProcessingNewDirection && (
+              <div className="flex justify-center">
+                <div className="w-full max-w-2xl">
+                  <LoadingIndicator stage="thinking" />
                 </div>
               </div>
             )}
