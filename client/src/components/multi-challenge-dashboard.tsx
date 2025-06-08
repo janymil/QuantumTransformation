@@ -41,18 +41,20 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   const [expandedChallenges, setExpandedChallenges] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const { data: progressData, isLoading } = useQuery({
+  const { data: progressData, isLoading: progressLoading } = useQuery({
     queryKey: ["/api/progress/all"],
     enabled: isAuthenticated && !!user,
   });
 
   const { data: userChallenges, isLoading: challengesLoading, error: challengesError } = useQuery({
-    queryKey: ["/api/challenges/user-challenges"],
-    enabled: isAuthenticated && !!user,
+    queryKey: ["/api/challenges/user-challenges", user?.id],
+    enabled: isAuthenticated && !!user && !authLoading,
     retry: 3,
     retryDelay: 1000,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true,
     queryFn: async () => {
       console.log("Making API call to /api/challenges/user-challenges");
       const res = await fetch("/api/challenges/user-challenges", {
@@ -74,6 +76,21 @@ export default function MultiChallengeDashboard({}: MultiChallengeDashboardProps
   console.log("MultiChallengeDashboard - Auth state:", { isAuthenticated, user: !!user });
   console.log("MultiChallengeDashboard - Challenges loading:", challengesLoading);
   console.log("MultiChallengeDashboard - Challenges error:", challengesError);
+
+  // Don't render until authentication is confirmed
+  if (!isAuthenticated || !user) {
+    console.log("MultiChallengeDashboard - Waiting for authentication");
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="loading-shimmer h-6 w-48 mx-auto mb-4"></div>
+            <div className="loading-shimmer h-4 w-32 mx-auto"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Quit challenge mutation
   const quitChallengeMutation = useMutation({
