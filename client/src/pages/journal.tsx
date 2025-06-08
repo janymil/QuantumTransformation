@@ -102,6 +102,8 @@ export default function Journal() {
     conversationPreview: string;
     userMessageCount: number;
     aiResponseCount: number;
+    psychologicalAnalysis?: string;
+    therapeuticThemes?: string[];
   } | null>(null);
 
   // Utility function to format date and time according to user's locale with 24h format
@@ -142,24 +144,39 @@ export default function Journal() {
           const lastUserMessage = userMessages[userMessages.length - 1]?.content || '';
           const lastAiMessage = aiMessages[aiMessages.length - 1]?.content || '';
           
-          // Create conversation summary
+          // Create conversation summary without labels
           let conversationPreview = '';
           if (firstUserMessage) {
-            conversationPreview += `Started with: "${firstUserMessage.slice(0, 60)}${firstUserMessage.length > 60 ? '...' : ''}"\n\n`;
+            conversationPreview += `"${firstUserMessage.slice(0, 80)}${firstUserMessage.length > 80 ? '...' : ''}"\n\n`;
           }
           if (lastUserMessage && lastUserMessage !== firstUserMessage) {
-            conversationPreview += `Latest: "${lastUserMessage.slice(0, 80)}${lastUserMessage.length > 80 ? '...' : ''}"\n\n`;
+            conversationPreview += `"${lastUserMessage.slice(0, 100)}${lastUserMessage.length > 100 ? '...' : ''}"\n\n`;
           }
           if (lastAiMessage) {
-            conversationPreview += `AI responded: "${lastAiMessage.slice(0, 100)}${lastAiMessage.length > 100 ? '...' : ''}"`;
+            conversationPreview += `"${lastAiMessage.slice(0, 120)}${lastAiMessage.length > 120 ? '...' : ''}"`;
           }
           
+          // Generate psychological analysis
+          const themes = [];
+          if (firstUserMessage.toLowerCase().includes('anxiety') || firstUserMessage.toLowerCase().includes('stress')) themes.push('anxiety management');
+          if (firstUserMessage.toLowerCase().includes('relationship') || firstUserMessage.toLowerCase().includes('partner')) themes.push('relationships');
+          if (firstUserMessage.toLowerCase().includes('work') || firstUserMessage.toLowerCase().includes('job')) themes.push('career concerns');
+          if (firstUserMessage.toLowerCase().includes('family') || firstUserMessage.toLowerCase().includes('parent')) themes.push('family dynamics');
+          if (firstUserMessage.toLowerCase().includes('self') || firstUserMessage.toLowerCase().includes('confidence')) themes.push('self-development');
+          if (themes.length === 0) themes.push('personal growth');
+          
+          const analysisInsight = themes.length > 1 
+            ? `Multi-faceted exploration of ${themes.slice(0, 2).join(' and ')}`
+            : `Focused therapeutic work on ${themes[0]}`;
+
           setSessionPreview({
             sessionId,
             messageCount,
             conversationPreview: conversationPreview || 'No conversation content available',
             userMessageCount: userMessages.length,
-            aiResponseCount: aiMessages.length
+            aiResponseCount: aiMessages.length,
+            psychologicalAnalysis: analysisInsight,
+            therapeuticThemes: themes
           });
         } else {
           setSessionPreview({
@@ -167,7 +184,9 @@ export default function Journal() {
             messageCount: 0,
             conversationPreview: 'No messages in this conversation yet',
             userMessageCount: 0,
-            aiResponseCount: 0
+            aiResponseCount: 0,
+            psychologicalAnalysis: 'Session not yet started',
+            therapeuticThemes: ['new session']
           });
         }
       }
@@ -1160,7 +1179,69 @@ export default function Journal() {
                   </div>
                 </div>
               ) : therapeuticSessions && therapeuticSessions.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="relative">
+                  {/* Conversation Preview Popup */}
+                  {hoveredSession && sessionPreview && (
+                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-6 max-w-lg w-96 z-50">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                            Conversation Preview
+                          </h4>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {sessionPreview.messageCount} total messages
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                              Conversation Flow:
+                            </p>
+                            <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line bg-gray-50 dark:bg-gray-800 p-3 rounded-md max-h-32 overflow-y-auto">
+                              {sessionPreview.conversationPreview}
+                            </div>
+                          </div>
+                          
+                          {sessionPreview.psychologicalAnalysis && (
+                            <div>
+                              <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
+                                Psychological Analysis:
+                              </p>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
+                                {sessionPreview.psychologicalAnalysis}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {sessionPreview.therapeuticThemes && sessionPreview.therapeuticThemes.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">
+                                Therapeutic Themes:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {sessionPreview.therapeuticThemes.map((theme, index) => (
+                                  <span 
+                                    key={index}
+                                    className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded-full"
+                                  >
+                                    {theme}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
+                            <span>{sessionPreview.userMessageCount} user messages</span>
+                            <span>{sessionPreview.aiResponseCount} AI responses</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {therapeuticSessions
                     .filter(session => {
                       // Search filter
@@ -1254,19 +1335,9 @@ export default function Journal() {
                           </CardHeader>
                           <CardContent className="pt-0">
                             <div className="space-y-3">
-                              {/* Show preview if hovered, otherwise show regular content */}
-                              {hoveredSession === session.id && sessionPreview?.sessionId === session.id ? (
-                                <div className="p-3 bg-muted/50 rounded-md border">
-                                  <p className="text-xs font-medium text-foreground mb-2">Conversation Preview:</p>
-                                  <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
-                                    {sessionPreview.conversationPreview}
-                                  </div>
-                                </div>
-                              ) : (
-                                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                                  {session.lastMessage || 'No messages yet'}
-                                </p>
-                              )}
+                              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                {session.lastMessage || 'No messages yet'}
+                              </p>
                               
                               <div className="grid grid-cols-2 gap-3 text-center">
                                 <div>
@@ -1397,6 +1468,7 @@ export default function Journal() {
                   </CardContent>
                 </Card>
               )}
+                </div>
             </div>
           </TabsContent>
         </Tabs>
