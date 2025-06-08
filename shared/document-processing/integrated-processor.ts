@@ -8,17 +8,25 @@ import { dbConnectionManager } from '../../server/db-connection-manager';
 
 // Try to import PDF parsing, but handle gracefully if not available
 let pdfParse: any = null;
+let pdfParseAvailable = false;
 try {
   pdfParse = require('pdf-parse');
+  pdfParseAvailable = true;
+  console.log('PDF parsing library loaded successfully');
 } catch (error) {
-  console.warn('PDF parsing library not available, using text fallback');
+  console.log('PDF parsing library not available, using intelligent text fallback');
+  pdfParseAvailable = false;
 }
 
 let mammoth: any = null;
+let mammothAvailable = false;
 try {
   mammoth = require('mammoth');
+  mammothAvailable = true;
+  console.log('Mammoth library loaded successfully');
 } catch (error) {
-  console.warn('Mammoth library not available for Word processing');
+  console.log('Mammoth library not available, using intelligent text fallback');
+  mammothAvailable = false;
 }
 
 export interface ExtractedContent {
@@ -73,6 +81,19 @@ export interface ProcessedDocument {
 }
 
 export class IntegratedDocumentProcessor {
+  private initialized = false;
+
+  constructor() {
+    this.initialize();
+  }
+
+  private initialize() {
+    console.log('Initializing Document Processor...');
+    console.log(`PDF Parse Available: ${pdfParseAvailable}`);
+    console.log(`Mammoth Available: ${mammothAvailable}`);
+    this.initialized = true;
+  }
+
   /**
    * Process and store document with full pipeline
    */
@@ -193,7 +214,7 @@ export class IntegratedDocumentProcessor {
    */
   private async processPDF(buffer: Buffer): Promise<ExtractedContent> {
     try {
-      if (!pdfParse) {
+      if (!pdfParseAvailable || !pdfParse) {
         console.log('PDF parsing library not available, using intelligent text extraction');
         return this.extractTextFromPDFBuffer(buffer);
       }
@@ -277,7 +298,7 @@ export class IntegratedDocumentProcessor {
    */
   private async processWordDocument(buffer: Buffer): Promise<ExtractedContent> {
     try {
-      if (!mammoth) {
+      if (!mammothAvailable || !mammoth) {
         console.log('Mammoth library not available, using intelligent text extraction');
         return this.extractTextFromWordBuffer(buffer);
       }

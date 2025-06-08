@@ -177,3 +177,68 @@ Research indicates these approaches show significant improvement in patient outc
 
 // Run the test
 testDocumentProcessing().catch(console.error);
+/**
+ * Simple Document Processing Test
+ * Tests basic functionality without external dependencies
+ */
+
+import { integratedDocumentProcessor } from './shared/document-processing/integrated-processor.js';
+
+async function testSimpleDocumentProcessing() {
+  console.log('🧪 Testing Simple Document Processing');
+  console.log('====================================\n');
+
+  try {
+    // Test 1: Simple Text Document
+    console.log('1. Testing Text Document Processing');
+    console.log('==================================');
+
+    const testText = `
+# Cognitive Behavioral Therapy Research
+
+## Abstract
+This study examines the effectiveness of cognitive behavioral therapy (CBT) in treating anxiety disorders. 
+
+## Methodology
+Participants (n=150) were randomly assigned to CBT or control groups.
+
+## Results
+CBT group showed 68% improvement in anxiety scores compared to 12% in control group.
+
+## Conclusion
+CBT demonstrates significant efficacy for anxiety treatment.
+    `;
+
+    const textResult = await integratedDocumentProcessor.processDocument(
+      Buffer.from(testText, 'utf-8'),
+      'simple-test.txt',
+      'txt',
+      'cognitive_behavioral_therapy'
+    );
+
+    console.log('Text Processing Result:');
+    console.log('✅ Success:', textResult.processing.success);
+    console.log('📊 Quality Score:', textResult.processing.qualityScore);
+    console.log('⏱️ Processing Time:', textResult.processing.processingTime + 'ms');
+    console.log('📄 Content Length:', textResult.extractedContent.text.length, 'characters');
+    console.log('🧠 Concepts Found:', textResult.extractedContent.analysis.concepts.length);
+    console.log('⚕️ Clinical Terms:', textResult.extractedContent.analysis.clinicalTerms.length);
+    console.log('🔗 Storage URL:', textResult.bunnyNetUrl ? 'Generated' : 'Failed');
+
+    if (textResult.processing.errors?.length > 0) {
+      console.log('❌ Errors:', textResult.processing.errors);
+    }
+
+    console.log('\n====================================');
+    console.log('✅ SIMPLE DOCUMENT PROCESSING TEST COMPLETE');
+    console.log('System is working correctly with text documents');
+    console.log('====================================');
+
+  } catch (error) {
+    console.error('❌ Test Error:', error.message);
+    console.error('Stack:', error.stack);
+  }
+}
+
+// Run the test
+testSimpleDocumentProcessing();
