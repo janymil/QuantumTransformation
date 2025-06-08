@@ -18,6 +18,8 @@ import { userModelingEngine } from "./user-modeling-engine";
 import type { PersonalizationRecommendations } from "./user-modeling-engine";
 import { dynamicFrameworkSelector } from "./dynamic-framework-selector";
 import type { FrameworkRecommendation } from "./dynamic-framework-selector";
+import { contextualMemoryArchitecture } from "./contextual-memory-architecture";
+import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-architecture";
 
 export class DeepJournalingEngine {
   
@@ -58,6 +60,10 @@ export class DeepJournalingEngine {
       request.userInput,
       { userProfile, threadHistory, userContext }
     );
+
+    // Analyze cross-session patterns and update therapeutic memory
+    const crossSessionPatterns = await contextualMemoryArchitecture.analyzeCrossSessionPatterns(request.userId);
+    const therapeuticMemory = await contextualMemoryArchitecture.getTherapeuticMemory(request.userId);
     
     // Determine exchange order
     const exchangeOrder = threadHistory.length + 1;
@@ -69,7 +75,7 @@ export class DeepJournalingEngine {
     } else if (request.actionType === 'customize_response' && threadHistory.length > 0) {
       aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile, personalizationRecs, frameworkRecommendation);
     } else {
-      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs, frameworkRecommendation);
+      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs, frameworkRecommendation, therapeuticMemory, crossSessionPatterns);
     }
     
     const processingTime = Date.now() - startTime;
@@ -148,7 +154,9 @@ export class DeepJournalingEngine {
     userProfile: PsychologicalProfile | null,
     userContext: any,
     personalizationRecs: PersonalizationRecommendations,
-    frameworkRec: FrameworkRecommendation
+    frameworkRec: FrameworkRecommendation,
+    therapeuticMemory?: TherapeuticMemory,
+    crossSessionPatterns?: any[]
   ) {
     // Use dynamic framework recommendation with personalization for optimal therapeutic intervention
     const mode = request.customizations?.mode || personalizationRecs.communicationAdjustments.tone || thread.preferredMode || 'conversational';
