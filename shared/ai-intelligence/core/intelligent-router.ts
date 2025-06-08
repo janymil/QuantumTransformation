@@ -363,8 +363,8 @@ export class IntelligentRouter {
       userInput: request.prompt,
       systemPrompt: request.systemPrompt,
       userTier: request.context.userTier || 'basic',
-      challengeType: request.context.challengeType,
-      actionType: request.context.actionType,
+      challengeType: request.context.therapeuticContext?.focusArea,
+      actionType: request.context.therapeuticContext?.actionType,
       options: request.options
     });
 
