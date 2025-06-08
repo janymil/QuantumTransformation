@@ -2868,7 +2868,7 @@ Provide personalized, actionable guidance that:
         cacheResponse, 
         trackUsage,
         createInputHash 
-      } = await import('./deep-journaling/ai-cost-control');
+      } = await import('./ai-cost-control');
 
       // Validate AI request with cost controls
       const inputHash = createInputHash(userGoals, 'vision_guide');
@@ -2992,7 +2992,7 @@ Make recommendations specific to their exact goals, timeline, and aspirations. F
         cacheResponse, 
         trackUsage,
         createInputHash 
-      } = await import('./deep-journaling/ai-cost-control');
+      } = await import('./ai-cost-control');
 
       // Create input for validation and caching
       const inputText = JSON.stringify({ boardData, userGoals, focusArea });
@@ -3128,7 +3128,7 @@ Focus on practical, implementable suggestions that directly support their ${focu
         cacheResponse, 
         trackUsage,
         createInputHash 
-      } = await import('./deep-journaling/ai-cost-control');
+      } = await import('./ai-cost-control');
 
       // Validate AI request with cost controls
       const inputHash = createInputHash(prompt, 'image_generation');
@@ -3253,7 +3253,7 @@ Focus on practical, implementable suggestions that directly support their ${focu
         cacheResponse, 
         trackUsage,
         createInputHash 
-      } = await import('./deep-journaling/ai-cost-control');
+      } = await import('./ai-cost-control');
 
       // Create input hash based on user data flags and user ID
       const dataFlags = `${includeJournals}-${includeAffirmations}-${includeChallenges}-${includeUserProfile}`;
