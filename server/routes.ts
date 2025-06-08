@@ -25,7 +25,6 @@ import OpenAI from "openai";
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-import { aiCouchEngine } from "./ai-couch-simple";
 import { db } from "./db";
 import { eq, desc, and, ilike, or, gte, count, avg, sum, sql } from "drizzle-orm";
 import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
@@ -2089,97 +2088,42 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // Update AI Couch profile
-  app.put('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
+
+
+  // Deep Journaling with Response Quality Tiering
+  app.post('/api/deep-journaling/analyze', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
+      const { userInput, threadId, actionType, customizations } = req.body;
+
+      const { multidisciplinaryAIEngine } = await import('./deep-journaling/multidisciplinary-ai-engine');
       
-      const updatedData = req.body;
-      
-      // Update profile in database
-      const profile = await storage.updateAICouchProfile(userId, updatedData);
-      
-      // Trigger AI reassessment based on updated profile
-      await aiCouchEngine.performDynamicAssessment(userId);
-      
-      res.json({ 
-        success: true, 
-        profile,
-        message: "Profile updated and AI coaching adapted to your changes" 
+      const response = await multidisciplinaryAIEngine.processCoachingRequest(
+        userId,
+        userInput,
+        'deep_journaling'
+      );
+
+      res.json({
+        ...response,
+        optimizationApplied: 'response_quality_tiering',
+        timestamp: new Date().toISOString()
       });
-    } catch (error) {
-      console.error("Error updating AI Couch profile:", error);
-      res.status(500).json({ message: "Failed to update profile", error: (error as Error).message });
-    }
-  });
 
-  // Get today's personalized daily assessment (AI-driven)
-  app.get('/api/ai-couch/daily-assessment', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
-      
-      // Check if user has today's assessment
-      const today = new Date().toISOString().split('T')[0];
-      const { aiCouchDailyAssessments } = await import('@shared/schema');
-      
-      const [existingAssessment] = await db
-        .select()
-        .from(aiCouchDailyAssessments)
-        .where(and(
-          eq(aiCouchDailyAssessments.userId, userId),
-          eq(aiCouchDailyAssessments.assessmentDate, today)
-        ))
-        .limit(1);
-
-      if (existingAssessment) {
-        return res.json(existingAssessment);
-      }
-
-      // Create new AI-driven daily assessment
-      const dailyPlan = await aiCouchEngine.generateDailyAssessment(userId);
-      
-      // Get user profile
-      const profile = await storage.getAICouchProfile(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      // Save to database
-      const [newAssessment] = await db
-        .insert(aiCouchDailyAssessments)
-        .values({
-          userId,
-          profileId: profile.id,
-          assessmentDate: today,
-          currentFocus: dailyPlan.currentFocus,
-          reasoning: dailyPlan.reasoning,
-          title: dailyPlan.dailyAssessment.title,
-          description: dailyPlan.dailyAssessment.description,
-          exercises: dailyPlan.dailyAssessment.exercises,
-          reflectionQuestions: dailyPlan.dailyAssessment.reflectionQuestions,
-          completionCriteria: dailyPlan.dailyAssessment.completionCriteria,
-          therapeuticApproaches: dailyPlan.progressIndicators,
-          nextSteps: dailyPlan.nextSteps,
-          progressIndicators: dailyPlan.progressIndicators,
-        })
-        .returning();
-
-      res.json(newAssessment);
-    } catch (error) {
-      console.error("Error getting daily assessment:", error);
-      res.status(500).json({ message: "Failed to get daily assessment", error: (error as Error).message });
+    } catch (error: unknown) {
+      console.error("Error in deep journaling analysis:", error);
+      res.status(500).json({ 
+        message: "Failed to process journaling request", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
   // Complete daily assessment with user responses
-  app.post('/api/ai-couch/complete-assessment/:assessmentId', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { assessmentId } = req.params;
       const { userResponses } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       const { aiCouchDailyAssessments } = await import('@shared/schema');
 
       // Update assessment as completed
@@ -2216,7 +2160,6 @@ Provide personalized, actionable guidance that:
   });
 
   // Get user's assessment history and progress
-  app.get('/api/ai-couch/progress', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { aiCouchDailyAssessments } = await import('@shared/schema');
@@ -2256,7 +2199,6 @@ Provide personalized, actionable guidance that:
   });
 
   // AI Couch intelligent multidisciplinary coaching session
-  app.post('/api/ai-couch/session', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { multidisciplinaryAIEngine } = await import('./multidisciplinary-ai-engine');
@@ -2283,10 +2225,8 @@ Provide personalized, actionable guidance that:
   });
 
   // Generate personalized challenge plan
-  app.post('/api/ai-couch/generate-plan', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const { 
         baseChallengeType, 
@@ -2318,10 +2258,8 @@ Provide personalized, actionable guidance that:
   });
 
   // Generate daily adaptive activity
-  app.post('/api/ai-couch/daily-activity', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const { 
         planId, 
@@ -2343,7 +2281,6 @@ Provide personalized, actionable guidance that:
   });
 
   // Get AI Couch user profile
-  app.get('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { aiCouchProfiles } = await import('@shared/schema');
@@ -2361,7 +2298,6 @@ Provide personalized, actionable guidance that:
   });
 
   // Get user's personalized challenge plans
-  app.get('/api/ai-couch/plans', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { personalizedChallengePlans } = await import('@shared/schema');
@@ -2389,7 +2325,6 @@ Provide personalized, actionable guidance that:
   });
 
   // Get daily activities for a plan
-  app.get('/api/ai-couch/plans/:planId/activities', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const planId = parseInt(req.params.planId);
@@ -2412,7 +2347,6 @@ Provide personalized, actionable guidance that:
   });
 
   // Complete daily activity
-  app.patch('/api/ai-couch/activities/:activityId/complete', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const activityId = parseInt(req.params.activityId);
@@ -2448,7 +2382,6 @@ Provide personalized, actionable guidance that:
   });
 
   // Get AI Couch session history
-  app.get('/api/ai-couch/sessions', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { limit = 20, offset = 0, sessionType } = req.query;
@@ -2475,7 +2408,6 @@ Provide personalized, actionable guidance that:
   });
 
   // Update AI Couch profile preferences
-  app.patch('/api/ai-couch/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const updates = req.body;
@@ -2497,10 +2429,8 @@ Provide personalized, actionable guidance that:
   });
 
   // Daily companion functionality - morning prompt
-  app.get('/api/ai-couch/morning-prompt', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const prompt = await aiCouchEngine.generateMorningPrompt(userId);
       res.json(prompt);
@@ -2511,11 +2441,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Daily companion functionality - evening reflection
-  app.post('/api/ai-couch/evening-reflection', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { dayExperiences } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const reflection = await aiCouchEngine.generateEveningReflection(userId, dayExperiences);
       res.json(reflection);
@@ -2526,10 +2454,8 @@ Provide personalized, actionable guidance that:
   });
 
   // Weekly pattern analysis
-  app.get('/api/ai-couch/weekly-summary', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const summary = await aiCouchEngine.generateWeeklyPatternSummary(userId);
       res.json(summary);
@@ -2540,11 +2466,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Crisis support mode
-  app.post('/api/ai-couch/crisis-support', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { crisisInput, severityLevel = 3 } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const support = await aiCouchEngine.provideCrisisSupport(userId, crisisInput, severityLevel);
       res.json(support);
@@ -2555,11 +2479,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Generate therapeutic intervention
-  app.post('/api/ai-couch/intervention', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { targetPattern, interventionType } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const intervention = await aiCouchEngine.generateTherapeuticIntervention(
         userId, 
@@ -2574,10 +2496,8 @@ Provide personalized, actionable guidance that:
   });
 
   // Dynamic assessment engine
-  app.get('/api/ai-couch/dynamic-assessment', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const assessment = await aiCouchEngine.performDynamicAssessment(userId);
       res.json(assessment);
@@ -2588,11 +2508,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Generate modular challenge blocks
-  app.post('/api/ai-couch/challenge-blocks', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { blockTypes, userCurrentLevel } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const blocks = await aiCouchEngine.generateModularChallengeBlocks(
         userId, 
@@ -2607,11 +2525,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Real-time adaptation
-  app.post('/api/ai-couch/adapt', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { todaysInputs } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const adaptation = await aiCouchEngine.performRealTimeAdaptation(userId, todaysInputs);
       res.json(adaptation);
@@ -2622,11 +2538,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Multi-layer personality profiling
-  app.post('/api/ai-couch/personality-profiling', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { assessmentInputs } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const profile = await aiCouchEngine.performMultiLayerPersonalityProfiling(userId, assessmentInputs);
       res.json(profile);
@@ -2637,10 +2551,8 @@ Provide personalized, actionable guidance that:
   });
 
   // Predictive guidance
-  app.get('/api/ai-couch/predictive-guidance', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const guidance = await aiCouchEngine.generatePredictiveGuidance(userId);
       res.json(guidance);
@@ -2651,11 +2563,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Expert knowledge integration
-  app.post('/api/ai-couch/expert-knowledge', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { expertDomain, userIssue } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(
         userId, 
@@ -2670,10 +2580,8 @@ Provide personalized, actionable guidance that:
   });
 
   // Advanced pattern recognition
-  app.get('/api/ai-couch/pattern-analysis', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const patterns = await aiCouchEngine.performAdvancedPatternRecognition(userId);
       res.json(patterns);
@@ -2684,11 +2592,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Multidisciplinary Expert Assessment
-  app.post('/api/ai-couch/multidisciplinary-assessment', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { currentIssues, goals } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const assessment = await aiCouchEngine.performMultidisciplinaryAssessment(userId, currentIssues, goals);
       res.json(assessment);
@@ -2699,11 +2605,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Expert Domain Guidance
-  app.post('/api/ai-couch/expert-guidance', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { expertDomain, userIssue } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, expertDomain, userIssue);
       res.json(guidance);
@@ -2714,11 +2618,9 @@ Provide personalized, actionable guidance that:
   });
 
   // CBT Therapist Session
-  app.post('/api/ai-couch/cbt-session', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { userIssue } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'cbt_therapist', userIssue);
       res.json(guidance);
@@ -2729,11 +2631,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Trauma Therapy Session
-  app.post('/api/ai-couch/trauma-session', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { userIssue } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'trauma_therapist', userIssue);
       res.json(guidance);
@@ -2744,11 +2644,9 @@ Provide personalized, actionable guidance that:
   });
 
   // EFT Tapping Session
-  app.post('/api/ai-couch/eft-session', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { userIssue } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'eft_practitioner', userIssue);
       res.json(guidance);
@@ -2759,11 +2657,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Meditation Instruction Session
-  app.post('/api/ai-couch/meditation-session', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { userIssue } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'meditation_instructor', userIssue);
       res.json(guidance);
@@ -2774,11 +2670,9 @@ Provide personalized, actionable guidance that:
   });
 
   // Nutritional Psychiatry Session
-  app.post('/api/ai-couch/nutrition-session', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { userIssue } = req.body;
-      const { aiCouchEngine } = await import('./ai-couch-engine');
       
       const guidance = await aiCouchEngine.applyExpertKnowledgeIntegration(userId, 'nutritional_psychiatrist', userIssue);
       res.json(guidance);
@@ -2789,7 +2683,6 @@ Provide personalized, actionable guidance that:
   });
 
   // Get Available Expert Domains
-  app.get('/api/ai-couch/expert-domains', isAuthenticated, async (req: any, res) => {
     try {
       const { multidisciplinaryExpertise } = await import('./multidisciplinary-expertise');
       
