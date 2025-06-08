@@ -130,29 +130,73 @@ export function registerDeepJournalingRoutes(app: Express) {
   });
 
   /**
-   * Get user's journaling threads
+   * Get user's journaling threads with enhanced conversation statistics and emotional analysis
    */
   app.get('/api/deep-journaling/threads', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const threads = await deepJournalingEngine.getUserThreads(userId);
       
-      // Add exchange counts to each thread
-      const threadsWithCounts = await Promise.all(
+      // Add enhanced analytics to each thread
+      const threadsWithAnalytics = await Promise.all(
         threads.map(async (thread) => {
+          // Get exchange count
           const [exchangeCount] = await db
             .select({ count: count() })
             .from(threadExchanges)
             .where(eq(threadExchanges.threadId, thread.id));
           
+          // Get latest exchange for analysis
+          const latestExchange = await db
+            .select()
+            .from(threadExchanges)
+            .where(eq(threadExchanges.threadId, thread.id))
+            .orderBy(desc(threadExchanges.createdAt))
+            .limit(1);
+
+          // Extract emotional insights and brief analysis
+          let emotionalInsight = 'Processing emotions';
+          let briefAnalysis = 'Therapeutic conversation about personal growth and self-reflection';
+          
+          if (latestExchange.length > 0) {
+            const exchange = latestExchange[0];
+            
+            // Extract emotional insight from AI analysis
+            if (exchange.aiEmotionalAssessment) {
+              try {
+                const assessment = typeof exchange.aiEmotionalAssessment === 'string' 
+                  ? JSON.parse(exchange.aiEmotionalAssessment) 
+                  : exchange.aiEmotionalAssessment;
+                emotionalInsight = assessment.insight || assessment.primaryEmotion || 'emotional processing';
+              } catch (e) {
+                // Fallback to direct value
+                emotionalInsight = exchange.aiEmotionalAssessment.toString().slice(0, 30);
+              }
+            }
+            
+            // Create brief analysis from user input or thread topic
+            if (exchange.userInput && exchange.userInput.length > 10) {
+              briefAnalysis = exchange.userInput.slice(0, 80) + (exchange.userInput.length > 80 ? '...' : '');
+            } else if (thread.currentTopic && thread.currentTopic.length > 10) {
+              briefAnalysis = thread.currentTopic.slice(0, 80) + (thread.currentTopic.length > 80 ? '...' : '');
+            }
+          }
+          
           return {
             ...thread,
-            exchangeCount: exchangeCount.count
+            exchangeCount: exchangeCount.count,
+            emotionalJourney: [emotionalInsight],
+            lastMessage: briefAnalysis,
+            conversationStats: {
+              totalExchanges: exchangeCount.count,
+              lastActivity: thread.updatedAt || thread.createdAt,
+              emotionalFocus: emotionalInsight
+            }
           };
         })
       );
 
-      res.json(threadsWithCounts);
+      res.json(threadsWithAnalytics);
     } catch (error) {
       console.error('Error fetching threads:', error);
       res.status(500).json({ message: 'Failed to fetch journaling threads' });
