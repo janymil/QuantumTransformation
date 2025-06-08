@@ -66,13 +66,21 @@ export function registerAuthRoutes(app: Express) {
   // Get current user
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      // Extract user ID from the authenticated user object
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || user?.userId;
+      
+      if (!userId) {
+        console.error("No user ID found in authenticated user object:", user);
+        return res.status(401).json({ message: "User ID not found" });
+      }
+      
+      const userData = await storage.getUser(userId);
       
       // Initialize user data if this is their first visit
       await initializeNewUser(userId);
       
-      res.json(user);
+      res.json(userData);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
