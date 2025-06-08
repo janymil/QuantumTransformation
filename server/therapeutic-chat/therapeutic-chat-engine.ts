@@ -277,18 +277,22 @@ export class DeepJournalingEngine {
 
       const responseContent = adapterResponse.content || "I'm here to listen and support you. What would you like to explore?";
       
-      // Use the therapeutic response directly from adapter - no JSON parsing needed
+      // Use the therapeutic response directly from adapter - includes AI Intelligence Layer benefits
       aiResponse = {
         analysis: { professionalAnalysis: responseContent },
-        question: "What would you like to explore further?", // Simple fallback question
-        patternInsights: {},
-        emotionalAssessment: {},
-        emotionalState: { primaryEmotion: 'curious', intensity: 0.7, clarity: 0.8 },
-        suggestions: [],
-        tokenCount: completion.usage?.total_tokens || 0,
-        cost: (completion.usage?.total_tokens || 0) * 0.00001,
-        modelUsed: "gpt-4o",
-        provider: "openai"
+        question: responseContent, // Use the full therapeutic response
+        patternInsights: adapterResponse.therapeuticInsights?.progressIndicators || [],
+        emotionalAssessment: adapterResponse.therapeuticInsights?.detectedEmotionalState || 'neutral',
+        emotionalState: { 
+          primaryEmotion: adapterResponse.therapeuticInsights?.detectedEmotionalState || 'curious', 
+          intensity: 0.7, 
+          clarity: 0.8 
+        },
+        suggestions: adapterResponse.therapeuticInsights?.recommendedFollowUp || [],
+        tokenCount: Math.ceil(responseContent.length / 4), // Estimate from response length
+        cost: adapterResponse.metadata.cost,
+        modelUsed: adapterResponse.metadata.modelUsed,
+        provider: adapterResponse.metadata.provider
       };
       
       console.log('Direct OpenAI Response Quality Check:', {
