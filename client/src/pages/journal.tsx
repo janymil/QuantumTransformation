@@ -1173,9 +1173,19 @@ export default function Journal() {
                               onClick={() => loadTherapeuticConversation(session.id, session.title || `Session ${session.id}`)}
                               size="sm"
                               className="w-full h-8 text-xs"
+                              disabled={loadingSessionId === session.id}
                             >
-                              <MessageSquare className="w-3 h-3 mr-1" />
-                              {session.status === 'finished' ? 'Review' : 'Continue'}
+                              {loadingSessionId === session.id ? (
+                                <>
+                                  <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
+                                  Loading...
+                                </>
+                              ) : (
+                                <>
+                                  <MessageSquare className="w-3 h-3 mr-1" />
+                                  {session.status === 'finished' ? 'Review' : 'Continue'}
+                                </>
+                              )}
                             </Button>
                           </div>
                         </CardContent>
