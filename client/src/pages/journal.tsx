@@ -1182,7 +1182,14 @@ export default function Journal() {
                 <div className="relative">
                   {/* Conversation Preview Popup */}
                   {hoveredSession && sessionPreview && (
-                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-6 max-w-lg w-96 z-50">
+                    <div 
+                      className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-6 max-w-lg w-96 z-50"
+                      onMouseEnter={() => setHoveredSession(hoveredSession)}
+                      onMouseLeave={() => {
+                        setHoveredSession(null);
+                        setSessionPreview(null);
+                      }}
+                    >
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold text-gray-900 dark:text-gray-100">
@@ -1234,7 +1241,7 @@ export default function Journal() {
                           
                           <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
                             <span>{sessionPreview.userMessageCount} user messages</span>
-                            <span>{sessionPreview.aiResponseCount} AI responses</span>
+                            <span>{sessionPreview.aiResponseCount} responses</span>
                           </div>
                         </div>
                       </div>
@@ -1348,7 +1355,7 @@ export default function Journal() {
                                 </div>
                                 <div>
                                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide" title="AI-generated therapeutic responses and insights in the conversation">
-                                    AI Responses
+                                    Responses
                                   </p>
                                   <p className="text-sm font-medium">
                                     {actualAiResponseCount}
