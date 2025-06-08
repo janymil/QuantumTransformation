@@ -2096,13 +2096,16 @@ Provide personalized, actionable guidance that:
       const userId = req.user.claims.sub;
       const { userInput, threadId, actionType, customizations } = req.body;
 
-      const { multidisciplinaryAIEngine } = await import('./deep-journaling/multidisciplinary-ai-engine');
+      // Route through AI Intelligence Layer for deep journaling analysis
+      const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
       
-      const response = await multidisciplinaryAIEngine.processCoachingRequest(
+      const response = await intelligentRouter.processCoachingRequest({
         userId,
         userInput,
-        'deep_journaling'
-      );
+        requestType: 'deep_journaling',
+        threadId,
+        customizations
+      });
 
       res.json({
         ...response,
@@ -2119,45 +2122,7 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // Complete daily assessment with user responses
-    try {
-      const userId = req.user.claims.sub;
-      const { assessmentId } = req.params;
-      const { userResponses } = req.body;
-      const { aiCouchDailyAssessments } = await import('@shared/schema');
 
-      // Update assessment as completed
-      const [updatedAssessment] = await db
-        .update(aiCouchDailyAssessments)
-        .set({
-          isCompleted: true,
-          completedAt: new Date(),
-          userResponses,
-          updatedAt: new Date()
-        })
-        .where(and(
-          eq(aiCouchDailyAssessments.id, parseInt(assessmentId)),
-          eq(aiCouchDailyAssessments.userId, userId)
-        ))
-        .returning();
-
-      if (!updatedAssessment) {
-        return res.status(404).json({ message: "Assessment not found" });
-      }
-
-      // Process responses for next day adaptation
-      const adaptationInsights = await aiCouchEngine.processDailyCheckIn(userId, userResponses);
-
-      res.json({ 
-        success: true, 
-        assessment: updatedAssessment,
-        adaptationInsights 
-      });
-    } catch (error) {
-      console.error("Error completing assessment:", error);
-      res.status(500).json({ message: "Failed to complete assessment", error: (error as Error).message });
-    }
-  });
 
   // Therapeutic Chat Routes - Conversational Interface Like Mindsera
   app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
@@ -2217,13 +2182,16 @@ Provide personalized, actionable guidance that:
       // Route through AI Intelligence Layer for therapeutic chat
       const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
       
-      const response = await intelligentRouter.processTherapeuticChat({
+      const response = await intelligentRouter.processCoachingRequest({
         userId,
         userInput: message,
+        requestType: 'therapeutic_chat',
         threadId,
-        conversationStyle: conversationStyle || 'empathetic',
-        focusArea: focusArea || 'general',
-        responseLength: responseLength || 'medium'
+        customizations: {
+          conversationStyle: conversationStyle || 'empathetic',
+          focusArea: focusArea || 'general',
+          responseLength: responseLength || 'medium'
+        }
       });
 
       res.json(response);
@@ -2243,10 +2211,9 @@ Provide personalized, actionable guidance that:
         .select()
         .from(threadExchanges)
         .where(and(
-          eq(threadExchanges.threadId, parseInt(threadId)),
-          eq(threadExchanges.userId, userId)
+          eq(threadExchanges.threadId, parseInt(threadId))
         ))
-        .orderBy(asc(threadExchanges.exchangeOrder));
+        .orderBy(threadExchanges.exchangeOrder);
 
       res.json(exchanges);
     } catch (error) {
@@ -2258,5 +2225,3 @@ Provide personalized, actionable guidance that:
   // Close registerRoutes function
   return server;
 }
-
-export { registerRoutes };

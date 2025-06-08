@@ -497,6 +497,48 @@ export class IntelligentRouter {
   async getRoutingStats(userId: string, timeframe: 'day' | 'week' | 'month' = 'week') {
     return await costOptimizer.getRoutingStats(userId, timeframe);
   }
+
+  /**
+   * Process coaching request - unified entry point for all coaching types
+   */
+  async processCoachingRequest(params: {
+    userId: string;
+    userInput: string;
+    requestType: 'therapeutic_chat' | 'ai_coaching' | 'deep_journaling';
+    threadId?: string;
+    customizations?: any;
+  }): Promise<AIResponse> {
+    // Convert coaching request to AIRequest format
+    const request: AIRequest = {
+      prompt: params.userInput,
+      systemPrompt: this.buildSystemPrompt(params.requestType, params.customizations),
+      context: {
+        userId: params.userId,
+        sessionType: params.requestType === 'therapeutic_chat' ? 'therapeutic_chat' : 'ai_coaching',
+        userTier: 'premium', // Default to premium for now
+        therapeuticContext: {
+          threadId: params.threadId,
+          conversationStyle: params.customizations?.conversationStyle,
+          focusArea: params.customizations?.focusArea,
+          actionType: params.requestType,
+          customizations: params.customizations
+        }
+      }
+    };
+
+    return await this.process(request);
+  }
+
+  private buildSystemPrompt(requestType: string, customizations?: any): string {
+    switch (requestType) {
+      case 'therapeutic_chat':
+        return `You are a compassionate AI therapist. Provide thoughtful, empathetic responses that help users explore their emotions and develop coping strategies. Style: ${customizations?.conversationStyle || 'empathetic'}. Focus: ${customizations?.focusArea || 'general'}.`;
+      case 'deep_journaling':
+        return `You are an AI journaling coach specializing in deep reflection and personal insight. Help users explore their thoughts and patterns through guided questions and analysis.`;
+      default:
+        return `You are a supportive AI life coach. Provide encouraging and practical guidance to help users achieve their goals.`;
+    }
+  }
 }
 
 export const intelligentRouter = new IntelligentRouter();
