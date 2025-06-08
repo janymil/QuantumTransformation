@@ -359,7 +359,7 @@ export const threadExchanges = pgTable("thread_exchanges", {
   modelUsed: varchar("model_used").default("gpt-4o"),
   processingTime: integer("processing_time").default(0), // AI response generation time in ms
   tokenCount: integer("token_count").default(0),
-  cost: decimal("cost", { precision: 8, scale: 6 }).default(0),
+  cost: decimal("cost", { precision: 8, scale: 6 }).default("0"),
   
   // User interaction
   userRating: integer("user_rating"), // 1-5 rating of AI response quality
