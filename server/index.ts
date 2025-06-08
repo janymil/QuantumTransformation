@@ -1,9 +1,21 @@
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
 import fileUpload from "express-fileupload";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Enable gzip compression for all responses
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6 // Balanced compression level
+}));
 
 // Add CORS headers for cross-domain requests
 app.use((req, res, next) => {
@@ -20,6 +32,18 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Add caching headers for static assets
+app.use('/assets', (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
+  res.setHeader('ETag', req.path); // Simple ETag based on path
+  next();
+});
+
+app.use('/favicon.ico', (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 days
+  next();
+});
 
 // File upload middleware for audio transcription
 app.use(fileUpload({
@@ -89,6 +113,11 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
+  
+  // Enable keep-alive connections for better performance
+  server.keepAliveTimeout = 65000; // 65 seconds
+  server.headersTimeout = 66000; // Slightly higher than keepAliveTimeout
+  
   server.listen({
     port,
     host: "0.0.0.0",
