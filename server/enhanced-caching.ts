@@ -2,7 +2,7 @@ import { db } from "./db";
 import { aiResponseCache, aiUsageTracking } from "@shared/schema";
 import { sql, eq, and, inArray } from "drizzle-orm";
 import { generateAIExplanation } from "./openai";
-import { createInputHash } from "./deep-journaling/ai-cost-control";
+import { createInputHash } from "./ai-cost-control";
 
 interface PreGeneratedContent {
   challengeType: string;

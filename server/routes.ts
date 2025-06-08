@@ -17,7 +17,7 @@ import {
   trackUsage,
   createInputHash,
   getUserAIStats 
-} from "./deep-journaling/ai-cost-control";
+} from "./ai-cost-control";
 import { costOptimizationEngine } from "./ai-cost-optimization";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
 import OpenAI from "openai";
@@ -43,8 +43,8 @@ import { advancedMemory } from "./advanced-memory";
 import { predictiveIntelligence } from "./predictive-intelligence";
 import { modelRouter } from "./intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
-import { registerDeepJournalingRoutes } from "./deep-journaling";
-import { multidisciplinaryAIEngine } from "./deep-journaling/multidisciplinary-ai-engine";
+// import { registerDeepJournalingRoutes } from "./deep-journaling-engine"; // Function not available
+import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
@@ -4470,7 +4470,7 @@ Provide your response in this JSON format:
   });
 
   // Register deep journaling routes
-  registerDeepJournalingRoutes(app);
+  // registerDeepJournalingRoutes(app); // Function not available
 
   const httpServer = createServer(app);
   return httpServer;

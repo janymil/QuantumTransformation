@@ -1,4 +1,4 @@
-import { db } from '../db';
+import { db } from './db';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { aiUsageTracking, aiResponseCache } from '@shared/schema';
 
