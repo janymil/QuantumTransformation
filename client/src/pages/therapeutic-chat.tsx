@@ -47,11 +47,11 @@ export default function TherapeuticChat() {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -102,7 +102,7 @@ export default function TherapeuticChat() {
         content: variables.message,
         timestamp: new Date()
       };
-      
+
       // Add AI response with therapeutic chat format
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
@@ -111,9 +111,9 @@ export default function TherapeuticChat() {
         timestamp: new Date(),
         emotionalTone: response.emotionalInsight || 'curious'
       };
-      
+
       setMessages(prev => [...prev, userMessage, aiMessage]);
-      
+
       // Do NOT save to database or update threads here
     },
     onError: (error: any) => {
@@ -150,7 +150,7 @@ export default function TherapeuticChat() {
     const messageToSend = currentMessage;
     console.log('Sending message:', messageToSend);
     setCurrentMessage(""); // Clear input immediately
-    
+
     try {
       await sendMessageMutation.mutateAsync({
         message: messageToSend
@@ -175,7 +175,7 @@ export default function TherapeuticChat() {
 
   const handleGoDeeper = async (lastAiMessage: string) => {
     const deeperPrompt = `You said: "${lastAiMessage.substring(0, 200)}...". I want to explore this more deeply. Please ask me follow-up questions that help me understand the underlying patterns, emotions, or beliefs connected to this. Guide me to examine this from different angles and help me discover insights I might not have considered.`;
-    
+
     try {
       await sendMessageMutation.mutateAsync({
         message: deeperPrompt,
@@ -192,7 +192,7 @@ export default function TherapeuticChat() {
 
   const handleNewDirection = async (aiMessage: string) => {
     const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage.substring(0, 200)}...", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
-    
+
     try {
       await sendMessageMutation.mutateAsync({
         message: newDirectionPrompt,
@@ -216,7 +216,7 @@ export default function TherapeuticChat() {
       });
       return;
     }
-    
+
     try {
       // Prepare conversation data for saving
       const conversationData = {
@@ -240,9 +240,9 @@ export default function TherapeuticChat() {
           title: "Conversation Saved",
           description: "Your therapeutic session has been saved successfully.",
         });
-        
+
         queryClient.invalidateQueries({ queryKey: ["/api/therapeutic-chat/sessions"] });
-        
+
         setActiveSession(null);
         setMessages([]);
         startNewSession();
@@ -275,15 +275,15 @@ export default function TherapeuticChat() {
     try {
       console.log('Loading session:', sessionId);
       const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}/messages`);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('Session data received:', data);
-        
+
         // Handle both data formats: direct array or {session, exchanges} object
         let messagesData = [];
         let sessionTitle = `Session ${sessionId}`;
-        
+
         if (Array.isArray(data)) {
           // Direct array format from server/routes.ts
           messagesData = data;
@@ -294,14 +294,14 @@ export default function TherapeuticChat() {
           sessionTitle = data.session?.title || sessionTitle;
           console.log('Processing exchanges from object:', messagesData);
         }
-        
+
         if (messagesData && messagesData.length > 0) {
           const formattedMessages: Message[] = [];
-          
+
           // Load conversation history directly without welcome message
           messagesData.forEach((item: any) => {
             console.log('Processing item:', item);
-            
+
             // Handle different data structures
             if (item.type === 'user') {
               // Already formatted message from server/routes.ts - include even if content is empty
@@ -328,7 +328,7 @@ export default function TherapeuticChat() {
                 content: item.userInput,
                 timestamp: new Date(item.createdAt || Date.now())
               });
-              
+
               const aiContent = item.aiAnalysis || item.analysis || item.question || item.response;
               if (aiContent) {
                 formattedMessages.push({
@@ -341,9 +341,9 @@ export default function TherapeuticChat() {
               }
             }
           });
-          
+
           console.log('Formatted messages:', formattedMessages);
-          
+
           // Set the loaded conversation history
           setMessages(formattedMessages);
           setActiveSession({
@@ -352,7 +352,7 @@ export default function TherapeuticChat() {
             title: sessionTitle,
             isActive: true
           });
-          
+
           toast({
             title: "Conversation Loaded",
             description: `Loaded ${formattedMessages.length} messages. Continue where you left off.`,
@@ -367,7 +367,7 @@ export default function TherapeuticChat() {
             title: sessionTitle,
             isActive: true
           });
-          
+
           toast({
             title: "Session Started",
             description: "Continuing session with fresh conversation.",
@@ -403,7 +403,7 @@ export default function TherapeuticChat() {
       recorder.onstop = async () => {
         const audioBlob = new Blob(chunks, { type: 'audio/wav' });
         await processVoiceRecording(audioBlob);
-        
+
         // Clean up
         stream.getTracks().forEach(track => track.stop());
         setAudioChunks([]);
@@ -468,7 +468,7 @@ export default function TherapeuticChat() {
               <p className="text-sm text-gray-500 dark:text-gray-400">AI-powered therapeutic companion</p>
             </div>
           </div>
-          
+
           <Button 
             onClick={startNewSession}
             className="w-full"
@@ -496,7 +496,7 @@ export default function TherapeuticChat() {
                             {thread.title || 'Therapeutic Session'}
                           </h3>
                         </div>
-                        
+
                         {/* Emotional insight badge */}
                         {thread.emotionalJourney && thread.emotionalJourney.length > 0 && (
                           <div className="mb-2">
@@ -506,7 +506,7 @@ export default function TherapeuticChat() {
                             </span>
                           </div>
                         )}
-                        
+
                         {/* Brief analysis */}
                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                           {thread.lastMessage ? 
@@ -514,7 +514,7 @@ export default function TherapeuticChat() {
                             'Therapeutic conversation about personal growth and self-reflection'
                           }
                         </p>
-                        
+
                         {/* Statistics */}
                         <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
                           <div className="flex items-center gap-1">
@@ -597,7 +597,7 @@ export default function TherapeuticChat() {
                   message={message} 
                   onDelete={deleteMessage}
                 />
-                
+
                 {/* Action buttons after last AI message */}
                 {message.type === 'ai' && index === messages.length - 1 && (
                   <div className="flex justify-center">
@@ -657,7 +657,7 @@ export default function TherapeuticChat() {
               onStartRecording={startRecording}
               onStopRecording={stopRecording}
             />
-          
+
             {sendMessageMutation.isPending && (
               <div className="flex justify-center">
                 <div className="w-full max-w-2xl">
@@ -665,7 +665,7 @@ export default function TherapeuticChat() {
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
@@ -692,7 +692,7 @@ export default function TherapeuticChat() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label htmlFor="focus-area">Focus Area</Label>
               <Select value={focusArea} onValueChange={setFocusArea}>
@@ -708,7 +708,7 @@ export default function TherapeuticChat() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label htmlFor="response-length">Response Length</Label>
               <Select value={responseLength} onValueChange={setResponseLength}>
@@ -722,7 +722,7 @@ export default function TherapeuticChat() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <Button 
               onClick={() => setShowCustomizationModal(false)}
               className="w-full"
