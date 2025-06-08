@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import fileUpload from "express-fileupload";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -19,6 +20,20 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// File upload middleware for audio transcription
+app.use(fileUpload({
+  createParentPath: true,
+  limits: { 
+    fileSize: 20 * 1024 * 1024 // 20MB limit for audio files
+  },
+  abortOnLimit: false,
+  responseOnLimit: "File size limit has been reached",
+  limitHandler: false,
+  preserveExtension: true,
+  safeFileNames: true,
+  parseNested: true
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
