@@ -132,26 +132,27 @@ export class CostOptimizer {
     try {
       const today = new Date().toISOString().split('T')[0];
       
+      // Use existing aiUsageTracking schema
+      const inputTokens = this.estimateTokens(request.prompt + request.systemPrompt);
+      const outputTokens = this.estimateTokens(response.content);
+      
       await db.insert(aiUsageTracking).values({
         userId,
-        day: today,
-        requestType: `${request.context.sessionType}_${response.metadata.provider}`,
-        inputHash: this.generateCacheKey(request),
-        tokensUsed: this.estimateTokens(request.prompt + request.systemPrompt),
-        cost: response.metadata.cost,
-        modelUsed: response.metadata.modelUsed,
-        provider: response.metadata.provider,
-        isFromCache: response.metadata.fromCache,
-        processingTime: response.metadata.processingTime,
-        complexity: request.context.complexity || 'moderate',
+        requestType: request.context.sessionType,
+        challengeType: request.context.sessionType,
+        day: parseInt(today.replace(/-/g, '')), // Convert YYYY-MM-DD to YYYYMMDD
+        model: response.metadata.modelUsed,
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+        cost: response.metadata.cost.toString(),
+        responseTime: response.metadata.processingTime,
+        requestHash: this.generateCacheKey(request),
+        wasFromCache: response.metadata.fromCache,
+        modelSelected: 'intelligent_routing',
+        complexityScore: request.context.complexity === 'simple' ? 3 : request.context.complexity === 'complex' ? 8 : 5,
+        qualityScore: 8,
         createdAt: new Date()
-      }).onConflictDoUpdate({
-        target: [aiUsageTracking.userId, aiUsageTracking.day, aiUsageTracking.inputHash],
-        set: {
-          tokensUsed: sql`${aiUsageTracking.tokensUsed} + ${this.estimateTokens(request.prompt + request.systemPrompt)}`,
-          cost: sql`${aiUsageTracking.cost} + ${response.metadata.cost}`,
-          requestCount: sql`${aiUsageTracking.requestCount} + 1`
-        }
       });
 
     } catch (error) {
@@ -206,27 +207,27 @@ export class CostOptimizer {
 
       const totalRequests = usage.length;
       const totalCost = usage.reduce((sum, entry) => sum + Number(entry.cost), 0);
-      const cacheHits = usage.filter(entry => entry.isFromCache).length;
+      const cacheHits = usage.filter(entry => entry.wasFromCache).length;
       const cacheHitRate = totalRequests > 0 ? cacheHits / totalRequests : 0;
 
       // Calculate cost savings from cache hits
       const averageCostPerRequest = totalRequests > 0 ? totalCost / (totalRequests - cacheHits) : 0;
       const costSavings = cacheHits * averageCostPerRequest;
 
-      // Routing breakdown
+      // Routing breakdown (using model field as proxy for provider)
       const routingBreakdown = {
         local: {
-          requests: usage.filter(u => u.provider === 'local').length,
+          requests: usage.filter(u => u.model.includes('local')).length,
           percentage: 0
         },
         openai: {
-          requests: usage.filter(u => u.provider === 'openai').length,
-          cost: usage.filter(u => u.provider === 'openai').reduce((sum, u) => sum + Number(u.cost), 0),
+          requests: usage.filter(u => u.model.includes('gpt')).length,
+          cost: usage.filter(u => u.model.includes('gpt')).reduce((sum, u) => sum + Number(u.cost), 0),
           percentage: 0
         },
         anthropic: {
-          requests: usage.filter(u => u.provider === 'anthropic').length,
-          cost: usage.filter(u => u.provider === 'anthropic').reduce((sum, u) => sum + Number(u.cost), 0),
+          requests: usage.filter(u => u.model.includes('claude')).length,
+          cost: usage.filter(u => u.model.includes('claude')).reduce((sum, u) => sum + Number(u.cost), 0),
           percentage: 0
         }
       };
