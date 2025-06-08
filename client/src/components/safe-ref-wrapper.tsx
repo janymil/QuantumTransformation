@@ -21,10 +21,12 @@ export const SafeRefWrapper = forwardRef<HTMLDivElement, SafeRefWrapperProps>(
         ref={(el) => {
           if (typeof ref === 'function') {
             ref(el);
-          } else if (ref) {
-            ref.current = el;
+          } else if (ref && 'current' in ref) {
+            (ref as React.MutableRefObject<HTMLDivElement | null>).current = el;
           }
-          internalRef.current = el;
+          if (internalRef.current !== el) {
+            internalRef.current = el;
+          }
         }}
         className={className}
       >
