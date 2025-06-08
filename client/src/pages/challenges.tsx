@@ -194,7 +194,18 @@ export default function ChallengesPage() {
                         <div className="flex gap-2">
                           <Button 
                             size="sm" 
-                            onClick={() => setLocation(`/challenge-day?type=${challenge.challengeType}&day=${challenge.currentDay}`)}
+                            onClick={() => {
+                              // Import and use the URL mapping for correct navigation
+                              const challengeUrlMap: Record<string, string> = {
+                                'general_quantum': 'quantum-consciousness',
+                                'money_manifestation': 'money-manifestation',
+                                'quantum_health': 'health-transformation',
+                                'quantum_relationships': 'relationships',
+                                'money_blocks_clearing': 'money-blocks-clearing'
+                              };
+                              const challengeUrl = challengeUrlMap[challenge.challengeType] || challenge.challengeType;
+                              setLocation(`/${challengeUrl}/day/${challenge.currentDay}`);
+                            }}
                             className="flex items-center space-x-1"
                           >
                             <span>Continue</span>
