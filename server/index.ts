@@ -1,10 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import compression from "compression";
-
-// Lazy loading for heavy modules
-let fileUpload: any;
-let registerRoutes: any;
-let setupVite: any, serveStatic: any, log: any;
+import fileUpload from "express-fileupload";
 
 const app = express();
 
@@ -61,7 +56,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      console.log(logLine);
     }
   });
 
@@ -69,6 +64,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Import heavy modules lazily
+  const { registerRoutes } = await import("./routes.js");
+  const { setupVite, serveStatic, log } = await import("./vite.js");
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
