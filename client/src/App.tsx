@@ -165,14 +165,10 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-background">
-          <Router />
-        </div>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <div className="min-h-screen bg-gray-100">
+      <h1 className="text-2xl font-bold p-4">AI Personal Development Platform</h1>
+      <p className="p-4">Application is loading...</p>
+    </div>
   );
 }
 
