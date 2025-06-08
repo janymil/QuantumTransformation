@@ -1,6 +1,7 @@
 /**
  * AI Coaching Adapter
  * Provides a simple interface for the ai-coaching system to use the AI Intelligence Layer
+ * Proper flow: adapter → ai-coaching-engine → APIs
  */
 
 import { intelligentRouter, AIRequest, AIResponse } from '../core/intelligent-router';
