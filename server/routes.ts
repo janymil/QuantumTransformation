@@ -2134,7 +2134,10 @@ Provide personalized, actionable guidance that:
         })
         .from(journalingThreads)
         .leftJoin(threadExchanges, eq(journalingThreads.id, threadExchanges.threadId))
-        .where(eq(journalingThreads.userId, userId))
+        .where(and(
+          eq(journalingThreads.userId, userId),
+          eq(journalingThreads.threadType, 'therapy_session')
+        ))
         .groupBy(journalingThreads.id)
         .orderBy(desc(journalingThreads.updatedAt))
         .limit(20);
@@ -2157,6 +2160,7 @@ Provide personalized, actionable guidance that:
         .values({
           userId,
           title: title || "New Therapeutic Chat Session",
+          threadType: 'therapy_session', // Explicitly set as therapy session
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -2259,14 +2263,14 @@ Provide personalized, actionable guidance that:
         }
 
         // Add AI response - check multiple possible fields for AI content
-        const aiContent = exchange.aiAnalysis || exchange.aiResponse || exchange.analysis || exchange.question;
+        const aiContent = exchange.aiAnalysis || exchange.aiQuestion;
         if (aiContent) {
           messages.push({
             id: `ai-${exchange.id}`,
             type: 'ai',
-            content: aiContent,
+            content: typeof aiContent === 'string' ? aiContent : JSON.stringify(aiContent),
             timestamp: exchange.createdAt || new Date(),
-            emotionalTone: exchange.currentEmotionalState || 'supportive'
+            emotionalTone: 'supportive'
           });
         }
       }
