@@ -230,14 +230,12 @@ class ErrorBoundary extends React.Component<
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-background">
-          <ErrorBoundary>
-            <Router />
-          </ErrorBoundary>
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <div className="min-h-screen bg-background">
+        <ErrorBoundary>
+          <Router />
+        </ErrorBoundary>
+      </div>
+      <Toaster />
     </QueryClientProvider>
   );
 }
