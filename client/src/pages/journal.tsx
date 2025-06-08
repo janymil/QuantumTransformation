@@ -1242,7 +1242,7 @@ export default function Journal() {
                   )}
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {therapeuticSessions
+                    {therapeuticSessions
                     .filter(session => {
                       // Search filter
                       if (conversationSearchQuery) {
@@ -1278,8 +1278,8 @@ export default function Journal() {
                     .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
                     .map((session, index) => {
                       const dateTimeFormat = session.createdAt ? formatDateTime(session.createdAt) : null;
-                      const actualMessageCount = sessionPreview?.sessionId === session.id ? sessionPreview.messageCount : (session.messageCount || 0);
-                      const actualAiResponseCount = sessionPreview?.sessionId === session.id ? sessionPreview.aiResponseCount : Math.floor((session.messageCount || 0) / 2);
+                      const actualMessageCount = sessionPreview?.sessionId === session.id ? (sessionPreview?.messageCount || 0) : (session.messageCount || 0);
+                      const actualAiResponseCount = sessionPreview?.sessionId === session.id ? (sessionPreview?.aiResponseCount || 0) : Math.floor((session.messageCount || 0) / 2);
                       
                       return (
                         <Card 
@@ -1468,7 +1468,6 @@ export default function Journal() {
                   </CardContent>
                 </Card>
               )}
-                </div>
             </div>
           </TabsContent>
         </Tabs>
