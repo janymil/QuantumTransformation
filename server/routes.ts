@@ -1613,35 +1613,29 @@ Provide personalized, actionable guidance that:
 - Addresses user's current progress level and challenges
 - Maintains quantum consciousness framework while being personally relevant`;
 
-      // Use intelligent model routing
-      const aiResult = await modelRouter.executeWithOptimalModel(
-        query,
-        systemPrompt,
-        query,
-        'smart_coaching',
-        challengeType,
-        userTier,
-        { temperature: 0.7, maxTokens: 1500 }
-      );
+      // Route through AI Intelligence Layer for basic tier
+      const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
+      
+      const response = await intelligentRouter.processCoachingRequest({
+        userId,
+        userInput: query,
+        requestType: 'ai_coaching',
+        customizations: {
+          challengeType,
+          userTier: userTier || 'basic',
+          systemPrompt
+        }
+      });
 
-      // Get additional insights based on complexity
-      let additionalInsights = {};
-      if (aiResult.routingDecision.complexity === 'complex') {
-        const emotionalInsights = await emotionalIntelligence.identifyEmotionalInsights(userId, challengeType);
-        const predictiveInsights = await predictiveIntelligence.generatePredictiveInsights(userId, challengeType);
-        additionalInsights = { emotionalInsights, predictiveInsights };
-      }
-
-      // Track usage with actual cost
-      await trackUsage(userId, 'smart_coaching', createInputHash(query, 'smart_coaching'), 800, 0.008);
+      // Track usage with actual cost from AI Intelligence Layer
+      await trackUsage(userId, 'smart_coaching', createInputHash(query, 'smart_coaching'), 800, response.metadata?.cost || 0.008);
 
       res.json({
-        response: aiResult.response,
-        modelUsed: aiResult.modelUsed,
-        routingDecision: aiResult.routingDecision,
-        actualCost: aiResult.actualCost,
-        ...additionalInsights,
-        personalizationMethod: 'intelligent_model_routing_with_vector_search',
+        response: response.content,
+        modelUsed: response.metadata?.modelUsed || 'ai-intelligence-layer',
+        routingDecision: { routingReason: response.metadata?.routingReason || 'ai_intelligence_layer_routing' },
+        actualCost: response.metadata?.cost || 0.008,
+        personalizationMethod: 'ai_intelligence_layer_with_coaching_engine',
         challengeType,
         timestamp: new Date().toISOString()
       });

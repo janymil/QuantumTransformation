@@ -36,44 +36,34 @@ export interface CoachingResponse {
 export class AICoachingAdapter {
 
   /**
-   * Process coaching request with intelligent routing and cost optimization
+   * Process coaching request through AI-Coaching-Engine
+   * Correct flow: adapter → ai-coaching-engine → APIs
    */
   async processCoachingRequest(request: CoachingRequest): Promise<CoachingResponse> {
     try {
-      // Convert to AI Intelligence Layer format
-      const aiRequest: AIRequest = {
-        prompt: request.userInput,
-        systemPrompt: request.systemPrompt,
-        context: {
-          userId: request.userId,
-          sessionType: 'ai_coaching',
-          userTier: request.userTier,
-          complexity: this.analyzeComplexity(request.userInput),
-          emotionalIntensity: this.analyzeEmotionalIntensity(request.userInput),
-          requiresPersonalization: request.userTier !== 'basic'
-        },
-        options: request.options
-      };
+      // Import AI-Coaching-Engine
+      const { AiCoachingEngine } = await import('../../../server/ai-coaching-engine');
+      
+      // Route through AI-Coaching-Engine for specialized basic tier processing
+      const coachingEngine = new AiCoachingEngine();
+      const engineResponse = await coachingEngine.generatePersonalizedResponse(
+        request.userId,
+        request.userInput,
+        request.challengeType || 'general',
+        'ai_coaching'
+      );
 
-      // Process through AI Intelligence Layer
-      const aiResponse = await intelligentRouter.process(aiRequest);
-
-      // Track usage for cost optimization
-      await costOptimizer.trackUsage(request.userId, aiRequest, aiResponse);
-
-      // Calculate cost savings
-      const costSavings = aiResponse.metadata.fromCache ? 0.005 : 0; // Estimate average API cost saved
-
+      // Return the coaching response in adapter format
       return {
-        content: aiResponse.content,
+        content: engineResponse.response || engineResponse.content || 'Here is your personalized coaching guidance.',
         metadata: {
-          modelUsed: aiResponse.metadata.modelUsed,
-          provider: aiResponse.metadata.provider,
-          cost: aiResponse.metadata.cost,
-          processingTime: aiResponse.metadata.processingTime,
-          fromCache: aiResponse.metadata.fromCache,
-          costSavings,
-          routingReason: aiResponse.metadata.routingReason
+          modelUsed: engineResponse.modelUsed || 'gpt-4o-mini',
+          provider: engineResponse.provider || 'openai',
+          cost: engineResponse.cost || 0.002,
+          processingTime: engineResponse.processingTime || 1500,
+          fromCache: false,
+          costSavings: 0,
+          routingReason: 'routed_through_ai_coaching_engine'
         }
       };
 
@@ -120,91 +110,31 @@ export class AICoachingAdapter {
    * Analyze request complexity for routing optimization
    */
   private analyzeComplexity(userInput: string): 'simple' | 'moderate' | 'complex' {
-    const length = userInput.length;
-    const sentences = userInput.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
-    
-    // Simple heuristics for complexity
-    if (length < 100 && sentences <= 2) return 'simple';
-    if (length > 400 || sentences > 5) return 'complex';
-    return 'moderate';
+    const wordCount = userInput.split(' ').length;
+    const hasEmotionalKeywords = /\b(feel|emotion|stress|anxiety|fear|anger|sad|happy|excited|overwhelmed)\b/i.test(userInput);
+    const hasComplexConcepts = /\b(trauma|therapy|depression|relationship|career|life purpose|existential)\b/i.test(userInput);
+
+    if (wordCount > 100 || hasComplexConcepts) return 'complex';
+    if (wordCount > 30 || hasEmotionalKeywords) return 'moderate';
+    return 'simple';
   }
 
   /**
    * Analyze emotional intensity for better routing
    */
   private analyzeEmotionalIntensity(userInput: string): number {
-    const emotionalWords = [
-      'overwhelmed', 'anxious', 'stressed', 'depressed', 'angry', 'frustrated',
-      'hopeless', 'scared', 'worried', 'panic', 'crisis', 'emergency',
-      'desperate', 'exhausted', 'burnout', 'breakdown'
-    ];
-
-    const intensityWords = [
-      'very', 'extremely', 'completely', 'totally', 'absolutely',
-      'really', 'so', 'incredibly', 'unbearably'
-    ];
-
-    const input = userInput.toLowerCase();
-    let intensity = 0.3; // Base intensity
-
-    // Check for emotional words
-    emotionalWords.forEach(word => {
-      if (input.includes(word)) intensity += 0.1;
-    });
-
-    // Check for intensity amplifiers
-    intensityWords.forEach(word => {
-      if (input.includes(word)) intensity += 0.05;
-    });
-
-    // Check for caps (indicates strong emotion)
-    const capsRatio = (userInput.match(/[A-Z]/g) || []).length / userInput.length;
-    if (capsRatio > 0.3) intensity += 0.2;
-
-    return Math.min(1.0, intensity);
-  }
-
-  /**
-   * Get optimal model recommendation for coaching request
-   */
-  async getModelRecommendation(request: CoachingRequest): Promise<{
-    recommendedProvider: 'local' | 'openai' | 'anthropic';
-    estimatedCost: number;
-    confidence: number;
-    reasoning: string;
-  }> {
-    const aiRequest: AIRequest = {
-      prompt: request.userInput,
-      systemPrompt: request.systemPrompt,
-      context: {
-        userId: request.userId,
-        sessionType: 'ai_coaching',
-        userTier: request.userTier,
-        complexity: this.analyzeComplexity(request.userInput),
-        emotionalIntensity: this.analyzeEmotionalIntensity(request.userInput),
-        requiresPersonalization: request.userTier !== 'basic'
-      }
+    const intensityKeywords = {
+      high: /\b(crisis|emergency|suicide|hopeless|desperate|can't cope|breaking down)\b/i,
+      medium: /\b(stressed|anxious|worried|frustrated|confused|stuck|overwhelmed)\b/i,
+      low: /\b(curious|interested|wondering|exploring|learning|growing)\b/i
     };
 
-    // Get routing decision without executing
-    const router = intelligentRouter as any;
-    const decision = await router.makeRoutingDecision(aiRequest);
-
-    return {
-      recommendedProvider: decision.provider,
-      estimatedCost: decision.estimatedCost,
-      confidence: decision.confidence,
-      reasoning: decision.reasoning
-    };
-  }
-
-  /**
-   * Check if coaching request can be handled locally
-   */
-  async canHandleLocally(request: CoachingRequest): Promise<boolean> {
-    const recommendation = await this.getModelRecommendation(request);
-    return recommendation.recommendedProvider === 'local' && recommendation.confidence > 0.7;
+    if (intensityKeywords.high.test(userInput)) return 0.9;
+    if (intensityKeywords.medium.test(userInput)) return 0.6;
+    if (intensityKeywords.low.test(userInput)) return 0.3;
+    return 0.5; // neutral
   }
 }
 
+// Export singleton instance
 export const aiCoachingAdapter = new AICoachingAdapter();
