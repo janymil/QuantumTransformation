@@ -3,11 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
 import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
-import { Play, BookOpen, Brain, Target, Zap } from "lucide-react";
+import { Play, BookOpen, Brain, Target, Zap, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { challengeContent } from "@/data/challenge-content";
+
+// Helper function to check if error is unauthorized
+function isUnauthorizedError(error: Error): boolean {
+  return error.message.includes('401') || error.message.includes('Unauthorized');
+}
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
 
   const { data: progressData, isLoading, error } = useQuery({
     queryKey: ["/api/progress"],

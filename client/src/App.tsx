@@ -8,7 +8,7 @@ import { lazy, Suspense } from "react";
 
 // Eager load only critical components
 import Landing from "@/pages/landing";
-import Dashboard from "@/pages/dashboard-simple";
+import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/navbar";
 
