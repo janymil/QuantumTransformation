@@ -7,6 +7,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -87,6 +88,11 @@ export default function Journal() {
   const [editInsights, setEditInsights] = useState("");
   const [editIntention, setEditIntention] = useState("");
   const [selectedInsightType, setSelectedInsightType] = useState<string | null>(null);
+  
+  // Conversation search and filter states
+  const [conversationSearchQuery, setConversationSearchQuery] = useState("");
+  const [conversationStatusFilter, setConversationStatusFilter] = useState("all");
+  const [conversationDateFilter, setConversationDateFilter] = useState("all");
 
   // Function to load therapeutic conversation in therapeutic chat page
   const loadTherapeuticConversation = (sessionId: number, sessionTitle: string) => {
@@ -983,6 +989,44 @@ export default function Journal() {
                     <MessageSquare className="w-4 h-4" />
                     New Session
                   </Button>
+                </div>
+              </div>
+
+              {/* Search and Filter Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Search conversations..."
+                      value={conversationSearchQuery}
+                      onChange={(e) => setConversationSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Select value={conversationStatusFilter} onValueChange={setConversationStatusFilter}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">In Progress</SelectItem>
+                      <SelectItem value="finished">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={conversationDateFilter} onValueChange={setConversationDateFilter}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                      <SelectItem value="month">This Month</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

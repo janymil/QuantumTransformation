@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain } from "lucide-react";
+import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain, Info } from "lucide-react";
 
 // Import modular components
 import { MessageBubble } from "@/components/therapeutic-chat/MessageBubble";
@@ -538,6 +538,17 @@ export default function TherapeuticChat() {
 
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-3">
+            {/* Information notice about Journal page */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  <p className="font-medium mb-1">Find All Your Conversations</p>
+                  <p>View and manage all saved therapeutic conversations in the Journal page → "Saved Conversations" tab.</p>
+                </div>
+              </div>
+            </div>
+
             {threads && Array.isArray(threads) && threads.length > 0 ? (
               threads.map((thread: any) => (
                 <Card 
