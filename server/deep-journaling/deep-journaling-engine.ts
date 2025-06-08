@@ -1,724 +1,409 @@
-import OpenAI from "openai";
-import { db } from "./db";
-import { responseQualityTiering } from './response-quality-tiering';
+import Anthropic from '@anthropic-ai/sdk';
+import { db } from './db';
 import { 
-  journalingThreads, 
-  threadExchanges, 
-  psychologicalProfile, 
-  emotionalStateHistory,
-  type JournalingThread,
-  type ThreadExchange,
-  type PsychologicalProfile
-} from "@shared/schema";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+  aiCouchProfiles, 
+  personalizedChallengePlans, 
+  aiCouchSessions, 
+  journalEntries
+} from '@shared/schema';
+import { eq, desc } from 'drizzle-orm';
+import { multidisciplinaryExpertise } from './multidisciplinary-expertise';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
-export interface DeepJournalingRequest {
-  userId: string;
-  threadId?: number;
-  userInput: string;
-  wasVoiceInput?: boolean;
-  voiceTranscriptionQuality?: number;
-  customizations?: {
-    mode?: 'conversational' | 'therapeutic' | 'analytical';
-    tone?: 'supportive' | 'challenging' | 'neutral' | 'empathetic';
-    perspective?: 'psychologist' | 'life_coach' | 'cbt_therapist' | 'philosopher' | 'stoic';
-    customInstructions?: string;
-  };
-  actionType?: 'go_deeper' | 'new_direction' | 'customize_response';
-}
-
-export interface DeepJournalingResponse {
-  threadId: number;
-  exchangeId: number;
-  analysis: {
-    emotionalAssessment: any;
-    patternInsights: any;
-    professionalAnalysis: string;
-  };
-  question: string;
-  suggestions?: string[];
-  emotionalState: {
-    primaryEmotion: string;
-    intensity: number;
-    clarity: number;
-  };
-  cost: number;
-  remainingRequests?: number;
-}
-
-export class DeepJournalingEngine {
+export class IntelligentCoachingEngine {
   
   /**
-   * Main entry point for deep journaling interactions
+   * Main coaching interface - automatically analyzes and applies appropriate therapeutic approach
    */
-  async processJournalingRequest(request: DeepJournalingRequest): Promise<DeepJournalingResponse> {
-    const startTime = Date.now();
+  async processCoachingRequest(
+    userId: string,
+    userInput: string,
+    sessionType: string = 'conversation'
+  ) {
+    const profile = await this.getUserProfile(userId);
+    if (!profile) throw new Error('User profile not found');
+
+    // Step 1: Intelligent analysis to determine therapeutic needs
+    const therapeuticAnalysis = await this.analyzeTherapeuticNeeds(userInput, profile);
     
-    // Get or create thread
-    let thread = await this.getOrCreateThread(request.userId, request.threadId);
-    
-    // Get user's psychological profile and history
-    const userProfile = await this.getUserPsychologicalProfile(request.userId);
-    const threadHistory = await this.getThreadHistory(thread.id);
-    const userContext = await this.getUserContext(request.userId);
-    
-    // Determine exchange order
-    const exchangeOrder = threadHistory.length + 1;
-    
-    // Generate AI response based on action type
-    let aiResponse;
-    if (request.actionType === 'new_direction') {
-      aiResponse = await this.generateNewDirectionResponse(request, thread, userProfile, userContext);
-    } else if (request.actionType === 'customize_response' && threadHistory.length > 0) {
-      aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile);
-    } else {
-      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext);
-    }
-    
-    const processingTime = Date.now() - startTime;
-    
-    // Save exchange to database
-    const [savedExchange] = await db.insert(threadExchanges).values({
-      threadId: thread.id,
-      exchangeOrder,
-      userInput: request.userInput,
-      userWordCount: request.userInput.split(' ').length,
-      wasVoiceInput: request.wasVoiceInput || false,
-      voiceTranscriptionQuality: request.voiceTranscriptionQuality,
-      aiAnalysis: aiResponse.analysis,
-      aiQuestion: aiResponse.question,
-      aiPatternInsights: aiResponse.patternInsights,
-      aiEmotionalAssessment: aiResponse.emotionalAssessment,
-      responseMode: request.customizations?.mode || 'conversational',
-      responseTone: request.customizations?.tone || 'supportive',
-      responsePerspective: request.customizations?.perspective || 'psychologist',
-      customResponseInstructions: request.customizations?.customInstructions,
-      modelUsed: 'gpt-4o',
-      processingTime,
-      tokenCount: aiResponse.tokenCount,
-      cost: aiResponse.cost
-    }).returning();
-    
-    // Update thread metadata
-    await this.updateThreadMetadata(thread.id, aiResponse.emotionalState, request.userInput);
-    
-    // Track emotional state
-    await this.trackEmotionalState(request.userId, thread.id, savedExchange.id, aiResponse.emotionalState);
-    
-    // Update psychological profile
-    await this.updatePsychologicalProfile(request.userId, request.userInput, aiResponse, userProfile);
-    
+    // Step 2: Apply integrated multidisciplinary expertise
+    const expertResponse = await this.applyMultidisciplinaryExpertise(
+      therapeuticAnalysis.integratedApproaches,
+      userInput,
+      profile,
+      therapeuticAnalysis
+    );
+
+    // Step 3: Create natural coaching response
+    const coachingResponse = await this.generateNaturalCoachingResponse(
+      userInput,
+      expertResponse,
+      profile,
+      therapeuticAnalysis
+    );
+
+    // Step 4: Store session with intelligent metadata
+    await this.storeSession(userId, userInput, coachingResponse, therapeuticAnalysis);
+
     return {
-      threadId: thread.id,
-      exchangeId: savedExchange.id,
-      analysis: {
-        emotionalAssessment: aiResponse.emotionalAssessment,
-        patternInsights: aiResponse.patternInsights,
-        professionalAnalysis: aiResponse.analysis.professionalAnalysis
-      },
-      question: aiResponse.question,
-      suggestions: aiResponse.suggestions,
-      emotionalState: aiResponse.emotionalState,
-      cost: aiResponse.cost,
-      remainingRequests: aiResponse.remainingRequests
+      response: coachingResponse.message,
+      practices: coachingResponse.practices,
+      insights: coachingResponse.insights,
+      nextSteps: coachingResponse.nextSteps,
+      therapeuticApproach: therapeuticAnalysis.primaryApproach,
+      reasoning: therapeuticAnalysis.reasoning
     };
   }
 
   /**
-   * Generate deep therapeutic analysis and questioning with quality tiering optimization
+   * Multidisciplinary analysis to create integrated therapeutic approach
    */
-  private async generateDeepAnalysisResponse(
-    request: DeepJournalingRequest, 
-    thread: JournalingThread, 
-    history: ThreadExchange[], 
-    userProfile: PsychologicalProfile | null,
-    userContext: any
-  ) {
-    const mode = request.customizations?.mode || thread.preferredMode || 'conversational';
-    const tone = request.customizations?.tone || thread.preferredTone || 'supportive';
-    const perspective = request.customizations?.perspective || thread.preferredPerspective || 'psychologist';
+  private async analyzeTherapeuticNeeds(userInput: string, profile: any) {
+    const prompt = `You are a multidisciplinary therapeutic AI that creates integrated healing approaches by combining multiple therapeutic modalities for maximum effectiveness.
 
-    const systemPrompt = this.buildTherapeuticSystemPrompt(mode, tone, perspective, request.customizations?.customInstructions);
-    const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext);
-    const analysisPrompt = this.buildAnalysisPrompt(request.userInput, request.actionType);
+USER PROFILE:
+- Healing Readiness: ${profile.healingReadiness}/10
+- Preferred Mode: ${profile.preferredMode}
+- Communication Style: ${profile.communicationStyle}
+- Learning Style: ${profile.learningStyle}
+
+USER INPUT: "${userInput}"
+
+AVAILABLE THERAPEUTIC MODALITIES:
+${Object.entries(multidisciplinaryExpertise).map(([key, expert]) => 
+  `${key}: ${expert.name} - Applications: ${expert.applications.slice(0, 3).join(', ')}`
+).join('\n')}
+
+MULTIDISCIPLINARY HEALING PRINCIPLE:
+True transformation occurs when multiple therapeutic approaches work synergistically. Analyze this situation to create an integrated treatment approach that combines 3-5 complementary modalities.
+
+Consider integration across:
+1. COGNITIVE LEVEL: Thought patterns, beliefs, mental frameworks
+2. EMOTIONAL LEVEL: Feeling processing, regulation, expression
+3. SOMATIC LEVEL: Body awareness, nervous system, physical integration
+4. BEHAVIORAL LEVEL: Actions, habits, daily practices
+5. SPIRITUAL/CONSCIOUSNESS LEVEL: Meaning, purpose, transcendent awareness
+
+Select modalities that create a comprehensive healing ecosystem addressing multiple dimensions simultaneously.
+
+Respond in JSON:
+{
+  "integratedApproaches": [
+    {
+      "modality": "expert_key",
+      "role": "primary|supporting|foundational",
+      "focus": "specific_healing_dimension",
+      "integration_points": ["how_it_connects_with_other_modalities"]
+    }
+  ],
+  "healingStrategy": "Overall integrated approach description",
+  "synergisticEffects": ["benefit_1", "benefit_2", "benefit_3"],
+  "urgencyLevel": "low|medium|high",
+  "holisticNeeds": ["mind", "body", "emotion", "spirit", "behavior"],
+  "confidence": 0.9
+}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    });
 
     try {
-      // Apply quality tiering optimization for deep journaling
-      const qualityOptimization = await responseQualityTiering.optimizeWithQualityTiering(
-        request.userInput,
-        'deep-journaling', // discipline ID for deep journaling
-        request.userId
-      );
-
-      const selectedModel = qualityOptimization.recommendedModel;
-      
-      const messages = [
-        { role: "system" as const, content: systemPrompt },
-        { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
-      ];
-
-      const response = await openai.chat.completions.create({
-        model: selectedModel === 'gpt-4o-mini' ? 'gpt-4o-mini' : 'gpt-4o',
-        messages,
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: selectedModel === 'gpt-4o-mini' ? 1500 : 2000
-      });
-
-      const result = JSON.parse(response.choices[0].message.content || '{}');
-      const tokenCount = response.usage?.total_tokens || 0;
-      const cost = this.calculateCost(tokenCount, selectedModel === 'gpt-4o-mini' ? 'gpt-4o-mini' : 'gpt-4o');
-
-      // Assess response quality for learning
-      const qualityMetrics = await responseQualityTiering.assessResponseQuality(
-        request.userInput,
-        result.analysis?.professionalAnalysis || '',
-        'deep-journaling',
-        selectedModel
-      );
-
-      return {
-        analysis: result.analysis || {},
-        question: result.question || "What would you like to explore further?",
-        patternInsights: result.patternInsights || {},
-        emotionalAssessment: result.emotionalAssessment || {},
-        emotionalState: result.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
-        suggestions: result.suggestions || [],
-        tokenCount,
-        cost,
-        remainingRequests: undefined,
-        qualityTier: qualityOptimization.recommendedTier.tier,
-        qualityConfidence: qualityOptimization.qualityConfidence,
-        qualityScore: qualityMetrics.overallQuality,
-        additionalSavings: qualityOptimization.expectedSavings
-      };
-      
+      const content = response.content[0];
+      if (content.type === 'text') {
+        return JSON.parse(content.text);
+      }
+      return this.fallbackAnalysis(userInput);
     } catch (error) {
-      console.error('Quality tiering error in deep journaling:', error);
-      
-      // Fallback to standard approach
-      const messages = [
-        { role: "system" as const, content: systemPrompt },
-        { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
-      ];
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages,
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 2000
-      });
-
-      const result = JSON.parse(response.choices[0].message.content || '{}');
-      const tokenCount = response.usage?.total_tokens || 0;
-      const cost = this.calculateCost(tokenCount, 'gpt-4o');
-
-      return {
-        analysis: result.analysis || {},
-        question: result.question || "What would you like to explore further?",
-        patternInsights: result.patternInsights || {},
-        emotionalAssessment: result.emotionalAssessment || {},
-        emotionalState: result.emotionalState || { primaryEmotion: 'neutral', intensity: 0.5, clarity: 0.5 },
-        suggestions: result.suggestions || [],
-        tokenCount,
-        cost,
-        remainingRequests: undefined
-      };
+      return this.fallbackAnalysis(userInput);
     }
   }
 
   /**
-   * Generate new direction response with different questioning approach
+   * Apply integrated multidisciplinary therapeutic expertise
    */
-  private async generateNewDirectionResponse(
-    request: DeepJournalingRequest,
-    thread: JournalingThread,
-    userProfile: PsychologicalProfile | null,
-    userContext: any
+  private async applyMultidisciplinaryExpertise(
+    integratedApproaches: any[],
+    userInput: string,
+    profile: any,
+    analysis: any
   ) {
-    const systemPrompt = `You are an expert therapeutic AI designed to help users explore their thoughts and emotions from new perspectives. 
+    const modalityDescriptions = integratedApproaches.map(approach => {
+      const expert = multidisciplinaryExpertise[approach.modality];
+      return `${expert?.name} (${approach.role}): ${expert?.description}`;
+    }).join('\n');
 
-When generating a "new direction" response:
-1. Take a completely different approach from typical therapeutic questioning
-2. Explore alternative angles, metaphors, or frameworks
-3. Use creative, thought-provoking questions that open new pathways of thinking
-4. Consider somatic, philosophical, or spiritual dimensions
-5. Challenge assumptions with gentle curiosity
-
-Response format (JSON):
-{
-  "analysis": {
-    "professionalAnalysis": "Brief professional assessment of the user's writing",
-    "newPerspective": "The alternative angle you're taking",
-    "potentialBreakthroughs": "Areas where this new direction might lead to insights"
-  },
-  "question": "A single, powerful question from this new direction",
-  "emotionalAssessment": {
-    "primaryEmotion": "detected emotion",
-    "underlyingEmotions": ["secondary emotions"],
-    "emotionalComplexity": "assessment of emotional layers"
-  },
-  "emotionalState": {
-    "primaryEmotion": "primary emotion detected",
-    "intensity": 0.0-1.0,
-    "clarity": 0.0-1.0
-  },
-  "patternInsights": {
-    "newPatternsPotential": "What new patterns this direction might reveal",
-    "alternativeFrameworks": ["Different ways to view their situation"]
-  },
-  "suggestions": ["Alternative exploration topics"]
-}`;
-
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: `User's current writing: "${request.userInput}"\n\nGenerate a completely new direction for exploration that differs from typical therapeutic approaches.` }
-    ];
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages,
-      response_format: { type: "json_object" },
-      temperature: 0.8, // Higher temperature for creativity
-      max_tokens: 1500
+    const allTechniques = integratedApproaches.flatMap(approach => {
+      const expert = multidisciplinaryExpertise[approach.modality];
+      return expert?.techniques.slice(0, 3) || [];
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    const tokenCount = response.usage?.total_tokens || 0;
-    const cost = this.calculateCost(tokenCount, 'gpt-4o');
+    const prompt = `You are a multidisciplinary therapeutic AI integrating multiple healing modalities simultaneously for comprehensive transformation.
 
-    return {
-      analysis: result.analysis || {},
-      question: result.question || "What if we explored this from a completely different angle?",
-      patternInsights: result.patternInsights || {},
-      emotionalAssessment: result.emotionalAssessment || {},
-      emotionalState: result.emotionalState || { primaryEmotion: 'curious', intensity: 0.6, clarity: 0.7 },
-      suggestions: result.suggestions || [],
-      tokenCount,
-      cost,
-      remainingRequests: undefined
-    };
-  }
+INTEGRATED THERAPEUTIC FRAMEWORK:
+${modalityDescriptions}
 
-  /**
-   * Generate customized response based on user preferences
-   */
-  private async generateCustomizedResponse(
-    request: DeepJournalingRequest,
-    thread: JournalingThread,
-    lastExchange: ThreadExchange,
-    userProfile: PsychologicalProfile | null
-  ) {
-    const mode = request.customizations?.mode || 'conversational';
-    const tone = request.customizations?.tone || 'supportive';
-    const perspective = request.customizations?.perspective || 'psychologist';
-    const customInstructions = request.customizations?.customInstructions || '';
+HEALING STRATEGY: ${analysis.healingStrategy}
 
-    const systemPrompt = `You are a therapeutic AI that adapts responses based on specific customization requests.
+SYNERGISTIC EFFECTS: ${analysis.synergisticEffects?.join(', ')}
 
-Current customization settings:
-- Mode: ${mode}
-- Tone: ${tone}  
-- Perspective: ${perspective}
-- Custom instructions: ${customInstructions}
+USER SITUATION: "${userInput}"
 
-Regenerate your response to the user's writing using these specific parameters. Maintain therapeutic value while adapting to the requested style.
+USER PROFILE:
+- Healing Readiness: ${profile.healingReadiness}/10
+- Communication Style: ${profile.communicationStyle}
+- Learning Style: ${profile.learningStyle}
 
-Response format (JSON):
+INTEGRATED APPROACH DETAILS:
+${integratedApproaches.map(approach => {
+  const expert = multidisciplinaryExpertise[approach.modality];
+  return `${expert?.name} (${approach.role}): Focus on ${approach.focus}
+  Integration Points: ${approach.integration_points?.join(', ')}`;
+}).join('\n\n')}
+
+AVAILABLE TECHNIQUES ACROSS ALL MODALITIES:
+${allTechniques.join(', ')}
+
+Create a comprehensive multidisciplinary intervention that:
+1. Integrates all selected therapeutic approaches synergistically
+2. Addresses cognitive, emotional, somatic, behavioral, and spiritual dimensions
+3. Provides techniques that work together rather than in isolation
+4. Creates a holistic healing ecosystem
+5. Maximizes therapeutic effectiveness through modality combination
+
+Format as JSON:
 {
-  "analysis": {
-    "professionalAnalysis": "Analysis tailored to the specified perspective",
-    "customizationApplication": "How you applied the requested customizations"
-  },
-  "question": "Question reflecting the requested tone and perspective",
-  "emotionalAssessment": {
-    "primaryEmotion": "detected emotion",
-    "responseToCustomization": "How customization affects emotional exploration"
-  },
-  "emotionalState": {
-    "primaryEmotion": "primary emotion",
-    "intensity": 0.0-1.0,
-    "clarity": 0.0-1.0
-  },
-  "patternInsights": {
-    "customizedInsights": "Insights from the specified perspective"
-  }
+  "multidisciplinaryAssessment": "Comprehensive assessment across all dimensions",
+  "integratedTechniques": [
+    {
+      "technique": "specific_technique",
+      "modalities": ["which_approaches_contribute"],
+      "dimension": "cognitive|emotional|somatic|behavioral|spiritual",
+      "synergy": "how_it_enhances_other_techniques"
+    }
+  ],
+  "holisticInterventions": ["intervention_1", "intervention_2", "intervention_3"],
+  "integrationStrategy": "How all approaches work together",
+  "expectedOutcomes": "Comprehensive therapeutic benefits",
+  "timeline": "Realistic progress timeframe"
 }`;
 
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: `Original user input: "${request.userInput}"\n\nPrevious AI response: "${lastExchange.aiQuestion}"\n\nGenerate a new response using the specified customizations.` }
-    ];
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages,
-      response_format: { type: "json_object" },
-      temperature: 0.6,
-      max_tokens: 1500
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    const tokenCount = response.usage?.total_tokens || 0;
-    const cost = this.calculateCost(tokenCount, 'gpt-4o');
-
-    return {
-      analysis: result.analysis || {},
-      question: result.question || "How does this perspective change your understanding?",
-      patternInsights: result.patternInsights || {},
-      emotionalAssessment: result.emotionalAssessment || {},
-      emotionalState: result.emotionalState || { primaryEmotion: 'reflective', intensity: 0.5, clarity: 0.6 },
-      suggestions: [],
-      tokenCount,
-      cost,
-      remainingRequests: undefined
-    };
+    try {
+      const content = response.content[0];
+      if (content.type === 'text') {
+        return JSON.parse(content.text);
+      }
+      return this.fallbackExpertResponse(integratedApproaches[0]);
+    } catch (error) {
+      return this.fallbackExpertResponse(integratedApproaches[0]);
+    }
   }
 
   /**
-   * Build therapeutic system prompt with specific frameworks
+   * Generate natural coaching response that integrates therapeutic expertise seamlessly
    */
-  private buildTherapeuticSystemPrompt(mode: string, tone: string, perspective: string, customInstructions?: string): string {
-    const basePrompt = `You are an advanced therapeutic AI specializing in deep psychological exploration and self-discovery. Your role is to help users explore their thoughts, emotions, and experiences through professional-grade questioning and analysis.
+  private async generateNaturalCoachingResponse(
+    userInput: string,
+    expertResponse: any,
+    profile: any,
+    analysis: any
+  ) {
+    const prompt = `You are AI Couch, a warm and wise personal transformation coach. Create a natural, conversational response that seamlessly integrates therapeutic expertise.
 
-CORE THERAPEUTIC FRAMEWORKS:
-1. **Socratic Questioning**: Guide users to discover insights through carefully crafted questions
-2. **Cognitive Behavioral Therapy (CBT)**: Identify thought patterns, cognitive distortions, and behavioral connections
-3. **Solution-Focused Therapy**: Help users identify strengths and resources they already possess
-4. **Emotional Regulation**: Help users understand and process complex emotional states
-5. **Mindfulness & Present-Moment Awareness**: Guide attention to current experience
-6. **Pattern Recognition**: Identify recurring themes, behaviors, and emotional patterns
+USER INPUT: "${userInput}"
 
-RESPONSE GUIDELINES:
-- Ask ONE meaningful question at a time
-- Build on previous responses and conversations
-- Help identify patterns, emotions, and underlying beliefs
-- Guide toward self-discovery rather than giving direct advice
-- Use a ${tone} tone with ${perspective} perspective in ${mode} mode
-- Be non-judgmental and create a safe space for exploration
-- Focus on depth over breadth
+THERAPEUTIC EXPERTISE TO INTEGRATE:
+- Assessment: ${expertResponse.assessment}
+- Techniques: ${expertResponse.techniques?.join(', ')}
+- Interventions: ${expertResponse.interventions?.join(', ')}
 
-${customInstructions ? `\nCUSTOM INSTRUCTIONS: ${customInstructions}` : ''}
+USER PREFERENCES:
+- Communication Style: ${profile.communicationStyle}
+- Learning Style: ${profile.learningStyle}
 
-RESPONSE FORMAT (JSON):
+GUIDELINES:
+1. Sound like a wise, experienced coach (not clinical or robotic)
+2. Seamlessly weave in therapeutic techniques without naming them
+3. Match their communication style (${profile.communicationStyle})
+4. Provide practical, actionable guidance
+5. Be warm, empathetic, and encouraging
+6. Never mention the specific therapeutic approach used
+
+Create a response that feels natural and supportive while incorporating the therapeutic wisdom.
+
+Format as JSON:
 {
-  "analysis": {
-    "professionalAnalysis": "Brief psychological assessment of the user's writing",
-    "cognitivePatterns": "Identified thought patterns or cognitive themes",
-    "emotionalUndercurrents": "Deeper emotional themes beneath surface expressions"
-  },
-  "question": "A single, powerful therapeutic question designed to go deeper",
-  "emotionalAssessment": {
-    "primaryEmotion": "primary detected emotion",
-    "secondaryEmotions": ["list of secondary emotions"],
-    "emotionalIntensity": "0.0-1.0 scale",
-    "emotionalClarity": "how clearly emotions are expressed/understood"
-  },
-  "emotionalState": {
-    "primaryEmotion": "primary emotion (lowercase)",
-    "intensity": 0.0-1.0,
-    "clarity": 0.0-1.0
-  },
-  "patternInsights": {
-    "identifiedPatterns": ["patterns noticed in this exchange"],
-    "comparisonToPrevious": "how this compares to previous exchanges",
-    "developmentalThemes": "growth or regression themes"
-  },
-  "suggestions": ["2-3 alternative exploration directions"]
+  "message": "Main coaching response (conversational, warm, practical)",
+  "practices": ["3-4 specific practices they can try today"],
+  "insights": "Key insight or reframe to help them",
+  "nextSteps": "Clear guidance for moving forward"
 }`;
 
-    return basePrompt;
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1200,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    try {
+      const content = response.content[0];
+      if (content.type === 'text') {
+        return JSON.parse(content.text);
+      }
+      return this.fallbackCoachingResponse(userInput, expertResponse);
+    } catch (error) {
+      return this.fallbackCoachingResponse(userInput, expertResponse);
+    }
   }
 
   /**
-   * Build context prompt with user history and profile
+   * Store session with intelligent metadata
    */
-  private buildContextPrompt(
-    thread: JournalingThread, 
-    history: ThreadExchange[], 
-    userProfile: PsychologicalProfile | null,
-    userContext: any
-  ): string {
-    let context = `CONVERSATION CONTEXT:\n`;
-    context += `Thread: ${thread.title}\n`;
-    context += `Thread Type: ${thread.threadType}\n`;
-    
-    if (thread.currentEmotionalState) {
-      context += `Current Emotional State: ${thread.currentEmotionalState}\n`;
-    }
-    
-    if (thread.currentTopic) {
-      context += `Current Topic: ${thread.currentTopic}\n`;
-    }
-
-    if (history.length > 0) {
-      context += `\nRECENT CONVERSATION HISTORY:\n`;
-      history.slice(-3).forEach((exchange, index) => {
-        context += `Exchange ${exchange.exchangeOrder}:\n`;
-        context += `User: ${exchange.userInput}\n`;
-        context += `AI: ${exchange.aiQuestion}\n\n`;
-      });
+  private async storeSession(
+    userId: string,
+    userInput: string,
+    response: any,
+    analysis: any
+  ) {
+    // Get or create user profile
+    let profile = await this.getUserProfile(userId);
+    if (!profile) {
+      // Create basic profile if none exists
+      const [newProfile] = await db.insert(aiCouchProfiles).values({
+        userId,
+        assessmentCompleted: false,
+        healingReadiness: 5,
+        preferredMode: 'mixed',
+        communicationStyle: 'balanced'
+      }).returning();
+      profile = newProfile;
     }
 
-    if (userProfile) {
-      context += `\nUSER PSYCHOLOGICAL PROFILE:\n`;
-      if (userProfile.emotionalPatterns) {
-        context += `Emotional Patterns: ${JSON.stringify(userProfile.emotionalPatterns)}\n`;
-      }
-      if (userProfile.recurringConcerns && Array.isArray(userProfile.recurringConcerns)) {
-        context += `Recurring Concerns: ${userProfile.recurringConcerns.join(', ')}\n`;
-      }
-      if (userProfile.communicationStyle) {
-        context += `Communication Style: ${userProfile.communicationStyle}\n`;
-      }
-    }
-
-    if (userContext && userContext.journalEntries && userContext.journalEntries.length > 0) {
-      context += `\nRECENT JOURNAL CONTEXT:\n`;
-      userContext.journalEntries.slice(-2).forEach((entry: any) => {
-        context += `Day ${entry.day}: ${entry.experience || entry.insights}\n`;
-      });
-    }
-
-    return context;
-  }
-
-  /**
-   * Build analysis prompt for the specific user input
-   */
-  private buildAnalysisPrompt(userInput: string, actionType?: string): string {
-    let prompt = `USER'S NEW WRITING:\n"${userInput}"\n\n`;
-    
-    if (actionType === 'go_deeper') {
-      prompt += `The user clicked "Go Deeper" - they want you to analyze their writing and ask a question that helps them explore this topic more deeply. Focus on:
-- Underlying emotions and motivations
-- Patterns and connections they might not see
-- Root causes or deeper layers of their experience
-- Questions that promote self-discovery and insight`;
-    } else {
-      prompt += `Analyze this writing and provide a therapeutic response that helps the user explore their thoughts and emotions more deeply.`;
-    }
-    
-    prompt += `\n\nGenerate your response in the specified JSON format.`;
-    
-    return prompt;
-  }
-
-  /**
-   * Get or create a journaling thread
-   */
-  private async getOrCreateThread(userId: string, threadId?: number): Promise<JournalingThread> {
-    if (threadId) {
-      const [existingThread] = await db
-        .select()
-        .from(journalingThreads)
-        .where(and(eq(journalingThreads.id, threadId), eq(journalingThreads.userId, userId)));
-      
-      if (existingThread) {
-        return existingThread;
-      }
-    }
-
-    // Create new thread
-    const [newThread] = await db.insert(journalingThreads).values({
+    await db.insert(aiCouchSessions).values({
       userId,
-      title: `Journaling Session ${new Date().toLocaleDateString()}`,
-      threadType: 'free_writing',
-      isActive: true
-    }).returning();
-
-    return newThread;
+      profileId: profile.id,
+      sessionType: 'intelligent_coaching',
+      sessionMode: 'multidisciplinary',
+      userInput,
+      aiResponse: JSON.stringify(response),
+      emotionalTone: this.detectEmotionalTone(userInput),
+      followUpNeeded: analysis.urgencyLevel !== 'low'
+    });
   }
 
   /**
-   * Get thread conversation history
+   * Get user profile
    */
-  private async getThreadHistory(threadId: number): Promise<ThreadExchange[]> {
-    return await db
-      .select()
-      .from(threadExchanges)
-      .where(eq(threadExchanges.threadId, threadId))
-      .orderBy(threadExchanges.exchangeOrder);
-  }
-
-  /**
-   * Get user's psychological profile
-   */
-  private async getUserPsychologicalProfile(userId: string): Promise<PsychologicalProfile | null> {
+  private async getUserProfile(userId: string) {
     const [profile] = await db
       .select()
-      .from(psychologicalProfile)
-      .where(eq(psychologicalProfile.userId, userId));
+      .from(aiCouchProfiles)
+      .where(eq(aiCouchProfiles.userId, userId));
+    return profile;
+  }
+
+  /**
+   * Detect emotional tone from user input
+   */
+  private detectEmotionalTone(input: string): string {
+    const lowerInput = input.toLowerCase();
     
-    return profile || null;
-  }
-
-  /**
-   * Get broader user context (journal entries, challenges, etc.)
-   */
-  private async getUserContext(userId: string) {
-    // This would fetch recent journal entries, challenges, etc.
-    // Simplified for now
-    return {
-      journalEntries: [],
-      challenges: [],
-      affirmations: []
-    };
-  }
-
-  /**
-   * Update thread metadata
-   */
-  private async updateThreadMetadata(threadId: number, emotionalState: any, userInput: string) {
-    // Get current exchange count
-    const exchangeCount = await db
-      .select()
-      .from(threadExchanges)
-      .where(eq(threadExchanges.threadId, threadId));
-    
-    const totalExchanges = exchangeCount.length;
-    
-    await db
-      .update(journalingThreads)
-      .set({
-        currentEmotionalState: emotionalState.primaryEmotion,
-        lastActiveAt: new Date(),
-        totalExchanges: Number(totalExchanges),
-        updatedAt: new Date()
-      })
-      .where(eq(journalingThreads.id, threadId));
-  }
-
-  /**
-   * Track emotional state history
-   */
-  private async trackEmotionalState(userId: string, threadId: number, exchangeId: number, emotionalState: any) {
-    await db.insert(emotionalStateHistory).values({
-      userId,
-      threadId,
-      exchangeId,
-      primaryEmotion: emotionalState.primaryEmotion,
-      emotionalIntensity: emotionalState.intensity,
-      emotionalClarity: emotionalState.clarity,
-      detectionMethod: 'ai_analysis',
-      confidenceScore: 0.8
-    });
-  }
-
-  /**
-   * Update user's psychological profile
-   */
-  private async updatePsychologicalProfile(
-    userId: string, 
-    userInput: string, 
-    aiResponse: any, 
-    existingProfile: PsychologicalProfile | null
-  ) {
-    // This would implement sophisticated profile updating logic
-    // For now, simplified implementation
-    if (!existingProfile) {
-      await db.insert(psychologicalProfile).values({
-        userId,
-        totalDataPoints: 1,
-        lastFullAnalysisAt: new Date()
-      });
+    if (lowerInput.includes('crisis') || lowerInput.includes('emergency') || lowerInput.includes('suicide')) {
+      return 'crisis';
+    } else if (lowerInput.includes('anxious') || lowerInput.includes('worried') || lowerInput.includes('stressed')) {
+      return 'anxious';
+    } else if (lowerInput.includes('sad') || lowerInput.includes('depressed') || lowerInput.includes('down')) {
+      return 'low';
+    } else if (lowerInput.includes('angry') || lowerInput.includes('frustrated') || lowerInput.includes('mad')) {
+      return 'agitated';
+    } else if (lowerInput.includes('excited') || lowerInput.includes('happy') || lowerInput.includes('great')) {
+      return 'positive';
     } else {
-      await db
-        .update(psychologicalProfile)
-        .set({
-          totalDataPoints: (existingProfile.totalDataPoints || 0) + 1,
-          updatedAt: new Date()
-        })
-        .where(eq(psychologicalProfile.userId, userId));
+      return 'neutral';
     }
   }
 
   /**
-   * Calculate cost based on token usage
+   * Fallback analysis when AI analysis fails
    */
-  private calculateCost(tokens: number, model: string): number {
-    const pricing = {
-      'gpt-4o': { input: 0.0025, output: 0.01 }, // per 1K tokens
-      'gpt-4o-mini': { input: 0.00015, output: 0.0006 }
-    };
+  private fallbackAnalysis(userInput: string) {
+    const input = userInput.toLowerCase();
     
-    const rate = pricing[model as keyof typeof pricing] || pricing['gpt-4o'];
-    return (tokens / 1000) * ((rate.input + rate.output) / 2); // Simplified average
-  }
-
-  /**
-   * Get user's active threads
-   */
-  async getUserThreads(userId: string): Promise<JournalingThread[]> {
-    return await db
-      .select()
-      .from(journalingThreads)
-      .where(and(eq(journalingThreads.userId, userId), eq(journalingThreads.isActive, true)))
-      .orderBy(desc(journalingThreads.lastActiveAt));
-  }
-
-  /**
-   * Get thread with exchanges
-   */
-  async getThreadWithExchanges(userId: string, threadId: number) {
-    const [thread] = await db
-      .select()
-      .from(journalingThreads)
-      .where(and(eq(journalingThreads.id, threadId), eq(journalingThreads.userId, userId)));
-
-    if (!thread) {
-      throw new Error('Thread not found');
+    if (input.includes('trauma') || input.includes('ptsd') || input.includes('abuse')) {
+      return {
+        primaryApproach: 'trauma_therapist',
+        supportingApproaches: ['somatic_therapist'],
+        reasoning: 'Trauma-related content detected',
+        urgencyLevel: 'high',
+        interventionNeeds: ['trauma processing', 'nervous system regulation'],
+        confidence: 0.8
+      };
     }
-
-    const exchanges = await db
-      .select()
-      .from(threadExchanges)
-      .where(eq(threadExchanges.threadId, threadId))
-      .orderBy(threadExchanges.exchangeOrder);
-
+    
+    if (input.includes('anxiety') || input.includes('panic') || input.includes('worry')) {
+      return {
+        primaryApproach: 'cbt_therapist',
+        supportingApproaches: ['meditation_instructor'],
+        reasoning: 'Anxiety patterns detected',
+        urgencyLevel: 'medium',
+        interventionNeeds: ['cognitive restructuring', 'anxiety management'],
+        confidence: 0.7
+      };
+    }
+    
     return {
-      thread,
-      exchanges
+      primaryApproach: 'personal_coach',
+      supportingApproaches: ['meditation_instructor'],
+      reasoning: 'General personal development support',
+      urgencyLevel: 'low',
+      interventionNeeds: ['goal clarification', 'motivation'],
+      confidence: 0.6
     };
   }
 
   /**
-   * Archive a thread
+   * Fallback expert response
    */
-  async archiveThread(userId: string, threadId: number) {
-    await db
-      .update(journalingThreads)
-      .set({
-        isArchived: true,
-        isActive: false,
-        updatedAt: new Date()
-      })
-      .where(and(eq(journalingThreads.id, threadId), eq(journalingThreads.userId, userId)));
+  private fallbackExpertResponse(approach: any) {
+    const expert = multidisciplinaryExpertise[approach?.modality] || multidisciplinaryExpertise['cbt_therapist'];
+    return {
+      multidisciplinaryAssessment: `From a ${expert.name} perspective, this situation requires gentle attention and evidence-based support.`,
+      integratedTechniques: [
+        {
+          technique: expert.techniques[0] || 'Mindful awareness',
+          modalities: [expert.name],
+          dimension: 'cognitive',
+          synergy: 'Creates foundation for other interventions'
+        }
+      ],
+      holisticInterventions: expert.interventions?.slice(0, 2) || ['Gentle self-observation', 'Compassionate self-talk'],
+      integrationStrategy: 'Combine with mindfulness and self-compassion practices',
+      expectedOutcomes: 'Gradual improvement in emotional regulation and insight',
+      timeline: '2-4 weeks for initial progress'
+    };
   }
 
   /**
-   * Update thread customization preferences
+   * Fallback coaching response
    */
-  async updateThreadPreferences(userId: string, threadId: number, preferences: {
-    mode?: string;
-    tone?: string;
-    perspective?: string;
-    customInstructions?: string;
-  }) {
-    await db
-      .update(journalingThreads)
-      .set({
-        preferredMode: preferences.mode,
-        preferredTone: preferences.tone,
-        preferredPerspective: preferences.perspective,
-        customInstructions: preferences.customInstructions,
-        updatedAt: new Date()
-      })
-      .where(and(eq(journalingThreads.id, threadId), eq(journalingThreads.userId, userId)));
+  private fallbackCoachingResponse(userInput: string, expertResponse: any) {
+    return {
+      message: "I hear you, and I want you to know that what you're experiencing makes complete sense. Let's work together to find some helpful approaches that feel right for you.",
+      practices: expertResponse.techniques?.slice(0, 3) || ['Take three deep breaths', 'Notice your current feelings without judgment', 'Practice one small act of self-care'],
+      insights: "Sometimes the most powerful changes begin with simply acknowledging where we are right now.",
+      nextSteps: "Let's continue exploring this together and see what feels most supportive for you moving forward."
+    };
   }
 }
 
-export const deepJournalingEngine = new DeepJournalingEngine();
+export const intelligentCoachingEngine = new IntelligentCoachingEngine();

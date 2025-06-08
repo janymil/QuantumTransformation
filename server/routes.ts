@@ -17,7 +17,7 @@ import {
   trackUsage,
   createInputHash,
   getUserAIStats 
-} from "./ai-cost-control";
+} from "./deep-journaling/ai-cost-control";
 import { costOptimizationEngine } from "./ai-cost-optimization";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
 import OpenAI from "openai";
