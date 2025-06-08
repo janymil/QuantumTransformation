@@ -1,10 +1,10 @@
-import { db } from "./db";
+import { db } from "../db";
 import { aiCouchProfiles, aiCouchSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { disciplineRegistry } from "./disciplines/discipline-registry";
-import { intelligentModelRouter } from './disciplines/intelligent-model-router';
-import { advancedCostOptimization } from './disciplines/advanced-cost-optimization';
-import { responseQualityTiering } from './response-quality-tiering';
+// import { disciplineRegistry } from "./disciplines/discipline-registry";
+// import { intelligentModelRouter } from './disciplines/intelligent-model-router';
+// import { advancedCostOptimization } from './disciplines/advanced-cost-optimization';
+// import { responseQualityTiering } from './response-quality-tiering';
 import { trackUsage } from './ai-cost-control';
 
 export interface MultidisciplinaryAnalysis {

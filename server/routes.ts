@@ -2868,7 +2868,7 @@ Provide personalized, actionable guidance that:
         cacheResponse, 
         trackUsage,
         createInputHash 
-      } = await import('./ai-cost-control');
+      } = await import('./deep-journaling/ai-cost-control');
 
       // Validate AI request with cost controls
       const inputHash = createInputHash(userGoals, 'vision_guide');
@@ -2992,7 +2992,7 @@ Make recommendations specific to their exact goals, timeline, and aspirations. F
         cacheResponse, 
         trackUsage,
         createInputHash 
-      } = await import('./ai-cost-control');
+      } = await import('./deep-journaling/ai-cost-control');
 
       // Create input for validation and caching
       const inputText = JSON.stringify({ boardData, userGoals, focusArea });
@@ -3128,7 +3128,7 @@ Focus on practical, implementable suggestions that directly support their ${focu
         cacheResponse, 
         trackUsage,
         createInputHash 
-      } = await import('./ai-cost-control');
+      } = await import('./deep-journaling/ai-cost-control');
 
       // Validate AI request with cost controls
       const inputHash = createInputHash(prompt, 'image_generation');
@@ -3253,7 +3253,7 @@ Focus on practical, implementable suggestions that directly support their ${focu
         cacheResponse, 
         trackUsage,
         createInputHash 
-      } = await import('./ai-cost-control');
+      } = await import('./deep-journaling/ai-cost-control');
 
       // Create input hash based on user data flags and user ID
       const dataFlags = `${includeJournals}-${includeAffirmations}-${includeChallenges}-${includeUserProfile}`;
@@ -4046,15 +4046,13 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
       const userId = req.user.claims.sub;
       const { userInput, threadId, actionType, customizations } = req.body;
 
-      const { deepJournalingEngine } = await import('./deep-journaling-engine');
+      const { intelligentCoachingEngine } = await import('./deep-journaling/deep-journaling-engine');
       
-      const response = await deepJournalingEngine.processJournalingRequest({
+      const response = await intelligentCoachingEngine.processCoachingRequest(
         userId,
-        threadId,
         userInput,
-        actionType,
-        customizations
-      });
+        'deep_journaling'
+      );
 
       res.json({
         ...response,
