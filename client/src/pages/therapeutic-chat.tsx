@@ -584,27 +584,22 @@ export default function TherapeuticChat() {
               onStopRecording={stopRecording}
             />
           
+            {/* Loading indicators should show when AI is processing */}
             {sendMessageMutation.isPending && (
-              <div className="flex justify-center">
-                <div className="w-full max-w-2xl">
-                  <LoadingIndicator stage="responding" />
-                </div>
+              <div className="w-full">
+                <LoadingIndicator stage="responding" />
               </div>
             )}
 
             {isProcessingDeeper && (
-              <div className="flex justify-center">
-                <div className="w-full max-w-2xl">
-                  <LoadingIndicator stage="analyzing" />
-                </div>
+              <div className="w-full">
+                <LoadingIndicator stage="analyzing" />
               </div>
             )}
 
             {isProcessingNewDirection && (
-              <div className="flex justify-center">
-                <div className="w-full max-w-2xl">
-                  <LoadingIndicator stage="thinking" />
-                </div>
+              <div className="w-full">
+                <LoadingIndicator stage="thinking" />
               </div>
             )}
             

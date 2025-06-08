@@ -37,7 +37,7 @@ export function LoadingIndicator({ stage = 'thinking' }: LoadingIndicatorProps) 
   }, [currentMessages.length]);
 
   return (
-    <div className="flex items-start gap-3 animate-fade-in">
+    <div className="flex items-start gap-3 mb-4" style={{ animation: 'fade-in 0.3s ease-out' }}>
       <Avatar className="mt-1">
         <AvatarFallback className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400">
           <Brain className="h-4 w-4 animate-pulse" />
@@ -51,15 +51,19 @@ export function LoadingIndicator({ stage = 'thinking' }: LoadingIndicatorProps) 
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
             </div>
-            <span className="text-sm min-w-0">
+            <span className="text-sm min-w-0 font-medium">
               {currentMessages[messageIndex]}{dots}
             </span>
           </div>
           
-          {/* Blinking cursor effect */}
-          <div className="mt-2 flex items-center gap-1">
-            <span className="text-gray-400 text-sm">|</span>
-            <div className="w-2 h-4 bg-gray-400 opacity-50 animate-pulse"></div>
+          {/* Typing indicator with blinking cursor */}
+          <div className="mt-3 flex items-center gap-1">
+            <div className="flex space-x-1">
+              <div className="w-1 h-1 bg-gray-400 rounded-full" style={{ animation: 'pulse-dot 1.5s infinite' }}></div>
+              <div className="w-1 h-1 bg-gray-400 rounded-full" style={{ animation: 'pulse-dot 1.5s infinite 0.2s' }}></div>
+              <div className="w-1 h-1 bg-gray-400 rounded-full" style={{ animation: 'pulse-dot 1.5s infinite 0.4s' }}></div>
+            </div>
+            <div className="w-0.5 h-4 bg-gray-500 ml-2" style={{ animation: 'blink 1s infinite' }}></div>
           </div>
         </div>
         
