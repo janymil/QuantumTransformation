@@ -33,8 +33,8 @@ class BunnyNetService {
     this.config = {
       username: 'quantumchallenge',
       hostname: 'ny.storage.bunnycdn.com',
-      password: 'cb1dd48b-7224-4d2c-9be6-f7b5-6b4e-4e75-afe7-9f93c5a4b2c8',
-      readOnlyPassword: 'cb1dd48b-7224-4d2c-9be6-f7b5-6b4e-4e75-afe7-9f93c5a4b2c8',
+      password: 'e67013cc-8750-49c7-a8ba7ad6f1ce-8fa5-4a73',
+      readOnlyPassword: '6bf393f5-2775-47fe-9f3f193cd7ae-f021-46c7',
       storageZoneName: 'quantumchallenge'
     };
   }
