@@ -4,25 +4,23 @@
  * Analyzes therapeutic response patterns, communication preferences, and emotional triggers
  */
 
-import { db } from "../storage";
+import { db } from "../db";
 import { 
   userTherapeuticProfile, 
   therapeuticInteractionAnalysis, 
   userCommunicationPatterns, 
   personalizationInsights,
   threadExchanges,
-  journalingThreads,
-  eq, 
-  and, 
-  desc 
-} from "../../shared/schema";
+  journalingThreads
+} from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
 import type { 
   UserTherapeuticProfile, 
   TherapeuticInteractionAnalysis, 
   UserCommunicationPatterns, 
   PersonalizationInsights,
   ThreadExchange 
-} from "../../shared/schema";
+} from "@shared/schema";
 
 export interface UserModelingRequest {
   userId: string;

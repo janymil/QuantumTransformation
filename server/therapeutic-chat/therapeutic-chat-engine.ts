@@ -46,17 +46,20 @@ export class DeepJournalingEngine {
     const threadHistory = await this.getThreadHistory(thread.id);
     const userContext = await this.getUserContext(request.userId);
     
+    // Get personalization recommendations for premium-level responses
+    const personalizationRecs = await userModelingEngine.getPersonalizationRecommendations(request.userId);
+    
     // Determine exchange order
     const exchangeOrder = threadHistory.length + 1;
     
     // Generate AI response based on action type
     let aiResponse;
     if (request.actionType === 'new_direction') {
-      aiResponse = await this.generateNewDirectionResponse(request, thread, userProfile, userContext);
+      aiResponse = await this.generateNewDirectionResponse(request, thread, userProfile, userContext, personalizationRecs);
     } else if (request.actionType === 'customize_response' && threadHistory.length > 0) {
-      aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile);
+      aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile, personalizationRecs);
     } else {
-      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext);
+      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs);
     }
     
     const processingTime = Date.now() - startTime;
@@ -91,6 +94,23 @@ export class DeepJournalingEngine {
     
     // Update psychological profile
     await this.updatePsychologicalProfile(request.userId, request.userInput, aiResponse, userProfile);
+    
+    // Analyze interaction for user modeling and personalization improvements
+    await userModelingEngine.analyzeInteraction({
+      userId: request.userId,
+      threadId: thread.id,
+      exchangeId: savedExchange.id,
+      userInput: request.userInput,
+      aiResponse: aiResponse.question,
+      sessionMetadata: {
+        timeOfDay: this.getTimeOfDay(),
+        sessionDuration: processingTime,
+        techniquesUsed: this.extractTechniquesUsed(aiResponse),
+        frameworksApplied: personalizationRecs.therapeuticFrameworks,
+        questioningStyle: personalizationRecs.therapeuticStyle,
+        interventionType: this.determineInterventionType(request, aiResponse)
+      }
+    });
     
     return {
       threadId: thread.id,
@@ -601,6 +621,65 @@ export class DeepJournalingEngine {
     const qualityFactor = aiResponse.analysis && aiResponse.question ? 1.2 : 0.8;
     
     return Math.min(1, baseEfficiency * costFactor * qualityFactor);
+  }
+
+  /**
+   * Helper methods for Multi-Dimensional User Modeling
+   */
+  private getTimeOfDay(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    if (hour < 21) return 'evening';
+    return 'night';
+  }
+
+  private extractTechniquesUsed(aiResponse: any): string[] {
+    const techniques = [];
+    
+    // Analyze the response to identify therapeutic techniques used
+    const responseText = aiResponse.question?.toLowerCase() || '';
+    
+    if (responseText.includes('what if') || responseText.includes('imagine')) {
+      techniques.push('hypothetical_questioning');
+    }
+    if (responseText.includes('how did that feel') || responseText.includes('emotion')) {
+      techniques.push('emotional_exploration');
+    }
+    if (responseText.includes('pattern') || responseText.includes('similar')) {
+      techniques.push('pattern_identification');
+    }
+    if (responseText.includes('why') || responseText.includes('what led')) {
+      techniques.push('socratic_questioning');
+    }
+    if (responseText.includes('reframe') || responseText.includes('another way')) {
+      techniques.push('cognitive_reframing');
+    }
+    
+    return techniques.length > 0 ? techniques : ['supportive_questioning'];
+  }
+
+  private determineInterventionType(request: DeepJournalingRequest, aiResponse: any): string {
+    // Determine intervention type based on request and response characteristics
+    if (request.actionType === 'new_direction') return 'redirection';
+    if (request.actionType === 'customize_response') return 'adaptation';
+    
+    const responseText = aiResponse.question?.toLowerCase() || '';
+    
+    if (responseText.includes('challenge') || responseText.includes('push')) {
+      return 'confrontation';
+    }
+    if (responseText.includes('understand') || responseText.includes('clarify')) {
+      return 'clarification';
+    }
+    if (responseText.includes('feel') || responseText.includes('valid')) {
+      return 'validation';
+    }
+    if (responseText.includes('insight') || responseText.includes('meaning')) {
+      return 'interpretation';
+    }
+    
+    return 'support';
   }
 
   /**
