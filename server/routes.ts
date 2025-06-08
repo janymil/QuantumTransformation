@@ -4219,6 +4219,62 @@ Provide your response in this JSON format:
     }
   });
 
+  // Save Therapeutic Chat Conversation endpoint (only when user finishes)
+  app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { title, messages, conversationStyle, focusArea } = req.body;
+
+      if (!messages || messages.length === 0) {
+        return res.status(400).json({ message: "No messages to save" });
+      }
+
+      // Create new thread for the finished conversation
+      const [newSession] = await db
+        .insert(journalingThreads)
+        .values({
+          userId,
+          title: title || 'Therapeutic Chat Session',
+          threadType: 'therapy_session',
+          currentTopic: 'therapeutic_chat'
+        })
+        .returning();
+
+      // Save all message exchanges to database
+      let exchangeOrder = 1;
+      for (let i = 0; i < messages.length; i += 2) {
+        const userMessage = messages[i];
+        const aiMessage = messages[i + 1];
+
+        if (userMessage && userMessage.type === 'user') {
+          await db
+            .insert(threadExchanges)
+            .values({
+              threadId: newSession.id,
+              exchangeOrder: exchangeOrder,
+              userInput: userMessage.content,
+              aiAnalysis: aiMessage?.content || '',
+              aiQuestion: aiMessage?.content || '',
+              aiEmotionalAssessment: { insight: aiMessage?.emotionalTone || 'supportive' },
+              processingTime: 1000
+            });
+          
+          exchangeOrder++;
+        }
+      }
+
+      res.json({
+        success: true,
+        threadId: newSession.id,
+        message: "Conversation saved successfully"
+      });
+
+    } catch (error) {
+      console.error("Error saving therapeutic conversation:", error);
+      res.status(500).json({ message: "Failed to save conversation" });
+    }
+  });
+
   app.post('/api/therapeutic-chat/message', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
