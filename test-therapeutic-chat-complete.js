@@ -3,7 +3,7 @@
  * Tests conversation saving, loading, and continuation with AI
  */
 
-const fs = require('fs');
+import fs from 'fs';
 
 async function testTherapeuticChatSystem() {
   console.log('🔥 Testing Complete Therapeutic Chat System with Load Conversation Functionality\n');
