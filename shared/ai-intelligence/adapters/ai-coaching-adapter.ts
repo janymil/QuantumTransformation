@@ -13,6 +13,7 @@ export interface CoachingRequest {
   systemPrompt: string;
   userTier: 'basic' | 'premium' | 'ultra';
   challengeType?: string;
+  actionType?: string;
   options?: {
     temperature?: number;
     maxTokens?: number;

@@ -2177,16 +2177,22 @@ Provide personalized, actionable guidance that:
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { message, threadId, conversationStyle, focusArea, responseLength } = req.body;
+      const { userInput, threadId, conversationStyle, focusArea, responseLength, actionType } = req.body;
+
+      // Validate that userInput is not null or empty
+      if (!userInput || typeof userInput !== 'string' || userInput.trim() === '') {
+        return res.status(400).json({ message: "User input is required" });
+      }
 
       // Route through AI Intelligence Layer for therapeutic chat
       const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
       
       const response = await intelligentRouter.processCoachingRequest({
         userId,
-        userInput: message,
+        userInput: userInput.trim(),
         requestType: 'therapeutic_chat',
         threadId,
+        actionType,
         customizations: {
           conversationStyle: conversationStyle || 'empathetic',
           focusArea: focusArea || 'general',

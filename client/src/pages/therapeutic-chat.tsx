@@ -193,7 +193,9 @@ export default function TherapeuticChat() {
   };
 
   const handleGoDeeper = async (lastAiMessage: string) => {
-    const deeperPrompt = `You said: "${lastAiMessage.substring(0, 200)}...". I want to explore this more deeply. Please ask me follow-up questions that help me understand the underlying patterns, emotions, or beliefs connected to this. Guide me to examine this from different angles and help me discover insights I might not have considered.`;
+    // Ensure we have valid content
+    const safeMessage = lastAiMessage || "our previous conversation";
+    const deeperPrompt = `You said: "${safeMessage.substring(0, 200)}${safeMessage.length > 200 ? '...' : ''}". I want to explore this more deeply. Please ask me follow-up questions that help me understand the underlying patterns, emotions, or beliefs connected to this. Guide me to examine this from different angles and help me discover insights I might not have considered.`;
 
     try {
       await sendMessageMutation.mutateAsync({
@@ -210,7 +212,9 @@ export default function TherapeuticChat() {
   };
 
   const handleNewDirection = async (aiMessage: string) => {
-    const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${aiMessage.substring(0, 200)}...", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
+    // Ensure we have valid content
+    const safeMessage = aiMessage || "our current discussion";
+    const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${safeMessage.substring(0, 200)}${safeMessage.length > 200 ? '...' : ''}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
 
     try {
       await sendMessageMutation.mutateAsync({
