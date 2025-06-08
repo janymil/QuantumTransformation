@@ -4080,6 +4080,7 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
           title: journalingThreads.title,
           lastMessage: journalingThreads.currentTopic,
           createdAt: journalingThreads.createdAt,
+          updatedAt: journalingThreads.updatedAt,
           emotionalJourney: journalingThreads.emotionalJourney
         })
         .from(journalingThreads)
@@ -4087,7 +4088,63 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
         .orderBy(desc(journalingThreads.updatedAt))
         .limit(20);
 
-      res.json(sessions);
+      // Enhanced analytics for each session
+      const sessionsWithAnalytics = await Promise.all(
+        sessions.map(async (session) => {
+          // Get exchange count
+          const [exchangeCount] = await db
+            .select({ count: count() })
+            .from(threadExchanges)
+            .where(eq(threadExchanges.threadId, session.id));
+          
+          // Get latest exchange for analysis
+          const latestExchange = await db
+            .select()
+            .from(threadExchanges)
+            .where(eq(threadExchanges.threadId, session.id))
+            .orderBy(desc(threadExchanges.createdAt))
+            .limit(1);
+
+          // Extract emotional insights and brief analysis
+          let emotionalInsight = 'emotional processing';
+          let briefAnalysis = 'Therapeutic conversation about personal growth and self-reflection';
+          
+          if (latestExchange.length > 0) {
+            const exchange = latestExchange[0];
+            
+            // Extract emotional insight from AI analysis
+            if (exchange.aiEmotionalAssessment) {
+              try {
+                const assessment = typeof exchange.aiEmotionalAssessment === 'string' 
+                  ? JSON.parse(exchange.aiEmotionalAssessment) 
+                  : exchange.aiEmotionalAssessment;
+                emotionalInsight = assessment.insight || assessment.primaryEmotion || 'emotional processing';
+              } catch (e) {
+                emotionalInsight = exchange.aiEmotionalAssessment.toString().slice(0, 30);
+              }
+            }
+            
+            // Create brief analysis from user input
+            if (exchange.userInput && exchange.userInput.length > 10) {
+              briefAnalysis = exchange.userInput.slice(0, 80) + (exchange.userInput.length > 80 ? '...' : '');
+            }
+          }
+          
+          return {
+            ...session,
+            exchangeCount: exchangeCount.count,
+            emotionalJourney: [emotionalInsight],
+            lastMessage: briefAnalysis,
+            conversationStats: {
+              totalExchanges: exchangeCount.count,
+              lastActivity: session.updatedAt || session.createdAt,
+              emotionalFocus: emotionalInsight
+            }
+          };
+        })
+      );
+
+      res.json(sessionsWithAnalytics);
     } catch (error) {
       console.error("Error fetching therapeutic chat sessions:", error);
       res.status(500).json({ message: "Failed to fetch sessions" });

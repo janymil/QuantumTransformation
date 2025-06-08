@@ -35,7 +35,7 @@ export default function TherapeuticChat() {
 
   // Fetch conversation threads
   const { data: threads = [], isLoading: threadsLoading } = useQuery({
-    queryKey: ['/api/deep-journaling/threads'],
+    queryKey: ['/api/therapeutic-chat/sessions'],
   });
 
   // Delete thread mutation
@@ -273,7 +273,7 @@ export default function TherapeuticChat() {
           description: "Your therapeutic session has been saved successfully.",
         });
         
-        queryClient.invalidateQueries({ queryKey: ["/api/deep-journaling/threads"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/therapeutic-chat/sessions"] });
         
         setActiveSession(null);
         setMessages([]);
