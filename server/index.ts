@@ -6,16 +6,16 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// Enable gzip compression for all responses
-app.use(compression({
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  },
-  level: 6 // Balanced compression level
-}));
+// Enable gzip compression for all responses (disabled for development debugging)
+// app.use(compression({
+//   filter: (req, res) => {
+//     if (req.headers['x-no-compression']) {
+//       return false;
+//     }
+//     return compression.filter(req, res);
+//   },
+//   level: 6 // Balanced compression level
+// }));
 
 // Add CORS headers for cross-domain requests
 app.use((req, res, next) => {
@@ -33,31 +33,31 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add caching headers for static assets
-app.use('/assets', (req, res, next) => {
-  res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
-  res.setHeader('ETag', req.path); // Simple ETag based on path
-  next();
-});
+// Add caching headers for static assets (disabled for development debugging)
+// app.use('/assets', (req, res, next) => {
+//   res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
+//   res.setHeader('ETag', req.path); // Simple ETag based on path
+//   next();
+// });
 
-app.use('/favicon.ico', (req, res, next) => {
-  res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 days
-  next();
-});
+// app.use('/favicon.ico', (req, res, next) => {
+//   res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 days
+//   next();
+// });
 
-// File upload middleware for audio transcription
-app.use(fileUpload({
-  createParentPath: true,
-  limits: { 
-    fileSize: 20 * 1024 * 1024 // 20MB limit for audio files
-  },
-  abortOnLimit: false,
-  responseOnLimit: "File size limit has been reached",
-  limitHandler: false,
-  preserveExtension: true,
-  safeFileNames: true,
-  parseNested: true
-}));
+// File upload middleware for audio transcription (disabled for development debugging)
+// app.use(fileUpload({
+//   createParentPath: true,
+//   limits: { 
+//     fileSize: 20 * 1024 * 1024 // 20MB limit for audio files
+//   },
+//   abortOnLimit: false,
+//   responseOnLimit: "File size limit has been reached",
+//   limitHandler: false,
+//   preserveExtension: true,
+//   safeFileNames: true,
+//   parseNested: true
+// }));
 
 app.use((req, res, next) => {
   const start = Date.now();
