@@ -125,15 +125,45 @@ export default function Journal() {
       if (response.ok) {
         const messages = await response.json();
         const messageCount = Array.isArray(messages) ? messages.length : 0;
-        const lastUserMessage = Array.isArray(messages) 
-          ? messages.filter(msg => msg.type === 'user' || msg.role === 'user').pop()?.content || 'No user messages'
-          : 'No messages available';
         
-        setSessionPreview({
-          sessionId,
-          messageCount,
-          lastUserMessage: lastUserMessage.slice(0, 150) + (lastUserMessage.length > 150 ? '...' : '')
-        });
+        if (Array.isArray(messages) && messages.length > 0) {
+          // Get first few exchanges to show conversation context
+          const userMessages = messages.filter(msg => msg.type === 'user' || msg.role === 'user');
+          const aiMessages = messages.filter(msg => msg.type === 'ai' || msg.role === 'assistant');
+          
+          // Create preview with key conversation highlights
+          const firstUserMessage = userMessages[0]?.content || '';
+          const lastUserMessage = userMessages[userMessages.length - 1]?.content || '';
+          const lastAiMessage = aiMessages[aiMessages.length - 1]?.content || '';
+          
+          // Create conversation summary
+          let conversationPreview = '';
+          if (firstUserMessage) {
+            conversationPreview += `Started with: "${firstUserMessage.slice(0, 60)}${firstUserMessage.length > 60 ? '...' : ''}"\n\n`;
+          }
+          if (lastUserMessage && lastUserMessage !== firstUserMessage) {
+            conversationPreview += `Latest: "${lastUserMessage.slice(0, 80)}${lastUserMessage.length > 80 ? '...' : ''}"\n\n`;
+          }
+          if (lastAiMessage) {
+            conversationPreview += `AI responded: "${lastAiMessage.slice(0, 100)}${lastAiMessage.length > 100 ? '...' : ''}"`;
+          }
+          
+          setSessionPreview({
+            sessionId,
+            messageCount,
+            conversationPreview: conversationPreview || 'No conversation content available',
+            userMessageCount: userMessages.length,
+            aiResponseCount: aiMessages.length
+          });
+        } else {
+          setSessionPreview({
+            sessionId,
+            messageCount: 0,
+            conversationPreview: 'No messages in this conversation yet',
+            userMessageCount: 0,
+            aiResponseCount: 0
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to fetch session preview:', error);
@@ -1162,6 +1192,7 @@ export default function Journal() {
                     .map((session, index) => {
                       const dateTimeFormat = session.createdAt ? formatDateTime(session.createdAt) : null;
                       const actualMessageCount = sessionPreview?.sessionId === session.id ? sessionPreview.messageCount : (session.messageCount || 0);
+                      const actualAiResponseCount = sessionPreview?.sessionId === session.id ? sessionPreview.aiResponseCount : Math.floor((session.messageCount || 0) / 2);
                       
                       return (
                         <Card 
@@ -1219,11 +1250,11 @@ export default function Journal() {
                             <div className="space-y-3">
                               {/* Show preview if hovered, otherwise show regular content */}
                               {hoveredSession === session.id && sessionPreview?.sessionId === session.id ? (
-                                <div className="p-2 bg-muted/50 rounded-md border">
-                                  <p className="text-xs font-medium text-foreground mb-1">Conversation Preview:</p>
-                                  <p className="text-xs text-muted-foreground leading-relaxed">
-                                    {sessionPreview.lastUserMessage}
-                                  </p>
+                                <div className="p-3 bg-muted/50 rounded-md border">
+                                  <p className="text-xs font-medium text-foreground mb-2">Conversation Preview:</p>
+                                  <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+                                    {sessionPreview.conversationPreview}
+                                  </div>
                                 </div>
                               ) : (
                                 <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">

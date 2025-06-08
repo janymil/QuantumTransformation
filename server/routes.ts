@@ -4133,6 +4133,7 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
           return {
             ...session,
             exchangeCount: exchangeCount.count,
+            messageCount: exchangeCount.count * 2, // Each exchange has user + AI message
             emotionalJourney: [emotionalInsight],
             lastMessage: briefAnalysis,
             conversationStats: {
