@@ -42,7 +42,7 @@ import { advancedMemory } from "./advanced-memory";
 import { predictiveIntelligence } from "./predictive-intelligence";
 import { modelRouter } from "./intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
-// import { registerDeepJournalingRoutes } from "./deep-journaling-engine"; // Function not available
+import { registerDeepJournalingRoutes } from "./therapeutic-chat";
 import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -642,6 +642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerProgressRoutes(app);
   registerJournalRoutes(app);
   registerGamificationRoutes(app);
+  registerDeepJournalingRoutes(app);
 
   // Enhanced AI Routes with Smart Caching System
   app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {

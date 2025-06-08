@@ -1,4 +1,4 @@
-export { deepJournalingEngine } from './engine';
+export { deepJournalingEngine } from './therapeutic-chat-engine';
 export { registerDeepJournalingRoutes } from './routes';
 export { voiceTranscriptionService } from './voice-service';
 export { psychologicalAnalyzer } from './psychological-analyzer';
