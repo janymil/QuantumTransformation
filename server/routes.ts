@@ -27,7 +27,7 @@ const openai = new OpenAI({
 });
 import { aiCouchEngine } from "./ai-couch-simple";
 import { db } from "./db";
-import { eq, desc, and, ilike, or, gte, count, avg, sum } from "drizzle-orm";
+import { eq, desc, and, ilike, or, gte, count, avg, sum, sql } from "drizzle-orm";
 import { conductMarketResearch, analyzePricingStrategy } from "./market-research";
 import { 
   determineCacheStrategy, 
@@ -4733,6 +4733,265 @@ Provide your response in this JSON format:
     } catch (error) {
       console.error("Error deleting therapeutic chat session:", error);
       res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
+  // Therapeutic Analytics Routes
+  
+  // Emotional State Analysis
+  app.get('/api/therapeutic-analytics/emotional-state', isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
+      const { timeFilter = 'month' } = req.query;
+      
+      let dateFilter = sql`1=1`;
+      const now = new Date();
+      
+      if (timeFilter === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        dateFilter = sql`${threadExchanges.createdAt} >= ${weekAgo}`;
+      } else if (timeFilter === 'month') {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        dateFilter = sql`${threadExchanges.createdAt} >= ${monthAgo}`;
+      }
+
+      // Analyze emotional patterns from therapeutic chat sessions
+      const exchanges = await db
+        .select({
+          userInput: threadExchanges.userInput,
+          aiAnalysis: threadExchanges.aiAnalysis,
+          createdAt: threadExchanges.createdAt
+        })
+        .from(threadExchanges)
+        .innerJoin(journalingThreads, eq(threadExchanges.threadId, journalingThreads.id))
+        .where(and(
+          eq(journalingThreads.userId, userId),
+          eq(journalingThreads.threadType, 'therapy_session'),
+          dateFilter
+        ))
+        .orderBy(desc(threadExchanges.createdAt));
+
+      // Extract emotions using simple keyword analysis
+      const emotionKeywords = {
+        'Anxiety': ['anxious', 'worried', 'nervous', 'stressed', 'panic', 'overwhelmed'],
+        'Sadness': ['sad', 'depressed', 'down', 'melancholy', 'grief', 'sorrow', 'lonely'],
+        'Anger': ['angry', 'mad', 'frustrated', 'irritated', 'rage', 'annoyed'],
+        'Fear': ['afraid', 'scared', 'terrified', 'fearful', 'phobia', 'dread'],
+        'Joy': ['happy', 'joyful', 'excited', 'elated', 'cheerful', 'delighted'],
+        'Love': ['love', 'affection', 'care', 'compassion', 'warmth', 'tenderness'],
+        'Confusion': ['confused', 'uncertain', 'unclear', 'bewildered', 'puzzled'],
+        'Stress': ['stress', 'pressure', 'tension', 'strain', 'burden', 'exhausted']
+      };
+
+      const emotionCounts = {};
+      const emotionEntries = {};
+
+      exchanges.forEach(exchange => {
+        const text = (exchange.userInput + ' ' + (exchange.aiAnalysis || '')).toLowerCase();
+        
+        Object.entries(emotionKeywords).forEach(([emotion, keywords]) => {
+          const hasEmotion = keywords.some(keyword => text.includes(keyword));
+          if (hasEmotion) {
+            emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+            if (!emotionEntries[emotion]) emotionEntries[emotion] = [];
+            emotionEntries[emotion].push(exchange.userInput);
+          }
+        });
+      });
+
+      const emotions = Object.entries(emotionCounts).map(([emotion, count]) => ({
+        emotion,
+        count,
+        intensity: Math.min(100, count * 10),
+        relatedEntries: emotionEntries[emotion] || []
+      })).sort((a, b) => b.count - a.count);
+
+      res.json({ emotions });
+    } catch (error) {
+      console.error('Error analyzing emotional state:', error);
+      res.status(500).json({ message: 'Failed to analyze emotional state' });
+    }
+  });
+
+  // Habit Tracking Analytics
+  app.get('/api/therapeutic-analytics/habits', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { timeFilter = 'month' } = req.query;
+      
+      let dateFilter = sql`1=1`;
+      const now = new Date();
+      
+      if (timeFilter === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        dateFilter = sql`${journalingThreads.createdAt} >= ${weekAgo}`;
+      } else if (timeFilter === 'month') {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        dateFilter = sql`${journalingThreads.createdAt} >= ${monthAgo}`;
+      }
+
+      // Get therapeutic sessions
+      const sessions = await db
+        .select({
+          id: journalingThreads.id,
+          createdAt: journalingThreads.createdAt,
+          title: journalingThreads.title
+        })
+        .from(journalingThreads)
+        .where(and(
+          eq(journalingThreads.userId, userId),
+          eq(journalingThreads.threadType, 'therapy_session'),
+          dateFilter
+        ))
+        .orderBy(desc(journalingThreads.createdAt));
+
+      // Calculate statistics
+      const totalSessions = sessions.length;
+      const sessionDates = sessions.map(s => s.createdAt?.toISOString().split('T')[0]).filter(Boolean);
+      const uniqueDates = [...new Set(sessionDates)];
+      
+      // Create calendar data for current month
+      const calendar = {};
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      for (let d = new Date(startOfMonth); d <= endOfMonth; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        calendar[dateStr] = sessionDates.includes(dateStr);
+      }
+
+      // Calculate streaks
+      const sortedDates = uniqueDates.sort();
+      let longestStreak = 0;
+      let currentStreak = 0;
+      
+      if (sortedDates.length > 0) {
+        currentStreak = 1;
+        longestStreak = 1;
+        
+        for (let i = 1; i < sortedDates.length; i++) {
+          const prevDate = new Date(sortedDates[i - 1]);
+          const currDate = new Date(sortedDates[i]);
+          const dayDiff = (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+          
+          if (dayDiff === 1) {
+            currentStreak++;
+            longestStreak = Math.max(longestStreak, currentStreak);
+          } else {
+            currentStreak = 1;
+          }
+        }
+      }
+
+      // Estimate journaling time (rough calculation)
+      const avgTimePerSession = 15; // minutes
+      const totalJournalingTime = `${totalSessions * avgTimePerSession} minutes`;
+
+      res.json({
+        totalJournalingTime,
+        longestStreak,
+        currentStreak,
+        entriesThisMonth: uniqueDates.length,
+        calendar
+      });
+    } catch (error) {
+      console.error('Error analyzing habits:', error);
+      res.status(500).json({ message: 'Failed to analyze habits' });
+    }
+  });
+
+  // Personality Insights (placeholder for now)
+  app.get('/api/therapeutic-analytics/personality', requireAuth, async (req, res) => {
+    try {
+      // This would require more sophisticated analysis
+      res.json({
+        traits: [],
+        message: 'Personality analysis requires more therapeutic session data'
+      });
+    } catch (error) {
+      console.error('Error analyzing personality:', error);
+      res.status(500).json({ message: 'Failed to analyze personality' });
+    }
+  });
+
+  // Recurring Topics Analysis
+  app.get('/api/therapeutic-analytics/topics', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { timeFilter = 'month' } = req.query;
+      
+      let dateFilter = sql`1=1`;
+      const now = new Date();
+      
+      if (timeFilter === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        dateFilter = sql`${threadExchanges.createdAt} >= ${weekAgo}`;
+      } else if (timeFilter === 'month') {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        dateFilter = sql`${threadExchanges.createdAt} >= ${monthAgo}`;
+      }
+
+      const exchanges = await db
+        .select({
+          userInput: threadExchanges.userInput,
+          aiAnalysis: threadExchanges.aiAnalysis,
+          createdAt: threadExchanges.createdAt
+        })
+        .from(threadExchanges)
+        .innerJoin(journalingThreads, eq(threadExchanges.threadId, journalingThreads.id))
+        .where(and(
+          eq(journalingThreads.userId, userId),
+          eq(journalingThreads.threadType, 'therapy_session'),
+          dateFilter
+        ))
+        .orderBy(desc(threadExchanges.createdAt));
+
+      // Simple topic extraction using keywords
+      const topicKeywords = {
+        'Relationships': ['relationship', 'partner', 'family', 'friend', 'marriage', 'divorce'],
+        'Work/Career': ['work', 'job', 'career', 'boss', 'colleague', 'employment'],
+        'Self-Esteem': ['confidence', 'self-worth', 'self-esteem', 'identity', 'value'],
+        'Health': ['health', 'illness', 'medical', 'physical', 'body', 'exercise'],
+        'Money': ['money', 'financial', 'debt', 'income', 'wealth', 'budget'],
+        'Future/Goals': ['future', 'goals', 'dreams', 'plans', 'ambitions', 'hope']
+      };
+
+      const topicCounts = {};
+      exchanges.forEach(exchange => {
+        const text = (exchange.userInput + ' ' + (exchange.aiAnalysis || '')).toLowerCase();
+        
+        Object.entries(topicKeywords).forEach(([topic, keywords]) => {
+          const hasTopic = keywords.some(keyword => text.includes(keyword));
+          if (hasTopic) {
+            topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+          }
+        });
+      });
+
+      const topics = Object.entries(topicCounts).map(([topic, frequency]) => ({
+        topic,
+        frequency,
+        trend: 'stable',
+        relatedSessions: []
+      })).sort((a, b) => b.frequency - a.frequency);
+
+      res.json({ topics });
+    } catch (error) {
+      console.error('Error analyzing topics:', error);
+      res.status(500).json({ message: 'Failed to analyze topics' });
+    }
+  });
+
+  // AI Suggestions (placeholder for now)
+  app.get('/api/therapeutic-analytics/suggestions', requireAuth, async (req, res) => {
+    try {
+      res.json({
+        suggestions: [],
+        message: 'AI suggestions will be generated based on your therapeutic progress'
+      });
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+      res.status(500).json({ message: 'Failed to generate suggestions' });
     }
   });
 

@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain, Info } from "lucide-react";
+import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain, Info, BarChart3 } from "lucide-react";
+import { Link } from "wouter";
 
 // Import modular components
 import { MessageBubble } from "@/components/therapeutic-chat/MessageBubble";
@@ -650,10 +651,18 @@ export default function TherapeuticChat() {
                 Confidential AI-assisted therapeutic conversation
               </p>
             </div>
-            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              <MessageCircle className="h-3 w-3 mr-1" />
-              Active Session
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Link href="/therapeutic-analytics">
+                <Button variant="outline" size="sm">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
+                </Button>
+              </Link>
+              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <MessageCircle className="h-3 w-3 mr-1" />
+                Active Session
+              </Badge>
+            </div>
           </div>
         </div>
 
