@@ -88,13 +88,18 @@ export class DeepJournalingEngine {
       personalizationLevel: 'moderate'
     };
     
-    // Select optimal therapeutic framework (simplified for performance)
-    const frameworkRecommendation = {
-      primaryFramework: 'supportive',
-      secondaryFramework: 'cbt',
-      confidence: 0.8,
-      reasoning: 'Default supportive approach with CBT elements'
-    };
+    // Select optimal therapeutic framework based on real-time session analysis + psychological insights
+    const frameworkRecommendation = await dynamicFrameworkSelector.selectOptimalFramework(
+      request.userId,
+      thread.id,
+      request.userInput,
+      { 
+        userProfile, 
+        threadHistory, 
+        userContext,
+        psychologicalAnalysis: psychologicalAnalysis
+      }
+    );
 
     // Analyze cross-session patterns and update therapeutic memory (temporarily disabled for stability)
     const crossSessionPatterns = [];

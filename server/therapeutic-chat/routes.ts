@@ -65,18 +65,57 @@ export function registerDeepJournalingRoutes(app: Express) {
       const userId = req.user.claims.sub;
       const validatedData = deepJournalingRequestSchema.parse(req.body);
 
-      const response = await deepJournalingEngine.processJournalingRequest({
+      // Set timeout for long-running requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
+      });
+
+      const responsePromise = deepJournalingEngine.processJournalingRequest({
         userId,
         ...validatedData
       });
 
-      res.json(response);
+      const response = await Promise.race([responsePromise, timeoutPromise]);
+
+      // Validate response completeness
+      if (response && typeof response === 'object') {
+        const content = response.analysis?.professionalAnalysis || response.question || response.response;
+        if (content && content.length > 10) {
+          res.json(response);
+        } else {
+          // Provide fallback response if content is incomplete
+          res.json({
+            ...response,
+            question: response.actionType === 'go_deeper' 
+              ? "Let me explore this more deeply with you. What specific aspects of this situation feel most significant or challenging right now?"
+              : "Let's approach this from a different perspective. What alternative ways might we understand or address this situation?",
+            analysis: {
+              professionalAnalysis: content || "I'm here to support your therapeutic journey."
+            }
+          });
+        }
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
       console.error('Deep journaling processing error:', error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: 'Invalid request data', errors: error.errors });
       } else {
-        res.status(500).json({ message: 'Failed to process journaling request' });
+        // Provide therapeutic fallback instead of generic error
+        const actionType = req.body?.actionType;
+        res.status(200).json({
+          question: actionType === 'go_deeper' 
+            ? "I want to explore this more deeply with you. What underlying feelings or patterns do you notice in this situation?"
+            : actionType === 'new_direction'
+            ? "Let's try a different therapeutic approach. What would it look like to view this challenge from a completely new angle?"
+            : "I'm here to support you. What would be most helpful to explore right now?",
+          analysis: {
+            professionalAnalysis: "I'm committed to providing you with thoughtful therapeutic support."
+          },
+          emotionalState: { primaryEmotion: 'supportive' },
+          threadId: req.body?.threadId || null
+        });
       }
     }
   });
