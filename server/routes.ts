@@ -4213,8 +4213,8 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Import AI Intelligence Layer therapeutic adapter
-      const { therapeuticChatAdapter } = require('../shared/ai-intelligence/adapters/therapeutic-chat-adapter');
+      // Import AI Intelligence Layer core router
+      const { intelligentRouter } = require('../shared/ai-intelligence/core/intelligent-router');
       
       // Helper function to build therapeutic system prompt
       function buildTherapeuticSystemPrompt(customizations: any, focusArea: string): string {
@@ -4232,60 +4232,58 @@ Focus on:
 
 Remember to maintain professional boundaries while being genuinely helpful and supportive.`;
       }
-
-      // Map frontend customization to therapeutic request format
+      
+      // Map frontend customization to AI Intelligence Layer request format
       const customizations = mapFrontendToEngineCustomizations(conversationStyle, focusArea, responseLength);
 
-      // Build request for AI Intelligence Layer -> Therapeutic-Chat-Adapter -> TherapeuticChatEngine
-      const therapeuticRequest = {
-        userId,
-        userInput: message,
+      // Build request for AI Intelligence Layer (entry point)
+      const aiRequest = {
+        prompt: message,
         systemPrompt: buildTherapeuticSystemPrompt(customizations, focusArea),
-        userTier: 'premium', // Therapeutic chat is premium tier
-        sessionContext: {
-          threadId,
-          conversationHistory: [], // Will be populated by adapter
-          therapeuticGoals: [focusArea],
-          currentTherapeuticStyle: conversationStyle,
-          emotionalState: 'processing',
-          sessionType: actionType || 'chat'
-        },
-        personalization: {
-          preferredResponseStyle: customizations.tone,
-          effectivePatterns: [],
-          avoidancePatterns: [],
-          personalizedContext: customizations
+        context: {
+          userId,
+          sessionType: 'therapeutic_chat',
+          userTier: 'premium',
+          complexity: 'complex', // Therapeutic chat is always complex
+          emotionalIntensity: 0.8, // High emotional sensitivity
+          requiresPersonalization: true,
+          therapeuticContext: {
+            threadId,
+            conversationStyle,
+            focusArea,
+            actionType: actionType || 'chat',
+            customizations
+          }
         },
         options: {
           temperature: 0.7,
           maxTokens: 2000,
-          enableAdaptiveLanguage: true,
-          enableContextualMemory: true
+          preferredProvider: 'openai'
         }
       };
 
       console.log("Therapeutic Chat - Routing through AI Intelligence Layer:", { userId, conversationStyle, focusArea });
 
-      // Process through AI Intelligence Layer -> Therapeutic-Chat-Adapter -> TherapeuticChatEngine
-      const adapterResponse = await therapeuticChatAdapter.processTherapeuticRequest(therapeuticRequest);
+      // Process through AI Intelligence Layer (correct entry point)
+      const aiResponse = await intelligentRouter.process(aiRequest);
 
-      console.log("Therapeutic Chat - AI Intelligence Layer response:", adapterResponse);
+      console.log("Therapeutic Chat - AI Intelligence Layer response:", aiResponse);
 
       // Format response for frontend compatibility
       const formattedResponse = {
-        response: adapterResponse.content || "I understand what you're sharing with me.",
-        followUpQuestion: adapterResponse.therapeuticInsights?.recommendedFollowUp?.[0] || "Can you tell me more about how this is affecting you?",
-        emotionalInsight: adapterResponse.therapeuticInsights?.detectedEmotionalState || "processing",
+        response: aiResponse.content || "I understand what you're sharing with me.",
+        followUpQuestion: "Can you tell me more about how this is affecting you?",
+        emotionalInsight: "processing",
         threadId: threadId,
         exchangeId: `exchange_${Date.now()}`,
-        cost: adapterResponse.metadata.cost,
+        cost: aiResponse.metadata.cost,
         remainingRequests: 50, // Will be calculated properly later
         aiResponse: {
-          analysis: { professionalAnalysis: adapterResponse.content },
-          question: adapterResponse.content,
-          cost: adapterResponse.metadata.cost,
-          modelUsed: adapterResponse.metadata.modelUsed,
-          provider: adapterResponse.metadata.provider
+          analysis: { professionalAnalysis: aiResponse.content },
+          question: aiResponse.content,
+          cost: aiResponse.metadata.cost,
+          modelUsed: aiResponse.metadata.modelUsed,
+          provider: aiResponse.metadata.provider
         }
       };
 

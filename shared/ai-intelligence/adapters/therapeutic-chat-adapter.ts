@@ -74,12 +74,15 @@ export class TherapeuticChatAdapter {
   }
 
   /**
-   * Process therapeutic chat request with advanced personalization
-   * BYPASSES cost optimization to preserve therapeutic quality
+   * Process therapeutic chat request through TherapeuticChatEngine
+   * Correct flow: adapter → therapeutic-chat-engine → APIs
    */
   async processTherapeuticRequest(request: TherapeuticRequest): Promise<TherapeuticResponse> {
     try {
-      // Apply advanced therapeutic intelligence from engine
+      // Import TherapeuticChatEngine
+      const { deepJournalingEngine } = require('../../server/therapeutic-chat/therapeutic-chat-engine');
+
+      // Apply advanced therapeutic intelligence from adapter
       const therapeuticEnhancedPrompt = await this.applyTherapeuticIntelligence(
         request,
         request.systemPrompt
@@ -99,22 +102,29 @@ export class TherapeuticChatAdapter {
         request.options?.enableContextualMemory
       );
 
-      // Analyze therapeutic complexity for premium model selection
-      const complexity = this.analyzeTherapeuticComplexity(request.userInput, request.sessionContext);
-      const emotionalIntensity = this.analyzeEmotionalIntensity(request.userInput);
+      // Build request for TherapeuticChatEngine (DeepJournalingEngine)
+      const engineRequest = {
+        userId: request.userId,
+        userInput: enhancedUserInput,
+        threadId: request.sessionContext.threadId,
+        actionType: request.sessionContext.sessionType,
+        customizations: {
+          tone: request.personalization?.preferredResponseStyle || 'empathetic',
+          approach: request.sessionContext.currentTherapeuticStyle || 'balanced',
+          responseLength: 'balanced',
+          focusArea: request.sessionContext.therapeuticGoals?.[0] || 'general'
+        },
+        wasVoiceInput: false
+      };
 
-      // BYPASS cost optimization - use direct premium API calls for therapeutic quality
-      const aiResponse = await this.processDirectPremiumAPI({
-        prompt: enhancedUserInput,
-        systemPrompt: enhancedSystemPrompt,
-        userTier: request.userTier,
-        complexity,
-        emotionalIntensity,
-        options: request.options
-      });
+      // Process through TherapeuticChatEngine (correct flow)
+      const engineResponse = await deepJournalingEngine.processJournalingRequest(engineRequest);
+
+      // Extract content from engine response
+      const content = engineResponse.analysis?.professionalAnalysis || engineResponse.question || "I understand what you're sharing with me.";
 
       // Apply adaptive language generation if enabled
-      let finalContent = aiResponse.content;
+      let finalContent = content;
       let adaptiveLanguageApplied = false;
       
       if (request.options?.enableAdaptiveLanguage) {
