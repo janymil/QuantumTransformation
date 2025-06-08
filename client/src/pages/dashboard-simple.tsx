@@ -1,11 +1,16 @@
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
-import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
-import OnboardingTour from "@/components/onboarding-tour";
-import { Play, BookOpen, Brain, Target, Zap } from "lucide-react";
-import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { Brain, Calendar, Target, TrendingUp, Zap, BookOpen, Users, Heart, DollarSign, Sparkles, Clock, CheckCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { lazy, Suspense } from "react";
+import { useAuth } from "@/hooks/useAuth";
+
+// Lazy load heavy components
+const SpacedRepetitionWidget = lazy(() => import("@/components/spaced-repetition-widget"));
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -26,7 +31,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
-          
+
           {/* Header */}
           <div className="flex items-center justify-between" data-tour-target="dashboard-header">
             <div>
@@ -47,14 +52,25 @@ export default function Dashboard() {
 
           {/* Multi-Challenge Dashboard */}
           <div data-tour-target="practice-area">
-            <MultiChallengeDashboard />
+            {/* MultiChallengeDashboard Component */}
           </div>
 
           {/* Additional Learning Tools */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Spaced Repetition Learning */}
-            <SpacedRepetitionWidget challengeType="general_quantum" />
-            
+            {/* Spaced Repetition Widget */}
+            <Suspense fallback={
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Loading spaced repetition...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            }>
+              <SpacedRepetitionWidget challengeType="general_quantum" />
+            </Suspense>
+
             {/* Quick Actions */}
             <Card>
               <CardHeader>
@@ -87,7 +103,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      
+
 
     </div>
   );

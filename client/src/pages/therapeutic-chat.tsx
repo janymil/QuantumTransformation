@@ -158,14 +158,10 @@ export default function TherapeuticChat() {
     }
   }, [messages.length]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto scroll to bottom
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // Remove the undefined inputRef usage - not needed since MessageInput handles its own focus
 
   const handleSendMessage = async () => {
     if (!currentMessage.trim() || sendMessageMutation.isPending) return;
@@ -225,35 +221,6 @@ export default function TherapeuticChat() {
       toast({
         title: "Error",
         description: "Failed to generate new direction. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCustomizeResponse = async () => {
-    // Get the last AI message to customize
-    const lastAiMessage = messages.filter(m => m.type === 'ai').pop();
-    if (!lastAiMessage) {
-      toast({
-        title: "No Response to Customize",
-        description: "Please have a conversation first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const customizePrompt = `Please regenerate your previous response using these new therapeutic parameters: Conversation Style: ${conversationStyle}, Focus Area: ${focusArea}, Response Length: ${responseLength}. Maintain the same therapeutic content but adjust the style, focus, and length according to these preferences.`;
-
-    try {
-      await sendMessageMutation.mutateAsync({
-        message: customizePrompt,
-        actionType: 'customize_response'
-      });
-      setShowCustomizationModal(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to customize response. Please try again.",
         variant: "destructive",
       });
     }
@@ -509,11 +476,11 @@ export default function TherapeuticChat() {
 
       if (response.ok) {
         const data = await response.json();
-
+        
         if (data.transcription && data.transcription.trim()) {
           // Set the transcribed text in the input field
           setCurrentMessage(data.transcription);
-
+          
           toast({
             title: "Voice Processed",
             description: "Your message has been transcribed. Review and send when ready.",
@@ -835,11 +802,10 @@ export default function TherapeuticChat() {
             </div>
 
             <Button 
-              onClick={handleCustomizeResponse}
+              onClick={() => setShowCustomizationModal(false)}
               className="w-full"
-              disabled={sendMessageMutation.isPending}
             >
-              {sendMessageMutation.isPending ? "Customizing..." : "Apply & Regenerate Response"}
+              Apply Settings
             </Button>
           </div>
         </DialogContent>

@@ -46,11 +46,6 @@ import { initializeUserGamification } from "./gamification";
 // import { registerDeepJournalingRoutes } from "./deep-journaling-engine"; // Function not available
 import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
-import { knowledgeRoutes } from "@shared/ai-intelligence/advanced/api-routes";
-import multer from 'multer';
-import { integratedDocumentProcessor } from '../shared/document-processing/integrated-processor';
-import { dbConnectionManager } from './db-connection-manager';
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-domain authentication endpoints (must be before auth middleware)
   
@@ -4208,102 +4203,118 @@ Design the vision board with 6-12 elements strategically placed. Include inspira
     }
   });
 
-  // Therapeutic Chat Processing endpoint using advanced DeepJournalingEngine
+  // Therapeutic Chat Processing endpoint (no database save)
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { userInput: message, conversationStyle = 'socratic', focusArea = 'general', responseLength = 'balanced', actionType, threadId } = req.body;
+      const { userInput: message, conversationStyle = 'supportive', focusArea = 'general', actionType } = req.body;
 
       if (!message?.trim()) {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Import the advanced therapeutic engine
-      const { deepJournalingEngine } = require('./therapeutic-chat/therapeutic-chat-engine');
+      // Generate specialized therapeutic prompts based on action type
+      let therapeuticPrompt;
+      
+      if (actionType === 'go_deeper') {
+        therapeuticPrompt = `You are a professional therapist conducting deep therapeutic exploration. The user wants to go deeper into their previous discussion. Your role is to:
 
-      // Map frontend customization to advanced engine format
-      const customizations = mapFrontendToEngineCustomizations(conversationStyle, focusArea, responseLength);
+1. Ask probing, insightful follow-up questions that uncover underlying patterns
+2. Guide them to examine root causes, beliefs, and emotional connections
+3. Help them discover insights they might not have considered
+4. Use therapeutic techniques to explore deeper layers of their experience
+5. Challenge them gently to explore different perspectives
 
-      // Build request for advanced engine
-      const engineRequest = {
-        userId,
-        userInput: message,
-        threadId,
-        actionType,
-        customizations,
-        wasVoiceInput: false
-      };
+The user's deeper exploration request: "${message}"
 
-      console.log("Therapeutic Chat - Using advanced engine with request:", engineRequest);
+Provide your response in this JSON format:
+{
+  "response": "Deep therapeutic response with follow-up questions that guide deeper exploration",
+  "followUpQuestion": "A profound question that uncovers underlying patterns or beliefs",
+  "emotionalInsight": "deeper understanding"
+}`;
 
-      // Process through advanced therapeutic engine
-      const engineResponse = await deepJournalingEngine.processJournalingRequest(engineRequest);
+      } else if (actionType === 'new_direction') {
+        therapeuticPrompt = `You are a professional therapist shifting therapeutic direction. The user wants to explore their concerns from a completely different angle. Your role is to:
 
-      console.log("Therapeutic Chat - Advanced engine response:", engineResponse);
+1. Take a fresh, innovative approach to their situation
+2. Challenge assumptions and reveal new perspectives
+3. Ask questions that explore unexplored aspects
+4. Use creative therapeutic techniques to reframe their experience
+5. Guide them toward breakthrough insights
 
-      // Format response for frontend compatibility
-      const formattedResponse = {
-        response: engineResponse.analysis?.professionalAnalysis || engineResponse.question || "I understand what you're sharing with me.",
-        followUpQuestion: engineResponse.question || "Can you tell me more about how this is affecting you?",
-        emotionalInsight: engineResponse.emotionalState?.primaryEmotion || "processing",
-        threadId: engineResponse.threadId,
-        exchangeId: engineResponse.exchangeId,
-        cost: engineResponse.cost,
-        remainingRequests: engineResponse.remainingRequests
-      };
+The user's direction change request: "${message}"
 
-      res.json(formattedResponse);
+Provide your response in this JSON format:
+{
+  "response": "A fresh therapeutic response that shifts perspective and explores new angles",
+  "followUpQuestion": "An innovative question that reveals unexplored aspects or challenges assumptions",
+  "emotionalInsight": "new perspective"
+}`;
+
+      } else {
+        // Regular therapeutic conversation
+        therapeuticPrompt = `You are a professional therapeutic companion engaging in a flowing conversation. Your role is to:
+
+1. Respond with empathy and genuine understanding
+2. Provide thoughtful insights when appropriate  
+3. Ask meaningful follow-up questions to deepen the conversation
+4. Maintain a warm, supportive tone while being professionally helpful
+
+Conversation Style: ${conversationStyle}  
+Focus Area: ${focusArea}
+
+The user just shared: "${message}"
+
+Respond as a therapeutic companion would - with understanding, insight, and a thoughtful question that continues the conversation naturally. Keep your response conversational and engaging, not clinical.
+
+Provide your response in this JSON format:
+{
+  "response": "Your empathetic response with insights",
+  "followUpQuestion": "A thoughtful question to continue the conversation",
+  "emotionalInsight": "Brief emotional insight (1-3 words like 'exploring vulnerability' or 'processing change')"
+}`;
+      }
+
+      console.log("Therapeutic Chat - Processing message:", message);
+
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: therapeuticPrompt },
+          { role: "user", content: message }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 800
+      });
+
+      console.log("Therapeutic Chat - OpenAI Raw Response:", aiResponse.choices[0].message.content);
+      
+      let therapeuticData;
+      try {
+        therapeuticData = JSON.parse(aiResponse.choices[0].message.content || '{}');
+        console.log("Therapeutic Chat - Parsed data:", therapeuticData);
+      } catch (parseError) {
+        console.error("Therapeutic Chat - JSON parse error:", parseError);
+        therapeuticData = {
+          response: "I understand what you're sharing with me. That sounds really challenging.",
+          followUpQuestion: "Can you tell me more about how this is affecting you?",
+          emotionalInsight: "processing"
+        };
+      }
+
+      res.json({
+        response: therapeuticData.response,
+        followUpQuestion: therapeuticData.followUpQuestion,
+        emotionalInsight: therapeuticData.emotionalInsight
+      });
 
     } catch (error) {
-      console.error("Error in advanced therapeutic chat processing:", error);
+      console.error("Error in therapeutic chat processing:", error);
       res.status(500).json({ message: "Failed to process message" });
     }
   });
-
-  // Helper function to map frontend customization to engine format with enhanced therapeutic styles
-  function mapFrontendToEngineCustomizations(conversationStyle: string, focusArea: string, responseLength: string) {
-    // Import enhanced customization functions
-    const { getCustomizationSystemPrompt } = require('./therapeutic-chat/therapeutic-frameworks');
-    
-    // Map conversation style to therapeutic mode and tone using valid type values
-    let mode: 'conversational' | 'therapeutic' | 'analytical' = 'therapeutic';
-    let tone: 'supportive' | 'challenging' | 'neutral' | 'empathetic' = 'supportive';
-    let perspective: 'psychologist' | 'life_coach' | 'cbt_therapist' | 'philosopher' | 'stoic' = 'psychologist';
-
-    // Map styles to engine parameters while preserving advanced functionality
-    switch(conversationStyle) {
-      case 'socratic':
-        mode = 'analytical';
-        tone = 'neutral';
-        perspective = 'philosopher';
-        break;
-      case 'directive':
-        mode = 'therapeutic';
-        tone = 'challenging';
-        perspective = 'life_coach';
-        break;
-      case 'reflective':
-        mode = 'conversational';
-        tone = 'empathetic';
-        perspective = 'psychologist';
-        break;
-      case 'collaborative':
-        mode = 'conversational';
-        tone = 'supportive';
-        perspective = 'psychologist';
-        break;
-    }
-
-    // Generate comprehensive customization instructions using enhanced system
-    const customInstructions = getCustomizationSystemPrompt(conversationStyle, focusArea, responseLength);
-
-    return {
-      mode,
-      tone,
-      perspective,
-      customInstructions
-    };
-  }
 
   // Voice Transcription endpoint for Therapeutic Chat
   app.post('/api/therapeutic-chat/transcribe', isAuthenticated, async (req: any, res) => {
@@ -4986,264 +4997,6 @@ Provide your response in this JSON format:
 
   // Register deep journaling routes
   // registerDeepJournalingRoutes(app); // Function not available
-
-  // Register knowledge acquisition routes - temporarily disabled
-  // app.use('/api', knowledgeRoutes);
-
-  // Configure multer for file uploads
-  const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB limit
-    },
-    fileFilter: (req, file, cb) => {
-      const allowedTypes = [
-        'application/pdf',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain',
-        'application/json'
-      ];
-      if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error('Unsupported file type. Only PDF, Word, text and JSON files are supported.'), false);
-      }
-    }
-  });
-
-  // Document Processing API Routes
-  
-  // Upload and process document
-  app.post('/api/documents/upload', isAuthenticated, upload.single('document'), async (req, res) => {
-    try {
-      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
-      
-      if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-      }
-
-      const { discipline = 'general' } = req.body;
-      
-      // Determine file type
-      let fileType: 'pdf' | 'docx' | 'txt' | 'image';
-      switch (req.file.mimetype) {
-        case 'application/pdf':
-          fileType = 'pdf';
-          break;
-        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-          fileType = 'docx';
-          break;
-        case 'text/plain':
-        case 'application/json':
-          fileType = 'txt';
-          break;
-        default:
-          return res.status(400).json({ error: 'Unsupported file type' });
-      }
-
-      console.log(`Processing ${fileType} document: ${req.file.originalname}`);
-
-      // Process document with connection retry mechanism
-      const result = await dbConnectionManager.executeWithRetry(async () => {
-        return await integratedDocumentProcessor.processDocument(
-          req.file.buffer,
-          req.file.originalname,
-          fileType,
-          discipline
-        );
-      });
-
-      if (!result.processing.success) {
-        return res.status(500).json({ 
-          error: 'Document processing failed',
-          details: result.processing.errors
-        });
-      }
-
-      // Store processing record in database (optional - could add schema for this)
-      console.log(`Document processed successfully: ${result.bunnyNetUrl}`);
-
-      res.json({
-        success: true,
-        document: {
-          id: result.id,
-          filename: result.originalFilename,
-          url: result.bunnyNetUrl,
-          fileType: result.fileType,
-          discipline,
-          processingTime: result.processing.processingTime,
-          qualityScore: result.processing.qualityScore,
-          extractedContent: {
-            wordCount: result.extractedContent.metadata.wordCount,
-            concepts: result.extractedContent.analysis.concepts.slice(0, 10),
-            clinicalTerms: result.extractedContent.analysis.clinicalTerms.slice(0, 5),
-            citations: result.extractedContent.analysis.citations.slice(0, 3),
-            readabilityScore: result.extractedContent.analysis.readabilityScore,
-            credibilityIndicators: result.extractedContent.quality.credibilityIndicators
-          },
-          knowledgeBase: result.knowledgeBase,
-          storage: result.storage
-        }
-      });
-
-    } catch (error) {
-      console.error('Document upload error:', error);
-      res.status(500).json({ 
-        error: 'Failed to process document',
-        message: error.message 
-      });
-    }
-  });
-
-  // Process multiple documents in batch
-  app.post('/api/documents/batch-upload', isAuthenticated, upload.array('documents', 10), async (req, res) => {
-    try {
-      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
-      
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ error: 'No files uploaded' });
-      }
-
-      const { discipline = 'general' } = req.body;
-      const files = req.files as Express.Multer.File[];
-
-      console.log(`Processing batch of ${files.length} documents`);
-
-      const documentsToProcess = files.map(file => {
-        let fileType: 'pdf' | 'docx' | 'txt' | 'image';
-        switch (file.mimetype) {
-          case 'application/pdf':
-            fileType = 'pdf';
-            break;
-          case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            fileType = 'docx';
-            break;
-          case 'text/plain':
-            fileType = 'txt';
-            break;
-          case 'image/png':
-          case 'image/jpeg':
-          case 'image/jpg':
-            fileType = 'image';
-            break;
-          default:
-            throw new Error(`Unsupported file type: ${file.mimetype}`);
-        }
-
-        return {
-          buffer: file.buffer,
-          filename: file.originalname,
-          fileType,
-          discipline
-        };
-      });
-
-      const results = await integratedDocumentProcessor.processBatch(documentsToProcess);
-
-      const successfulResults = results.filter(r => r.processing.success);
-      const failedResults = results.filter(r => !r.processing.success);
-
-      res.json({
-        success: true,
-        processed: successfulResults.length,
-        failed: failedResults.length,
-        total: results.length,
-        results: results.map(result => ({
-          id: result.id,
-          filename: result.originalFilename,
-          url: result.bunnyNetUrl,
-          success: result.processing.success,
-          qualityScore: result.processing.qualityScore,
-          processingTime: result.processing.processingTime,
-          errors: result.processing.errors || []
-        }))
-      });
-
-    } catch (error) {
-      console.error('Batch upload error:', error);
-      res.status(500).json({ 
-        error: 'Failed to process documents',
-        message: error.message 
-      });
-    }
-  });
-
-  // Retrieve document content
-  app.get('/api/documents/:documentId', isAuthenticated, async (req, res) => {
-    try {
-      const { documentId } = req.params;
-      const { url } = req.query;
-
-      if (!url) {
-        return res.status(400).json({ error: 'Document URL required' });
-      }
-
-      const content = await integratedDocumentProcessor.retrieveDocument(url as string);
-      
-      res.json({
-        success: true,
-        documentId,
-        content,
-        url
-      });
-
-    } catch (error) {
-      console.error('Document retrieval error:', error);
-      res.status(500).json({ 
-        error: 'Failed to retrieve document',
-        message: error.message 
-      });
-    }
-  });
-
-  // Search processed documents
-  app.get('/api/documents/search', isAuthenticated, async (req, res) => {
-    try {
-      const { query, discipline, limit = 10 } = req.query;
-
-      if (!query) {
-        return res.status(400).json({ error: 'Search query required' });
-      }
-
-      const results = await integratedDocumentProcessor.searchDocuments(
-        query as string,
-        discipline as string,
-        parseInt(limit as string)
-      );
-
-      res.json({
-        success: true,
-        query,
-        results
-      });
-
-    } catch (error) {
-      console.error('Document search error:', error);
-      res.status(500).json({ 
-        error: 'Failed to search documents',
-        message: error.message 
-      });
-    }
-  });
-
-  // Get processing statistics
-  app.get('/api/documents/stats', isAuthenticated, async (req, res) => {
-    try {
-      const stats = await integratedDocumentProcessor.getProcessingStats();
-      
-      res.json({
-        success: true,
-        stats
-      });
-
-    } catch (error) {
-      console.error('Stats retrieval error:', error);
-      res.status(500).json({ 
-        error: 'Failed to retrieve statistics',
-        message: error.message 
-      });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

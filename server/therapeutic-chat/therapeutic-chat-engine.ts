@@ -14,14 +14,6 @@ import { buildTherapeuticSystemPrompt, getNewDirectionSystemPrompt, getCustomiza
 import { psychologicalAnalyzer } from "./psychological-analyzer";
 import { intelligentModelRouter } from "./intelligent-model-router";
 import { advancedCostOptimization } from "./advanced-cost-optimization";
-import { userModelingEngine } from "./user-modeling-engine";
-import type { PersonalizationRecommendations } from "./user-modeling-engine";
-import { dynamicFrameworkSelector } from "./dynamic-framework-selector";
-import type { FrameworkRecommendation } from "./dynamic-framework-selector";
-import { contextualMemoryArchitecture } from "./contextual-memory-architecture";
-import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-architecture";
-import { adaptiveLanguageGenerator } from "./adaptive-language-generator";
-import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
 
 export class DeepJournalingEngine {
   
@@ -52,76 +44,20 @@ export class DeepJournalingEngine {
     const threadHistory = await this.getThreadHistory(thread.id);
     const userContext = await this.getUserContext(request.userId);
     
-    // Get personalization recommendations for premium-level responses
-    const personalizationRecs = await userModelingEngine.getPersonalizationRecommendations(request.userId);
-    
-    // Select optimal therapeutic framework based on real-time session analysis
-    const frameworkRecommendation = await dynamicFrameworkSelector.selectOptimalFramework(
-      request.userId,
-      thread.id,
-      request.userInput,
-      { userProfile, threadHistory, userContext }
-    );
-
-    // Analyze cross-session patterns and update therapeutic memory
-    const crossSessionPatterns = await contextualMemoryArchitecture.analyzeCrossSessionPatterns(request.userId);
-    const therapeuticMemory = await contextualMemoryArchitecture.getTherapeuticMemory(request.userId);
-    
     // Determine exchange order
     const exchangeOrder = threadHistory.length + 1;
     
     // Generate AI response based on action type
     let aiResponse;
     if (request.actionType === 'new_direction') {
-      aiResponse = await this.generateNewDirectionResponse(request, thread, userProfile, userContext, personalizationRecs, frameworkRecommendation);
+      aiResponse = await this.generateNewDirectionResponse(request, thread, userProfile, userContext);
     } else if (request.actionType === 'customize_response' && threadHistory.length > 0) {
-      aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile, personalizationRecs, frameworkRecommendation);
+      aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile);
     } else {
-      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs, frameworkRecommendation, therapeuticMemory, crossSessionPatterns);
+      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext);
     }
     
     const processingTime = Date.now() - startTime;
-    
-    // Detect breakthrough moments and update therapeutic memory
-    const breakthroughMoment = await contextualMemoryArchitecture.identifyBreakthroughMoments(
-      request.userId,
-      thread.id,
-      exchangeOrder,
-      request.userInput,
-      aiResponse.analysis?.professionalAnalysis || aiResponse.question || ''
-    );
-    
-    // Track therapeutic goals based on current session
-    await contextualMemoryArchitecture.trackTherapeuticGoals(request.userId, {
-      userInput: request.userInput,
-      aiResponse: aiResponse,
-      emotionalState: aiResponse.emotionalState,
-      exchangeOrder
-    });
-
-    // Apply adaptive language generation for user-specific communication
-    const languageAdaptation = await adaptiveLanguageGenerator.generateAdaptedResponse(
-      request.userId,
-      aiResponse.question || aiResponse.analysis?.professionalAnalysis || '',
-      {
-        userInput: request.userInput,
-        emotionalState: aiResponse.emotionalState,
-        therapeuticFramework: frameworkRecommendation.primaryFramework,
-        sessionHistory: threadHistory
-      }
-    );
-
-    // Update AI response with language-adapted content
-    if (languageAdaptation.adaptedContent !== aiResponse.question) {
-      aiResponse.question = languageAdaptation.adaptedContent;
-      aiResponse.languageAdaptation = {
-        vocabularyAdjustments: languageAdaptation.vocabularyAdjustments,
-        metaphorsUsed: languageAdaptation.metaphorsUsed,
-        culturalAdaptations: languageAdaptation.culturalAdaptations,
-        emotionalResonanceElements: languageAdaptation.emotionalResonanceElements,
-        adaptationReasoning: languageAdaptation.adaptationReasoning
-      };
-    }
     
     // Save exchange to database
     const [savedExchange] = await db.insert(threadExchanges).values({
@@ -154,23 +90,6 @@ export class DeepJournalingEngine {
     // Update psychological profile
     await this.updatePsychologicalProfile(request.userId, request.userInput, aiResponse, userProfile);
     
-    // Analyze interaction for user modeling and personalization improvements
-    await userModelingEngine.analyzeInteraction({
-      userId: request.userId,
-      threadId: thread.id,
-      exchangeId: savedExchange.id,
-      userInput: request.userInput,
-      aiResponse: aiResponse.question,
-      sessionMetadata: {
-        timeOfDay: this.getTimeOfDay(),
-        sessionDuration: processingTime,
-        techniquesUsed: this.extractTechniquesUsed(aiResponse),
-        frameworksApplied: personalizationRecs.therapeuticFrameworks,
-        questioningStyle: personalizationRecs.therapeuticStyle,
-        interventionType: this.determineInterventionType(request, aiResponse)
-      }
-    });
-    
     return {
       threadId: thread.id,
       exchangeId: savedExchange.id,
@@ -195,36 +114,14 @@ export class DeepJournalingEngine {
     thread: JournalingThread, 
     history: ThreadExchange[], 
     userProfile: PsychologicalProfile | null,
-    userContext: any,
-    personalizationRecs: PersonalizationRecommendations,
-    frameworkRec: FrameworkRecommendation,
-    therapeuticMemory?: TherapeuticMemory,
-    crossSessionPatterns?: any[]
+    userContext: any
   ) {
-    // Use dynamic framework recommendation with personalization for optimal therapeutic intervention
-    const mode = request.customizations?.mode || personalizationRecs.communicationAdjustments.tone || thread.preferredMode || 'conversational';
-    const tone = request.customizations?.tone || personalizationRecs.communicationAdjustments.tone || thread.preferredTone || 'supportive';
-    const perspective = request.customizations?.perspective || frameworkRec.primaryFramework || personalizationRecs.therapeuticStyle || thread.preferredPerspective || 'psychologist';
+    const mode = request.customizations?.mode || thread.preferredMode || 'conversational';
+    const tone = request.customizations?.tone || thread.preferredTone || 'supportive';
+    const perspective = request.customizations?.perspective || thread.preferredPerspective || 'psychologist';
 
-    // Build enhanced system prompt with dynamic framework selection and personalization
-    const systemPrompt = buildTherapeuticSystemPrompt(
-      [frameworkRec.primaryFramework, ...frameworkRec.secondaryFrameworks],
-      request.userInput, 
-      { 
-        mode, 
-        tone, 
-        perspective,
-        responseLength: personalizationRecs.communicationAdjustments.responseLength,
-        metaphorTypes: personalizationRecs.communicationAdjustments.metaphorTypes,
-        avoidanceFactors: [...personalizationRecs.avoidanceFactors, ...frameworkRec.avoidanceFactors],
-        customInstructions: [...personalizationRecs.customInstructions, ...frameworkRec.adaptationInstructions],
-        interventionType: frameworkRec.interventionType,
-        frameworkRationale: frameworkRec.rationale,
-        expectedOutcomes: frameworkRec.expectedOutcomes
-      }
-    );
-    
-    const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext, therapeuticMemory, crossSessionPatterns);
+    const systemPrompt = buildTherapeuticSystemPrompt([], request.userInput, { mode, tone, perspective });
+    const contextPrompt = this.buildContextPrompt(thread, history, userProfile, userContext);
     const analysisPrompt = this.buildAnalysisPrompt(request.userInput, request.actionType);
 
     const messages = [
@@ -307,9 +204,7 @@ export class DeepJournalingEngine {
     request: DeepJournalingRequest,
     thread: JournalingThread,
     userProfile: PsychologicalProfile | null,
-    userContext: any,
-    personalizationRecs: PersonalizationRecommendations,
-    frameworkRec: FrameworkRecommendation
+    userContext: any
   ) {
     const systemPrompt = getNewDirectionSystemPrompt({});
 
@@ -347,9 +242,7 @@ export class DeepJournalingEngine {
     request: DeepJournalingRequest,
     thread: JournalingThread,
     lastExchange: ThreadExchange,
-    userProfile: PsychologicalProfile | null,
-    personalizationRecs: PersonalizationRecommendations,
-    frameworkRec: FrameworkRecommendation
+    userProfile: PsychologicalProfile | null
   ) {
     const mode = request.customizations?.mode || 'conversational';
     const tone = request.customizations?.tone || 'supportive';
@@ -392,9 +285,7 @@ export class DeepJournalingEngine {
     thread: JournalingThread, 
     history: ThreadExchange[], 
     userProfile: PsychologicalProfile | null,
-    userContext: any,
-    therapeuticMemory?: TherapeuticMemory,
-    crossSessionPatterns?: any[]
+    userContext: any
   ): string {
     let context = `CONVERSATION CONTEXT:\n`;
     context += `Thread: ${thread.title}\n`;
@@ -434,42 +325,6 @@ export class DeepJournalingEngine {
       context += `\nRECENT JOURNAL CONTEXT:\n`;
       userContext.journalEntries.slice(-2).forEach((entry: any) => {
         context += `Day ${entry.day}: ${entry.experience || entry.insights}\n`;
-      });
-    }
-
-    // Add therapeutic memory and cross-session insights
-    if (therapeuticMemory) {
-      context += `\nTHERAPEUTIC MEMORY & PROGRESS:\n`;
-      
-      if (therapeuticMemory.goals.length > 0) {
-        context += `Active Therapeutic Goals:\n`;
-        therapeuticMemory.goals.slice(0, 3).forEach(goal => {
-          context += `- ${goal.title}: ${goal.currentProgress}% complete (${goal.category})\n`;
-        });
-      }
-      
-      if (therapeuticMemory.breakthroughs.length > 0) {
-        context += `Recent Breakthroughs:\n`;
-        therapeuticMemory.breakthroughs.slice(0, 2).forEach(breakthrough => {
-          context += `- ${breakthrough.type}: ${breakthrough.description} (significance: ${breakthrough.significance}/10)\n`;
-        });
-      }
-      
-      if (therapeuticMemory.resistancePatterns.length > 0) {
-        context += `Resistance Patterns:\n`;
-        therapeuticMemory.resistancePatterns.slice(0, 2).forEach(pattern => {
-          context += `- "${pattern.pattern}" (frequency: ${pattern.frequency}, trend: ${pattern.trend})\n`;
-        });
-      }
-      
-      context += `Progress Velocity: ${therapeuticMemory.progressVelocity.predictedTrajectory} (${therapeuticMemory.progressVelocity.engagementTrend} engagement)\n`;
-      context += `Therapeutic Alliance Score: ${Math.round(therapeuticMemory.therapeuticAlliance * 100)}%\n`;
-    }
-
-    if (crossSessionPatterns && crossSessionPatterns.length > 0) {
-      context += `\nCROSS-SESSION PATTERNS:\n`;
-      crossSessionPatterns.slice(0, 3).forEach(pattern => {
-        context += `- ${pattern.pattern}: ${pattern.occurrences} occurrences over ${pattern.timeSpan} days (significance: ${pattern.significance}/10)\n`;
       });
     }
 
@@ -744,65 +599,6 @@ export class DeepJournalingEngine {
     const qualityFactor = aiResponse.analysis && aiResponse.question ? 1.2 : 0.8;
     
     return Math.min(1, baseEfficiency * costFactor * qualityFactor);
-  }
-
-  /**
-   * Helper methods for Multi-Dimensional User Modeling
-   */
-  private getTimeOfDay(): string {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'morning';
-    if (hour < 17) return 'afternoon';
-    if (hour < 21) return 'evening';
-    return 'night';
-  }
-
-  private extractTechniquesUsed(aiResponse: any): string[] {
-    const techniques = [];
-    
-    // Analyze the response to identify therapeutic techniques used
-    const responseText = aiResponse.question?.toLowerCase() || '';
-    
-    if (responseText.includes('what if') || responseText.includes('imagine')) {
-      techniques.push('hypothetical_questioning');
-    }
-    if (responseText.includes('how did that feel') || responseText.includes('emotion')) {
-      techniques.push('emotional_exploration');
-    }
-    if (responseText.includes('pattern') || responseText.includes('similar')) {
-      techniques.push('pattern_identification');
-    }
-    if (responseText.includes('why') || responseText.includes('what led')) {
-      techniques.push('socratic_questioning');
-    }
-    if (responseText.includes('reframe') || responseText.includes('another way')) {
-      techniques.push('cognitive_reframing');
-    }
-    
-    return techniques.length > 0 ? techniques : ['supportive_questioning'];
-  }
-
-  private determineInterventionType(request: DeepJournalingRequest, aiResponse: any): string {
-    // Determine intervention type based on request and response characteristics
-    if (request.actionType === 'new_direction') return 'redirection';
-    if (request.actionType === 'customize_response') return 'adaptation';
-    
-    const responseText = aiResponse.question?.toLowerCase() || '';
-    
-    if (responseText.includes('challenge') || responseText.includes('push')) {
-      return 'confrontation';
-    }
-    if (responseText.includes('understand') || responseText.includes('clarify')) {
-      return 'clarification';
-    }
-    if (responseText.includes('feel') || responseText.includes('valid')) {
-      return 'validation';
-    }
-    if (responseText.includes('insight') || responseText.includes('meaning')) {
-      return 'interpretation';
-    }
-    
-    return 'support';
   }
 
   /**

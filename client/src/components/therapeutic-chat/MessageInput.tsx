@@ -1,8 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Send } from "lucide-react";
-import React, { useState, useRef } from 'react';
-
 
 interface MessageInputProps {
   currentMessage: string;
@@ -39,7 +37,7 @@ export function MessageInput({
                 className="min-h-[120px] max-h-[200px] resize-none pr-20 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400"
                 disabled={isLoading}
               />
-
+              
               {/* Voice and Send buttons inside textarea */}
               <div className="absolute bottom-3 right-3 flex items-center gap-2">
                 <Button
@@ -75,65 +73,3 @@ export function MessageInput({
     </div>
   );
 }
-
-interface NewMessageInputProps {
-  onSendMessage: (message: string) => void;
-  disabled?: boolean;
-}
-
-export const NewMessageInput: React.FC<NewMessageInputProps> = ({ onSendMessage, disabled }) => {
-  const [message, setMessage] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Focus on mount with proper null checking
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      if (textareaRef.current && !disabled) {
-        textareaRef.current.focus();
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [disabled]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
-      setMessage('');
-      // Add null check before accessing ref
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-        }
-      }, 0);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t">
-      <Textarea
-        ref={textareaRef}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyPress={handleKeyPress}
-        placeholder="Share what's on your mind..."
-        className="flex-1 min-h-[40px] max-h-[120px] resize-none"
-        disabled={disabled}
-      />
-      <Button
-        type="submit"
-        disabled={!message.trim() || disabled}
-        className="self-end"
-      >
-        <Send className="h-4 w-4" />
-      </Button>
-    </form>
-  );
-};
