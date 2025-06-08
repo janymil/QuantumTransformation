@@ -48,8 +48,10 @@ import { responseQualityTiering } from "./response-quality-tiering";
 // Helper function to extract user ID from authenticated request
 function getUserId(req: any): string {
   const user = req.user as any;
-  const userId = user?.claims?.sub || user?.id || user?.userId;
+  // Handle different authentication formats
+  const userId = user?.id || user?.userId || user?.claims?.sub || user?.sub;
   if (!userId) {
+    console.error("User ID not found. User object:", user);
     throw new Error("User ID not found in authenticated request");
   }
   return userId;

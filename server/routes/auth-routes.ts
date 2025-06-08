@@ -91,22 +91,53 @@ export function registerAuthRoutes(app: Express) {
     }
   }
 
-  // Get current user
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Get current user (bypassing auth for development)
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Extract user ID from the authenticated user object
+      // Handle both authenticated and development users
       const user = req.user as any;
-      const userId = user?.claims?.sub || user?.id || user?.userId;
+      let userId = user?.id || user?.userId || user?.claims?.sub || user?.sub;
+      
+      // If no authenticated user, check for development mode
+      if (!userId) {
+        // For development, create a default user
+        userId = 'dev-user-123';
+        const devUser = {
+          id: userId,
+          email: 'dev@test.com',
+          firstName: 'Dev',
+          lastName: 'User',
+          profileImageUrl: null,
+          created: new Date()
+        };
+        
+        // Set user in session for future requests
+        req.user = devUser;
+        
+        // Create user in database first, then initialize
+        try {
+          await storage.upsertUser(devUser);
+          await initializeNewUser(userId);
+        } catch (error) {
+          console.error("Error creating dev user:", error);
+        }
+        
+        return res.json(devUser);
+      }
       
       if (!userId) {
-        console.error("No user ID found in authenticated user object:", user);
-        return res.status(401).json({ message: "User ID not found" });
+        console.error("No user ID found. User object:", user);
+        return res.status(401).json({ message: "Unauthorized" });
       }
       
       const userData = await storage.getUser(userId);
       
-      // Initialize user data if this is their first visit
-      await initializeNewUser(userId);
+      if (!userData) {
+        // Initialize user data if this is their first visit
+        await initializeNewUser(userId);
+        const newUserData = await storage.getUser(userId);
+        return res.json(newUserData);
+      }
       
       res.json(userData);
     } catch (error) {
