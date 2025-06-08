@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { deepJournalingEngine } from "./engine";
+import { deepJournalingEngine } from "./therapeutic-chat-engine";
 import { monthlyCostSimulation } from "./monthly-cost-simulation";
 import { advancedCostOptimization } from "./advanced-cost-optimization";
 import { voiceTranscriptionService } from "./voice-service";
