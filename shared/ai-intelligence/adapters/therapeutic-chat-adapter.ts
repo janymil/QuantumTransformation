@@ -79,8 +79,8 @@ export class TherapeuticChatAdapter {
    */
   async processTherapeuticRequest(request: TherapeuticRequest): Promise<TherapeuticResponse> {
     try {
-      // Import TherapeuticChatEngine
-      const { deepJournalingEngine } = require('../../server/therapeutic-chat/therapeutic-chat-engine');
+      // Import DeepJournalingEngine
+      const { DeepJournalingEngine } = require('../../server/therapeutic-chat/therapeutic-chat-engine');
 
       // Apply advanced therapeutic intelligence from adapter
       const therapeuticEnhancedPrompt = await this.applyTherapeuticIntelligence(
@@ -117,8 +117,9 @@ export class TherapeuticChatAdapter {
         wasVoiceInput: false
       };
 
-      // Process through TherapeuticChatEngine (correct flow)
-      const engineResponse = await deepJournalingEngine.processJournalingRequest(engineRequest);
+      // Process through DeepJournalingEngine (correct flow)
+      const engine = new DeepJournalingEngine();
+      const engineResponse = await engine.processJournalingRequest(engineRequest);
 
       // Extract content from engine response
       const content = engineResponse.analysis?.professionalAnalysis || engineResponse.question || "I understand what you're sharing with me.";
@@ -129,7 +130,7 @@ export class TherapeuticChatAdapter {
       
       if (request.options?.enableAdaptiveLanguage) {
         finalContent = await this.applyAdaptiveLanguage(
-          aiResponse.content,
+          content,
           request.personalization?.preferredResponseStyle,
           request.sessionContext.currentTherapeuticStyle
         );
