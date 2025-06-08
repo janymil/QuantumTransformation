@@ -16,6 +16,8 @@ import { intelligentModelRouter } from "./intelligent-model-router";
 import { advancedCostOptimization } from "./advanced-cost-optimization";
 import { userModelingEngine } from "./user-modeling-engine";
 import type { PersonalizationRecommendations } from "./user-modeling-engine";
+import { dynamicFrameworkSelector } from "./dynamic-framework-selector";
+import type { FrameworkRecommendation } from "./dynamic-framework-selector";
 
 export class DeepJournalingEngine {
   
@@ -49,17 +51,25 @@ export class DeepJournalingEngine {
     // Get personalization recommendations for premium-level responses
     const personalizationRecs = await userModelingEngine.getPersonalizationRecommendations(request.userId);
     
+    // Select optimal therapeutic framework based on real-time session analysis
+    const frameworkRecommendation = await dynamicFrameworkSelector.selectOptimalFramework(
+      request.userId,
+      thread.id,
+      request.userInput,
+      { userProfile, threadHistory, userContext }
+    );
+    
     // Determine exchange order
     const exchangeOrder = threadHistory.length + 1;
     
     // Generate AI response based on action type
     let aiResponse;
     if (request.actionType === 'new_direction') {
-      aiResponse = await this.generateNewDirectionResponse(request, thread, userProfile, userContext, personalizationRecs);
+      aiResponse = await this.generateNewDirectionResponse(request, thread, userProfile, userContext, personalizationRecs, frameworkRecommendation);
     } else if (request.actionType === 'customize_response' && threadHistory.length > 0) {
-      aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile, personalizationRecs);
+      aiResponse = await this.generateCustomizedResponse(request, thread, threadHistory[threadHistory.length - 1], userProfile, personalizationRecs, frameworkRecommendation);
     } else {
-      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs);
+      aiResponse = await this.generateDeepAnalysisResponse(request, thread, threadHistory, userProfile, userContext, personalizationRecs, frameworkRecommendation);
     }
     
     const processingTime = Date.now() - startTime;
@@ -137,16 +147,17 @@ export class DeepJournalingEngine {
     history: ThreadExchange[], 
     userProfile: PsychologicalProfile | null,
     userContext: any,
-    personalizationRecs: PersonalizationRecommendations
+    personalizationRecs: PersonalizationRecommendations,
+    frameworkRec: FrameworkRecommendation
   ) {
-    // Use personalization recommendations for premium-level customization
+    // Use dynamic framework recommendation with personalization for optimal therapeutic intervention
     const mode = request.customizations?.mode || personalizationRecs.communicationAdjustments.tone || thread.preferredMode || 'conversational';
     const tone = request.customizations?.tone || personalizationRecs.communicationAdjustments.tone || thread.preferredTone || 'supportive';
-    const perspective = request.customizations?.perspective || personalizationRecs.therapeuticStyle || thread.preferredPerspective || 'psychologist';
+    const perspective = request.customizations?.perspective || frameworkRec.primaryFramework || personalizationRecs.therapeuticStyle || thread.preferredPerspective || 'psychologist';
 
-    // Build enhanced system prompt with personalization
+    // Build enhanced system prompt with dynamic framework selection and personalization
     const systemPrompt = buildTherapeuticSystemPrompt(
-      personalizationRecs.therapeuticFrameworks,
+      [frameworkRec.primaryFramework, ...frameworkRec.secondaryFrameworks],
       request.userInput, 
       { 
         mode, 
@@ -154,8 +165,11 @@ export class DeepJournalingEngine {
         perspective,
         responseLength: personalizationRecs.communicationAdjustments.responseLength,
         metaphorTypes: personalizationRecs.communicationAdjustments.metaphorTypes,
-        avoidanceFactors: personalizationRecs.avoidanceFactors,
-        customInstructions: personalizationRecs.customInstructions
+        avoidanceFactors: [...personalizationRecs.avoidanceFactors, ...frameworkRec.avoidanceFactors],
+        customInstructions: [...personalizationRecs.customInstructions, ...frameworkRec.adaptationInstructions],
+        interventionType: frameworkRec.interventionType,
+        frameworkRationale: frameworkRec.rationale,
+        expectedOutcomes: frameworkRec.expectedOutcomes
       }
     );
     
@@ -243,7 +257,8 @@ export class DeepJournalingEngine {
     thread: JournalingThread,
     userProfile: PsychologicalProfile | null,
     userContext: any,
-    personalizationRecs: PersonalizationRecommendations
+    personalizationRecs: PersonalizationRecommendations,
+    frameworkRec: FrameworkRecommendation
   ) {
     const systemPrompt = getNewDirectionSystemPrompt({});
 
@@ -282,7 +297,8 @@ export class DeepJournalingEngine {
     thread: JournalingThread,
     lastExchange: ThreadExchange,
     userProfile: PsychologicalProfile | null,
-    personalizationRecs: PersonalizationRecommendations
+    personalizationRecs: PersonalizationRecommendations,
+    frameworkRec: FrameworkRecommendation
   ) {
     const mode = request.customizations?.mode || 'conversational';
     const tone = request.customizations?.tone || 'supportive';
