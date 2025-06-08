@@ -307,33 +307,43 @@ export default function TherapeuticChat() {
   // Load session function to continue chatting with saved conversations
   const loadSession = async (sessionId: number) => {
     try {
+      console.log('Loading session:', sessionId);
       const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}/messages`);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Session data received:', data);
+        
         if (data?.exchanges && data.exchanges.length > 0) {
           const formattedMessages: Message[] = [];
           
           // Load conversation history directly without welcome message
           data.exchanges.forEach((exchange: any) => {
+            console.log('Processing exchange:', exchange);
+            
             if (exchange.userInput) {
               formattedMessages.push({
                 id: `user-${exchange.id}`,
                 type: 'user',
                 content: exchange.userInput,
-                timestamp: new Date(exchange.createdAt)
+                timestamp: new Date(exchange.createdAt || Date.now())
               });
             }
             
-            if (exchange.aiAnalysis) {
+            // Check multiple possible fields for AI response
+            const aiContent = exchange.aiAnalysis || exchange.analysis || exchange.question || exchange.response;
+            if (aiContent) {
               formattedMessages.push({
                 id: `ai-${exchange.id}`,
                 type: 'ai',
-                content: exchange.aiAnalysis,
-                timestamp: new Date(exchange.createdAt),
+                content: aiContent,
+                timestamp: new Date(exchange.createdAt || Date.now()),
                 emotionalTone: 'supportive'
               });
             }
           });
+          
+          console.log('Formatted messages:', formattedMessages);
           
           // Set the loaded conversation history
           setMessages(formattedMessages);
@@ -346,9 +356,10 @@ export default function TherapeuticChat() {
           
           toast({
             title: "Conversation Loaded",
-            description: "Continue where you left off.",
+            description: `Loaded ${formattedMessages.length} messages. Continue where you left off.`,
           });
         } else {
+          console.log('No exchanges found, starting fresh session');
           // If no exchanges found, start fresh but with session context
           setMessages([]);
           setActiveSession({
@@ -357,11 +368,18 @@ export default function TherapeuticChat() {
             title: data.session?.title || `Session ${sessionId}`,
             isActive: true
           });
+          
+          toast({
+            title: "Session Started",
+            description: "Continuing session with fresh conversation.",
+          });
         }
       } else {
+        console.error('Failed to load session:', response.status, response.statusText);
         throw new Error('Failed to load conversation');
       }
     } catch (error) {
+      console.error('Error loading session:', error);
       toast({
         title: "Error",
         description: "Failed to load conversation. Please try again.",
