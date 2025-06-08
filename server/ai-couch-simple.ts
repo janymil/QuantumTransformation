@@ -41,12 +41,13 @@ Provide a comprehensive coaching response that automatically integrates multiple
 
     try {
       // Use intelligent model routing for cost optimization
-      const analysis = this.modelRouter.analyzeQuery(userInput);
-      const routingDecision = this.modelRouter.makeRoutingDecision(analysis);
-      const routedResponse = await this.modelRouter.executeWithModel(
-        routingDecision,
-        systemPrompt,
+      const routedResponse = await this.modelRouter.executeWithOptimalModel(
         prompt,
+        systemPrompt,
+        userInput,
+        sessionType,
+        'general',
+        'basic',
         { temperature: 0.7, maxTokens: 2000 }
       );
 

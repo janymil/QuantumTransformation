@@ -1888,20 +1888,22 @@ Provide personalized, actionable guidance that:
         0
       );
       
-      // Use advanced AI coaching engine with multidisciplinary approach
+      // Use AI coaching engine with intelligent GPT-4o/GPT-4o-mini routing for basic tier
       const userInput = `Goals: ${userGoals}. Challenges: ${Array.isArray(currentChallenges) ? currentChallenges.join(', ') : currentChallenges}. Energy level: ${mood}/10.`;
       const context = `Day ${currentDay} of ${challengeType} challenge. User seeking personalized coaching and guidance.`;
       
-      const advancedCoaching = await aiCouchEngine.generatePersonalizedResponse(
+      // Import the correct basic tier AI coaching engine
+      const { aiCoachingEngine } = await import('./ai-coaching-engine');
+      const basicCoaching = await aiCoachingEngine.generatePersonalizedResponse(
         userId,
         userInput,
         context,
-        'advanced_coaching'
+        'daily_coaching'
       );
       
       // Parse the AI response and structure it for the frontend
       const structuredResponse = {
-        personalizedMessage: advancedCoaching.response || "Your personalized guidance is ready.",
+        personalizedMessage: basicCoaching.response || "Your personalized guidance is ready.",
         todaysRecommendation: `Based on your goals and current energy level (${mood}/10), focus on integrating multiple therapeutic approaches that support your growth today.`,
         practiceAdjustments: [
           "Apply consciousness expansion techniques suited to your current state",
