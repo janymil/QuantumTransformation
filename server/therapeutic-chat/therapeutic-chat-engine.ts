@@ -14,6 +14,8 @@ import { buildTherapeuticSystemPrompt, getNewDirectionSystemPrompt, getCustomiza
 import { psychologicalAnalyzer } from "./psychological-analyzer";
 import { intelligentModelRouter } from "./intelligent-model-router";
 import { advancedCostOptimization } from "./advanced-cost-optimization";
+import { userModelingEngine } from "./user-modeling-engine";
+import type { PersonalizationRecommendations } from "./user-modeling-engine";
 
 export class DeepJournalingEngine {
   
