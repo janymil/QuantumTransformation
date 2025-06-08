@@ -31,7 +31,7 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
                 {message.type === 'user' ? 'Y' : <Brain className="h-4 w-4" />}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1 min-w-0">
               <div className={`p-4 rounded-2xl ${
                 message.type === 'user'
@@ -50,16 +50,11 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
                   )}
                 </div>
               </div>
-              
+
               <div className={`flex items-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400 ${
                 message.type === 'user' ? 'justify-end' : 'justify-start'
               }`}>
                 <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                {message.emotionalTone && (
-                  <Badge variant="secondary" className="text-xs">
-                    {message.emotionalTone}
-                  </Badge>
-                )}
                 {message.type === 'ai' && (
                   <Button
                     size="sm"
