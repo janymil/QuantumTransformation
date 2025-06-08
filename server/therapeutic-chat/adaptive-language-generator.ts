@@ -169,7 +169,10 @@ export class AdaptiveLanguageGenerator {
       
       if (existingProfile.length > 0 && existingProfile[0].languageAdaptationProfile) {
         try {
-          return JSON.parse(existingProfile[0].languageAdaptationProfile as string);
+          const parsedProfile = typeof existingProfile[0].languageAdaptationProfile === 'string' 
+            ? JSON.parse(existingProfile[0].languageAdaptationProfile)
+            : existingProfile[0].languageAdaptationProfile;
+          return parsedProfile as LanguageAdaptationProfile;
         } catch {
           // Fall through to create new profile
         }
@@ -202,7 +205,7 @@ export class AdaptiveLanguageGenerator {
         .orderBy(desc(threadExchanges.createdAt))
         .limit(20);
       
-      const userInputs = exchanges.map(e => e.userInput).filter(Boolean);
+      const userInputs = exchanges.map(e => e.thread_exchanges.userInput).filter(Boolean);
       
       if (userInputs.length === 0) {
         return this.getDefaultLanguageProfile(userId);
@@ -698,17 +701,28 @@ export class AdaptiveLanguageGenerator {
     try {
       const profileJson = JSON.stringify(profile);
       
-      await db.insert(userTherapeuticProfile).values({
-        userId,
-        languageAdaptationProfile: profileJson,
-        updatedAt: new Date()
-      }).onConflictDoUpdate({
-        target: userTherapeuticProfile.userId,
-        set: {
+      // Check if profile exists
+      const existingProfile = await db.select()
+        .from(userTherapeuticProfile)
+        .where(eq(userTherapeuticProfile.userId, userId))
+        .limit(1);
+      
+      if (existingProfile.length > 0) {
+        // Update existing profile
+        await db.update(userTherapeuticProfile)
+          .set({
+            languageAdaptationProfile: profileJson,
+            updatedAt: new Date()
+          })
+          .where(eq(userTherapeuticProfile.userId, userId));
+      } else {
+        // Create new profile
+        await db.insert(userTherapeuticProfile).values({
+          userId,
           languageAdaptationProfile: profileJson,
           updatedAt: new Date()
-        }
-      });
+        });
+      }
       
     } catch (error) {
       console.error('Error storing language profile:', error);
