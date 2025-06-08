@@ -74,7 +74,7 @@ Citation Count: 127
     const uploadResponse = await fetch(uploadUrl, {
       method: 'PUT',
       headers: {
-        'AccessKey': 'cb1dd48b-7224-4d2c-9be6f7b5-6b4e-4e75-afe7-9f93c5a4b2c8',
+        'AccessKey': 'cb1dd48b-7224-4d2c-9be6-f7b5-6b4e-4e75-afe7-9f93c5a4b2c8',
         'Content-Type': 'text/plain'
       },
       body: buffer
