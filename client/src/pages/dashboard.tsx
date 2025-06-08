@@ -164,7 +164,7 @@ export default function Dashboard() {
           {/* Additional Learning Tools */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Spaced Repetition Learning */}
-            <SpacedRepetitionWidget />
+            <SpacedRepetitionWidget challengeType="general_quantum" />
             
             {/* Quick Actions */}
             <Card>
@@ -277,11 +277,34 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ChallengeTimeline 
-                  currentDay={currentDay}
-                  completedDays={completedDays}
-                  content={challengeContent}
-                />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Progress</span>
+                    <span className="text-sm font-medium">{completionPercentage}%</span>
+                  </div>
+                  <div className="w-full bg-secondary rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${completionPercentage}%` }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
+                      <div
+                        key={day}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                          completedDays.includes(day)
+                            ? 'bg-primary text-primary-foreground'
+                            : day === currentDay
+                            ? 'bg-secondary text-foreground border-2 border-primary'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -293,12 +316,19 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {achievements.slice(0, 4).map((achievement) => (
-                      <AchievementBadge 
+                    {achievements.slice(0, 4).map((achievement: any) => (
+                      <div 
                         key={achievement.id}
-                        achievementId={achievement.achievementId}
-                        unlockedAt={achievement.unlockedAt}
-                      />
+                        className="flex flex-col items-center p-4 bg-secondary rounded-lg"
+                      >
+                        <Target className="w-8 h-8 text-primary mb-2" />
+                        <span className="text-sm font-medium text-center">
+                          {achievement.achievementId}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(achievement.unlockedAt).toLocaleDateString()}
+                        </span>
+                      </div>
                     ))}
                   </div>
                   {achievements.length > 4 && (
