@@ -30,7 +30,7 @@ export function MessageBubble({ message, onDelete }: MessageBubbleProps) {
                 : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
             }`}>
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                {message.content || 'No content'}
+                {message.content}
               </div>
 
               {/* Timestamp and emotional tone */}

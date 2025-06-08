@@ -73,6 +73,16 @@ export default function TherapeuticChat() {
   // Send message mutation - therapeutic chat only (no database save until finish)
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, actionType }: { message: string; actionType?: 'go_deeper' | 'new_direction' | 'customize_response' }) => {
+      // Add user message immediately before API call
+      const userMessage: Message = {
+        id: `user-${Date.now()}`,
+        type: 'user',
+        content: message.trim(),
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      
       // Call therapeutic chat endpoint directly without saving to database
       const response = await fetch('/api/therapeutic-chat/process', {
         method: 'POST',
@@ -94,14 +104,6 @@ export default function TherapeuticChat() {
       return await response.json();
     },
     onSuccess: (response: any) => {
-      // Add user message
-      const userMessage: Message = {
-        id: `user-${Date.now()}`,
-        type: 'user',
-        content: currentMessage,
-        timestamp: new Date()
-      };
-      
       // Add AI response with therapeutic chat format
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
@@ -111,7 +113,7 @@ export default function TherapeuticChat() {
         emotionalTone: response.emotionalInsight || 'curious'
       };
       
-      setMessages(prev => [...prev, userMessage, aiMessage]);
+      setMessages(prev => [...prev, aiMessage]);
       setCurrentMessage("");
       
       // Do NOT save to database or update threads here
