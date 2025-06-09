@@ -110,7 +110,7 @@ export default function TherapeuticChat() {
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
         type: 'ai',
-        content: response.response || 'I understand. Please tell me more.',
+        content: `${response.professionalAnalysis || 'I hear what you\'re sharing.'}\n\n${response.question || 'What would you like to explore further?'}`,
         timestamp: new Date(),
         emotionalTone: response.emotionalInsight || 'curious'
       };
