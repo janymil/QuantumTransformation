@@ -14,11 +14,16 @@
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { processFastResponse } from '../server/therapeutic-chat/FastChatEngine';
 import { getLastSessionInsights } from '../server/therapeutic-chat/helpers/getLastSessionInsights';
 import { db } from '../server/db';
 import { psychologicalProfile, journalingThreads, threadExchanges } from '../shared/schema';
 import { eq } from 'drizzle-orm';
+
+// ES module compatibility
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load mock data
 const mockDataPath = path.join(__dirname, 'test-mock-data.json');
@@ -247,7 +252,7 @@ async function main() {
 }
 
 // Execute if run directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
