@@ -15,6 +15,7 @@ export interface TherapeuticRequest {
   userId: string;
   userInput: string;
   systemPrompt: string;
+  userTier?: 'basic' | 'premium' | 'ultra';
   sessionContext: {
     threadId?: string;
     conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -133,7 +134,8 @@ export class TherapeuticChatAdapter {
         {
           userId: request.userId,
           sessionType: 'therapeutic_chat',
-          therapeuticFramework: request.sessionContext.currentTherapeuticStyle
+          therapeuticFramework: request.sessionContext.currentTherapeuticStyle,
+          userTier: (request.userTier || 'premium') as 'basic' | 'premium' | 'ultra'
         }
       );
 
@@ -228,7 +230,8 @@ Provide a sophisticated therapeutic response that demonstrates deep understandin
         request.options
       );
 
-      return {
+      // Cache response only if cost optimization is not bypassed
+      const responseToReturn = {
         content: finalContent,
         metadata: {
           modelUsed: 'claude-3-5-sonnet-20241022',
@@ -244,6 +247,26 @@ Provide a sophisticated therapeutic response that demonstrates deep understandin
         },
         therapeuticInsights
       };
+
+      // Only cache if cost optimization is not bypassed
+      if (!bypassCostOptimization) {
+        try {
+          await costOptimizer.cacheResponse({
+            prompt: request.userInput,
+            systemPrompt: request.systemPrompt,
+            context: {
+              userId: request.userId,
+              sessionType: 'therapeutic_chat',
+              userTier: 'premium'
+            }
+          }, responseToReturn);
+        } catch (error) {
+          // Cache error shouldn't prevent response delivery
+          console.warn('Failed to cache therapeutic response:', error);
+        }
+      }
+
+      return responseToReturn;
 
     } catch (error) {
       console.error('Therapeutic Chat Adapter error:', error);

@@ -27,7 +27,7 @@ export class UnifiedResearchIntegration {
       userId: string;
       sessionType: 'ai_coaching' | 'therapeutic_chat';
       therapeuticFramework?: string;
-      userTier: 'basic' | 'premium';
+      userTier: 'basic' | 'premium' | 'ultra';
     }
   ): Promise<ResearchEnhancedPrompt> {
     
