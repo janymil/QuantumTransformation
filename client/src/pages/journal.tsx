@@ -141,6 +141,10 @@ export default function Journal() {
           messages = data;
         } else if (data?.messages) {
           messages = data.messages;
+        } else if (data?.session) {
+          // If we have session data but no direct messages, the messages might be empty
+          // Let's check if we have any exchange data to process
+          console.log('Session data found but no messages array, checking for other data:', data);
         }
         
         const messageCount = messages.length;

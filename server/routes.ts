@@ -2274,9 +2274,16 @@ Provide personalized, actionable guidance that:
 
   // Get messages for a specific therapeutic chat session (frontend expects this endpoint)
   app.get('/api/therapeutic-chat/sessions/:sessionId/messages', isAuthenticated, async (req: any, res) => {
+    // Disable caching for debugging
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       const userId = req.user.claims.sub;
       const { sessionId } = req.params;
+      
+      console.log(`Fetching messages for session ${sessionId}, user ${userId}`);
 
       // Get the session info
       const session = await db
@@ -2298,6 +2305,11 @@ Provide personalized, actionable guidance that:
         .from(threadExchanges)
         .where(eq(threadExchanges.threadId, parseInt(sessionId)))
         .orderBy(threadExchanges.exchangeOrder);
+
+      console.log(`Found ${exchanges.length} exchanges for session ${sessionId}`);
+      exchanges.forEach((ex, idx) => {
+        console.log(`Exchange ${idx}: userInput="${ex.userInput?.substring(0, 50)}...", aiAnalysis="${ex.aiAnalysis?.substring(0, 50)}...", aiQuestion="${ex.aiQuestion?.substring(0, 50)}..."`);
+      });
 
       // Convert exchanges to message format expected by frontend
       const messages = [];
@@ -2325,7 +2337,9 @@ Provide personalized, actionable guidance that:
         }
       }
 
-      res.json({
+      console.log(`Converted to ${messages.length} messages`);
+
+      const response = {
         session: {
           id: session[0].id,
           title: session[0].title,
@@ -2333,7 +2347,10 @@ Provide personalized, actionable guidance that:
           updatedAt: session[0].updatedAt ? new Date(session[0].updatedAt).toISOString() : new Date().toISOString()
         },
         messages
-      });
+      };
+
+      console.log(`Sending response with ${response.messages.length} messages`);
+      res.json(response);
     } catch (error) {
       console.error("Error fetching therapeutic chat messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
