@@ -162,7 +162,7 @@ export default function SoundscapePlayer() {
   };
 
   // Generate noise buffer for ambient sounds
-  const createNoiseBuffer = (type: string, frequency?: number): AudioBuffer => {
+  const createNoiseBuffer = (type: string, frequency?: number): AudioBuffer | null => {
     if (!audioContextRef.current) return null;
 
     const bufferSize = audioContextRef.current.sampleRate * 2; // 2 seconds
@@ -316,7 +316,7 @@ export default function SoundscapePlayer() {
     if (isPlaying && gainNodesRef.current.length > 0) {
       gainNodesRef.current.forEach(gain => {
         gain.gain.setValueAtTime(
-          currentParameters?.volume * newVolume[0] || newVolume[0], 
+          (currentParameters?.volume || 1) * newVolume[0], 
           audioContextRef.current?.currentTime || 0
         );
       });

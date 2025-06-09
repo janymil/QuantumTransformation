@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
 import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
-import SoundscapePlayer from "@/components/soundscape-player";
+import SimpleSoundscapePlayer from "@/components/simple-soundscape-player";
 import { Play, BookOpen, Brain, Target, Zap, Calendar } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -170,7 +170,7 @@ export default function Dashboard() {
             <SpacedRepetitionWidget challengeType="mindfulness" />
             
             {/* Personalized Soundscape Player */}
-            <SoundscapePlayer />
+            <SimpleSoundscapePlayer />
             
             {/* Quick Actions */}
             <Card>
