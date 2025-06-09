@@ -127,7 +127,7 @@ export const therapeuticFrameworks: Record<string, TherapeuticFramework> = {
   }
 };
 
-export function selectOptimalFramework(
+export function recommendTherapeuticFrameworks(
   userInput: string,
   emotionalState: string,
   sessionGoals: string[]

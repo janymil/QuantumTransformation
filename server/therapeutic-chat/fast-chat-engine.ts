@@ -207,10 +207,10 @@ export class FastChatEngine {
     customizations?: any
   ): Promise<string> {
     // Import therapeutic framework functions
-    const { selectOptimalFramework, buildTherapeuticSystemPrompt } = await import('./therapeutic-frameworks');
+    const { recommendTherapeuticFrameworks, buildTherapeuticSystemPrompt } = await import('./therapeutic-frameworks');
     
     // Get appropriate therapeutic frameworks based on user input
-    const frameworks = selectOptimalFramework(
+    const frameworks = recommendTherapeuticFrameworks(
       userInput,
       sessionInsights?.emotionalBaseline || 'exploring',
       sessionInsights?.areas_of_focus || []
