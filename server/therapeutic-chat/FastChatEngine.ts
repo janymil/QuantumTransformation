@@ -45,13 +45,14 @@ export class FastChatEngine {
   }
 
   /**
-   * Generate immediate therapeutic response using GPT-4o
+   * Process fast therapeutic response using GPT-4o (expected by routes)
    */
-  async generateFastResponse(
+  async processFastResponse(
     userId: string,
+    threadId: string,
     userMessage: string,
     challengeType: string = 'general'
-  ): Promise<FastChatResponse> {
+  ): Promise<any> {
     const startTime = Date.now();
 
     try {
@@ -87,14 +88,19 @@ export class FastChatEngine {
       const outputTokens = completion.usage?.completion_tokens || 0;
       const cost = (inputTokens / 1000000 * 5) + (outputTokens / 1000000 * 15);
 
+      // Return format expected by routes
       return {
-        response,
-        responseTime,
-        cost,
-        tokensUsed: {
-          input: inputTokens,
-          output: outputTokens,
-          total: inputTokens + outputTokens
+        aiResponse: response,
+        metadata: {
+          responseTime,
+          cost,
+          tokensUsed: {
+            input: inputTokens,
+            output: outputTokens,
+            total: inputTokens + outputTokens
+          },
+          model: 'gpt-4o',
+          processingEngine: 'FastChatEngine'
         }
       };
 
