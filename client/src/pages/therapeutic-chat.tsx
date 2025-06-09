@@ -37,21 +37,44 @@ export default function TherapeuticChat() {
   const queryClient = useQueryClient();
 
   // Fetch conversation threads
-  const { data: threads = [], isLoading: threadsLoading } = useQuery<any[]>({
+  const { data: threads = [], isLoading: threadsLoading, error: threadsError } = useQuery<any[]>({
     queryKey: ['/api/therapeutic-chat/sessions'],
+    queryFn: async () => {
+      const response = await fetch('/api/therapeutic-chat/sessions', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch sessions: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Fresh sessions data received:', data);
+      return data;
+    },
     refetchOnWindowFocus: true,
     staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache at all
   });
 
   // Debug threads data
   useEffect(() => {
+    console.log('=== FRONTEND THREADS DEBUG ===');
     console.log('Threads data updated:', threads);
     console.log('Threads loading:', threadsLoading);
+    console.log('Threads error:', threadsError);
     console.log('Threads length:', threads?.length);
+    console.log('Threads type:', typeof threads, 'Is array:', Array.isArray(threads));
     if (threads && threads.length > 0) {
       console.log('First thread:', threads[0]);
+      console.log('All threads:', threads);
     }
-  }, [threads, threadsLoading]);
+    console.log('=== END FRONTEND THREADS DEBUG ===');
+  }, [threads, threadsLoading, threadsError]);
 
   // Force refresh sessions mutation
   const refreshSessionsMutation = useMutation({
@@ -871,6 +894,29 @@ export default function TherapeuticChat() {
               >
                 <Info className="h-4 w-4 mr-2" />
                 Refresh Sessions
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/therapeutic-chat/debug/all-sessions');
+                    const debugData = await response.json();
+                    console.log('=== MANUAL DEBUG DATA ===');
+                    console.log('Debug response:', debugData);
+                    console.log('Current user ID:', debugData.currentUserId);
+                    console.log('All sessions:', debugData.allSessions);
+                    console.log('Matching sessions:', debugData.matchingSessions);
+                    toast({
+                      title: "Debug Info",
+                      description: `Found ${debugData.allSessions?.length || 0} total sessions, ${debugData.matchingSessions?.length || 0} matching your user ID`,
+                    });
+                  } catch (error) {
+                    console.error('Debug failed:', error);
+                  }
+                }}
+              >
+                Debug DB
               </Button>
               <Link href="/therapeutic-analytics">
                 <Button variant="outline" size="sm">

@@ -69,40 +69,23 @@ export function registerTherapeuticChatRoutes(app: Express) {
         console.log('Numeric matches:', numericMatch.length);
       }
       
-      // Try multiple query approaches to find sessions
-      console.log('Running primary query with userId:', userId);
-      let sessions = await db
-        .select()
-        .from(therapeuticChatSessions)
-        .where(eq(therapeuticChatSessions.userId, userId))
-        .orderBy(desc(therapeuticChatSessions.lastActivity));
-
-      console.log('Primary query result:', sessions.length);
-
-      // If no sessions found with direct string match, try with explicit type conversion
-      if (sessions.length === 0) {
-        console.log('Trying with explicit string conversion...');
+      // Find sessions using the manual filter approach that works
+      console.log('Finding sessions using manual filter approach...');
+      const userSessions = allSessions.filter(s => String(s.userId) === String(userId));
+      console.log('Manual filter found:', userSessions.length, 'sessions');
+      
+      if (userSessions.length > 0) {
+        console.log('Manual filter session details:', userSessions.map(s => ({ id: s.id, title: s.title, userId: s.userId, userIdType: typeof s.userId })));
         
-        // Try querying where we cast both sides to string for comparison
-        const allSessionsForUser = allSessions.filter(s => String(s.userId) === String(userId));
-        sessions = allSessionsForUser;
-        
-        console.log('String conversion result:', sessions.length);
-      }
-
-      console.log('Final sessions found for user:', sessions.length);
-      if (sessions.length > 0) {
-        console.log('Session details:', sessions.map(s => ({ id: s.id, title: s.title, userId: s.userId })));
-      }
-
-      // If we still have no sessions from the database query but found them in the filter,
-      // ensure we return the filtered results
-      if (sessions.length === 0 && allSessions.length > 0) {
-        const manualMatches = allSessions.filter(s => String(s.userId) === String(userId));
-        if (manualMatches.length > 0) {
-          console.log('Using manual matches:', manualMatches.length);
-          sessions = manualMatches.sort((a, b) => new Date(b.lastActivity || b.createdAt).getTime() - new Date(a.lastActivity || a.createdAt).getTime());
-        }
+        // Sort by last activity
+        sessions = userSessions.sort((a, b) => {
+          const aDate = new Date(a.lastActivity || a.createdAt).getTime();
+          const bDate = new Date(b.lastActivity || b.createdAt).getTime();
+          return bDate - aDate;
+        });
+      } else {
+        console.log('No sessions found even with manual filter');
+        sessions = [];
       }
 
       console.log('=== FINAL RESPONSE ===');
