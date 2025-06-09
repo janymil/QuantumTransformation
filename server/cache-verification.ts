@@ -6,7 +6,7 @@ import {
   getEnhancedCachedResponse, 
   getTemplateResponse 
 } from "./enhanced-caching";
-import { createInputHash } from "./ai-cost-control";
+import { createInputHash } from "./ai-coaching/ai-cost-control";
 
 interface CacheVerificationResult {
   question: string;
