@@ -8,6 +8,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
 });
 
+// Export the openai client for use in other modules
+export { openai };
+
 /**
  * Get challenge-specific content and training data
  */
