@@ -16,15 +16,15 @@ router.get('/sessions', async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    console.log('Sessions endpoint - userId:', userId, 'type:', typeof userId);
+    // Debug: Test raw SQL query first
+    const rawResult = await db.execute(sql`SELECT * FROM therapeutic_chat_sessions WHERE user_id = ${userId} ORDER BY last_activity DESC`);
+    console.log('Raw SQL result:', rawResult.length, 'sessions found');
     
     const sessions = await db
       .select()
       .from(therapeuticChatSessions)
       .where(eq(therapeuticChatSessions.userId, userId))
       .orderBy(desc(therapeuticChatSessions.lastActivity));
-    
-    console.log('Sessions endpoint - found sessions:', sessions.length);
     
     // Add cache-busting headers to ensure fresh responses
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
