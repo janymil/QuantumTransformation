@@ -4,7 +4,7 @@
  */
 
 import { db } from "../../db";
-import { psychologicalProfile, journalingThreads, threadExchanges, therapeuticChatSessions, therapeuticChatMessages } from "@shared/schema";
+import { psychologicalProfile, therapeuticChatSessions, therapeuticChatMessages } from "@shared/schema";
 import { eq, desc, and, or, sql } from "drizzle-orm";
 
 export interface UserSessionInsights {
@@ -191,8 +191,11 @@ export async function getLastSessionInsights(userId: string): Promise<UserSessio
           themes.push(session.focusArea);
         }
       });
-      });
     }
+
+    // Remove duplicate themes and ensure clean data
+    const uniqueThemes = [...new Set(themes.filter(theme => theme && theme.length > 0))];
+    themes = uniqueThemes.slice(0, 5); // Keep top 5 themes
 
     // Ensure we have valid data
     const validFrameworks = ["CBT", "ACT", "DBT", "Psychodynamic", "Humanistic", "Mindfulness"];
@@ -242,11 +245,11 @@ export async function getUserTherapeuticPreferences(userId: string): Promise<{
   try {
     const insights = await getLastSessionInsights(userId);
     
-    // Get session count from journaling threads
+    // Get session count from therapeutic chat sessions
     const sessionCount = await db
       .select()
-      .from(journalingThreads)
-      .where(eq(journalingThreads.userId, userId));
+      .from(therapeuticChatSessions)
+      .where(eq(therapeuticChatSessions.userId, userId));
 
     return {
       primaryFramework: insights.framework,
