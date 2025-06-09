@@ -53,9 +53,9 @@ export async function getLastSessionInsights(userId: string): Promise<SessionIns
  * Extract preferred therapeutic framework from profile data
  */
 function extractTherapeuticFramework(profile: any): string {
-  // Check communication style field for framework preference
-  if (profile.communicationStyle) {
-    const style = profile.communicationStyle.toLowerCase();
+  // Check communication_style field for framework preference
+  if (profile.communication_style) {
+    const style = profile.communication_style.toLowerCase();
     if (style.includes('cbt') || style.includes('cognitive')) return 'CBT';
     if (style.includes('act') || style.includes('acceptance')) return 'ACT';
     if (style.includes('dbt') || style.includes('dialectical')) return 'DBT';
@@ -63,13 +63,12 @@ function extractTherapeuticFramework(profile: any): string {
     if (style.includes('psychodynamic')) return 'Psychodynamic';
   }
 
-  // Check effective therapeutic styles
-  if (profile.effectiveTherapeuticStyles) {
-    const styles = profile.effectiveTherapeuticStyles;
-    if (styles.cbt > 0.7) return 'CBT';
-    if (styles.act > 0.7) return 'ACT';
-    if (styles.dbt > 0.7) return 'DBT';
-    if (styles.humanistic > 0.7) return 'Humanistic';
+  // Check most_effective_questioning_styles for framework indicators
+  if (profile.most_effective_questioning_styles) {
+    const styles = profile.most_effective_questioning_styles;
+    if (styles.cognitive_behavioral && styles.cognitive_behavioral > 0.7) return 'CBT';
+    if (styles.acceptance_commitment && styles.acceptance_commitment > 0.7) return 'ACT';
+    if (styles.humanistic && styles.humanistic > 0.7) return 'Humanistic';
   }
 
   return 'CBT'; // Default framework
@@ -80,18 +79,18 @@ function extractTherapeuticFramework(profile: any): string {
  */
 function extractToneShift(profile: any): string {
   // Check personality traits for tone indicators
-  if (profile.personalityTraits && profile.personalityTraits.toneShift) {
-    return profile.personalityTraits.toneShift;
+  if (profile.personality_traits && profile.personality_traits.toneShift) {
+    return profile.personality_traits.toneShift;
   }
 
-  // Check communication tone
-  if (profile.communicationTone) {
-    return profile.communicationTone;
+  // Check communication style for tone
+  if (profile.communication_style) {
+    return profile.communication_style;
   }
 
   // Infer from emotional baseline
-  if (profile.currentDominantEmotion) {
-    const emotion = profile.currentDominantEmotion.toLowerCase();
+  if (profile.current_dominant_emotion) {
+    const emotion = profile.current_dominant_emotion.toLowerCase();
     if (emotion.includes('anxious') || emotion.includes('stressed')) return 'tense';
     if (emotion.includes('sad') || emotion.includes('depressed')) return 'subdued';
     if (emotion.includes('angry') || emotion.includes('frustrated')) return 'intense';
@@ -106,13 +105,13 @@ function extractToneShift(profile: any): string {
  */
 function extractEmotionalState(profile: any): string {
   // Use current dominant emotion if available
-  if (profile.currentDominantEmotion) {
-    return profile.currentDominantEmotion;
+  if (profile.current_dominant_emotion) {
+    return profile.current_dominant_emotion;
   }
 
   // Check personality traits for emotional indicators
-  if (profile.personalityTraits && profile.personalityTraits.emotionalBaseline) {
-    return profile.personalityTraits.emotionalBaseline;
+  if (profile.personality_traits && profile.personality_traits.emotionalBaseline) {
+    return profile.personality_traits.emotionalBaseline;
   }
 
   return 'uncertain'; // Default state
@@ -125,21 +124,26 @@ function extractDominantThemes(profile: any): string[] {
   const themes: string[] = [];
 
   // Extract from personality traits
-  if (profile.personalityTraits && profile.personalityTraits.motivationThemes) {
-    const motivationThemes = profile.personalityTraits.motivationThemes;
+  if (profile.personality_traits && profile.personality_traits.motivationThemes) {
+    const motivationThemes = profile.personality_traits.motivationThemes;
     if (Array.isArray(motivationThemes)) {
       themes.push(...motivationThemes);
     }
   }
 
   // Extract from identified growth areas
-  if (profile.identifiedGrowthAreas && Array.isArray(profile.identifiedGrowthAreas)) {
-    themes.push(...profile.identifiedGrowthAreas);
+  if (profile.identified_growth_areas && Array.isArray(profile.identified_growth_areas)) {
+    themes.push(...profile.identified_growth_areas);
   }
 
   // Extract from strengths as positive themes
-  if (profile.identifiedStrengths && Array.isArray(profile.identifiedStrengths)) {
-    themes.push(...profile.identifiedStrengths);
+  if (profile.identified_strengths && Array.isArray(profile.identified_strengths)) {
+    themes.push(...profile.identified_strengths);
+  }
+
+  // Extract from recurring concerns
+  if (profile.recurring_concerns && Array.isArray(profile.recurring_concerns)) {
+    themes.push(...profile.recurring_concerns);
   }
 
   // Remove duplicates and return up to 5 most relevant themes

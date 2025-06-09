@@ -1,242 +1,227 @@
 /**
- * FastChatEngine - Optimized for sub-1 second therapeutic responses
- * Uses embedding search, cached insights, and streamlined GPT-4o calls
+ * Fast Chat Engine for Sub-1 Second Therapeutic Responses
+ * Delivers immediate responses using GPT-4o with embedded context
  */
 
+import OpenAI from 'openai';
+import { getLastSessionInsights } from './helpers/getLastSessionInsights';
 import { db } from '../db';
-import { journalingEntries, psychologicalProfile, users } from '../../shared/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { therapeuticConversations } from '../../shared/schema';
+import { eq, desc } from 'drizzle-orm';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 interface FastChatResponse {
-  analysis: string;
-  question: string;
+  response: string;
+  responseTime: number;
+  cost: number;
+  tokensUsed: {
+    input: number;
+    output: number;
+    total: number;
+  };
 }
 
-interface SessionInsights {
-  preferredFramework: string;
-  emotionalBaseline: string;
-  communicationStyle: string;
-  recentPatterns: any[];
-  strengths: string[];
-  areas_of_focus: string[];
-}
-
-interface SimilarEntry {
-  content: string;
-  date: Date;
-  similarity: number;
+interface ConversationContext {
+  recentMessages: string[];
+  sessionInsights: {
+    framework: string;
+    tone: string;
+    state: string;
+    themes: string[];
+  };
 }
 
 export class FastChatEngine {
+  private static instance: FastChatEngine;
   
+  public static getInstance(): FastChatEngine {
+    if (!FastChatEngine.instance) {
+      FastChatEngine.instance = new FastChatEngine();
+    }
+    return FastChatEngine.instance;
+  }
+
   /**
-   * Main fast response function - optimized for speed
-   * @param userId - User identifier
-   * @param threadId - Conversation thread ID (optional)
-   * @param entryText - User's current journal entry/message
-   * @returns Promise<FastChatResponse> - Analysis and follow-up question
+   * Generate immediate therapeutic response using GPT-4o
    */
-  async processFastResponse(
-    userId: string, 
-    threadId: string | null, 
-    entryText: string
+  async generateFastResponse(
+    userId: string,
+    userMessage: string,
+    challengeType: string = 'general'
   ): Promise<FastChatResponse> {
-    
     const startTime = Date.now();
-    
+
     try {
-      // Step 1: Get similar past entries using embedding search (parallel)
-      // Step 2: Get cached session insights (parallel)
-      const [similarEntries, sessionInsights] = await Promise.all([
-        this.getSimilarEntries(userId, entryText),
-        this.getLastSessionInsights(userId)
-      ]);
+      // Get conversation context quickly
+      const context = await this.getConversationContext(userId);
       
-      console.log(`Data retrieval: ${Date.now() - startTime}ms`);
+      // Build optimized prompt for immediate response
+      const prompt = this.buildFastPrompt(userMessage, challengeType, context);
       
-      // Step 3: Build lightweight therapeutic system prompt
-      const systemPrompt = this.buildLightweightPrompt(
-        entryText,
-        similarEntries,
-        sessionInsights
-      );
-      
-      // Step 4: Call GPT-4o with optimized settings
-      const response = await this.callGPT4o(systemPrompt, entryText);
-      
-      console.log(`Total FastChatEngine time: ${Date.now() - startTime}ms`);
-      
-      return response;
-      
+      // Make GPT-4o call for immediate response
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: prompt.system
+          },
+          {
+            role: 'user',
+            content: prompt.user
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 400, // Limit for faster response
+        stream: false
+      });
+
+      const response = completion.choices[0]?.message?.content || 'I understand what you\'re sharing. Let me think about how to best support you with this.';
+      const responseTime = Date.now() - startTime;
+
+      // Calculate cost (GPT-4o pricing: $5/1M input, $15/1M output)
+      const inputTokens = completion.usage?.prompt_tokens || 0;
+      const outputTokens = completion.usage?.completion_tokens || 0;
+      const cost = (inputTokens / 1000000 * 5) + (outputTokens / 1000000 * 15);
+
+      return {
+        response,
+        responseTime,
+        cost,
+        tokensUsed: {
+          input: inputTokens,
+          output: outputTokens,
+          total: inputTokens + outputTokens
+        }
+      };
+
     } catch (error) {
       console.error('FastChatEngine error:', error);
-      // Fallback response maintains therapeutic quality
+      
+      // Fallback response if API fails
       return {
-        analysis: "I hear you sharing something important. Your willingness to reflect shows strength and self-awareness.",
-        question: "What aspect of this feels most significant to you right now?"
+        response: this.getFallbackResponse(challengeType),
+        responseTime: Date.now() - startTime,
+        cost: 0,
+        tokensUsed: { input: 0, output: 0, total: 0 }
       };
     }
   }
-  
+
   /**
-   * Step 1: Retrieve 2-3 semantically similar past entries using embedding search
-   * Uses pgvector similarity search for fast retrieval
+   * Get recent conversation context for personalization
    */
-  private async getSimilarEntries(userId: string, entryText: string): Promise<SimilarEntry[]> {
+  private async getConversationContext(userId: string): Promise<ConversationContext> {
     try {
-      // Use pgvector similarity search if available, otherwise fallback to recent entries
-      const recentEntries = await db.select({
-        content: journalingEntries.content,
-        createdAt: journalingEntries.createdAt,
+      // Get session insights from psychological profile
+      const sessionInsights = await getLastSessionInsights(userId);
+
+      // Get last 3 conversation messages for context
+      const recentConversations = await db.select({
+        userInput: therapeuticConversations.userInput,
+        aiResponse: therapeuticConversations.aiResponse
       })
-      .from(journalingEntries)
-      .where(eq(journalingEntries.userId, userId))
-      .orderBy(desc(journalingEntries.createdAt))
-      .limit(5);
-      
-      // Convert to SimilarEntry format with basic similarity scoring
-      return recentEntries.map((entry, index) => ({
-        content: entry.content?.substring(0, 200) || '', // Truncate for speed
-        date: entry.createdAt || new Date(),
-        similarity: 1.0 - (index * 0.1) // Simple scoring based on recency
-      })).slice(0, 3);
-      
-    } catch (error) {
-      console.error('Error retrieving similar entries:', error);
-      return [];
-    }
-  }
-  
-  /**
-   * Step 2: Get cached psychological profile insights for personalization
-   * Fetches most recent session data for context
-   */
-  async getLastSessionInsights(userId: string): Promise<SessionInsights> {
-    try {
-      const [recentProfile] = await db.select()
-        .from(psychologicalProfile)
-        .where(eq(psychologicalProfile.userId, userId))
-        .orderBy(desc(psychologicalProfile.id))
-        .limit(1);
-      
-      if (!recentProfile) {
-        return this.getDefaultInsights();
-      }
-      
-      return {
-        preferredFramework: recentProfile.communicationStyle || 'person-centered',
-        emotionalBaseline: recentProfile.currentDominantEmotion || 'neutral',
-        communicationStyle: recentProfile.communicationStyle || 'balanced',
-        recentPatterns: recentProfile.personalityTraits || [],
-        strengths: recentProfile.identifiedStrengths || [],
-        areas_of_focus: recentProfile.identifiedGrowthAreas || []
-      };
-      
-    } catch (error) {
-      console.error('Error getting session insights:', error);
-      return this.getDefaultInsights();
-    }
-  }
-  
-  /**
-   * Step 3: Build lightweight therapeutic system prompt
-   * Optimized for speed while maintaining therapeutic quality
-   */
-  private buildLightweightPrompt(
-    entryText: string,
-    similarEntries: SimilarEntry[],
-    insights: SessionInsights
-  ): string {
-    
-    // Build context from similar entries
-    const contextFromHistory = similarEntries.length > 0
-      ? `Previous reflection themes: ${similarEntries.map(e => e.content.substring(0, 100)).join('; ')}`
-      : 'This appears to be a new area of exploration.';
-    
-    // Incorporate user's therapeutic preferences
-    const therapeuticApproach = this.getTherapeuticApproach(insights.preferredFramework);
-    
-    return `You are an expert therapeutic AI assistant specializing in ${therapeuticApproach}. 
+      .from(therapeuticConversations)
+      .where(eq(therapeuticConversations.userId, userId))
+      .orderBy(desc(therapeuticConversations.createdAt))
+      .limit(3);
 
-User Profile Context:
-- Emotional baseline: ${insights.emotionalBaseline}
-- Communication style: ${insights.communicationStyle}
-- Key strengths: ${insights.strengths.slice(0, 2).join(', ')}
-- Growth areas: ${insights.areas_of_focus.slice(0, 2).join(', ')}
-
-${contextFromHistory}
-
-Your task: Provide a 2-3 sentence psychological reflection that validates their experience and offers insight, then ask ONE thoughtful follow-up question to deepen exploration.
-
-Response format: Return ONLY a JSON object like: {"analysis": "your 2-3 sentence reflection", "question": "your follow-up question"}`;
-  }
-  
-  /**
-   * Step 4: Call GPT-4o with optimized settings for speed
-   * Configured for fast responses while maintaining quality
-   */
-  private async callGPT4o(systemPrompt: string, entryText: string): Promise<FastChatResponse> {
-    try {
-      const { openai } = await import('../ai');
-      
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: entryText }
-        ],
-        max_tokens: 200, // Optimized for 2-3 sentences + question
-        temperature: 0.7,
-        response_format: { type: "json_object" }
+      // Format recent messages
+      const recentMessages: string[] = [];
+      recentConversations.reverse().forEach(conv => {
+        recentMessages.push(`User: ${conv.userInput}`);
+        if (conv.aiResponse) {
+          recentMessages.push(`Assistant: ${conv.aiResponse}`);
+        }
       });
-      
-      const responseText = completion.choices[0].message.content;
-      if (!responseText) {
-        throw new Error('Empty response from GPT-4o');
-      }
-      
-      const parsed = JSON.parse(responseText);
-      
+
       return {
-        analysis: parsed.analysis || "I can hear the depth in what you're sharing.",
-        question: parsed.question || "What feels most important about this for you?"
+        recentMessages,
+        sessionInsights
       };
-      
+
     } catch (error) {
-      console.error('GPT-4o call error:', error);
-      throw error;
+      console.error('Error getting conversation context:', error);
+      return {
+        recentMessages: [],
+        sessionInsights: {
+          framework: 'CBT',
+          tone: 'neutral',
+          state: 'uncertain',
+          themes: []
+        }
+      };
     }
   }
-  
+
   /**
-   * Helper: Get therapeutic approach based on user's preferred framework
+   * Build optimized prompt for fast therapeutic response
    */
-  private getTherapeuticApproach(framework: string): string {
-    const approaches: Record<string, string> = {
-      'cbt': 'cognitive behavioral therapy, focusing on thought patterns and behavioral insights',
-      'person-centered': 'person-centered therapy, emphasizing empathy and unconditional positive regard',
-      'psychodynamic': 'psychodynamic therapy, exploring unconscious patterns and early experiences',
-      'mindfulness': 'mindfulness-based therapy, emphasizing present-moment awareness',
-      'solution-focused': 'solution-focused therapy, highlighting strengths and future possibilities'
-    };
+  private buildFastPrompt(
+    userMessage: string,
+    challengeType: string,
+    context: ConversationContext
+  ): { system: string; user: string } {
+    const { sessionInsights, recentMessages } = context;
     
-    return approaches[framework] || approaches['person-centered'];
-  }
-  
-  /**
-   * Helper: Default insights for new users
-   */
-  private getDefaultInsights(): SessionInsights {
+    const systemPrompt = `You are an expert therapeutic AI providing immediate, personalized support. 
+
+THERAPEUTIC APPROACH:
+- Framework: ${sessionInsights.framework}
+- User's emotional state: ${sessionInsights.state}
+- Communication tone: ${sessionInsights.tone}
+- Key themes: ${sessionInsights.themes.join(', ') || 'None identified yet'}
+
+RESPONSE GUIDELINES:
+1. Provide immediate validation and understanding
+2. Use ${sessionInsights.framework} techniques when appropriate
+3. Match the user's emotional tone (${sessionInsights.tone})
+4. Reference their key themes if relevant: ${sessionInsights.themes.join(', ')}
+5. Keep response under 150 words for immediate delivery
+6. Be warm, professional, and therapeutic
+7. Ask one thoughtful follow-up question
+
+CHALLENGE TYPE: ${challengeType}
+
+${recentMessages.length > 0 ? `RECENT CONVERSATION CONTEXT:\n${recentMessages.join('\n')}\n` : ''}
+
+Respond with therapeutic empathy and practical guidance.`;
+
     return {
-      preferredFramework: 'person-centered',
-      emotionalBaseline: 'exploring',
-      communicationStyle: 'balanced',
-      recentPatterns: [],
-      strengths: ['self-awareness', 'courage to reflect'],
-      areas_of_focus: ['emotional understanding']
+      system: systemPrompt,
+      user: userMessage
     };
+  }
+
+  /**
+   * Provide fallback response if API fails
+   */
+  private getFallbackResponse(challengeType: string): string {
+    const fallbacks = {
+      anxiety: "I can sense you're feeling anxious right now. That's completely understandable. Let's take this one step at a time. What's feeling most overwhelming for you in this moment?",
+      depression: "Thank you for sharing what you're going through. It takes courage to reach out when you're feeling this way. You're not alone in this. What would feel most supportive for you right now?",
+      relationships: "Relationships can be complex and challenging. I appreciate you opening up about this situation. What aspect of this relationship dynamic feels most important to explore together?",
+      stress: "It sounds like you're carrying a lot right now. Stress can feel overwhelming, but we can work together to find ways to manage it. What's contributing most to your stress lately?",
+      general: "I hear what you're sharing, and I want you to know that your feelings are valid. Thank you for trusting me with this. What would be most helpful for you to explore right now?"
+    };
+
+    return fallbacks[challengeType as keyof typeof fallbacks] || fallbacks.general;
+  }
+
+  /**
+   * Validate response quality before sending
+   */
+  private validateResponse(response: string): boolean {
+    // Basic quality checks
+    if (response.length < 20) return false;
+    if (response.includes('I cannot') || response.includes('I\'m not able')) return false;
+    if (response.includes('as an AI')) return false;
+    
+    return true;
   }
 }
 
-// Export singleton instance
-export const fastChatEngine = new FastChatEngine();
+export const fastChatEngine = FastChatEngine.getInstance();
