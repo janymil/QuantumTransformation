@@ -235,12 +235,13 @@ Provide a sophisticated therapeutic response that demonstrates deep understandin
         content: finalContent,
         metadata: {
           modelUsed: 'claude-3-5-sonnet-20241022',
-          provider: 'anthropic',
+          provider: 'anthropic' as const,
           cost: 0.008,
           processingTime: Date.now() - startTime,
           fromCache: false,
           costSavings: 0,
           routingReason: 'therapeutic_chat_adapter_enhanced',
+          learningApplied: false,
           adaptiveLanguageApplied,
           contextualMemoryUsed: request.options?.enableContextualMemory || false,
           personalizationLevel
