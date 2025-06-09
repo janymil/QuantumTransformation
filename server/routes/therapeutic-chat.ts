@@ -5,8 +5,8 @@ import { eq, desc, and } from 'drizzle-orm';
 
 const router = express.Router();
 
-// Get all therapeutic chat sessions for a user
-router.get('/sessions', async (req, res) => {
+// Get all therapeutic chat sessions for a user - FORCE FRESH QUERY
+router.get('/sessions-debug', async (req, res) => {
   // Force fresh query by adding timestamp and query param check
   const timestamp = Date.now();
   const forceRefresh = req.query.refresh || timestamp;
@@ -18,33 +18,49 @@ router.get('/sessions', async (req, res) => {
 
     // FORCE EXECUTION - Always log regardless of cache
     console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===', Date.now());
+    console.log('req.user:', JSON.stringify(req.user, null, 2));
     console.log('Fetching sessions for userId:', userId, 'type:', typeof userId);
     
     // Check all sessions in database first
     console.log('Querying all sessions...');
     const allSessions = await db.select().from(therapeuticChatSessions);
     console.log('Total sessions in database:', allSessions.length);
-    console.log('All sessions:', JSON.stringify(allSessions, null, 2));
+    allSessions.forEach((session, i) => {
+      console.log(`Session ${i}: user_id="${session.userId}" (type: ${typeof session.userId}), title="${session.title}"`);
+    });
+    
+    // Test multiple matching approaches
+    console.log('\n--- Testing different userId formats ---');
+    console.log('1. Direct userId:', userId);
+    console.log('2. String(userId):', String(userId));
+    console.log('3. req.user.claims.sub:', req.user?.claims?.sub);
+    console.log('4. req.user.id:', req.user?.id);
     
     // Test exact string match
-    console.log('Testing string match for userId:', String(userId));
     const sessionsByStringMatch = await db
       .select()
       .from(therapeuticChatSessions)
       .where(eq(therapeuticChatSessions.userId, String(userId)));
     
-    console.log('Sessions by string match:', sessionsByStringMatch.length, JSON.stringify(sessionsByStringMatch, null, 2));
+    console.log('Sessions by string match:', sessionsByStringMatch.length);
+    
+    // Test with req.user.id if available
+    if (req.user?.id) {
+      const sessionsByUserId = await db
+        .select()
+        .from(therapeuticChatSessions)
+        .where(eq(therapeuticChatSessions.userId, String(req.user.id)));
+      console.log('Sessions by req.user.id:', sessionsByUserId.length);
+    }
     
     // Original query
-    console.log('Running original query...');
     const sessions = await db
       .select()
       .from(therapeuticChatSessions)
       .where(eq(therapeuticChatSessions.userId, userId))
       .orderBy(desc(therapeuticChatSessions.lastActivity));
 
-    console.log('Found sessions for user (original query):', sessions.length);
-    console.log('Sessions result:', JSON.stringify(sessions, null, 2));
+    console.log('Final sessions result:', sessions.length);
     console.log('=== END DEBUG ===');
     
     // Add cache-busting headers to ensure fresh responses
