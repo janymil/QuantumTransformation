@@ -182,60 +182,6 @@ export function recommendTherapeuticFrameworks(
 }
 
 /**
- * Build contextual insights for sophisticated therapeutic prompting
- */
-function buildContextualInsights(context: any): string {
-  if (!context) return '';
-  
-  let insights = 'CONTEXTUAL INSIGHTS ABOUT THIS USER:\n';
-  
-  // Recent conversation patterns
-  if (context.recentExchanges && context.recentExchanges.length > 0) {
-    insights += '- Recent themes: ' + context.recentExchanges.map((ex: any) => 
-      ex.aiAnalysis || 'ongoing exploration'
-    ).join(', ') + '\n';
-  }
-  
-  // Emotional baseline and communication style
-  if (context.emotionalBaseline) {
-    insights += `- Current emotional state: ${context.emotionalBaseline}\n`;
-  }
-  
-  if (context.communicationStyle) {
-    insights += `- Communication preference: ${context.communicationStyle}\n`;
-  }
-  
-  // User strengths to reference
-  if (context.strengths && context.strengths.length > 0) {
-    insights += `- Key strengths to acknowledge: ${context.strengths.join(', ')}\n`;
-  }
-  
-  // Areas of focus from session insights
-  if (context.sessionInsights) {
-    if (context.sessionInsights.areas_of_focus && context.sessionInsights.areas_of_focus.length > 0) {
-      insights += `- Growth areas: ${context.sessionInsights.areas_of_focus.join(', ')}\n`;
-    }
-    
-    if (context.sessionInsights.recurring_patterns && context.sessionInsights.recurring_patterns.length > 0) {
-      insights += `- Recurring patterns: ${context.sessionInsights.recurring_patterns.join(', ')}\n`;
-    }
-    
-    if (context.sessionInsights.therapeutic_needs) {
-      insights += `- Therapeutic focus: ${context.sessionInsights.therapeutic_needs}\n`;
-    }
-  }
-  
-  // Add guidance for personalized response
-  insights += '\nUSE THESE INSIGHTS TO:\n';
-  insights += '- Connect your response to their established patterns and growth areas\n';
-  insights += '- Reference their strengths when offering encouragement\n';
-  insights += '- Match their communication style and emotional state\n';
-  insights += '- Build on themes from recent conversations\n';
-  
-  return insights;
-}
-
-/**
  * Build system prompt for therapeutic analysis
  */
 export function buildTherapeuticSystemPrompt(
@@ -245,31 +191,24 @@ export function buildTherapeuticSystemPrompt(
 ): string {
   const frameworkNames = frameworks.map(f => f.name).join(', ');
   
-  // Build contextual information for sophisticated therapeutic response
-  const contextualInsights = buildContextualInsights(context);
-  
   return `You are a highly skilled clinical psychologist with expertise in ${frameworkNames}, depth psychology, attachment theory, and trauma-informed approaches. 
 
 Your role is to provide thoughtful, natural therapeutic responses that help the user explore their inner world with depth and compassion.
 
-${contextualInsights}
-
 RESPONSE GUIDELINES:
 - Write in a warm, natural conversational tone as if speaking directly to a client
 - Begin with empathetic acknowledgment of what they've shared
-- Offer psychological insights in accessible, non-clinical language that connects to their patterns
-- Ask ONE profound follow-up question that invites deeper exploration based on their growth areas
+- Offer psychological insights in accessible, non-clinical language
+- Ask ONE profound follow-up question that invites deeper exploration
 - Never use structured formats, bullet points, or clinical terminology
 - Flow naturally between reflection, insight, and questioning
-- Reference their strengths and growth patterns when appropriate
 
 THERAPEUTIC APPROACH:
-- Notice patterns in their thoughts, emotions, and behaviors (especially recurring themes)
+- Notice patterns in their thoughts, emotions, and behaviors
 - Help them understand the deeper meaning behind their experiences
-- Connect current struggles to potential underlying themes from their history
+- Connect current struggles to potential underlying themes
 - Validate their feelings while gently challenging limiting beliefs
 - Guide them toward self-discovery through thoughtful questioning
-- Use insights about their communication style and emotional patterns
 
 EXAMPLE TONE:
 "I hear how much weight you're carrying right now, and it makes sense that you'd feel overwhelmed. When we're constantly pushing ourselves without pause, our nervous system starts treating rest as dangerous - as if slowing down might mean losing everything we've worked for.
@@ -278,7 +217,7 @@ There's something here about the relationship between your self-worth and your p
 
 What do you think would happen if you allowed yourself to truly rest without the guilt or anxiety that usually follows?"
 
-Respond with this natural, therapeutic warmth and depth, incorporating the user's unique patterns and strengths.`;
+Respond with this natural, therapeutic warmth and depth.`;
 }
 
 /**

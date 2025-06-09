@@ -267,11 +267,14 @@ export class FastChatEngine {
       // Simple emotion detection from content
       const emotionalState = this.detectEmotionFromContent(fullResponse);
 
+      // Parse the therapeutic response to extract analysis and question
+      const { analysis, question } = this.parseTherapeuticResponse(fullResponse);
+
       return {
-        analysis: fullResponse, // Use full response as analysis since it contains the required format
-        question: fullResponse, // Same content for question field
+        analysis,
+        question,
         emotionalState,
-        suggestions: ['Continue exploring these insights in your journaling'],
+        suggestions: this.extractSuggestions(fullResponse),
         emotionalAssessment: { primary: emotionalState, intensity: 6 },
         patternInsights: { identified_patterns: ['self_reflection', 'value_exploration'] },
         tokenCount: response.usage?.input_tokens || 0,
@@ -311,7 +314,59 @@ export class FastChatEngine {
     return 'thoughtful';
   }
 
+  /**
+   * Parse therapeutic response to extract analysis and question
+   */
+  private parseTherapeuticResponse(fullResponse: string): { analysis: string; question: string } {
+    const content = fullResponse.trim();
+    
+    // Split by question marks to find the last question
+    const questions = content.split(/\?+/).filter(s => s.trim().length > 0);
+    
+    if (questions.length > 1) {
+      // Last question is the follow-up question
+      const question = questions[questions.length - 1].trim() + '?';
+      // Everything before the last question is analysis
+      const analysisEnd = content.lastIndexOf(question.slice(0, -1));
+      const analysis = content.substring(0, analysisEnd).trim();
+      
+      return {
+        analysis: analysis || content,
+        question: question
+      };
+    }
+    
+    // If no clear question found, treat entire response as analysis
+    return {
+      analysis: content,
+      question: "What comes up for you as you sit with these reflections?"
+    };
+  }
 
+  /**
+   * Extract suggestions from therapeutic response
+   */
+  private extractSuggestions(content: string): string[] {
+    // Look for action-oriented phrases in the response
+    const suggestions = [];
+    
+    if (content.includes('reflect') || content.includes('consider')) {
+      suggestions.push('Take time to reflect on these insights');
+    }
+    if (content.includes('journal') || content.includes('write')) {
+      suggestions.push('Continue exploring these themes in your journaling');
+    }
+    if (content.includes('notice') || content.includes('aware')) {
+      suggestions.push('Practice noticing these patterns in daily life');
+    }
+    
+    // Default suggestions if none found
+    if (suggestions.length === 0) {
+      suggestions.push('Continue exploring these feelings and insights');
+    }
+    
+    return suggestions;
+  }
 
   /**
    * Enqueue background processing job (non-blocking)
