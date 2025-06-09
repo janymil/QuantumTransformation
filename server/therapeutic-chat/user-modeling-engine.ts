@@ -576,20 +576,20 @@ export class UserModelingEngine {
       .select()
       .from(personalizationInsights)
       .where(and(
-        eq(personalizationInsights.userId, userId),
-        eq(personalizationInsights.insightType, pattern.type || 'behavioral_pattern')
+        eq(personalizationInsights.user_id, userId),
+        eq(personalizationInsights.insight_type, pattern.type || 'behavioral_pattern')
       ));
     
     if (existingInsights.length === 0) {
       await db.insert(personalizationInsights).values({
-        userId,
-        insightType: pattern.type || 'behavioral_pattern',
-        insightContent: pattern.description || pattern.title,
-        confidenceScore: pattern.confidence || 0.7,
-        evidenceSources: pattern.evidence || [],
-        applicableContexts: pattern.contextFactors || [],
-        effectivenessRating: 0.5,
-        isActive: true
+        user_id: userId,
+        insight_type: pattern.type || 'behavioral_pattern',
+        insight_content: pattern.description || pattern.title || 'User interaction pattern detected',
+        confidence_score: pattern.confidence || 0.7,
+        evidence_sources: pattern.evidence || [],
+        applicable_contexts: pattern.contextFactors || [],
+        effectiveness_rating: 0.5,
+        is_active: true
       });
     }
   }
