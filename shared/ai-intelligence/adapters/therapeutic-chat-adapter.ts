@@ -15,7 +15,7 @@ export interface TherapeuticRequest {
   userId: string;
   userInput: string;
   systemPrompt: string;
-  userTier: 'premium' | 'ultra';
+  userTier?: 'premium' | 'ultra';
   sessionContext: {
     threadId?: string;
     conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -36,6 +36,7 @@ export interface TherapeuticRequest {
     preferredProvider?: 'openai' | 'anthropic' | 'local';
     enableAdaptiveLanguage?: boolean;
     enableContextualMemory?: boolean;
+    bypassCostOptimization?: boolean;
   };
 }
 
@@ -81,7 +82,41 @@ export class TherapeuticChatAdapter {
   async processTherapeuticRequest(request: TherapeuticRequest): Promise<TherapeuticResponse> {
     const startTime = Date.now();
     try {
-      // Direct AI call for therapeutic processing
+      // Check if cost optimization should be bypassed for premium therapeutic
+      const bypassCostOptimization = request.options?.bypassCostOptimization || false;
+      
+      // Skip cache check if cost optimization is bypassed
+      if (!bypassCostOptimization) {
+        const cachedResponse = await costOptimizer.checkCache({
+          prompt: request.userInput,
+          systemPrompt: request.systemPrompt,
+          context: {
+            userId: request.userId,
+            sessionType: 'therapeutic_chat',
+            userTier: 'premium'
+          }
+        });
+        
+        if (cachedResponse) {
+          return {
+            content: cachedResponse.content,
+            metadata: {
+              modelUsed: cachedResponse.modelUsed,
+              provider: cachedResponse.provider as any,
+              cost: 0,
+              processingTime: Date.now() - startTime,
+              fromCache: true,
+              costSavings: 0,
+              routingReason: 'Cache hit',
+              adaptiveLanguageApplied: false,
+              contextualMemoryUsed: false,
+              personalizationLevel: 0
+            }
+          };
+        }
+      }
+
+      // Initialize AI clients
       const anthropic = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
       });

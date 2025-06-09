@@ -2185,31 +2185,29 @@ Provide personalized, actionable guidance that:
         return res.status(400).json({ message: "User input is required" });
       }
 
-      // Premium therapeutic chat through AI Intelligence Layer (cost optimization disabled)
-      const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
+      // Premium therapeutic chat through existing therapeutic-chat-adapter (with cost bypass)
+      const { therapeuticChatAdapter } = await import('../shared/ai-intelligence/adapters/therapeutic-chat-adapter');
       
-      const response = await intelligentRouter.process({
-        prompt: userInput.trim(),
+      const response = await therapeuticChatAdapter.processTherapeuticRequest({
+        userId,
+        userInput: userInput.trim(),
         systemPrompt: `You are an expert therapeutic AI assistant with advanced training in multiple psychological frameworks including CBT, DBT, ACT, psychodynamic therapy, and humanistic approaches. Provide sophisticated therapeutic responses with deep psychological insight.`,
-        context: {
-          userId,
-          sessionType: 'therapeutic_chat',
-          userTier: 'premium',
-          therapeuticContext: {
-            threadId: threadId ? threadId.toString() : undefined,
-            actionType: actionType || 'therapeutic_chat',
-            conversationStyle: conversationStyle || 'empathetic',
-            focusArea: focusArea || 'general',
-            customizations: {
-              tone: conversationStyle || 'empathetic',
-              responseLength: responseLength || 'balanced'
-            }
-          }
+        userTier: 'premium',
+        sessionContext: {
+          threadId: threadId ? threadId.toString() : undefined,
+          sessionType: actionType || 'therapeutic_chat',
+          currentTherapeuticStyle: conversationStyle || 'empathetic',
+          therapeuticGoals: [focusArea || 'general'],
+          emotionalState: 'exploring'
+        },
+        personalization: {
+          preferredResponseStyle: conversationStyle || 'empathetic'
         },
         options: {
           temperature: 0.7,
           maxTokens: 2000,
-          bypassCostOptimization: true // KEY: This disables caching and cost optimization for premium therapeutic
+          enableContextualMemory: true,
+          bypassCostOptimization: true // KEY: This enables premium therapeutic processing
         }
       });
 
