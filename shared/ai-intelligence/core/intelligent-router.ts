@@ -35,6 +35,7 @@ export interface AIRequest {
     temperature?: number;
     maxTokens?: number;
     preferredProvider?: 'openai' | 'anthropic' | 'local';
+    bypassCostOptimization?: boolean;
   };
 }
 
@@ -69,21 +70,23 @@ export class IntelligentRouter {
     const startTime = Date.now();
     
     try {
-      // Step 1: Check cache first
-      const cachedResponse = await costOptimizer.checkCache(request);
-      if (cachedResponse) {
-        return {
-          content: cachedResponse.content,
-          metadata: {
-            modelUsed: cachedResponse.modelUsed,
-            provider: cachedResponse.provider as any,
-            cost: 0,
-            processingTime: Date.now() - startTime,
-            fromCache: true,
-            learningApplied: false,
-            routingReason: 'Cache hit'
-          }
-        };
+      // Step 1: Check cache first (unless bypassed for premium therapeutic)
+      if (!request.options?.bypassCostOptimization) {
+        const cachedResponse = await costOptimizer.checkCache(request);
+        if (cachedResponse) {
+          return {
+            content: cachedResponse.content,
+            metadata: {
+              modelUsed: cachedResponse.modelUsed,
+              provider: cachedResponse.provider as any,
+              cost: 0,
+              processingTime: Date.now() - startTime,
+              fromCache: true,
+              learningApplied: false,
+              routingReason: 'Cache hit'
+            }
+          };
+        }
       }
 
       // Step 2: Analyze request and make routing decision
@@ -107,11 +110,12 @@ export class IntelligentRouter {
         }
       }
 
-      // Step 4: Apply learning and cache response
-      await Promise.all([
-        costOptimizer.cacheResponse(request, response),
-        learningEngine.learn(request, response)
-      ]);
+      // Step 4: Apply learning and cache response (skip caching if cost optimization bypassed)
+      const tasks = [learningEngine.learn(request, response)];
+      if (!request.options?.bypassCostOptimization) {
+        tasks.push(costOptimizer.cacheResponse(request, response));
+      }
+      await Promise.all(tasks);
 
       response.metadata.processingTime = Date.now() - startTime;
       return response;
@@ -266,12 +270,22 @@ export class IntelligentRouter {
   /**
    * Select external API provider and model
    */
-  private selectExternalProvider(complexity: any, context: any): {
+  private selectExternalProvider(complexity: any, context: any, bypassCostOptimization?: boolean): {
     provider: 'openai' | 'anthropic';
     model: string;
     reasoning: string;
     estimatedCost: number;
   } {
+    // Premium therapeutic with cost optimization bypassed gets best models
+    if (bypassCostOptimization && context.sessionType === 'therapeutic_chat') {
+      return {
+        provider: 'anthropic',
+        model: 'claude-3-5-sonnet-20241022',
+        reasoning: 'Premium therapeutic with cost optimization bypassed - using best model',
+        estimatedCost: 0.015
+      };
+    }
+
     // High complexity or ultra tier gets best models
     if (complexity.requiresAdvanced || context.userTier === 'ultra') {
       return {

@@ -2185,21 +2185,32 @@ Provide personalized, actionable guidance that:
         return res.status(400).json({ message: "User input is required" });
       }
 
-      // Direct route to therapeutic chat engine (bypass AI intelligence layers)
-      const { therapeuticChatEngine } = await import('./therapeutic-chat/therapeutic-chat-engine');
+      // Premium therapeutic chat through AI Intelligence Layer (cost optimization disabled)
+      const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
       
-      const response = await therapeuticChatEngine.processTherapeuticMessage({
-        userId,
-        userInput: userInput.trim(),
-        threadId: threadId ? parseInt(threadId) : undefined,
-        actionType: actionType || 'therapeutic_chat',
-        customizations: {
-          tone: conversationStyle || 'empathetic',
-          approach: focusArea || 'general',
-          responseLength: responseLength || 'balanced',
-          focusArea: focusArea || 'general'
+      const response = await intelligentRouter.process({
+        prompt: userInput.trim(),
+        systemPrompt: `You are an expert therapeutic AI assistant with advanced training in multiple psychological frameworks including CBT, DBT, ACT, psychodynamic therapy, and humanistic approaches. Provide sophisticated therapeutic responses with deep psychological insight.`,
+        context: {
+          userId,
+          sessionType: 'therapeutic_chat',
+          userTier: 'premium',
+          therapeuticContext: {
+            threadId: threadId ? threadId.toString() : undefined,
+            actionType: actionType || 'therapeutic_chat',
+            conversationStyle: conversationStyle || 'empathetic',
+            focusArea: focusArea || 'general',
+            customizations: {
+              tone: conversationStyle || 'empathetic',
+              responseLength: responseLength || 'balanced'
+            }
+          }
         },
-        wasVoiceInput: false
+        options: {
+          temperature: 0.7,
+          maxTokens: 2000,
+          bypassCostOptimization: true // KEY: This disables caching and cost optimization for premium therapeutic
+        }
       });
 
       res.json(response);
