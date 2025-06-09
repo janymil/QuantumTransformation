@@ -41,6 +41,29 @@ export default function TherapeuticChat() {
     queryKey: ['/api/therapeutic-chat/sessions'],
   });
 
+  // Debug mutation for sessions
+  const debugSessionsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/therapeutic-chat/sessions-debug');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      console.log('Debug sessions response:', data);
+      toast({
+        title: "Debug Complete",
+        description: "Check browser console for debug output",
+      });
+    },
+    onError: (error) => {
+      console.error('Debug sessions error:', error);
+      toast({
+        title: "Debug Error",
+        description: "Check browser console for error details",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Delete therapeutic chat session mutation
   const deleteThreadMutation = useMutation({
     mutationFn: async (threadId: number) => {
@@ -819,6 +842,15 @@ export default function TherapeuticChat() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => debugSessionsMutation.mutate()}
+                disabled={debugSessionsMutation.isPending}
+              >
+                <Info className="h-4 w-4 mr-2" />
+                Debug Sessions
+              </Button>
               <Link href="/therapeutic-analytics">
                 <Button variant="outline" size="sm">
                   <BarChart3 className="h-4 w-4 mr-2" />
