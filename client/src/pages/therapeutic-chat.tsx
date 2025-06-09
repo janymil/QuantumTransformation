@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain, Info, BarChart3 } from "lucide-react";
+import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain, Info, BarChart3, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 
 // Import modular components
@@ -32,6 +32,7 @@ export default function TherapeuticChat() {
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -351,6 +352,8 @@ export default function TherapeuticChat() {
       return;
     }
 
+    setIsSaving(true);
+
     try {
       // Prepare conversation data for saving
       const conversationData = {
@@ -375,7 +378,10 @@ export default function TherapeuticChat() {
           description: "Your therapeutic session has been saved successfully.",
         });
 
+        // Invalidate both therapeutic sessions and journal queries to ensure visibility
         queryClient.invalidateQueries({ queryKey: ["/api/therapeutic-chat/sessions"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/saved-conversations"] });
 
         setActiveSession(null);
         setMessages([]);
@@ -389,6 +395,8 @@ export default function TherapeuticChat() {
         description: "Unable to save conversation. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -836,9 +844,16 @@ export default function TherapeuticChat() {
                           size="sm" 
                           className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                           onClick={() => handleFinishConversation()}
-                          disabled={messages.length <= 1}
+                          disabled={messages.length <= 1 || isSaving}
                         >
-                          Finish Conversation
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            'Finish Conversation'
+                          )}
                         </Button>
                       </div>
                     </div>

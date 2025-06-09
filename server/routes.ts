@@ -2245,6 +2245,70 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Save conversation - creates new thread with messages
+  app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { threadId, title, messages, conversationStyle, focusArea } = req.body;
+
+      if (!messages || messages.length === 0) {
+        return res.status(400).json({ message: "Messages are required to save conversation" });
+      }
+
+      let finalThreadId = threadId;
+
+      // Create new thread if none exists
+      if (!threadId) {
+        const [newThread] = await db
+          .insert(conversationThreads)
+          .values({
+            userId,
+            title: title || 'Therapeutic Chat Session',
+            lastMessage: messages[messages.length - 1]?.content?.slice(0, 100) || '',
+            emotionalJourney: [focusArea || 'general']
+          })
+          .returning();
+        
+        finalThreadId = newThread.id;
+      }
+
+      // Save all messages to thread exchanges
+      for (let i = 0; i < messages.length; i++) {
+        const message = messages[i];
+        
+        await db
+          .insert(threadExchanges)
+          .values({
+            threadId: finalThreadId,
+            exchangeOrder: i + 1,
+            userMessage: message.type === 'user' ? message.content : '',
+            aiResponse: message.type === 'ai' ? message.content : '',
+            emotionalTone: message.emotionalTone || 'neutral',
+            timestamp: new Date(message.timestamp || Date.now())
+          });
+      }
+
+      // Update thread's last message
+      await db
+        .update(conversationThreads)
+        .set({
+          lastMessage: messages[messages.length - 1]?.content?.slice(0, 100) || '',
+          emotionalJourney: [focusArea || 'general']
+        })
+        .where(eq(conversationThreads.id, finalThreadId));
+
+      res.json({ 
+        success: true, 
+        threadId: finalThreadId,
+        message: "Conversation saved successfully"
+      });
+
+    } catch (error) {
+      console.error("Error saving conversation:", error);
+      res.status(500).json({ message: "Failed to save conversation" });
+    }
+  });
+
   // Get conversation history for a specific thread
   app.get('/api/therapeutic-chat/sessions/:threadId/history', isAuthenticated, async (req: any, res) => {
     try {
