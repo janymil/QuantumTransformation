@@ -5,8 +5,8 @@
  */
 
 import { IntelligentModelRouter } from './intelligent-model-router';
-import { unifiedResearchIntegration } from './unified-research-integration';
-import { db } from './db';
+import { unifiedResearchIntegration } from '../unified-research-integration';
+import { db } from '../db';
 import { eq, desc } from 'drizzle-orm';
 import { aiResponseHistory } from '@shared/schema';
 

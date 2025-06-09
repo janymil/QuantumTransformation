@@ -41,10 +41,10 @@ import { vectorPersonalization } from "./vector-personalization";
 import { emotionalIntelligence } from "./emotional-intelligence";
 import { advancedMemory } from "./advanced-memory";
 import { predictiveIntelligence } from "./predictive-intelligence";
-import { modelRouter } from "./intelligent-model-router";
+import { modelRouter } from "./ai-coaching/intelligent-model-router";
 import { initializeUserGamification } from "./gamification";
 import { registerDeepJournalingRoutes } from "./therapeutic-chat";
-import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
+import { multidisciplinaryAIEngine } from "./ai-coaching/multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
