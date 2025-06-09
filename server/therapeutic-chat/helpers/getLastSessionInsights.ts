@@ -190,10 +190,7 @@ export async function getLastSessionInsights(userId: string): Promise<UserSessio
         if (session.focusArea) {
           themes.push(session.focusArea);
         }
-
-        if (thread.currentEmotionalState) {
-          themes.push(thread.currentEmotionalState.toLowerCase());
-        }
+      });
       });
     }
 
