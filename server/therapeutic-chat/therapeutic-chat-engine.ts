@@ -353,66 +353,36 @@ Use this analysis to provide highly personalized, psychologically-informed thera
       { role: "user" as const, content: `${contextPrompt}\n\n${analysisPrompt}` }
     ];
 
-    // Use therapeutic-chat-adapter for AI Intelligence Layer integration while preserving therapeutic quality
+    // Use Layer 5 intelligent model routing directly (consolidated from Layer 3)
     let aiResponse;
 
     try {
-      const therapeuticRequest: TherapeuticRequest = {
-        userId: request.userId,
-        userInput: `${contextPrompt}\n\n${analysisPrompt}`,
+      // Direct routing through Layer 5 - premium models only with quality-first approach
+      const routingResponse = await intelligentModelRouter.routeTherapeuticRequest(
+        request,
         systemPrompt,
-        userTier: 'premium', // Therapeutic chat is premium tier
-        sessionContext: {
-          threadId: thread.id,
-          conversationHistory: history.map(h => ({
-            role: 'user' as const,
-            content: h.userInput || ''
-          })),
-          therapeuticGoals: frameworkRec.expectedOutcomes,
-          currentTherapeuticStyle: frameworkRec.primaryFramework,
-          emotionalState: userProfile?.currentEmotionalState || 'neutral',
-          sessionType: 'therapeutic_analysis'
-        },
-        personalization: {
-          preferredResponseStyle: personalizationRecs.communicationAdjustments.tone,
-          effectivePatterns: personalizationRecs.therapeuticFrameworks,
-          avoidancePatterns: personalizationRecs.avoidanceFactors,
-          personalizedContext: {
-            mode,
-            tone,
-            perspective,
-            responseLength: personalizationRecs.communicationAdjustments.responseLength
-          }
-        },
-        options: {
-          temperature: 0.7,
-          maxTokens: 2000,
-          enableAdaptiveLanguage: true,
-          enableContextualMemory: true
-        }
-      };
+        `${contextPrompt}\n\n${analysisPrompt}`,
+        'complex' // Premium tier always uses complex routing for therapeutic quality
+      );
 
-      // Process through therapeutic-chat-adapter (bypasses cost optimization, preserves quality)
-      const adapterResponse = await therapeuticChatAdapter.processTherapeuticRequest(therapeuticRequest);
+      const responseContent = routingResponse.question || "I'm here to listen and support you. What would you like to explore?";
 
-      const responseContent = adapterResponse.content || "I'm here to listen and support you. What would you like to explore?";
-
-      // Use the therapeutic response directly from adapter - includes AI Intelligence Layer benefits
+      // Use the therapeutic response directly from Layer 5 routing - premium models only
       aiResponse = {
         analysis: { professionalAnalysis: responseContent },
         question: responseContent, // Use the full therapeutic response
-        patternInsights: adapterResponse.therapeuticInsights?.progressIndicators || [],
-        emotionalAssessment: adapterResponse.therapeuticInsights?.detectedEmotionalState || 'neutral',
-        emotionalState: { 
-          primaryEmotion: adapterResponse.therapeuticInsights?.detectedEmotionalState || 'curious', 
+        patternInsights: routingResponse.patternInsights || {},
+        emotionalAssessment: routingResponse.emotionalAssessment || 'neutral',
+        emotionalState: routingResponse.emotionalState || { 
+          primaryEmotion: 'curious', 
           intensity: 0.7, 
           clarity: 0.8 
         },
-        suggestions: adapterResponse.therapeuticInsights?.recommendedFollowUp || [],
-        tokenCount: Math.ceil(responseContent.length / 4), // Estimate from response length
-        cost: adapterResponse.metadata.cost,
-        modelUsed: adapterResponse.metadata.modelUsed,
-        provider: adapterResponse.metadata.provider
+        suggestions: routingResponse.suggestions || [],
+        tokenCount: routingResponse.tokenCount || Math.ceil(responseContent.length / 4),
+        cost: routingResponse.cost || 0.003,
+        modelUsed: routingResponse.modelUsed || 'claude-3-5-sonnet-20241022',
+        provider: routingResponse.provider || 'anthropic'
       };
 
       console.log('Direct OpenAI Response Quality Check:', {

@@ -2218,29 +2218,18 @@ Provide personalized, actionable guidance that:
         return res.status(400).json({ message: "User input is required" });
       }
 
-      // Premium therapeutic chat through existing therapeutic-chat-adapter (with cost bypass)
-      const { therapeuticChatAdapter } = await import('../shared/ai-intelligence/adapters/therapeutic-chat-adapter');
+      // Premium therapeutic chat through consolidated Layer 5 routing (quality-first approach)
+      const { therapeuticChatEngine } = await import('./therapeutic-chat/therapeutic-chat-engine');
 
-      const response = await therapeuticChatAdapter.processTherapeuticRequest({
+      const response = await therapeuticChatEngine.processJournalingRequest({
         userId,
         userInput: userInput.trim(),
-        systemPrompt: `You are an expert therapeutic AI assistant with advanced training in multiple psychological frameworks including CBT, DBT, ACT, psychodynamic therapy, and humanistic approaches. Provide sophisticated therapeutic responses with deep psychological insight.`,
-        userTier: 'premium',
-        sessionContext: {
-          threadId: threadId ? threadId.toString() : undefined,
-          sessionType: actionType || 'therapeutic_chat',
-          currentTherapeuticStyle: conversationStyle || 'empathetic',
-          therapeuticGoals: [focusArea || 'general'],
-          emotionalState: 'exploring'
-        },
-        personalization: {
-          preferredResponseStyle: conversationStyle || 'empathetic'
-        },
-        options: {
-          temperature: 0.7,
-          maxTokens: 2000,
-          enableContextualMemory: true,
-          bypassCostOptimization: true // KEY: This enables premium therapeutic processing
+        threadId,
+        actionType: actionType || 'deep_analysis',
+        customizations: {
+          mode: conversationStyle || 'empathetic',
+          tone: 'supportive',
+          perspective: 'psychologist'
         }
       });
 
