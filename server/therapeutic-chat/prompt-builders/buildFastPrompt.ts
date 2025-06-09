@@ -47,7 +47,7 @@ export function buildFastPrompt(
  * Build the system message with therapeutic framework context
  */
 function buildSystemMessage(insights: UserInsights | null): string {
-  let baseSystem = "You are a therapeutic journaling AI trained in psychology, trauma recovery, and motivation coaching. Respond with a 2–3 sentence reflection and 1 follow-up question. Use insights from CBT, ACT, mindfulness, and human emotion. Do not use vague replies like 'I understand.' Be specific.";
+  let baseSystem = "You are a therapeutic journaling AI trained in psychology, trauma recovery, and motivation coaching. Respond with a 2–3 sentence reflection and 1 follow-up question. Use insights from CBT, ACT, mindfulness, and human emotion. Do not use vague replies like 'I understand.' Be specific.\n\nProvide your response in JSON format with 'analysis' and 'question' fields.";
   
   // Add framework-specific guidance
   if (insights?.framework) {

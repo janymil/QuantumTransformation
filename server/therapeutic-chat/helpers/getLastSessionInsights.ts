@@ -5,7 +5,7 @@
 
 import { db } from "../../db";
 import { psychologicalProfile, journalingThreads, threadExchanges } from "@shared/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, or, sql } from "drizzle-orm";
 
 export interface UserSessionInsights {
   framework: string;
@@ -39,12 +39,17 @@ export async function getLastSessionInsights(userId: string): Promise<UserSessio
     let recentExchanges: any[] = [];
     if (userThreads.length > 0) {
       const threadIds = userThreads.map(thread => thread.id);
-      recentExchanges = await db
-        .select()
-        .from(threadExchanges)
-        .where(sql`${threadExchanges.threadId} IN (${threadIds.join(',')})`)
-        .orderBy(desc(threadExchanges.createdAt))
-        .limit(15);
+      if (threadIds.length > 0) {
+        recentExchanges = await db
+          .select()
+          .from(threadExchanges)
+          .where(threadIds.length === 1 
+            ? eq(threadExchanges.threadId, threadIds[0])
+            : or(...threadIds.map(id => eq(threadExchanges.threadId, id)))
+          )
+          .orderBy(desc(threadExchanges.createdAt))
+          .limit(15);
+      }
     }
 
     // Step 4: Extract and aggregate insights
