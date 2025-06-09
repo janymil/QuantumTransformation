@@ -8,6 +8,7 @@ import { db } from '../db';
 import { threadExchanges, journalingThreads, psychologicalProfile } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { getLastSessionInsights, type LastSessionInsights } from "./helpers";
+import { buildFastPrompt, type MemorySnippet } from './prompt-builders';
 
 interface FastChatResponse {
   analysis: string;
@@ -38,20 +39,26 @@ export class FastChatEngine {
         getLastSessionInsights(userId)
       ]);
 
-      // Step 2: Build lightweight system prompt
-      const systemPrompt = this.buildLightweightPrompt(
-        entryText, 
-        semanticMatches, 
-        sessionInsights
-      );
+      // Step 2: Convert semantic matches to memory snippets
+      const memorySnippets: MemorySnippet[] = semanticMatches.map(match => ({
+        content: match.content,
+        context: match.context,
+        relevance: match.similarity
+      }));
 
-      // Step 3: Get GPT-4o response (optimized for speed)
+      // Step 3: Build prompt using the prompt builder
+      const messages = buildFastPrompt(entryText, memorySnippets, {
+        preferredFramework: sessionInsights.preferredFramework,
+        emotionalState: sessionInsights.emotionalState,
+        communicationTone: sessionInsights.communicationTone,
+        challengeLevel: sessionInsights.challengeLevel,
+        themes: sessionInsights.themes
+      });
+
+      // Step 4: Get GPT-4o response (optimized for speed)
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: entryText }
-        ],
+        messages,
         max_tokens: 200, // Limit for speed
         temperature: 0.7,
         response_format: { type: 'json_object' }
@@ -164,35 +171,7 @@ export class FastChatEngine {
     return intersection.size / Math.max(set1.size, set2.size);
   }
 
-  /**
-   * Build lightweight system prompt optimized for fast GPT-4o responses
-   */
-  private buildLightweightPrompt(
-    entryText: string,
-    semanticMatches: SemanticMatch[],
-    insights: LastSessionInsights
-  ): string {
-    const contextSection = semanticMatches.length > 0 
-      ? `\nRELATED PAST THEMES:\n${semanticMatches.map(m => `- ${m.content}`).join('\n')}\n`
-      : '';
-
-    return `You are a skilled therapeutic AI assistant providing quick, meaningful responses. 
-
-USER PROFILE:
-- Preferred approach: ${insights.preferredFramework}
-- Communication tone: ${insights.communicationTone}
-- Current emotional state: ${insights.emotionalState}
-- Challenge level: ${insights.challengeLevel}/10
-${contextSection}
-INSTRUCTIONS:
-1. Provide a 2-3 sentence psychological reflection that validates their experience
-2. Ask 1 follow-up question that helps them explore deeper
-3. Use ${insights.communicationTone} tone
-4. Apply ${insights.preferredFramework} framework principles
-5. Return as JSON: {"analysis": "reflection here", "question": "question here"}
-
-Keep responses concise but meaningful. Focus on emotional validation and gentle exploration.`;
-  }
+  
 }
 
 // Export singleton instance
