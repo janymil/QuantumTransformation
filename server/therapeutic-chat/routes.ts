@@ -51,43 +51,48 @@ export function registerTherapeuticChatRoutes(app: Express) {
       console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===');
       console.log('Fetching sessions for userId:', userId, 'type:', typeof userId);
       
-      // Check all sessions in database first
+      // Check all sessions in database first to understand what's stored
       console.log('Querying all sessions...');
       const allSessions = await db.select().from(therapeuticChatSessions);
       console.log('Total sessions in database:', allSessions.length);
       
       if (allSessions.length > 0) {
-        console.log('Sample session userIds:', allSessions.slice(0, 3).map(s => ({ id: s.id, userId: s.userId, type: typeof s.userId })));
+        console.log('All session userIds in DB:', allSessions.map(s => ({ id: s.id, userId: s.userId, type: typeof s.userId })));
         
-        // Check for any sessions that might match this user
-        const potentialMatches = allSessions.filter(s => 
-          String(s.userId) === userId || 
-          s.userId === userId ||
-          s.userId === parseInt(userId, 10)
-        );
-        console.log('Potential matches found:', potentialMatches.length);
+        // Check for any sessions that might match this user with various formats
+        const directStringMatch = allSessions.filter(s => s.userId === userId);
+        const castStringMatch = allSessions.filter(s => String(s.userId) === userId);
+        const numericMatch = allSessions.filter(s => s.userId === parseInt(userId, 10));
+        
+        console.log('Direct string matches:', directStringMatch.length);
+        console.log('Cast string matches:', castStringMatch.length); 
+        console.log('Numeric matches:', numericMatch.length);
       }
       
       // Try multiple query approaches to find sessions
+      console.log('Running primary query with userId:', userId);
       let sessions = await db
         .select()
         .from(therapeuticChatSessions)
         .where(eq(therapeuticChatSessions.userId, userId))
         .orderBy(desc(therapeuticChatSessions.lastActivity));
 
-      // If no sessions found with string match, try numeric match
-      if (sessions.length === 0 && !isNaN(parseInt(userId, 10))) {
-        console.log('Trying numeric userId match...');
-        sessions = await db
-          .select()
-          .from(therapeuticChatSessions)
-          .where(eq(therapeuticChatSessions.userId, parseInt(userId, 10).toString()))
-          .orderBy(desc(therapeuticChatSessions.lastActivity));
+      console.log('Primary query result:', sessions.length);
+
+      // If no sessions found with direct string match, try with explicit type conversion
+      if (sessions.length === 0) {
+        console.log('Trying with explicit string conversion...');
+        
+        // Try querying where we cast both sides to string for comparison
+        const allSessionsForUser = allSessions.filter(s => String(s.userId) === String(userId));
+        sessions = allSessionsForUser;
+        
+        console.log('String conversion result:', sessions.length);
       }
 
-      console.log('Found sessions for user:', sessions.length);
+      console.log('Final sessions found for user:', sessions.length);
       if (sessions.length > 0) {
-        console.log('Session titles:', sessions.map(s => s.title));
+        console.log('Session details:', sessions.map(s => ({ id: s.id, title: s.title, userId: s.userId })));
       }
       console.log('=== END DEBUG ===');
 
@@ -184,7 +189,7 @@ export function registerTherapeuticChatRoutes(app: Express) {
       const [newSession] = await db
         .insert(therapeuticChatSessions)
         .values({
-          userId: userId, // Keep as string for consistency
+          userId: String(userId), // Explicitly ensure string type for consistency
           title: title || 'Therapeutic Session',
           sessionType: sessionType || 'general',
           conversationStyle: conversationStyle || 'socratic',
@@ -365,6 +370,27 @@ export function registerTherapeuticChatRoutes(app: Express) {
     } catch (error) {
       console.error('Error deleting therapeutic chat session:', error);
       res.status(500).json({ error: 'Failed to delete session' });
+    }
+  });
+
+  // Debug endpoint to check all sessions in database
+  app.get('/api/therapeutic-chat/debug/all-sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = String(req.user.claims.sub);
+      console.log('Debug: Current user ID:', userId, 'type:', typeof userId);
+      
+      const allSessions = await db.select().from(therapeuticChatSessions);
+      console.log('Debug: All sessions in database:', allSessions);
+      
+      res.json({
+        currentUserId: userId,
+        currentUserIdType: typeof userId,
+        allSessions: allSessions,
+        matchingSessions: allSessions.filter(s => String(s.userId) === String(userId))
+      });
+    } catch (error) {
+      console.error('Debug endpoint error:', error);
+      res.status(500).json({ error: 'Debug failed' });
     }
   });
 
