@@ -1,0 +1,33 @@
+{
+  "testUser": {
+    "userId": "test-user-123",
+    "name": "Test User",
+    "email": "test@example.com"
+  },
+  "journalEntries": [
+    {
+      "id": "entry-1",
+      "text": "I've been feeling overwhelmed with work lately. The deadlines keep piling up and I can't seem to catch a break. I'm starting to question if I'm good enough for this job.",
+      "theme": "work stress",
+      "emotionalState": "anxious"
+    },
+    {
+      "id": "entry-2", 
+      "text": "Had a really good conversation with my friend today. It made me realize that I've been isolating myself too much. I need to reach out more to people I care about.",
+      "theme": "relationships",
+      "emotionalState": "reflective"
+    },
+    {
+      "id": "entry-3",
+      "text": "I keep procrastinating on important tasks and then beating myself up about it. This cycle is exhausting and I don't know how to break it.",
+      "theme": "self-criticism",
+      "emotionalState": "frustrated"
+    }
+  ],
+  "mockInsights": {
+    "framework": "Cognitive Behavioral Therapy",
+    "tone": "supportive",
+    "state": "mild anxiety with perfectionist tendencies",
+    "themes": ["work-life balance", "self-worth", "social connection"]
+  }
+}

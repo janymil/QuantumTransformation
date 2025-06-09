@@ -5,6 +5,7 @@
 
 import OpenAI from 'openai';
 import { getLastSessionInsights } from './helpers/getLastSessionInsights';
+import { buildFastPrompt } from './prompt-builders/buildFastPrompt';
 import { db } from '../db';
 import { threadExchanges, journalingThreads } from '../../shared/schema';
 import { eq, desc } from 'drizzle-orm';
@@ -51,11 +52,11 @@ export async function processFastResponse(
     // Step 2: Get cached psychological profile insights
     const sessionInsights = await getLastSessionInsights(userId);
 
-    // Step 3: Build lightweight GPT-4o system prompt
-    const systemPrompt = buildLightweightPrompt(sessionInsights, similarEntries);
+    // Step 3: Build fast prompt using the new prompt builder
+    const promptMessages = buildFastPrompt(entryText, similarEntries, sessionInsights);
 
     // Step 4: Call GPT-4o for fast response
-    const response = await callGPT4o(systemPrompt, entryText);
+    const response = await callGPT4o(promptMessages);
 
     return response;
 
@@ -114,51 +115,15 @@ async function findSimilarEntries(userId: string, currentText: string): Promise<
   }
 }
 
-/**
- * Step 3: Build lightweight system prompt optimized for speed
- */
-function buildLightweightPrompt(
-  insights: SessionInsights,
-  similarEntries: SimilarEntry[]
-): string {
-  const contextualPatterns = similarEntries.length > 0 
-    ? `Based on similar past reflections, I notice patterns around: ${similarEntries.map(e => extractKeyTheme(e.userInput)).join(', ')}.`
-    : '';
 
-  const themeContext = insights.themes.length > 0 
-    ? `Key themes for this user: ${insights.themes.join(', ')}.`
-    : '';
-
-  return `You are an expert therapeutic coach using ${insights.framework} approach. The user's emotional state: ${insights.state}. Communication tone: ${insights.tone}.
-
-${themeContext}
-${contextualPatterns}
-
-RESPONSE FORMAT:
-- Provide exactly 2-3 sentences of psychological reflection that validates their experience and offers insight
-- Ask exactly 1 follow-up question that guides them deeper into self-discovery
-- Be warm, professional, and therapeutically focused
-- Keep total response under 100 words for speed
-
-CRITICAL: Respond with pure therapeutic content only. No meta-commentary about being an AI.`;
-}
 
 /**
  * Step 4: Call GPT-4o with optimized settings for speed
  */
-async function callGPT4o(systemPrompt: string, userInput: string): Promise<FastResponse> {
+async function callGPT4o(messages: Array<{role: string, content: string}>): Promise<FastResponse> {
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-    messages: [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
-      {
-        role: 'user',
-        content: userInput
-      }
-    ],
+    messages: messages as any,
     temperature: 0.7,
     max_tokens: 150, // Limited for speed
     stream: false
