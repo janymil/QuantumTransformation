@@ -38,7 +38,7 @@ import { advancedMemory } from "./advanced-memory";
 import { predictiveIntelligence } from "./predictive-intelligence";
 import { modelRouter, multidisciplinaryAIEngine } from "./ai-coaching";
 import { initializeUserGamification } from "./gamification";
-// Deep journaling routes temporarily disabled
+import { registerDeepJournalingRoutes } from "./therapeutic-chat";
 import { responseQualityTiering } from "./response-quality-tiering";
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
@@ -637,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerProgressRoutes(app);
   registerJournalRoutes(app);
   registerGamificationRoutes(app);
-  // Deep journaling routes temporarily disabled
+  registerDeepJournalingRoutes(app);
 
   // Enhanced AI Routes with Smart Caching System
   app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {
