@@ -13,11 +13,13 @@ router.get('/sessions', isAuthenticated, async (req: any, res) => {
   const forceRefresh = req.query.refresh || timestamp;
   try {
     const userId = req.user?.claims?.sub || req.user?.id;
-    console.log('=== THERAPEUTIC CHAT SESSIONS AUTH DEBUG ===');
-    console.log('req.user:', req.user);
+    console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===');
+    console.log('req.user:', JSON.stringify(req.user, null, 2));
     console.log('userId extracted:', userId);
+    console.log('req.isAuthenticated():', req.isAuthenticated?.());
     
     if (!userId) {
+      console.log('No userId found in request');
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
