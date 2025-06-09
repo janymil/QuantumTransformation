@@ -104,7 +104,23 @@ export async function processFastResponse(
     });
 
     // Step 5: Parse and return structured response
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const rawContent = response.choices[0].message.content || "{}";
+    console.log("Raw OpenAI response:", rawContent);
+    
+    let result;
+    try {
+      result = JSON.parse(rawContent);
+      console.log("Parsed JSON result:", result);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.log("Attempting to extract content manually from:", rawContent);
+      
+      // Manual extraction if JSON parsing fails
+      result = {
+        analysis: rawContent,
+        question: "How does this situation make you feel, and what would help you move forward?"
+      };
+    }
     
     const processingTime = Date.now() - startTime;
     console.log(`FastChatEngine processed response in ${processingTime}ms`);
