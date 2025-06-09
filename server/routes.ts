@@ -2130,6 +2130,8 @@ Provide personalized, actionable guidance that:
         .select({
           id: journalingThreads.id,
           title: journalingThreads.title,
+          createdAt: journalingThreads.createdAt,
+          updatedAt: journalingThreads.updatedAt,
           lastActivity: journalingThreads.updatedAt,
           entriesCount: sql<number>`count(${threadExchanges.id})`.as('entriesCount')
         })
@@ -2143,7 +2145,15 @@ Provide personalized, actionable guidance that:
         .orderBy(desc(journalingThreads.updatedAt))
         .limit(20);
 
-      res.json(sessions);
+      // Format dates properly for frontend
+      const formattedSessions = sessions.map(session => ({
+        ...session,
+        createdAt: session.createdAt ? new Date(session.createdAt).toISOString() : new Date().toISOString(),
+        updatedAt: session.updatedAt ? new Date(session.updatedAt).toISOString() : new Date().toISOString(),
+        lastActivity: session.lastActivity ? new Date(session.lastActivity).toISOString() : new Date().toISOString()
+      }));
+
+      res.json(formattedSessions);
     } catch (error) {
       console.error("Error fetching therapeutic chat sessions:", error);
       res.status(500).json({ message: "Failed to fetch sessions" });
@@ -2275,7 +2285,7 @@ Provide personalized, actionable guidance that:
             id: `user-${exchange.id}`,
             type: 'user',
             content: exchange.userInput,
-            timestamp: exchange.createdAt || new Date()
+            timestamp: exchange.createdAt ? new Date(exchange.createdAt).toISOString() : new Date().toISOString()
           });
         }
 
@@ -2286,13 +2296,21 @@ Provide personalized, actionable guidance that:
             id: `ai-${exchange.id}`,
             type: 'ai',
             content: typeof aiContent === 'string' ? aiContent : JSON.stringify(aiContent),
-            timestamp: exchange.createdAt || new Date(),
+            timestamp: exchange.createdAt ? new Date(exchange.createdAt).toISOString() : new Date().toISOString(),
             emotionalTone: 'supportive'
           });
         }
       }
 
-      res.json(messages);
+      res.json({
+        session: {
+          id: session[0].id,
+          title: session[0].title,
+          createdAt: session[0].createdAt ? new Date(session[0].createdAt).toISOString() : new Date().toISOString(),
+          updatedAt: session[0].updatedAt ? new Date(session[0].updatedAt).toISOString() : new Date().toISOString()
+        },
+        messages
+      });
     } catch (error) {
       console.error("Error fetching therapeutic chat messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });

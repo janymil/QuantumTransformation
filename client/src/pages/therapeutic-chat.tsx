@@ -414,14 +414,19 @@ export default function TherapeuticChat() {
         const data = await response.json();
         console.log('Session data received:', data);
 
-        // Handle both data formats: direct array or {session, exchanges} object
+        // Handle both data formats: direct array or {session, messages} object
         let messagesData = [];
         let sessionTitle = `Session ${sessionId}`;
 
         if (Array.isArray(data)) {
-          // Direct array format from server/routes.ts
+          // Direct array format (old format)
           messagesData = data;
           console.log('Processing direct message array:', messagesData);
+        } else if (data?.messages) {
+          // New object format with session metadata and messages
+          messagesData = data.messages;
+          sessionTitle = data.session?.title || sessionTitle;
+          console.log('Processing messages from new object format:', messagesData);
         } else if (data?.exchanges) {
           // Object format from server/therapeutic-chat/routes.ts
           messagesData = data.exchanges;
