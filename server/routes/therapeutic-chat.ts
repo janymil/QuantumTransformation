@@ -13,12 +13,19 @@ router.get('/sessions', async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    console.log('Fetching sessions for userId:', userId, 'type:', typeof userId);
+    
+    // First check if any sessions exist
+    const allSessions = await db.select().from(therapeuticChatSessions);
+    console.log('All sessions in database:', allSessions);
+    
     const sessions = await db
       .select()
       .from(therapeuticChatSessions)
       .where(eq(therapeuticChatSessions.userId, userId))
       .orderBy(desc(therapeuticChatSessions.lastActivity));
 
+    console.log('Found sessions for user:', sessions.length, sessions);
     res.json(sessions);
   } catch (error) {
     console.error('Error fetching therapeutic chat sessions:', error);
