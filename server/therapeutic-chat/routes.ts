@@ -94,6 +94,20 @@ export function registerTherapeuticChatRoutes(app: Express) {
       if (sessions.length > 0) {
         console.log('Session details:', sessions.map(s => ({ id: s.id, title: s.title, userId: s.userId })));
       }
+
+      // If we still have no sessions from the database query but found them in the filter,
+      // ensure we return the filtered results
+      if (sessions.length === 0 && allSessions.length > 0) {
+        const manualMatches = allSessions.filter(s => String(s.userId) === String(userId));
+        if (manualMatches.length > 0) {
+          console.log('Using manual matches:', manualMatches.length);
+          sessions = manualMatches.sort((a, b) => new Date(b.lastActivity || b.createdAt).getTime() - new Date(a.lastActivity || a.createdAt).getTime());
+        }
+      }
+
+      console.log('=== FINAL RESPONSE ===');
+      console.log('Returning sessions count:', sessions.length);
+      console.log('Sessions being returned:', sessions.map(s => ({ id: s.id, title: s.title })));
       console.log('=== END DEBUG ===');
 
       // Add cache-busting headers to ensure fresh responses
