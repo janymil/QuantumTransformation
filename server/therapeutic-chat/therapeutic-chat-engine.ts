@@ -1015,3 +1015,4 @@ Use this analysis to provide highly personalized, psychologically-informed thera
 }
 
 export const deepJournalingEngine = new DeepJournalingEngine();
+export const therapeuticChatEngine = deepJournalingEngine;
