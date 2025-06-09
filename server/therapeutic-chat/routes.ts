@@ -7,36 +7,8 @@ import { db } from '../db';
 import { therapeuticChatSessions, therapeuticChatMessages } from '../../shared/schema';
 import { eq, desc, and } from 'drizzle-orm';
 
-// Authentication middleware
-const isAuthenticated = (req: any, res: any, next: any) => {
-  // Check multiple possible authentication patterns
-  const userId = req.user?.claims?.sub || req.user?.id || req.headers['x-replit-user-id'];
-
-  if (!userId) {
-    console.log('Authentication failed - no user or not authenticated');
-    return res.status(401).json({ error: 'User not authenticated' });
-  }
-
-  // Ensure user object has the expected structure
-  if (!req.user) {
-    req.user = {};
-  }
-  if (!req.user.claims) {
-    req.user.claims = {};
-  }
-  if (!req.user.claims.sub) {
-    req.user.claims.sub = String(userId); // Ensure it's a string
-  }
-
-  console.log('User authenticated successfully:', {
-    hasUser: !!req.user,
-    userKeys: Object.keys(req.user),
-    userId: req.user.claims.sub,
-    userIdType: typeof req.user.claims.sub
-  });
-
-  next();
-};
+// Import the existing authentication middleware
+import { isAuthenticated } from '../replitAuth';
 
 export function registerTherapeuticChatRoutes(app: Express) {
   // Get all therapeutic chat sessions for a user
