@@ -657,11 +657,14 @@ export class FastChatEngine {
     try {
       await db.insert(emotionalStateHistory).values({
         userId,
-        threadId,
-        exchangeId,
-        emotionalState: typeof emotionalState === 'string' ? emotionalState : emotionalState.primary,
-        intensity: typeof emotionalState === 'object' ? emotionalState.intensity : 5,
-        timestamp: new Date()
+        threadId: parseInt(threadId),
+        exchangeId: parseInt(exchangeId),
+        primaryEmotion: typeof emotionalState === 'string' ? emotionalState : (emotionalState.primary || 'neutral'),
+        emotionalIntensity: typeof emotionalState === 'object' ? (emotionalState.intensity || 0.5) : 0.5,
+        emotionalClarity: 0.7,
+        triggerContext: 'user_journaling_session',
+        detectionMethod: 'ai_analysis',
+        confidenceScore: 0.8
       });
     } catch (error) {
       console.error('Error tracking emotional state:', error);
