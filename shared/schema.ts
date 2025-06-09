@@ -597,29 +597,37 @@ export const userCommunicationPatterns = pgTable("user_communication_patterns", 
 // Personalization Insights - Store discovered patterns and preferences
 export const personalizationInsights = pgTable("personalization_insights", {
   id: serial("id").primaryKey(),
-  user_id: varchar("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   
   // Insight Classification
-  insight_type: varchar("insight_type").notNull(), // "communication_preference", "therapeutic_response", "emotional_pattern", "behavioral_trend"
-  insight_content: text("insight_content").notNull(), // Main insight description
+  insightType: varchar("insight_type").notNull(), // "communication_preference", "therapeutic_response", "emotional_pattern", "behavioral_trend"
+  insightCategory: varchar("insight_category").notNull(), // "effectiveness", "preference", "trigger", "strength", "challenge"
   
-  // Quality and Evidence
-  confidence_score: real("confidence_score").notNull(), // 0-1 scale
-  evidence_sources: jsonb("evidence_sources").default([]), // Supporting data points
-  applicable_contexts: jsonb("applicable_contexts").default([]), // Conditions that affect this insight
-  effectiveness_rating: real("effectiveness_rating"), // 0-1 scale based on outcomes
+  // Insight Details
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  confidence: real("confidence").notNull(), // 0-1 scale
+  evidence: jsonb("evidence").default([]), // Supporting data points
   
-  // Validation and Status
-  last_validated: timestamp("last_validated"),
-  is_active: boolean("is_active").default(true),
+  // Application Guidelines
+  recommendedActions: jsonb("recommended_actions").default([]), // How to apply this insight
+  contraindications: jsonb("contraindications").default([]), // When not to apply
+  contextFactors: jsonb("context_factors").default([]), // Conditions that affect this insight
   
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  // Validation and Quality
+  isValidated: boolean("is_validated").default(false),
+  validationDate: timestamp("validation_date"),
+  effectiveness: real("effectiveness"), // 0-1 scale based on outcomes
+  lastApplied: timestamp("last_applied"),
+  applicationCount: integer("application_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
-  index("personalization_insights_user_idx").on(table.user_id),
-  index("personalization_insights_type_idx").on(table.insight_type),
-  index("personalization_insights_confidence_idx").on(table.confidence_score),
-  index("personalization_insights_effectiveness_idx").on(table.effectiveness_rating),
+  index("personalization_insights_user_idx").on(table.userId),
+  index("personalization_insights_type_idx").on(table.insightType),
+  index("personalization_insights_confidence_idx").on(table.confidence),
+  index("personalization_insights_effectiveness_idx").on(table.effectiveness),
 ]);
 
 // Schema types

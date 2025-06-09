@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { 
   BookOpen, 
   Calendar, 
@@ -96,7 +95,6 @@ export default function Journal() {
   const [conversationDateFilter, setConversationDateFilter] = useState("all");
   const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
   const [loadingSessionId, setLoadingSessionId] = useState<number | null>(null);
-  const [sessionToDelete, setSessionToDelete] = useState<{ id: number; title: string } | null>(null);
   const [hoveredSession, setHoveredSession] = useState<number | null>(null);
   const [sessionPreview, setSessionPreview] = useState<{
     sessionId: number;
@@ -279,20 +277,9 @@ export default function Journal() {
     },
   });
 
-  const handleDeleteSession = (sessionId: number, sessionTitle: string) => {
-    setSessionToDelete({ id: sessionId, title: sessionTitle });
-  };
-
-  const confirmDeleteSession = () => {
-    if (sessionToDelete) {
-      setDeletingSessionId(sessionToDelete.id);
-      deleteSessionMutation.mutate(sessionToDelete.id);
-      setSessionToDelete(null);
-    }
-  };
-
-  const cancelDeleteSession = () => {
-    setSessionToDelete(null);
+  const handleDeleteSession = async (sessionId: number) => {
+    setDeletingSessionId(sessionId);
+    deleteSessionMutation.mutate(sessionId);
   };
 
   const toggleEntryExpansion = (entryId: string | number) => {
@@ -1296,7 +1283,7 @@ export default function Journal() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteSession(session.id, session.title || `Session ${session.id}`);
+                                handleDeleteSession(session.id);
                               }}
                               disabled={deletingSessionId === session.id}
                               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
@@ -1631,53 +1618,6 @@ export default function Journal() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Delete Session Confirmation Dialog */}
-        <AlertDialog open={sessionToDelete !== null} onOpenChange={() => setSessionToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <Trash2 className="w-5 h-5 text-destructive" />
-                Delete Conversation
-              </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-2">
-                <p>
-                  Are you sure you want to delete "{sessionToDelete?.title}"?
-                </p>
-                <p className="font-semibold text-destructive">
-                  This action is irreversible and will permanently delete all conversation data, including:
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                  <li>All messages and AI responses</li>
-                  <li>Therapeutic analysis and insights</li>
-                  <li>Session history and context</li>
-                </ul>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={cancelDeleteSession}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmDeleteSession}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={deletingSessionId !== null}
-              >
-                {deletingSessionId === sessionToDelete?.id ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent mr-2" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Permanently
-                  </>
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </div>
   );

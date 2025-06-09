@@ -127,7 +127,7 @@ export const therapeuticFrameworks: Record<string, TherapeuticFramework> = {
   }
 };
 
-export function recommendTherapeuticFrameworks(
+export function selectOptimalFramework(
   userInput: string,
   emotionalState: string,
   sessionGoals: string[]
@@ -209,6 +209,8 @@ THERAPEUTIC APPROACH:
 - Connect current struggles to potential underlying themes
 - Validate their feelings while gently challenging limiting beliefs
 - Guide them toward self-discovery through thoughtful questioning
+
+USER INPUT: "${userInput}"
 
 EXAMPLE TONE:
 "I hear how much weight you're carrying right now, and it makes sense that you'd feel overwhelmed. When we're constantly pushing ourselves without pause, our nervous system starts treating rest as dangerous - as if slowing down might mean losing everything we've worked for.

@@ -1,9 +1,11 @@
 import type { Express } from "express";
 import { deepJournalingEngine } from "./therapeutic-chat-engine";
-import { processFastResponse } from "./FastChatEngine";
+import { monthlyCostSimulation } from "./monthly-cost-simulation";
+import { advancedCostOptimization } from "./advanced-cost-optimization";
 import { voiceTranscriptionService } from "./voice-service";
 import { psychologicalAnalyzer } from "./psychological-analyzer";
 import { therapeuticFrameworks } from "./therapeutic-frameworks";
+import { costOptimizationService } from "./cost-optimization";
 import { isAuthenticated } from "../replitAuth";
 import multer from "multer";
 import { z } from "zod";
@@ -105,106 +107,16 @@ export function registerDeepJournalingRoutes(app: Express) {
   });
 
   /**
-   * Main deep journaling endpoint - Fast response with background processing
-   * Uses FastChatEngine for sub-1s responses while preserving all premium functions
+   * Main deep journaling endpoint - process user input and generate therapeutic response
    */
   app.post('/api/deep-journaling/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const validatedData = deepJournalingRequestSchema.parse(req.body);
 
-      const startTime = Date.now();
-
-      // Use FastChatEngine for immediate response (under 1s target)
-      const fastResponse = await processFastResponse(
-        userId,
-        validatedData.threadId?.toString() || 'new',
-        validatedData.userInput
-      );
-
-      const responseTime = Date.now() - startTime;
-
-      // Add performance metadata for monitoring
-      const responseWithMetadata = {
-        ...fastResponse,
-        _metadata: {
-          responseTime,
-          engine: 'fast_chat_engine',
-          backgroundProcessing: true,
-          timestamp: new Date().toISOString()
-        }
-      };
-
-      res.json(responseWithMetadata);
-
-      // Log performance for optimization
-      console.log(`Fast therapeutic response: ${responseTime}ms for user ${userId}`);
-
-    } catch (error) {
-      console.error('Fast therapeutic processing error:', error);
-      
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: 'Invalid request data', errors: error.errors });
-        return;
-      }
-
-      // Fallback to comprehensive engine if fast engine fails
-      try {
-        console.log('Falling back to comprehensive engine...');
-        const fallbackResponse = await deepJournalingEngine.processJournalingRequest({
-          userId: req.user.claims.sub,
-          ...validatedData
-        });
-
-        res.json({
-          ...fallbackResponse,
-          _metadata: {
-            responseTime: Date.now() - Date.now(),
-            engine: 'comprehensive_fallback',
-            backgroundProcessing: false,
-            timestamp: new Date().toISOString()
-          }
-        });
-
-      } catch (fallbackError) {
-        console.error('Fallback engine also failed:', fallbackError);
-        
-        // Ultimate therapeutic fallback
-        const actionType = req.body?.actionType;
-        res.status(200).json({
-          question: actionType === 'go_deeper' 
-            ? "I want to explore this more deeply with you. What underlying feelings or patterns do you notice in this situation?"
-            : actionType === 'new_direction'
-            ? "Let's try a different therapeutic approach. What would it look like to view this challenge from a completely new angle?"
-            : "I'm here to support you. What would be most helpful to explore right now?",
-          analysis: {
-            professionalAnalysis: "I'm committed to providing you with thoughtful therapeutic support."
-          },
-          emotionalState: { primaryEmotion: 'supportive' },
-          threadId: req.body?.threadId || null,
-          _metadata: {
-            responseTime: Date.now() - startTime,
-            engine: 'therapeutic_fallback',
-            backgroundProcessing: false,
-            timestamp: new Date().toISOString()
-          }
-        });
-      }
-    }
-  });
-
-  /**
-   * Comprehensive therapeutic processing endpoint - For complex cases requiring full analysis
-   * Uses the original comprehensive engine when deep analysis is explicitly requested
-   */
-  app.post('/api/deep-journaling/comprehensive', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const validatedData = deepJournalingRequestSchema.parse(req.body);
-
-      // Set timeout for comprehensive processing
+      // Set timeout for long-running requests
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Comprehensive processing timeout')), 45000); // 45 second timeout
+        setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
       });
 
       const responsePromise = deepJournalingEngine.processJournalingRequest({
@@ -218,14 +130,7 @@ export function registerDeepJournalingRoutes(app: Express) {
       if (response && typeof response === 'object') {
         const content = response.analysis?.professionalAnalysis || response.question || response.response;
         if (content && content.length > 10) {
-          res.json({
-            ...response,
-            _metadata: {
-              engine: 'comprehensive_engine',
-              backgroundProcessing: false,
-              timestamp: new Date().toISOString()
-            }
-          });
+          res.json(response);
         } else {
           // Provide fallback response if content is incomplete
           res.json({
@@ -235,11 +140,6 @@ export function registerDeepJournalingRoutes(app: Express) {
               : "Let's approach this from a different perspective. What alternative ways might we understand or address this situation?",
             analysis: {
               professionalAnalysis: content || "I'm here to support your therapeutic journey."
-            },
-            _metadata: {
-              engine: 'comprehensive_fallback',
-              backgroundProcessing: false,
-              timestamp: new Date().toISOString()
             }
           });
         }
@@ -247,7 +147,7 @@ export function registerDeepJournalingRoutes(app: Express) {
         throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('Comprehensive processing error:', error);
+      console.error('Deep journaling processing error:', error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: 'Invalid request data', errors: error.errors });
       } else {
@@ -263,12 +163,7 @@ export function registerDeepJournalingRoutes(app: Express) {
             professionalAnalysis: "I'm committed to providing you with thoughtful therapeutic support."
           },
           emotionalState: { primaryEmotion: 'supportive' },
-          threadId: req.body?.threadId || null,
-          _metadata: {
-            engine: 'error_fallback',
-            backgroundProcessing: false,
-            timestamp: new Date().toISOString()
-          }
+          threadId: req.body?.threadId || null
         });
       }
     }

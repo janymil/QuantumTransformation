@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory, journalingThreads, threadExchanges, users } from "@shared/schema";
+import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory, journalingThreads, threadExchanges } from "@shared/schema";
 import { aiInteractionHistory } from "@shared/ai-interaction-schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -2207,7 +2207,7 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // Process therapeutic chat message through Fast Chat Engine (sub-1s responses)
+  // Process therapeutic chat message through AI Intelligence Layer
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -2218,108 +2218,25 @@ Provide personalized, actionable guidance that:
         return res.status(400).json({ message: "User input is required" });
       }
 
-      const startTime = Date.now();
+      // Premium therapeutic chat through consolidated Layer 5 routing (quality-first approach)
+      const { therapeuticChatEngine } = await import('./therapeutic-chat/therapeutic-chat-engine');
 
-      // Use new FastChatEngine for optimized sub-1 second responses
-      const { fastChatEngine } = await import('./therapeutic-chat/FastChatEngine');
-
-      const response = await fastChatEngine.processFastResponse(
+      const response = await therapeuticChatEngine.processJournalingRequest({
         userId,
+        userInput: userInput.trim(),
         threadId,
-        userInput.trim()
-      );
-
-      const responseTime = Date.now() - startTime;
-      console.log(`FastChatEngine response: ${responseTime}ms for user ${userId}`);
-
-      // Send response immediately to user
-      res.json(response);
-
-      // Enqueue background post-processing job (non-blocking)
-      const { postProcessingJob } = await import('./jobs/post-processing-job');
-      await postProcessingJob.enqueue({
-        userId,
-        threadId: threadId || 'default',
-        entryText: userInput.trim()
+        actionType: actionType || 'deep_analysis',
+        customizations: {
+          mode: conversationStyle || 'empathetic',
+          tone: 'supportive',
+          perspective: 'psychologist'
+        }
       });
+
+      res.json(response);
     } catch (error) {
       console.error("Error processing therapeutic chat:", error);
       res.status(500).json({ message: "Failed to process message" });
-    }
-  });
-
-  // Save conversation - creates new thread with messages
-  app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { threadId, title, messages, conversationStyle, focusArea } = req.body;
-
-      if (!messages || messages.length === 0) {
-        return res.status(400).json({ message: "Messages are required to save conversation" });
-      }
-
-      let finalThreadId = threadId;
-
-      // Create new thread if none exists
-      if (!threadId) {
-        const [newThread] = await db
-          .insert(journalingThreads)
-          .values({
-            userId,
-            title: title || 'Therapeutic Chat Session',
-            threadType: 'therapy_session',
-            currentTopic: focusArea || 'general',
-            emotionalJourney: [focusArea || 'general'],
-            totalExchanges: messages.length
-          })
-          .returning();
-        
-        finalThreadId = newThread.id;
-      }
-
-      // Save all messages to thread exchanges
-      let userInputCount = 0;
-      for (let i = 0; i < messages.length; i++) {
-        const message = messages[i];
-        
-        // Only save actual user-AI exchanges, skip welcome messages
-        if (message.type === 'user' || (message.type === 'ai' && message.id !== 'welcome')) {
-          userInputCount++;
-          
-          await db
-            .insert(threadExchanges)
-            .values({
-              threadId: finalThreadId,
-              exchangeOrder: userInputCount,
-              userInput: message.type === 'user' ? message.content : '',
-              userWordCount: message.type === 'user' ? message.content.split(' ').length : 0,
-              aiAnalysis: message.type === 'ai' ? { content: message.content, emotionalTone: message.emotionalTone } : {},
-              aiQuestion: message.type === 'ai' ? message.content : 'Follow-up question',
-              modelUsed: 'claude-3-sonnet',
-              processingTime: 1000
-            });
-        }
-      }
-
-      // Update thread's total exchanges
-      await db
-        .update(journalingThreads)
-        .set({
-          totalExchanges: userInputCount,
-          emotionalJourney: [focusArea || 'general'],
-          lastActiveAt: new Date()
-        })
-        .where(eq(journalingThreads.id, finalThreadId));
-
-      res.json({ 
-        success: true, 
-        threadId: finalThreadId,
-        message: "Conversation saved successfully"
-      });
-
-    } catch (error) {
-      console.error("Error saving conversation:", error);
-      res.status(500).json({ message: "Failed to save conversation" });
     }
   });
 
@@ -2426,46 +2343,6 @@ Provide personalized, actionable guidance that:
     } catch (error) {
       console.error("Error fetching therapeutic chat messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
-    }
-  });
-
-  // Delete therapeutic chat session
-  app.delete('/api/therapeutic-chat/sessions/:sessionId', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { sessionId } = req.params;
-
-      // First verify the session belongs to the user
-      const session = await db
-        .select()
-        .from(journalingThreads)
-        .where(and(
-          eq(journalingThreads.id, parseInt(sessionId)),
-          eq(journalingThreads.userId, userId)
-        ))
-        .limit(1);
-
-      if (session.length === 0) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-
-      // Delete all exchanges first (cascade should handle this, but being explicit)
-      await db
-        .delete(threadExchanges)
-        .where(eq(threadExchanges.threadId, parseInt(sessionId)));
-
-      // Delete the session
-      await db
-        .delete(journalingThreads)
-        .where(and(
-          eq(journalingThreads.id, parseInt(sessionId)),
-          eq(journalingThreads.userId, userId)
-        ));
-
-      res.json({ success: true, message: "Session deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting therapeutic chat session:", error);
-      res.status(500).json({ message: "Failed to delete session" });
     }
   });
 

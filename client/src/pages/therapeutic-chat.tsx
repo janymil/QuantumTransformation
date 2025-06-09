@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain, Info, BarChart3, Loader2 } from "lucide-react";
+import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain, Info, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 
 // Import modular components
@@ -33,8 +32,6 @@ export default function TherapeuticChat() {
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [threadToDelete, setThreadToDelete] = useState<{ id: number; title: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -64,9 +61,8 @@ export default function TherapeuticChat() {
       queryClient.invalidateQueries({ queryKey: ['/api/therapeutic-chat/sessions'] });
       toast({
         title: "Session Deleted",
-        description: "The therapeutic chat session has been permanently deleted.",
+        description: "The therapeutic chat session has been removed.",
       });
-      setThreadToDelete(null);
     },
     onError: (error: any) => {
       toast({
@@ -74,23 +70,8 @@ export default function TherapeuticChat() {
         description: error.message || "Failed to delete session",
         variant: "destructive",
       });
-      setThreadToDelete(null);
     },
   });
-
-  const handleDeleteThread = (threadId: number, threadTitle: string) => {
-    setThreadToDelete({ id: threadId, title: threadTitle });
-  };
-
-  const confirmDeleteThread = () => {
-    if (threadToDelete) {
-      deleteThreadMutation.mutate(threadToDelete.id);
-    }
-  };
-
-  const cancelDeleteThread = () => {
-    setThreadToDelete(null);
-  };
 
   // Send message mutation - therapeutic chat only (no database save until finish)
   const sendMessageMutation = useMutation({
@@ -370,8 +351,6 @@ export default function TherapeuticChat() {
       return;
     }
 
-    setIsSaving(true);
-
     try {
       // Prepare conversation data for saving
       const conversationData = {
@@ -396,10 +375,7 @@ export default function TherapeuticChat() {
           description: "Your therapeutic session has been saved successfully.",
         });
 
-        // Invalidate both therapeutic sessions and journal queries to ensure visibility
         queryClient.invalidateQueries({ queryKey: ["/api/therapeutic-chat/sessions"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/saved-conversations"] });
 
         setActiveSession(null);
         setMessages([]);
@@ -413,8 +389,6 @@ export default function TherapeuticChat() {
         description: "Unable to save conversation. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -752,7 +726,7 @@ export default function TherapeuticChat() {
                         className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteThread(thread.id, thread.title || `Session ${thread.id}`);
+                          deleteThreadMutation.mutate(thread.id);
                         }}
                         disabled={deleteThreadMutation.isPending}
                       >
@@ -862,16 +836,9 @@ export default function TherapeuticChat() {
                           size="sm" 
                           className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                           onClick={() => handleFinishConversation()}
-                          disabled={messages.length <= 1 || isSaving}
+                          disabled={messages.length <= 1}
                         >
-                          {isSaving ? (
-                            <>
-                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              Saving...
-                            </>
-                          ) : (
-                            'Finish Conversation'
-                          )}
+                          Finish Conversation
                         </Button>
                       </div>
                     </div>
@@ -967,53 +934,6 @@ export default function TherapeuticChat() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Thread Confirmation Dialog */}
-      <AlertDialog open={threadToDelete !== null} onOpenChange={() => setThreadToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-destructive" />
-              Delete Conversation
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Are you sure you want to delete "{threadToDelete?.title}"?
-              </p>
-              <p className="font-semibold text-destructive">
-                This action is irreversible and will permanently delete all conversation data, including:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>All messages and AI responses</li>
-                <li>Therapeutic analysis and insights</li>
-                <li>Session history and context</li>
-              </ul>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelDeleteThread}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteThread}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteThreadMutation.isPending}
-            >
-              {deleteThreadMutation.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent mr-2" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Permanently
-                </>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

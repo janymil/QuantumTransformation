@@ -13,7 +13,7 @@ import {
   type ThreadExchange,
   type UserTherapeuticProfile
 } from "@shared/schema";
-import { eq, desc, and, gte, avg, count } from "drizzle-orm";
+import { eq, and, desc, avg, count } from "drizzle-orm";
 
 export interface SessionProgressionMetrics {
   totalExchanges: number;
@@ -182,7 +182,7 @@ export class DynamicFrameworkSelector {
       const recentEmotions = await db.select()
         .from(emotionalStateHistory)
         .where(eq(emotionalStateHistory.userId, userId))
-        .orderBy(desc(emotionalStateHistory.createdAt))
+        .orderBy(desc(emotionalStateHistory.recordedAt))
         .limit(10);
 
       // Analyze current input for emotional indicators

@@ -228,17 +228,12 @@ export class UserModelingEngine {
    * Get user's communication patterns
    */
   private async getUserCommunicationPatterns(userId: string): Promise<UserCommunicationPatterns | null> {
-    try {
-      const [patterns] = await db
-        .select()
-        .from(userCommunicationPatterns)
-        .where(eq(userCommunicationPatterns.userId, userId));
-      
-      return patterns || null;
-    } catch (error) {
-      console.error('Error getting communication patterns:', error);
-      return null;
-    }
+    const [patterns] = await db
+      .select()
+      .from(userCommunicationPatterns)
+      .where(eq(userCommunicationPatterns.userId, userId));
+    
+    return patterns || null;
   }
 
   /**
@@ -256,42 +251,14 @@ export class UserModelingEngine {
   /**
    * Get personalization recommendations for user
    */
-  async getPersonalizationRecommendations(
-    userId: string,
-    currentInput?: string,
-    context?: any
-  ): Promise<PersonalizationRecommendations> {
-    try {
-      const [profile, patterns, insights] = await Promise.all([
-        this.getUserTherapeuticProfile(userId).catch(() => null),
-        this.getUserCommunicationPatterns(userId).catch(() => null),
-        this.getValidatedInsights(userId).catch(() => [])
-      ]);
+  async getPersonalizationRecommendations(userId: string): Promise<PersonalizationRecommendations> {
+    const [profile, patterns, insights] = await Promise.all([
+      this.getUserTherapeuticProfile(userId),
+      this.getUserCommunicationPatterns(userId),
+      this.getValidatedInsights(userId)
+    ]);
 
-      return this.synthesizeRecommendations(profile, patterns, insights);
-    } catch (error) {
-      console.error('Error getting personalization recommendations:', error);
-      return this.getDefaultRecommendations();
-    }
-  }
-
-  /**
-   * Get default recommendations when data is unavailable
-   */
-  private getDefaultRecommendations(): PersonalizationRecommendations {
-    return {
-      therapeuticStyle: 'empathetic',
-      communicationAdjustments: {
-        tone: 'supportive',
-        complexity: 5,
-        metaphorTypes: ['journey', 'growth'],
-        responseLength: 'moderate'
-      },
-      therapeuticFrameworks: ['cbt', 'humanistic'],
-      avoidanceFactors: ['harsh_confrontation'],
-      customInstructions: ['Focus on validation and gentle exploration'],
-      confidence: 0.5
-    };
+    return this.synthesizeRecommendations(profile, patterns, insights);
   }
 
   /**
@@ -576,20 +543,24 @@ export class UserModelingEngine {
       .select()
       .from(personalizationInsights)
       .where(and(
-        eq(personalizationInsights.user_id, userId),
-        eq(personalizationInsights.insight_type, pattern.type || 'behavioral_pattern')
+        eq(personalizationInsights.userId, userId),
+        eq(personalizationInsights.title, pattern.title)
       ));
     
     if (existingInsights.length === 0) {
       await db.insert(personalizationInsights).values({
-        user_id: userId,
-        insight_type: pattern.type || 'behavioral_pattern',
-        insight_content: pattern.description || pattern.title || 'User interaction pattern detected',
-        confidence_score: pattern.confidence || 0.7,
-        evidence_sources: pattern.evidence || [],
-        applicable_contexts: pattern.contextFactors || [],
-        effectiveness_rating: 0.5,
-        is_active: true
+        userId,
+        insightType: pattern.type,
+        insightCategory: pattern.category,
+        title: pattern.title,
+        description: pattern.description,
+        confidence: pattern.confidence,
+        evidence: pattern.evidence,
+        recommendedActions: pattern.recommendedActions,
+        contraindications: pattern.contraindications,
+        contextFactors: pattern.contextFactors,
+        isValidated: false,
+        applicationCount: 0
       });
     }
   }
@@ -599,10 +570,10 @@ export class UserModelingEngine {
       .select()
       .from(personalizationInsights)
       .where(and(
-        eq(personalizationInsights.user_id, userId),
-        eq(personalizationInsights.is_active, true)
+        eq(personalizationInsights.userId, userId),
+        eq(personalizationInsights.isValidated, true)
       ))
-      .orderBy(desc(personalizationInsights.confidence_score));
+      .orderBy(desc(personalizationInsights.confidence));
   }
 
   private synthesizeRecommendations(
