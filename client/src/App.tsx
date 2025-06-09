@@ -18,6 +18,7 @@ import DeepJournaling from "@/pages/deep-journaling";
 import TherapeuticChat from "@/pages/therapeutic-chat";
 import TherapeuticAnalytics from "@/pages/therapeutic-analytics";
 import TherapeuticStylesDemo from "@/pages/therapeutic-styles-demo";
+import SoundscapePage from "@/pages/soundscape";
 import AdminAnalytics from "@/pages/admin-analytics";
 import AdminUnlockDays from "@/pages/admin-unlock-days";
 import AiCouchOnboarding from "@/pages/ai-couch-onboarding";
@@ -103,6 +104,7 @@ function Router() {
         <Route path="/therapeutic-chat" component={TherapeuticChat} />
         <Route path="/therapeutic-analytics" component={TherapeuticAnalytics} />
         <Route path="/therapeutic-styles-demo" component={TherapeuticStylesDemo} />
+        <Route path="/soundscape" component={SoundscapePage} />
         <Route path="/admin-analytics" component={AdminAnalytics} />
         <Route path="/admin-unlock-days" component={AdminUnlockDays} />
         <Route path="/journal" component={() => <Journal />} />
