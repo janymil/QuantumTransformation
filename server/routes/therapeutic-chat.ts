@@ -1,12 +1,13 @@
 import express from 'express';
 import { db } from '../db';
 import { therapeuticChatSessions, therapeuticChatMessages } from '../../shared/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
+import { isAuthenticated } from '../replitAuth';
 
 const router = express.Router();
 
 // Get all therapeutic chat sessions for a user
-router.get('/sessions', async (req, res) => {
+router.get('/sessions', isAuthenticated, async (req, res) => {
   // Force fresh query by adding timestamp and query param check
   const timestamp = Date.now();
   const forceRefresh = req.query.refresh || timestamp;
@@ -16,15 +17,19 @@ router.get('/sessions', async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    // Debug: Test raw SQL query first
-    const rawResult = await db.execute(sql`SELECT * FROM therapeutic_chat_sessions WHERE user_id = ${userId} ORDER BY last_activity DESC`);
-    console.log('Raw SQL result:', rawResult.length, 'sessions found');
+    // Use raw SQL to bypass Drizzle field mapping issue
+    const result = await db.execute(sql`
+      SELECT id, user_id as "userId", title, session_type as "sessionType", 
+             conversation_style as "conversationStyle", focus_area as "focusArea",
+             response_length as "responseLength", is_active as "isActive",
+             message_count as "messageCount", last_activity as "lastActivity",
+             created_at as "createdAt", updated_at as "updatedAt"
+      FROM therapeutic_chat_sessions 
+      WHERE user_id = ${userId} 
+      ORDER BY last_activity DESC
+    `);
     
-    const sessions = await db
-      .select()
-      .from(therapeuticChatSessions)
-      .where(eq(therapeuticChatSessions.userId, userId))
-      .orderBy(desc(therapeuticChatSessions.lastActivity));
+    const sessions = result.rows;
     
     // Add cache-busting headers to ensure fresh responses
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
