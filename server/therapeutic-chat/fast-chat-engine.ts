@@ -19,7 +19,7 @@ import {
   userTherapeuticProfile
 } from '@shared/schema';
 import { buildFastPrompt, type MemorySnippet, type UserInsights, validatePromptInputs, optimizePromptForTokens } from './prompt-builders/buildFastPrompt';
-import { getLastSessionInsights } from './helpers/getLastSessionInsights';
+import { getLastSessionInsights as getUserSessionInsights } from './helpers/getLastSessionInsights';
 
 /**
  * Fast response structure for speed-optimized therapeutic interactions
@@ -73,7 +73,7 @@ export async function processFastResponse(
     // Step 2: Parallel data retrieval for speed optimization
     const [similarEntries, sessionInsights] = await Promise.all([
       findSimilarPastEntries(userId, entryText, 3),
-      getLastSessionInsights(userId)
+      getUserSessionInsights(userId)
     ]);
 
     // Step 3: Convert similar entries to memory snippets
