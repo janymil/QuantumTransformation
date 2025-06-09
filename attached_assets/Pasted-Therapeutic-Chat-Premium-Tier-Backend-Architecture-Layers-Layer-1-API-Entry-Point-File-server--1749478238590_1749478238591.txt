@@ -1,0 +1,70 @@
+Therapeutic Chat Premium Tier - Backend Architecture Layers
+Layer 1: API Entry Point
+File: server/routes/therapeutic-action.ts
+
+Handles incoming HTTP requests from frontend
+Authenticates users and validates requests
+Routes to appropriate therapeutic processing engines
+Layer 2: Therapeutic Chat Engine (Core Processing)
+File: server/therapeutic-chat/therapeutic-chat-engine.ts
+
+Main Class: DeepJournalingEngine
+Key Method: processJournalingRequest()
+Orchestrates the entire therapeutic workflow
+Manages thread creation, user profiling, and response generation
+Layer 3: AI Intelligence Layer Integration
+File: shared/ai-intelligence/adapters/therapeutic-chat-adapter.ts
+
+Premium Feature: Bypasses cost optimization for quality preservation
+Routes through AI Intelligence Layer without caching therapeutic responses
+Provides intelligent model selection (GPT-4o/Claude-3.5-Sonnet)
+Maintains therapeutic context and personalization
+Layer 4: Advanced Therapeutic Components
+4A. Psychological Analysis Engine
+File: server/therapeutic-chat/psychological-analyzer.ts
+
+Analyzes emotional states, cognitive patterns, and coping strategies
+Generates comprehensive psychological insights
+Provides risk assessment and therapeutic recommendations
+4B. User Modeling Engine
+File: server/therapeutic-chat/user-modeling-engine.ts
+
+Multi-dimensional user profiling
+Therapeutic response pattern analysis
+Communication preference modeling
+Engagement score calculation
+4C. Dynamic Framework Selector
+File: server/therapeutic-chat/dynamic-framework-selector.ts
+
+Selects optimal therapeutic frameworks (CBT, psychodynamic, humanistic)
+Real-time adaptation based on user state
+Provides framework-specific intervention recommendations
+4D. Contextual Memory Architecture
+File: server/therapeutic-chat/contextual-memory-architecture.ts
+
+Cross-session pattern recognition
+Long-term therapeutic goal tracking
+Breakthrough moment identification
+Progress velocity calculation
+Layer 5: Intelligent Model Routing
+File: server/therapeutic-chat/intelligent-model-router.ts
+
+Premium Models Only: GPT-4o and Claude-3.5-Sonnet
+Complexity-based model selection
+Quality-first routing (no cost optimization for premium)
+Fallback mechanisms for reliability
+Layer 6: Therapeutic Frameworks & Prompts
+File: server/therapeutic-chat/therapeutic-frameworks.ts
+
+Evidence-based therapeutic system prompts
+Framework-specific intervention strategies
+Professional therapeutic language generation
+Customization and personalization layers
+Layer 7: Database & State Management
+Files: server/db.ts + shared/schema.ts
+
+Tables:
+journalingThreads - Conversation threads
+threadExchanges - Individual message exchanges
+psychologicalProfile - User psychological data
+emotionalStateHistory - Emotional tracking over time

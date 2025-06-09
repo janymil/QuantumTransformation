@@ -22,7 +22,7 @@ import { contextualMemoryArchitecture } from "./contextual-memory-architecture";
 import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-architecture";
 import { adaptiveLanguageGenerator } from "./adaptive-language-generator";
 import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
-import { therapeuticChatAdapter, TherapeuticRequest } from '@shared/ai-intelligence/adapters/therapeutic-chat-adapter';
+// Layer 3 removed - using Layer 5 intelligent model routing directly
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 

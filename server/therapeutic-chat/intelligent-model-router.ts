@@ -5,6 +5,12 @@ import { DeepJournalingRequest } from "./types";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+/**
+ * Layer 5: Intelligent Model Routing for Premium Therapeutic Chat
+ * Consolidated routing logic from Layer 3 (therapeutic-chat-adapter)
+ * Premium Models Only: GPT-4o and Claude-3.5-Sonnet
+ * Quality-first routing with complexity-based selection
+ */
 export class IntelligentModelRouter {
   
   /**
@@ -30,56 +36,76 @@ export class IntelligentModelRouter {
   }
 
   /**
-   * Select the most cost-effective and appropriate model for the request
+   * Premium tier intelligent model selection - Quality-first approach
+   * Consolidated from Layer 3 (therapeutic-chat-adapter)
    */
   private selectOptimalModel(request: DeepJournalingRequest, complexity: string) {
     const factors = this.analyzeRequestFactors(request);
     
+    // Premium tier - no cost optimization, quality first
     // Claude excels at empathetic, nuanced therapeutic responses
     if (factors.needsEmpathy || factors.isEmotionallyComplex || request.customizations?.tone === 'empathetic') {
       return { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022', cost: 0.003 };
     }
     
-    // Claude is more cost-effective for longer conversations
+    // Claude for high emotional intensity and trauma work
+    if (factors.emotionalIntensity > 0.7 || factors.hasTraumaKeywords) {
+      return { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022', cost: 0.003 };
+    }
+    
+    // Claude for longer conversations and complex therapeutic work
     if (factors.isLongConversation || complexity === 'complex') {
       return { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022', cost: 0.003 };
     }
     
     // GPT-4o for analytical and structured therapeutic frameworks
     if (request.customizations?.mode === 'analytical' || 
-        request.customizations?.perspective === 'cbt_therapist') {
+        request.customizations?.perspective === 'cbt_therapist' ||
+        request.customizations?.perspective === 'psychologist') {
       return { provider: 'openai', model: 'gpt-4o', cost: 0.0025 };
     }
     
-    // GPT-4o mini for simple interactions to save costs
-    if (complexity === 'simple' || factors.isSimpleQuery) {
-      return { provider: 'openai', model: 'gpt-4o-mini', cost: 0.00015 };
-    }
-    
-    // Default to Claude for general therapeutic work (better empathy, lower cost)
+    // Default to Claude for general therapeutic work (superior empathy)
     return { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022', cost: 0.003 };
   }
 
   /**
-   * Analyze request to determine complexity and therapeutic needs
+   * Advanced therapeutic factor analysis - Enhanced from Layer 3
+   * Analyzes emotional intensity, trauma indicators, and therapeutic needs
    */
   private analyzeRequestFactors(request: DeepJournalingRequest) {
     const userInput = request.userInput.toLowerCase();
+    const inputLength = userInput.length;
+    
+    // Advanced emotional analysis from therapeutic-chat-adapter
+    const emotionalKeywords = ['anxious', 'depressed', 'sad', 'angry', 'hurt', 'pain', 'struggle', 'difficult', 'overwhelmed', 'lost'];
+    const traumaKeywords = ['trauma', 'abuse', 'ptsd', 'flashback', 'trigger', 'panic', 'dissociation'];
+    const empathyKeywords = ['feel', 'feeling', 'emotion', 'heart', 'cry', 'tears', 'lonely', 'hopeless'];
+    
+    const emotionalMatches = emotionalKeywords.filter(keyword => 
+      userInput.includes(keyword)
+    ).length;
+    
+    const traumaMatches = traumaKeywords.filter(keyword => 
+      userInput.includes(keyword)
+    ).length;
+    
+    const empathyMatches = empathyKeywords.filter(keyword => 
+      userInput.includes(keyword)
+    ).length;
+    
+    const emotionalIntensity = Math.min((emotionalMatches + traumaMatches) / 5, 1.0);
+    const hasTraumaKeywords = traumaMatches > 0;
+    const complexity = inputLength > 200 ? 'complex' : inputLength > 100 ? 'moderate' : 'simple';
     
     return {
-      needsEmpathy: userInput.includes('feel') || userInput.includes('emotion') || 
-                    userInput.includes('sad') || userInput.includes('anxious') ||
-                    userInput.includes('depressed') || userInput.includes('overwhelmed'),
-      
-      isEmotionallyComplex: userInput.length > 200 || 
-                           (userInput.match(/\b(feel|emotion|heart|soul|pain|joy|love|fear|anger)\b/g) || []).length > 2,
-      
-      isLongConversation: request.threadId !== undefined,
-      
-      isSimpleQuery: userInput.length < 50 && 
-                     !userInput.includes('?') && 
-                     request.actionType !== 'go_deeper',
-      
+      needsEmpathy: empathyMatches > 0 || request.customizations?.tone === 'empathetic',
+      isEmotionallyComplex: emotionalMatches > 2,
+      emotionalIntensity,
+      hasTraumaKeywords,
+      isLongConversation: inputLength > 300 || request.threadId !== undefined,
+      complexity,
+      isSimpleQuery: inputLength < 50 && !userInput.includes('?') && request.actionType !== 'go_deeper',
       isAnalytical: request.customizations?.mode === 'analytical' ||
                     request.customizations?.perspective === 'cbt_therapist'
     };
