@@ -17,6 +17,8 @@ router.get('/sessions', isAuthenticated, async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    console.log('Sessions endpoint - userId:', userId, 'type:', typeof userId);
+    
     // Use raw SQL to bypass Drizzle field mapping issue
     const result = await db.execute(sql`
       SELECT id, user_id as "userId", title, session_type as "sessionType", 
@@ -29,7 +31,10 @@ router.get('/sessions', isAuthenticated, async (req, res) => {
       ORDER BY last_activity DESC
     `);
     
-    const sessions = result.rows;
+    console.log('SQL result rows:', result.rows?.length || 0);
+    console.log('SQL result sample:', result.rows?.[0]);
+    
+    const sessions = result.rows || [];
     
     // Add cache-busting headers to ensure fresh responses
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
