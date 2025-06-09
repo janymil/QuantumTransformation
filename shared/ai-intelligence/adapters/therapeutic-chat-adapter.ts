@@ -121,44 +121,14 @@ export class TherapeuticChatAdapter {
         apiKey: process.env.ANTHROPIC_API_KEY,
       });
 
-      // Apply advanced therapeutic intelligence from adapter
-      const therapeuticEnhancedPrompt = await this.applyTherapeuticIntelligence(
-        request,
-        request.systemPrompt
-      );
-
-      // Enhance with research integration (preserve knowledge enhancements for premium)
-      const researchEnhancedPrompt = await unifiedResearchIntegration.enhancePromptWithResearch(
-        therapeuticEnhancedPrompt,
-        request.userInput,
-        {
-          userId: request.userId,
-          sessionType: 'therapeutic_chat',
-          therapeuticFramework: request.sessionContext.currentTherapeuticStyle,
-          userTier: (request.userTier || 'premium') as 'basic' | 'premium' | 'ultra'
-        }
-      );
-
-      // Enhanced system prompt with personalization
-      const enhancedSystemPrompt = await this.enhanceSystemPrompt(
-        researchEnhancedPrompt.enhancedPrompt,
-        request.personalization,
-        request.sessionContext
-      );
-
-      // Enhanced user input with contextual memory
-      const enhancedUserInput = await this.enhanceUserInput(
-        request.userInput,
-        request.sessionContext,
-        request.options?.enableContextualMemory
-      );
+      // Direct therapeutic processing without intelligence layer
 
       // Process through DeepJournalingEngine (therapeutic-chat-engine) for full therapeutic intelligence
       const { deepJournalingEngine } = await import('../../../server/therapeutic-chat');
       
       const engineRequest = {
         userId: request.userId,
-        userInput: enhancedUserInput,
+        userInput: request.userInput,
         threadId: request.sessionContext.threadId ? parseInt(request.sessionContext.threadId) : undefined,
         actionType: (['go_deeper', 'new_direction', 'customize_response'].includes(request.sessionContext.sessionType || '')) 
           ? (request.sessionContext.sessionType as 'go_deeper' | 'new_direction' | 'customize_response') 

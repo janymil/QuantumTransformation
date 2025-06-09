@@ -52,47 +52,29 @@ USER INPUT: ${userInput}
 Provide practical coaching guidance that helps the user take concrete steps toward their goals. Include specific actions they can take today.`;
 
     try {
-      // Enhance prompt with research integration
-      const enhancedPrompt = await unifiedResearchIntegration.enhancePromptWithResearch(
+      // Direct AI coaching without intelligence layer
+      const routedResponse = await this.modelRouter.executeWithOptimalModel(
         prompt,
-        userInput,
-        {
-          userId,
-          sessionType: 'ai_coaching',
-          userTier: 'basic'
-        }
-      );
-
-      // Use intelligent routing to select optimal model
-      const analysis = this.modelRouter.analyzeQuery(userInput);
-      const routingDecision = this.modelRouter.makeRoutingDecision(analysis);
-      
-      const routedResponse = await this.modelRouter.executeWithModel(
-        routingDecision,
         systemPrompt,
-        enhancedPrompt.enhancedPrompt,
+        userInput,
+        sessionType,
+        'general',
+        'basic',
         { temperature: 0.7, maxTokens: 1500 }
       );
 
-      // Post-process response with research citations
-      const finalResponse = unifiedResearchIntegration.postProcessResponse(
-        routedResponse.response,
-        enhancedPrompt.researchContext
-      );
-
       const result = {
-        response: finalResponse,
+        response: routedResponse.response,
         type: 'ai_coaching',
         tier: 'basic',
         timestamp: new Date().toISOString(),
         sessionType,
         modelUsed: routedResponse.modelUsed,
-        cost: routedResponse.actualCost,
+        cost: routedResponse.actualCost || 0.002,
         routingDecision: routedResponse.routingDecision,
-        researchEnhanced: enhancedPrompt.researchContext.evidenceLevel,
         emotional_tone: this.detectEmotionalTone(userInput),
         coaching_focus: this.detectCoachingFocus(userInput),
-        action_items: this.extractActionItems(finalResponse)
+        action_items: this.extractActionItems(routedResponse.response)
       };
 
       // Store session data for learning
