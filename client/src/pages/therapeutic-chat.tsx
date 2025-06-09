@@ -468,13 +468,16 @@ export default function TherapeuticChat() {
                 timestamp: new Date(item.createdAt || Date.now())
               });
 
-              const aiContent = item.aiAnalysis || item.analysis || item.question || item.response;
+              // Check multiple possible AI response fields
+              const aiContent = item.aiAnalysis || item.ai_analysis || item.aiQuestion || item.ai_question || item.analysis || item.question || item.response;
               if (aiContent) {
+                // Handle both string and JSON object responses
+                const content = typeof aiContent === 'string' ? aiContent : JSON.stringify(aiContent);
                 formattedMessages.push({
                   id: `ai-${item.id}`,
                   type: 'ai',
-                  content: aiContent,
-                  timestamp: new Date(item.createdAt || Date.now()),
+                  content: content,
+                  timestamp: new Date(item.createdAt || item.created_at || Date.now()),
                   emotionalTone: 'supportive'
                 });
               }
