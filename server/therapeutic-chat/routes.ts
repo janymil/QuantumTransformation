@@ -26,13 +26,14 @@ const isAuthenticated = (req: any, res: any, next: any) => {
     req.user.claims = {};
   }
   if (!req.user.claims.sub) {
-    req.user.claims.sub = userId;
+    req.user.claims.sub = String(userId); // Ensure it's a string
   }
   
   console.log('User authenticated successfully:', {
     hasUser: !!req.user,
     userKeys: Object.keys(req.user),
-    userId: req.user.claims.sub
+    userId: req.user.claims.sub,
+    userIdType: typeof req.user.claims.sub
   });
   
   next();
@@ -42,7 +43,7 @@ export function registerTherapeuticChatRoutes(app: Express) {
   // Get all therapeutic chat sessions for a user
   app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = String(req.user.claims.sub); // Ensure string type
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
@@ -54,27 +55,23 @@ export function registerTherapeuticChatRoutes(app: Express) {
       console.log('Querying all sessions...');
       const allSessions = await db.select().from(therapeuticChatSessions);
       console.log('Total sessions in database:', allSessions.length);
-      console.log('All sessions:', JSON.stringify(allSessions, null, 2));
       
-      // Test exact string match
-      console.log('Testing string match for userId:', String(userId));
-      const sessionsByStringMatch = await db
-        .select()
-        .from(therapeuticChatSessions)
-        .where(eq(therapeuticChatSessions.userId, String(userId)));
+      if (allSessions.length > 0) {
+        console.log('Sample session userIds:', allSessions.slice(0, 3).map(s => ({ id: s.id, userId: s.userId, type: typeof s.userId })));
+      }
       
-      console.log('Sessions by string match:', sessionsByStringMatch.length, JSON.stringify(sessionsByStringMatch, null, 2));
-      
-      // Original query
-      console.log('Running original query...');
+      // Use string matching for consistency
+      console.log('Querying with string userId:', userId);
       const sessions = await db
         .select()
         .from(therapeuticChatSessions)
         .where(eq(therapeuticChatSessions.userId, userId))
         .orderBy(desc(therapeuticChatSessions.lastActivity));
 
-      console.log('Found sessions for user (original query):', sessions.length);
-      console.log('Sessions result:', JSON.stringify(sessions, null, 2));
+      console.log('Found sessions for user:', sessions.length);
+      if (sessions.length > 0) {
+        console.log('Session titles:', sessions.map(s => s.title));
+      }
       console.log('=== END DEBUG ===');
 
       // Add cache-busting headers to ensure fresh responses
@@ -142,12 +139,14 @@ export function registerTherapeuticChatRoutes(app: Express) {
   // Save a conversation to therapeutic chat system
   app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = String(req.user.claims.sub); // Ensure string type
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
 
       const { title, messages, sessionType, conversationStyle, focusArea } = req.body;
+
+      console.log('Saving conversation for userId:', userId, 'title:', title);
 
       // Create new therapeutic chat session
       const [newSession] = await db
@@ -163,6 +162,8 @@ export function registerTherapeuticChatRoutes(app: Express) {
           lastActivity: new Date(),
         })
         .returning();
+
+      console.log('Created session:', newSession.id, 'for user:', userId);
 
       // Save all messages
       if (messages && messages.length > 0) {
@@ -182,6 +183,8 @@ export function registerTherapeuticChatRoutes(app: Express) {
         await db
           .insert(therapeuticChatMessages)
           .values(messageData);
+        
+        console.log('Saved', messageData.length, 'messages for session:', newSession.id);
       }
 
       res.json({ success: true, sessionId: newSession.id });

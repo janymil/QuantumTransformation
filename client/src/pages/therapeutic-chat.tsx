@@ -39,7 +39,19 @@ export default function TherapeuticChat() {
   // Fetch conversation threads
   const { data: threads = [], isLoading: threadsLoading } = useQuery<any[]>({
     queryKey: ['/api/therapeutic-chat/sessions'],
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always fetch fresh data
   });
+
+  // Debug threads data
+  useEffect(() => {
+    console.log('Threads data updated:', threads);
+    console.log('Threads loading:', threadsLoading);
+    console.log('Threads length:', threads?.length);
+    if (threads && threads.length > 0) {
+      console.log('First thread:', threads[0]);
+    }
+  }, [threads, threadsLoading]);
 
   // Force refresh sessions mutation
   const refreshSessionsMutation = useMutation({
