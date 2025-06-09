@@ -7,12 +7,16 @@ import { isAuthenticated } from '../replitAuth';
 const router = express.Router();
 
 // Get all therapeutic chat sessions for a user
-router.get('/sessions', isAuthenticated, async (req, res) => {
+router.get('/sessions', isAuthenticated, async (req: any, res) => {
   // Force fresh query by adding timestamp and query param check
   const timestamp = Date.now();
   const forceRefresh = req.query.refresh || timestamp;
   try {
-    const userId = req.user?.claims?.sub;
+    const userId = req.user?.claims?.sub || req.user?.id;
+    console.log('=== THERAPEUTIC CHAT SESSIONS AUTH DEBUG ===');
+    console.log('req.user:', req.user);
+    console.log('userId extracted:', userId);
+    
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
