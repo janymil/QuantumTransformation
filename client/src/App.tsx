@@ -18,7 +18,7 @@ import DeepJournaling from "@/pages/deep-journaling";
 import TherapeuticChat from "@/pages/therapeutic-chat";
 import TherapeuticAnalytics from "@/pages/therapeutic-analytics";
 import TherapeuticStylesDemo from "@/pages/therapeutic-styles-demo";
-import SoundscapeSimple from "@/pages/soundscape-simple";
+import SoundscapePlayer from "@/pages/soundscape-player";
 import AdminAnalytics from "@/pages/admin-analytics";
 import AdminUnlockDays from "@/pages/admin-unlock-days";
 import AiCouchOnboarding from "@/pages/ai-couch-onboarding";
@@ -97,7 +97,7 @@ function Router() {
       <Switch>
         {/* Main shared routes */}
         <Route path="/" component={Dashboard} />
-        <Route path="/soundscape" component={SoundscapeSimple} />
+        <Route path="/soundscape" component={SoundscapePlayer} />
         <Route path="/challenges" component={Challenges} />
         <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/ai-conversation-history" component={AIConversationHistory} />
