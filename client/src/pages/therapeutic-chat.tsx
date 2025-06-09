@@ -202,6 +202,7 @@ export default function TherapeuticChat() {
   };
 
   // Auto-save conversation to dedicated therapeutic chat database
+  // This updates the SAME conversation rather than creating new ones
   const autoSaveConversation = async (currentMessages: Message[]) => {
     try {
       // Only auto-save if we have meaningful conversation (excluding welcome message)
@@ -219,11 +220,16 @@ export default function TherapeuticChat() {
         messages: meaningfulMessages,
         sessionType: 'general',
         conversationStyle,
-        focusArea
+        focusArea,
+        sessionId: activeSession?.sessionId || null // Include existing session ID to update same conversation
       };
 
-      const response = await fetch('/api/therapeutic-chat/save-conversation', {
-        method: 'POST',
+      const endpoint = activeSession?.sessionId 
+        ? `/api/therapeutic-chat/sessions/${activeSession.sessionId}/update`
+        : '/api/therapeutic-chat/save-conversation';
+
+      const response = await fetch(endpoint, {
+        method: activeSession?.sessionId ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -233,14 +239,61 @@ export default function TherapeuticChat() {
       if (response.ok) {
         const result = await response.json();
         if (result.sessionId && !activeSession) {
-          setActiveSession({ sessionId: result.sessionId, threadId: result.sessionId });
+          setActiveSession({ 
+            id: result.sessionId, 
+            sessionId: result.sessionId, 
+            threadId: result.sessionId,
+            title: title || 'Therapeutic Session'
+          });
         }
-        // Refresh the sessions list to show the new conversation in sidebar
+        // Refresh the sessions list to show the updated conversation in sidebar
         queryClient.invalidateQueries({ queryKey: ["/api/therapeutic-chat/sessions"] });
       }
     } catch (error) {
       console.log('Auto-save failed silently:', error);
       // Fail silently for auto-save to not interrupt user experience
+    }
+  };
+
+  // Finish conversation and finalize the saved session
+  const handleFinishConversation = async () => {
+    try {
+      // Ensure conversation is saved with final content
+      const meaningfulMessages = messages.filter(msg => msg.id !== 'welcome');
+      if (meaningfulMessages.length >= 2) {
+        await autoSaveConversation(messages);
+        
+        toast({
+          title: "Conversation Finished",
+          description: "Your therapeutic session has been saved and finalized.",
+        });
+        
+        // Clear current session and start fresh
+        setActiveSession(null);
+        setMessages([{
+          id: 'welcome',
+          type: 'ai',
+          content: "Hello! I'm here to listen and support you. Feel free to share whatever is on your mind - there's no judgment here, just genuine understanding. What would you like to explore together today?",
+          timestamp: new Date(),
+          emotionalTone: 'welcoming'
+        }]);
+        setCurrentMessage("");
+        
+        // Refresh sessions list
+        queryClient.invalidateQueries({ queryKey: ["/api/therapeutic-chat/sessions"] });
+      } else {
+        toast({
+          title: "No Conversation to Save",
+          description: "Please have a meaningful conversation before finishing.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to finish conversation. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

@@ -144,6 +144,76 @@ router.post('/save-conversation', async (req, res) => {
   }
 });
 
+// Update an existing therapeutic chat session (for auto-save)
+router.put('/sessions/:sessionId/update', async (req, res) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    const sessionId = parseInt(req.params.sessionId);
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { title, messages, sessionType, conversationStyle, focusArea } = req.body;
+
+    // Verify session belongs to user
+    const existingSession = await db
+      .select()
+      .from(therapeuticChatSessions)
+      .where(and(
+        eq(therapeuticChatSessions.id, sessionId),
+        eq(therapeuticChatSessions.userId, userId)
+      ))
+      .limit(1);
+
+    if (existingSession.length === 0) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Update session metadata
+    await db
+      .update(therapeuticChatSessions)
+      .set({
+        title: title || existingSession[0].title,
+        sessionType: sessionType || existingSession[0].sessionType,
+        conversationStyle: conversationStyle || existingSession[0].conversationStyle,
+        focusArea: focusArea || existingSession[0].focusArea,
+        messageCount: messages ? messages.length : existingSession[0].messageCount,
+        lastActivity: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(therapeuticChatSessions.id, sessionId));
+
+    // Delete existing messages and replace with new ones
+    if (messages && messages.length > 0) {
+      await db
+        .delete(therapeuticChatMessages)
+        .where(eq(therapeuticChatMessages.sessionId, sessionId));
+
+      const messageData = messages.map((msg: any, index: number) => ({
+        sessionId: sessionId,
+        messageType: msg.type || (index % 2 === 0 ? 'user' : 'ai'),
+        content: msg.content || msg.text || '',
+        aiAnalysis: msg.analysis ? { analysis: msg.analysis } : null,
+        aiQuestion: msg.question || null,
+        actionType: msg.actionType || 'regular',
+        processingTime: msg.processingTime || null,
+        tokens: msg.tokens || null,
+        cost: msg.cost || null,
+      }));
+
+      await db
+        .insert(therapeuticChatMessages)
+        .values(messageData);
+    }
+
+    res.json({ success: true, sessionId: sessionId });
+  } catch (error) {
+    console.error('Error updating therapeutic conversation:', error);
+    res.status(500).json({ error: 'Failed to update conversation' });
+  }
+});
+
 // Delete a therapeutic chat session
 router.delete('/sessions/:sessionId', async (req, res) => {
   try {

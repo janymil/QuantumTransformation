@@ -9,6 +9,7 @@ export interface Message {
 
 export interface ConversationSession {
   id: number;
+  sessionId?: number;
   threadId?: number;
   title: string;
   messages?: Message[];
