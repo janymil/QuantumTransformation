@@ -577,23 +577,19 @@ export class UserModelingEngine {
       .from(personalizationInsights)
       .where(and(
         eq(personalizationInsights.userId, userId),
-        eq(personalizationInsights.title, pattern.title)
+        eq(personalizationInsights.insightType, pattern.type || 'behavioral_pattern')
       ));
     
     if (existingInsights.length === 0) {
       await db.insert(personalizationInsights).values({
         userId,
-        insightType: pattern.type,
-        insightCategory: pattern.category,
-        title: pattern.title,
-        description: pattern.description,
-        confidence: pattern.confidence,
-        evidence: pattern.evidence,
-        recommendedActions: pattern.recommendedActions,
-        contraindications: pattern.contraindications,
-        contextFactors: pattern.contextFactors,
-        isValidated: false,
-        applicationCount: 0
+        insightType: pattern.type || 'behavioral_pattern',
+        insightContent: pattern.description || pattern.title,
+        confidenceScore: pattern.confidence || 0.7,
+        evidenceSources: pattern.evidence || [],
+        applicableContexts: pattern.contextFactors || [],
+        effectivenessRating: 0.5,
+        isActive: true
       });
     }
   }
