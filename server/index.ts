@@ -68,12 +68,12 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Register all routes
-  registerRoutes(app);
-
-  // Ensure therapeutic chat routes are registered
+  // Register therapeutic chat routes FIRST to prevent conflicts
   const { registerTherapeuticChatRoutes } = await import('./therapeutic-chat/routes');
   registerTherapeuticChatRoutes(app);
+
+  // Register all other routes
+  registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
