@@ -245,23 +245,22 @@ export class FastChatEngine {
       // Use Claude for therapeutic responses (fast and high quality)
       const response = await this.anthropic.messages.create({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1000, // Reduced for speed
+        max_tokens: 1500,
         temperature: 0.7,
         messages: [
           { 
             role: 'user', 
-            content: `${systemPrompt}\n\nUser Journal Entry: ${userInput}\n\nRespond with the exact format specified: 2-3 sentences of specific psychological reflection, followed by one meaningful follow-up question. No generic responses.` 
+            content: `${systemPrompt}\n\nUser Input: "${userInput}"\n\nIMPORTANT: You must provide a thoughtful therapeutic response that:\n1. Acknowledges what they've shared with empathy\n2. Offers specific psychological insights\n3. Asks ONE meaningful follow-up question\n\nDo NOT respond with generic phrases like "I understand. Please tell me more." Provide substantial therapeutic value.` 
           }
         ]
       });
 
       const rawContent = response.content[0].type === 'text' ? response.content[0].text : '';
       
-      // Use the complete response as the question since it should follow the exact format
-      // The AI should return 2-3 sentences + follow-up question as requested
-      const lines = rawContent.trim().split('\n').filter(line => line.trim());
+      if (!rawContent || rawContent.trim().length < 20 || rawContent.toLowerCase().includes('please tell me more') || rawContent.toLowerCase().includes('i understand')) {
+        throw new Error('Generic response detected, using fallback');
+      }
       
-      // If the response follows format, use it directly; otherwise return the full response
       const fullResponse = rawContent.trim();
       
       // Simple emotion detection from content
