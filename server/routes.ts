@@ -2395,8 +2395,9 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // Register therapeutic action routes with FastChatEngine
-  app.use('/api/therapeutic-chat/actions', therapeuticActionRoutes);
+  // Register therapeutic chat routes
+  const { registerTherapeuticChatRoutes } = await import('./therapeutic-chat/routes');
+  registerTherapeuticChatRoutes(app);peuticActionRoutes);
 
   // Post-processing job status endpoint
   app.get('/api/therapeutic-chat/job-status', isAuthenticated, async (req: any, res) => {

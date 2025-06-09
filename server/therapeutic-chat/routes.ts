@@ -1,3 +1,4 @@
+
 import type { Express } from "express";
 import { fastChatEngine } from "./fast-chat-engine";
 import { monthlyCostSimulation } from "./monthly-cost-simulation";
@@ -15,7 +16,8 @@ const isAuthenticated = (req: any, res: any, next: any) => {
   next();
 };
 
-// Get all therapeutic chat sessions for a user
+export function registerTherapeuticChatRoutes(app: Express) {
+  // Get all therapeutic chat sessions for a user
   app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -47,7 +49,57 @@ const isAuthenticated = (req: any, res: any, next: any) => {
     }
   });
 
-// Save a conversation to therapeutic chat system
+  // Get messages for a specific session
+  app.get('/api/therapeutic-chat/sessions/:sessionId/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = parseInt(req.params.sessionId);
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Verify session belongs to user
+      const session = await db
+        .select()
+        .from(therapeuticChatSessions)
+        .where(and(
+          eq(therapeuticChatSessions.id, sessionId),
+          eq(therapeuticChatSessions.userId, userId)
+        ))
+        .limit(1);
+
+      if (session.length === 0) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      // Get messages for the session
+      const messages = await db
+        .select()
+        .from(therapeuticChatMessages)
+        .where(eq(therapeuticChatMessages.sessionId, sessionId))
+        .orderBy(therapeuticChatMessages.createdAt);
+
+      // Format messages for frontend
+      const formattedMessages = messages.map(msg => ({
+        id: msg.id,
+        type: msg.messageType,
+        content: msg.content,
+        timestamp: msg.createdAt,
+        emotionalTone: msg.emotionalTone
+      }));
+
+      res.json({
+        session: session[0],
+        messages: formattedMessages
+      });
+    } catch (error) {
+      console.error('Error fetching session messages:', error);
+      res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+  });
+
+  // Save a conversation to therapeutic chat system
   app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -99,7 +151,7 @@ const isAuthenticated = (req: any, res: any, next: any) => {
     }
   });
 
-// Update an existing therapeutic chat session (for auto-save)
+  // Update an existing therapeutic chat session (for auto-save)
   app.put('/api/therapeutic-chat/sessions/:sessionId/update', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -169,3 +221,70 @@ const isAuthenticated = (req: any, res: any, next: any) => {
       res.status(500).json({ error: 'Failed to update conversation' });
     }
   });
+
+  // Delete therapeutic chat session
+  app.delete('/api/therapeutic-chat/sessions/:sessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = parseInt(req.params.sessionId);
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Verify session belongs to user
+      const session = await db
+        .select()
+        .from(therapeuticChatSessions)
+        .where(and(
+          eq(therapeuticChatSessions.id, sessionId),
+          eq(therapeuticChatSessions.userId, userId)
+        ))
+        .limit(1);
+
+      if (session.length === 0) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      // Delete messages first
+      await db
+        .delete(therapeuticChatMessages)
+        .where(eq(therapeuticChatMessages.sessionId, sessionId));
+
+      // Delete session
+      await db
+        .delete(therapeuticChatSessions)
+        .where(eq(therapeuticChatSessions.id, sessionId));
+
+      res.json({ success: true, message: 'Session deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting therapeutic chat session:', error);
+      res.status(500).json({ error: 'Failed to delete session' });
+    }
+  });
+
+  // Process therapeutic chat message
+  app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userInput, threadId, conversationStyle, focusArea, actionType } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Use FastChatEngine for processing
+      const response = await fastChatEngine.processFastResponse(userId, threadId, userInput);
+
+      res.json({
+        professionalAnalysis: response.analysis,
+        question: response.question,
+        emotionalInsight: 'supportive',
+        threadId: threadId
+      });
+    } catch (error) {
+      console.error('Error processing therapeutic chat:', error);
+      res.status(500).json({ error: 'Failed to process message' });
+    }
+  });
+}
