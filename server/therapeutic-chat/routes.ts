@@ -10,9 +10,31 @@ import { eq, desc, and } from 'drizzle-orm';
 
 // Authentication middleware
 const isAuthenticated = (req: any, res: any, next: any) => {
-  if (!req.user || !req.user.claims || !req.user.claims.sub) {
+  // Check multiple possible authentication patterns
+  const userId = req.user?.claims?.sub || req.user?.id || req.headers['x-replit-user-id'];
+  
+  if (!userId) {
+    console.log('Authentication failed - no user or not authenticated');
     return res.status(401).json({ error: 'User not authenticated' });
   }
+  
+  // Ensure user object has the expected structure
+  if (!req.user) {
+    req.user = {};
+  }
+  if (!req.user.claims) {
+    req.user.claims = {};
+  }
+  if (!req.user.claims.sub) {
+    req.user.claims.sub = userId;
+  }
+  
+  console.log('User authenticated successfully:', {
+    hasUser: !!req.user,
+    userKeys: Object.keys(req.user),
+    userId: req.user.claims.sub
+  });
+  
   next();
 };
 
@@ -27,14 +49,32 @@ export function registerTherapeuticChatRoutes(app: Express) {
 
       console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===');
       console.log('Fetching sessions for userId:', userId, 'type:', typeof userId);
-
+      
+      // Check all sessions in database first
+      console.log('Querying all sessions...');
+      const allSessions = await db.select().from(therapeuticChatSessions);
+      console.log('Total sessions in database:', allSessions.length);
+      console.log('All sessions:', JSON.stringify(allSessions, null, 2));
+      
+      // Test exact string match
+      console.log('Testing string match for userId:', String(userId));
+      const sessionsByStringMatch = await db
+        .select()
+        .from(therapeuticChatSessions)
+        .where(eq(therapeuticChatSessions.userId, String(userId)));
+      
+      console.log('Sessions by string match:', sessionsByStringMatch.length, JSON.stringify(sessionsByStringMatch, null, 2));
+      
+      // Original query
+      console.log('Running original query...');
       const sessions = await db
         .select()
         .from(therapeuticChatSessions)
         .where(eq(therapeuticChatSessions.userId, userId))
         .orderBy(desc(therapeuticChatSessions.lastActivity));
 
-      console.log('Found sessions for user:', sessions.length, sessions);
+      console.log('Found sessions for user (original query):', sessions.length);
+      console.log('Sessions result:', JSON.stringify(sessions, null, 2));
       console.log('=== END DEBUG ===');
 
       // Add cache-busting headers to ensure fresh responses

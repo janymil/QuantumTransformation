@@ -42,6 +42,7 @@ import { registerDeepJournalingRoutes } from "./therapeutic-chat";
 import { responseQualityTiering } from "./response-quality-tiering";
 import therapeuticActionRoutes from "./routes/therapeutic-action";
 import therapeuticChatRoutes from "./routes/therapeutic-chat";
+import { registerTherapeuticChatRoutes } from './therapeutic-chat/routes';
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
 
@@ -814,7 +815,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Track usage (skip for now due to type mismatch)
-      // await trackUsage(parseInt(userId), 'vector_coaching', query, personalizedResponse, challengeType);
+      // await```python
+ trackUsage(parseInt(userId), 'vector_coaching', query, personalizedResponse, challengeType);
 
       // Store in response history (skip for now due to schema mismatch)
       // await db.insert(aiResponseHistory).values({
