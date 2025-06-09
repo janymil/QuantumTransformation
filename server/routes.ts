@@ -2185,20 +2185,21 @@ Provide personalized, actionable guidance that:
         return res.status(400).json({ message: "User input is required" });
       }
 
-      // Route through AI Intelligence Layer for therapeutic chat
-      const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
+      // Direct route to therapeutic chat engine (bypass AI intelligence layers)
+      const { therapeuticChatEngine } = await import('./therapeutic-chat/therapeutic-chat-engine');
       
-      const response = await intelligentRouter.processCoachingRequest({
+      const response = await therapeuticChatEngine.processTherapeuticMessage({
         userId,
         userInput: userInput.trim(),
-        requestType: 'therapeutic_chat',
-        threadId,
-        actionType,
+        threadId: threadId ? parseInt(threadId) : undefined,
+        actionType: actionType || 'therapeutic_chat',
         customizations: {
-          conversationStyle: conversationStyle || 'empathetic',
-          focusArea: focusArea || 'general',
-          responseLength: responseLength || 'medium'
-        }
+          tone: conversationStyle || 'empathetic',
+          approach: focusArea || 'general',
+          responseLength: responseLength || 'balanced',
+          focusArea: focusArea || 'general'
+        },
+        wasVoiceInput: false
       });
 
       res.json(response);

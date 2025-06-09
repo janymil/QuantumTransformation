@@ -23,8 +23,93 @@ import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-
 import { adaptiveLanguageGenerator } from "./adaptive-language-generator";
 import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
 import { therapeuticChatAdapter, TherapeuticRequest } from '@shared/ai-intelligence/adapters/therapeutic-chat-adapter';
+import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 export class DeepJournalingEngine {
+
+  private anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+
+  private openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  /**
+   * Direct therapeutic message processing (bypass AI intelligence layers)
+   */
+  async processTherapeuticMessage(request: DeepJournalingRequest): Promise<any> {
+    try {
+      const startTime = Date.now();
+
+      // Get or create thread
+      let thread = await this.getOrCreateThread(request.userId, request.threadId);
+
+      // Get thread history for context
+      const threadHistory = await this.getThreadHistory(thread.id);
+      
+      // Build therapeutic system prompt
+      const systemPrompt = `You are an expert therapeutic AI with deep training in psychology, psychotherapy, and emotional intelligence. Your role is to provide sophisticated therapeutic responses that demonstrate genuine understanding and professional insight.
+
+THERAPEUTIC APPROACH:
+- Analyze the user's emotional state, underlying patterns, and core concerns
+- Choose appropriate therapeutic techniques (CBT, psychodynamic, humanistic, etc.)
+- Ask thoughtful questions that guide deeper self-exploration
+- Provide meaningful insights that help users understand themselves better
+- Always respond with depth, empathy, and professional therapeutic skill
+
+CONVERSATION CONTEXT:
+${threadHistory.length > 0 ? 
+  threadHistory.slice(-3).map(exchange => 
+    `User: ${exchange.userInput}\nAI: ${exchange.aiQuestion}`
+  ).join('\n\n') : 
+  'This is the beginning of the conversation.'
+}
+
+Analyze the user's input and craft a response that demonstrates deep understanding, provides therapeutic insight, and guides the conversation forward with purposeful questions.`;
+
+      // Make direct API call to Claude
+      const response = await this.anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 2000,
+        temperature: 0.7,
+        messages: [
+          { role: 'user', content: `${systemPrompt}\n\nUser Input: ${request.userInput}` }
+        ]
+      });
+
+      const aiResponse = response.content[0].type === 'text' ? response.content[0].text : 'I understand what you\'re sharing with me.';
+
+      // Save exchange to database
+      const exchangeOrder = threadHistory.length + 1;
+      const [savedExchange] = await db.insert(threadExchanges).values({
+        threadId: thread.id,
+        exchangeOrder,
+        userInput: request.userInput,
+        userWordCount: request.userInput.split(' ').length,
+        wasVoiceInput: request.wasVoiceInput || false,
+        aiQuestion: aiResponse,
+        responseMode: request.customizations?.tone || 'empathetic',
+        responseTone: request.customizations?.tone || 'empathetic',
+        responsePerspective: 'therapeutic',
+        modelUsed: 'claude-3-5-sonnet-20241022',
+        processingTime: Date.now() - startTime,
+        tokenCount: response.usage?.input_tokens || 0,
+        cost: '0.008'
+      }).returning();
+
+      return {
+        content: aiResponse,
+        threadId: thread.id,
+        exchangeId: savedExchange.id
+      };
+
+    } catch (error) {
+      console.error('Direct therapeutic processing error:', error);
+      throw error;
+    }
+  }
 
   /**
    * Main entry point for deep journaling interactions
