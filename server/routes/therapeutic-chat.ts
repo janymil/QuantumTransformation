@@ -26,6 +26,12 @@ router.get('/sessions', async (req, res) => {
       .orderBy(desc(therapeuticChatSessions.lastActivity));
 
     console.log('Found sessions for user:', sessions.length, sessions);
+    
+    // Add cache-busting headers to ensure fresh responses
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.json(sessions);
   } catch (error) {
     console.error('Error fetching therapeutic chat sessions:', error);
