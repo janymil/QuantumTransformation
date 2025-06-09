@@ -7,8 +7,9 @@ const router = express.Router();
 
 // Get all therapeutic chat sessions for a user
 router.get('/sessions', async (req, res) => {
-  // Force fresh query by adding timestamp
+  // Force fresh query by adding timestamp and query param check
   const timestamp = Date.now();
+  const forceRefresh = req.query.refresh || timestamp;
   try {
     const userId = req.user?.claims?.sub;
     if (!userId) {
