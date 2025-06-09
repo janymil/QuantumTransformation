@@ -7,6 +7,8 @@ const router = express.Router();
 
 // Get all therapeutic chat sessions for a user
 router.get('/sessions', async (req, res) => {
+  // Force fresh query by adding timestamp
+  const timestamp = Date.now();
   try {
     const userId = req.user?.claims?.sub;
     if (!userId) {
@@ -42,6 +44,8 @@ router.get('/sessions', async (req, res) => {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
+    // Add timestamp to response headers for debugging but return sessions array
+    res.setHeader('X-Debug-Timestamp', timestamp.toString());
     res.json(sessions);
   } catch (error) {
     console.error('Error fetching therapeutic chat sessions:', error);
