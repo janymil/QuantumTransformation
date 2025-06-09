@@ -131,20 +131,26 @@ export default function Journal() {
   // Function to fetch session preview on hover
   const fetchSessionPreview = async (sessionId: number) => {
     try {
-      const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}/messages`);
+      // Add cache-busting parameter to force fresh data
+      const timestamp = Date.now();
+      const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}/messages?t=${timestamp}`);
       if (response.ok) {
         const data = await response.json();
         
         // Handle new API response format with session metadata
+        console.log('Full API response data:', data);
+        console.log('Data type:', typeof data, 'Is array:', Array.isArray(data));
+        
         let messages = [];
         if (Array.isArray(data)) {
           messages = data;
+          console.log('Using array format, messages count:', messages.length);
         } else if (data?.messages) {
           messages = data.messages;
+          console.log('Using data.messages format, messages count:', messages.length);
         } else if (data?.session) {
-          // If we have session data but no direct messages, the messages might be empty
-          // Let's check if we have any exchange data to process
-          console.log('Session data found but no messages array, checking for other data:', data);
+          console.log('Session data found but no messages array. Session:', data.session);
+          console.log('Available data keys:', Object.keys(data));
         }
         
         const messageCount = messages.length;
