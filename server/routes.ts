@@ -2396,8 +2396,7 @@ Provide personalized, actionable guidance that:
   });
 
   // Register therapeutic chat routes
-  const { registerTherapeuticChatRoutes } = await import('./therapeutic-chat/routes');
-  registerTherapeuticChatRoutes(app);peuticActionRoutes);
+  app.use('/api/therapeutic-chat', therapeuticChatRoutes);
 
   // Post-processing job status endpoint
   app.get('/api/therapeutic-chat/job-status', isAuthenticated, async (req: any, res) => {
