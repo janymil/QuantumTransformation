@@ -16,28 +16,35 @@ router.get('/sessions', async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===');
+    // FORCE EXECUTION - Always log regardless of cache
+    console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===', Date.now());
     console.log('Fetching sessions for userId:', userId, 'type:', typeof userId);
     
-    // First check if any sessions exist
+    // Check all sessions in database first
+    console.log('Querying all sessions...');
     const allSessions = await db.select().from(therapeuticChatSessions);
-    console.log('All sessions in database:', allSessions);
+    console.log('Total sessions in database:', allSessions.length);
+    console.log('All sessions:', JSON.stringify(allSessions, null, 2));
     
-    // Try different query approaches to debug the issue
+    // Test exact string match
+    console.log('Testing string match for userId:', String(userId));
     const sessionsByStringMatch = await db
       .select()
       .from(therapeuticChatSessions)
       .where(eq(therapeuticChatSessions.userId, String(userId)));
     
-    console.log('Sessions by string match:', sessionsByStringMatch);
+    console.log('Sessions by string match:', sessionsByStringMatch.length, JSON.stringify(sessionsByStringMatch, null, 2));
     
+    // Original query
+    console.log('Running original query...');
     const sessions = await db
       .select()
       .from(therapeuticChatSessions)
       .where(eq(therapeuticChatSessions.userId, userId))
       .orderBy(desc(therapeuticChatSessions.lastActivity));
 
-    console.log('Found sessions for user (original query):', sessions.length, sessions);
+    console.log('Found sessions for user (original query):', sessions.length);
+    console.log('Sessions result:', JSON.stringify(sessions, null, 2));
     console.log('=== END DEBUG ===');
     
     // Add cache-busting headers to ensure fresh responses
