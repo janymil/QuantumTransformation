@@ -1,5 +1,5 @@
 
-#!/usr/bin/env node
+// Fast Journaling System Test Script
 
 /**
  * Fast Journaling System Test Script

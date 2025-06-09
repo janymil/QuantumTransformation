@@ -462,7 +462,8 @@ export class PostProcessingJob {
           currentEmotionalState: analysis.emotionalState,
           preferredTone: PostProcessingJob.mapEmotionalStateToTone(analysis.emotionalState),
           preferredPerspective: frameworkSelection.primaryFramework,
-          lastActiveAt: new Date()
+          lastActiveAt: new Date(),
+          updatedAt: new Date()
         })
         .where(eq(journalingThreads.id, parseInt(threadId)));
     } catch (error) {
