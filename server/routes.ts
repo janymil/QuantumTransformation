@@ -2207,7 +2207,7 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // Process therapeutic chat message through AI Intelligence Layer
+  // Process therapeutic chat message through Fast Chat Engine (sub-1s responses)
   app.post('/api/therapeutic-chat/process', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -2218,10 +2218,12 @@ Provide personalized, actionable guidance that:
         return res.status(400).json({ message: "User input is required" });
       }
 
-      // Premium therapeutic chat through consolidated Layer 5 routing (quality-first approach)
-      const { therapeuticChatEngine } = await import('./therapeutic-chat/therapeutic-chat-engine');
+      const startTime = Date.now();
 
-      const response = await therapeuticChatEngine.processJournalingRequest({
+      // Use FastChatEngine for immediate response with proper therapeutic format
+      const { fastChatEngine } = await import('./therapeutic-chat/fast-chat-engine');
+
+      const response = await fastChatEngine.processFastResponse({
         userId,
         userInput: userInput.trim(),
         threadId,
@@ -2232,6 +2234,9 @@ Provide personalized, actionable guidance that:
           perspective: 'psychologist'
         }
       });
+
+      const responseTime = Date.now() - startTime;
+      console.log(`Fast therapeutic response: ${responseTime}ms for user ${userId}`);
 
       res.json(response);
     } catch (error) {
