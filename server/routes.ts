@@ -20,6 +20,7 @@ import {
 } from "./ai-cost-control";
 import { costOptimizationEngine } from "./ai-cost-optimization";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
+import { soundscapeGenerator } from "./soundscape-generator";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -2354,6 +2355,45 @@ Provide personalized, actionable guidance that:
     } catch (error) {
       console.error("Error fetching therapeutic chat messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Soundscape Generator API Routes
+  app.post('/api/soundscape/generate', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { purpose, currentEmotionalState, preferences } = req.body;
+
+      const parameters = await soundscapeGenerator.generatePersonalizedSoundscape(
+        userId,
+        purpose,
+        currentEmotionalState,
+        preferences
+      );
+
+      res.json(parameters);
+    } catch (error) {
+      console.error("Error generating soundscape:", error);
+      res.status(500).json({ message: "Failed to generate soundscape" });
+    }
+  });
+
+  app.post('/api/soundscape/rate', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { soundscapeId, effectiveness, feedback } = req.body;
+
+      await soundscapeGenerator.rateSoundscapeEffectiveness(
+        userId,
+        soundscapeId,
+        effectiveness,
+        feedback
+      );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error rating soundscape:", error);
+      res.status(500).json({ message: "Failed to rate soundscape" });
     }
   });
 
