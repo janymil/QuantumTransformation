@@ -39,56 +39,29 @@ export class FastChatEngine {
     const startTime = Date.now();
 
     try {
-      // Step 1: Get essential data only (lightweight operations)
-      const [thread, lastSessionInsights] = await Promise.all([
-        this.getOrCreateThread(request.userId, request.threadId),
-        this.getLastSessionInsights(request.userId)
-      ]);
+      // Ultra-fast path: Skip all database lookups and use minimal processing
+      const thread = await this.getOrCreateThread(request.userId, request.threadId);
 
-      // Step 2: Get recent memory (limited to 2-3 most relevant entries)
-      const lightweightMemory = await this.getLightweightMemory(thread.id);
+      // Minimal system prompt - no complex processing
+      const systemPrompt = `You are a compassionate therapeutic AI assistant. Provide empathetic, insightful responses that validate the user's feelings and offer gentle guidance. Keep responses warm, professional, and conversational (2-3 paragraphs). Always end with a thoughtful question to deepen exploration.`;
 
-      // Step 3: Build fast system prompt with cached insights
-      const systemPrompt = await this.buildFastSystemPrompt(
-        request.userInput,
-        lightweightMemory,
-        lastSessionInsights,
-        request.customizations
-      );
-
-      // Step 4: Generate fast AI response
+      // Direct AI call with minimal prompt
       const aiResponse = await this.generateFastAIResponse(
         systemPrompt,
         request.userInput,
         request.customizations?.perspective || 'psychologist'
       );
 
-      // Step 5: Save exchange immediately
-      const exchangeOrder = lightweightMemory.length + 1;
+      // Minimal database insert - only essential fields
       const [savedExchange] = await db.insert(threadExchanges).values({
         threadId: thread.id,
-        exchangeOrder,
+        exchangeOrder: 1,
         userInput: request.userInput,
         userWordCount: request.userInput.split(' ').length,
-        wasVoiceInput: request.wasVoiceInput || false,
-        voiceTranscriptionQuality: request.voiceTranscriptionQuality,
-        aiAnalysis: {
-          professionalAnalysis: aiResponse.analysis,
-          emotionalInsights: aiResponse.emotionalState,
-          cognitivePatterns: [],
-          therapeuticRecommendations: aiResponse.suggestions || []
-        },
+        aiAnalysis: { professionalAnalysis: aiResponse.analysis },
         aiQuestion: aiResponse.question,
-        aiPatternInsights: aiResponse.patternInsights || {},
-        aiEmotionalAssessment: aiResponse.emotionalAssessment || {},
-        responseMode: request.customizations?.mode || 'conversational',
-        responseTone: request.customizations?.tone || 'supportive',
-        responsePerspective: request.customizations?.perspective || 'psychologist',
-        customResponseInstructions: request.customizations?.customInstructions,
-        modelUsed: aiResponse.modelUsed || 'claude-3-5-sonnet',
-        processingTime: Date.now() - startTime,
-        tokenCount: aiResponse.tokenCount || 0,
-        cost: aiResponse.cost || '0.008'
+        modelUsed: 'gpt-3.5-turbo',
+        processingTime: Date.now() - startTime
       }).returning();
 
       // Step 6: Enqueue background processing (non-blocking)
@@ -198,7 +171,7 @@ export class FastChatEngine {
   }
 
   /**
-   * Build optimized system prompt with cached data using proper therapeutic frameworks
+   * Build fast, lightweight system prompt optimized for speed
    */
   private async buildFastSystemPrompt(
     userInput: string,
@@ -206,31 +179,24 @@ export class FastChatEngine {
     sessionInsights: any,
     customizations?: any
   ): Promise<string> {
-    // Import therapeutic framework functions
-    const { recommendTherapeuticFrameworks, buildTherapeuticSystemPrompt } = await import('./therapeutic-frameworks');
-    
-    // Get appropriate therapeutic frameworks based on user input
-    const frameworks = recommendTherapeuticFrameworks(
-      userInput,
-      sessionInsights?.emotionalBaseline || 'exploring',
-      sessionInsights?.areas_of_focus || []
-    );
+    // Simple, fast therapeutic prompt without complex framework processing
+    const recentContext = recentMemory.length > 0 
+      ? `Previous conversation context: ${recentMemory[0]?.userInput?.substring(0, 200) || 'None'}`
+      : 'This is the start of our conversation.';
 
-    // Build context from recent memory and session insights
-    const context = {
-      recentExchanges: recentMemory.slice(0, 2).map(exchange => ({
-        userInput: exchange.userInput,
-        aiAnalysis: exchange.aiAnalysis
-      })),
-      sessionInsights,
-      emotionalBaseline: sessionInsights?.emotionalBaseline || 'exploring',
-      communicationStyle: sessionInsights?.communicationStyle || 'compassionate',
-      strengths: sessionInsights?.strengths || ['resilience', 'self-awareness'],
-      customizations
-    };
+    return `You are a skilled therapeutic AI assistant with expertise in psychology and emotional support. Your role is to provide compassionate, insightful responses that help users explore their thoughts and feelings.
 
-    // Use the sophisticated therapeutic system prompt
-    return buildTherapeuticSystemPrompt(frameworks, userInput, context);
+Guidelines:
+- Respond with genuine empathy and understanding
+- Ask thoughtful follow-up questions to deepen exploration
+- Offer practical insights and gentle guidance
+- Maintain a warm, professional therapeutic presence
+- Keep responses concise but meaningful (2-3 paragraphs max)
+- Focus on the user's emotional experience and growth
+
+${recentContext}
+
+Respond to the user's message with professional therapeutic insight, emotional validation, and a thoughtful question that encourages deeper reflection.`;
   }
 
   /**
