@@ -11,6 +11,7 @@
 import { openai } from '../openai';
 import { db } from '../db';
 import { eq, desc, and, isNotNull } from 'drizzle-orm';
+import { PostProcessingJob } from '../jobs/post-processing-job';
 import { 
   threadExchanges, 
   journalingThreads, 

@@ -1,357 +1,522 @@
+/**
+ * PostProcessingJob - Background Analysis System
+ * Analyzes journal entries asynchronously to build comprehensive psychological profiles
+ */
 
-import { db } from "../db";
+import { db } from '../db';
 import { 
-  psychologicalProfile, 
-  emotionalStateHistory, 
-  userTherapeuticProfile,
-  therapeuticInteractionAnalysis 
-} from "@shared/schema";
-import { eq } from "drizzle-orm";
-import { psychologicalAnalyzer } from "../therapeutic-chat/psychological-analyzer";
-import { userModelingEngine } from "../therapeutic-chat/user-modeling-engine";
-import { dynamicFrameworkSelector } from "../therapeutic-chat/dynamic-framework-selector";
+  userTherapeuticProfile, 
+  journalingThreads, 
+  threadExchanges,
+  psychologicalProfile 
+} from '../../shared/schema';
+import { eq, and, desc, isNotNull } from 'drizzle-orm';
+import { openai } from '../openai';
 
-export interface PostProcessingJobData {
+// Job Queue Interface (in-memory implementation)
+interface JobData {
   userId: string;
-  threadId: number;
+  threadId: string;
   entryText: string;
-  exchangeId?: number;
   timestamp: Date;
 }
 
-export interface PostProcessingResults {
-  preferredFramework: string;
-  detectedEmotionalState: string;
-  toneShift: number; // -1 to 1 scale
-  motivationThemes: string[];
-  cognitivePatterns: any[];
-  copingStrategies: any;
-  insights: any;
+interface QueuedJob {
+  id: string;
+  data: JobData;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  createdAt: Date;
+  processedAt?: Date;
+  error?: string;
 }
 
-class PostProcessingJobQueue {
-  private queue: PostProcessingJobData[] = [];
-  private processing = false;
-  private readonly maxRetries = 3;
-  private readonly processInterval = 2000; // Process every 2 seconds
-
-  constructor() {
-    // Start the background processor
-    this.startProcessor();
-  }
-
-  /**
-   * Add a new job to the queue
-   */
-  async enqueue(jobData: PostProcessingJobData): Promise<void> {
-    this.queue.push({
-      ...jobData,
-      timestamp: new Date()
-    });
-    
-    console.log(`Queued post-processing job for user ${jobData.userId}, thread ${jobData.threadId}`);
-  }
-
-  /**
-   * Start the background processor
-   */
-  private startProcessor(): void {
-    setInterval(async () => {
-      if (!this.processing && this.queue.length > 0) {
-        await this.processNext();
-      }
-    }, this.processInterval);
-  }
-
-  /**
-   * Process the next job in the queue
-   */
-  private async processNext(): Promise<void> {
-    if (this.queue.length === 0) return;
-
-    this.processing = true;
-    const job = this.queue.shift()!;
-
+/**
+ * Psychological Analyzer - Advanced text analysis for emotional and cognitive patterns
+ */
+class PsychologicalAnalyzer {
+  static async analyze(entryText: string): Promise<{
+    emotionalState: string;
+    cognitivePatterns: string[];
+    stressLevel: number;
+    motivationThemes: string[];
+    therapeuticNeeds: string[];
+  }> {
     try {
-      console.log(`Processing post-processing job for user ${job.userId}`);
-      await this.processJob(job);
-      console.log(`Successfully processed job for user ${job.userId}`);
-    } catch (error) {
-      console.error(`Error processing job for user ${job.userId}:`, error);
-      // Could implement retry logic here if needed
-    } finally {
-      this.processing = false;
-    }
-  }
+      const prompt = `Analyze this journal entry for psychological patterns:
+"${entryText}"
 
-  /**
-   * Process a single job
-   */
-  private async processJob(job: PostProcessingJobData): Promise<void> {
-    const startTime = Date.now();
+Provide structured analysis in JSON format:
+{
+  "emotionalState": "primary emotional state (one word)",
+  "cognitivePatterns": ["cognitive pattern 1", "pattern 2"],
+  "stressLevel": 1-10,
+  "motivationThemes": ["motivation theme 1", "theme 2"],
+  "therapeuticNeeds": ["therapeutic need 1", "need 2"]
+}
 
-    try {
-      // Step 1: Psychological Analysis
-      console.log(`Step 1: Running psychological analysis for user ${job.userId}`);
-      const psychAnalysis = psychologicalAnalyzer.analyzeComprehensively(job.entryText);
+Focus on:
+- Core emotional state (anxious, depressed, excited, content, etc.)
+- Thinking patterns (rumination, catastrophizing, positive reframing, etc.)
+- Stress indicators (1=very low, 10=crisis level)
+- What motivates this person (achievement, connection, autonomy, etc.)
+- What therapeutic approaches would help (CBT, mindfulness, narrative therapy, etc.)`;
 
-      // Step 2: User Model Update
-      console.log(`Step 2: Updating user model for user ${job.userId}`);
-      await userModelingEngine.analyzeInteraction({
-        userId: job.userId,
-        threadId: job.threadId,
-        exchangeId: job.exchangeId,
-        userInput: job.entryText,
-        aiResponse: "", // We don't have AI response in post-processing
-        sessionMetadata: {
-          timeOfDay: this.getTimeOfDay(),
-          userMoodAtStart: this.inferMoodFromText(job.entryText)
-        }
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+        max_tokens: 400
       });
 
-      // Step 3: Framework Selection Analysis
-      console.log(`Step 3: Analyzing framework preferences for user ${job.userId}`);
-      let frameworkRecommendation;
-      try {
-        frameworkRecommendation = await dynamicFrameworkSelector.selectOptimalFramework(
-          job.userId,
-          job.threadId,
-          job.entryText,
-          {}
-        );
-      } catch (error) {
-        console.warn('Framework selector error, using fallback:', error);
-        frameworkRecommendation = {
-          primaryFramework: 'cognitive_behavioral',
-          confidence: 0.5,
-          rationale: 'Fallback framework due to analysis error'
-        };
-      }
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error('No analysis content received');
 
-      // Step 4: Calculate tone shift and motivation themes
-      const toneShift = this.calculateToneShift(job.entryText);
-      const motivationThemes = this.extractMotivationThemes(job.entryText);
-
-      // Step 5: Save results to database
-      const results: PostProcessingResults = {
-        preferredFramework: frameworkRecommendation.primaryFramework,
-        detectedEmotionalState: psychAnalysis.emotionalState.primary,
-        toneShift,
-        motivationThemes,
-        cognitivePatterns: psychAnalysis.cognitivePatterns,
-        copingStrategies: psychAnalysis.copingStrategies,
-        insights: psychAnalysis.insights
+      const analysis = JSON.parse(content);
+      
+      return {
+        emotionalState: analysis.emotionalState || 'neutral',
+        cognitivePatterns: analysis.cognitivePatterns || [],
+        stressLevel: Math.max(1, Math.min(10, analysis.stressLevel || 5)),
+        motivationThemes: analysis.motivationThemes || [],
+        therapeuticNeeds: analysis.therapeuticNeeds || []
       };
-
-      await this.saveResults(job.userId, job.threadId, results);
-
-      const processingTime = Date.now() - startTime;
-      console.log(`Post-processing completed for user ${job.userId} in ${processingTime}ms`);
-
     } catch (error) {
-      console.error(`Critical error in post-processing job for user ${job.userId}:`, error);
-      throw error;
+      console.error('Psychological analysis failed:', error);
+      return {
+        emotionalState: 'neutral',
+        cognitivePatterns: [],
+        stressLevel: 5,
+        motivationThemes: [],
+        therapeuticNeeds: []
+      };
     }
   }
+}
 
-  /**
-   * Save analysis results to database
-   */
-  private async saveResults(
-    userId: string, 
-    threadId: number, 
-    results: PostProcessingResults
-  ): Promise<void> {
+/**
+ * User Model Engine - Updates comprehensive user psychological model
+ */
+class UserModelEngine {
+  static async update(userId: string, entryText: string, analysis: any): Promise<void> {
     try {
-      // Update or create psychological profile
-      const existingProfile = await db.select()
+      // Get existing psychological profile
+      const [existingProfile] = await db
+        .select()
         .from(psychologicalProfile)
         .where(eq(psychologicalProfile.userId, userId))
         .limit(1);
 
-      if (existingProfile.length > 0) {
-        // Update existing profile
-        await db.update(psychologicalProfile)
-          .set({
-            currentDominantEmotion: results.detectedEmotionalState,
-            emotionalPatterns: {
-              ...existingProfile[0].emotionalPatterns,
-              recentState: results.detectedEmotionalState,
-              toneShift: results.toneShift
-            },
-            mostEffectiveQuestioningStyles: [results.preferredFramework],
-            progressMarkers: {
-              ...existingProfile[0].progressMarkers,
-              lastAnalysis: new Date().toISOString(),
-              motivationThemes: results.motivationThemes
-            },
-            lastFullAnalysisAt: new Date(),
-            updatedAt: new Date()
-          })
-          .where(eq(psychologicalProfile.userId, userId));
+      const updatedData = {
+        userId,
+        emotionalPatterns: this.mergePatterns(
+          existingProfile?.emotionalPatterns || [],
+          [analysis.emotionalState]
+        ),
+        cognitiveStyle: this.mergePatterns(
+          existingProfile?.cognitiveStyle || [],
+          analysis.cognitivePatterns
+        ),
+        stressLevels: this.updateStressHistory(
+          existingProfile?.stressLevels || [],
+          analysis.stressLevel
+        ),
+        motivationFactors: this.mergePatterns(
+          existingProfile?.motivationFactors || [],
+          analysis.motivationThemes
+        ),
+        therapeuticPreferences: this.mergePatterns(
+          existingProfile?.therapeuticPreferences || [],
+          analysis.therapeuticNeeds
+        ),
+        lastUpdated: new Date()
+      };
+
+      if (existingProfile) {
+        await db
+          .update(psychologicalProfiles)
+          .set(updatedData)
+          .where(eq(psychologicalProfiles.userId, userId));
       } else {
-        // Create new profile
-        await db.insert(psychologicalProfile).values({
-          userId,
-          currentDominantEmotion: results.detectedEmotionalState,
-          emotionalPatterns: {
-            recentState: results.detectedEmotionalState,
-            toneShift: results.toneShift
-          },
-          mostEffectiveQuestioningStyles: [results.preferredFramework],
-          progressMarkers: {
-            lastAnalysis: new Date().toISOString(),
-            motivationThemes: results.motivationThemes
-          },
-          lastFullAnalysisAt: new Date(),
-          analysisConfidenceLevel: 0.8,
-          totalDataPoints: 1
-        });
+        await db
+          .insert(psychologicalProfiles)
+          .values(updatedData);
       }
 
-      // Save emotional state history
-      await db.insert(emotionalStateHistory).values({
-        userId,
-        threadId,
-        primaryEmotion: results.detectedEmotionalState,
-        emotionalIntensity: results.insights.keyInsights.length > 0 ? 0.7 : 0.5,
-        emotionalClarity: 0.8,
-        triggerContext: results.motivationThemes.join(', '),
-        associatedTopics: results.motivationThemes,
-        detectionMethod: 'ai_analysis',
-        confidenceScore: 0.8
+      console.log(`Updated psychological model for user ${userId}`);
+    } catch (error) {
+      console.error('User model update failed:', error);
+    }
+  }
+
+  private static mergePatterns(existing: string[], newPatterns: string[]): string[] {
+    const combined = [...existing, ...newPatterns];
+    const frequency = combined.reduce((acc, pattern) => {
+      acc[pattern] = (acc[pattern] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Return top 5 most frequent patterns
+    return Object.entries(frequency)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([pattern]) => pattern);
+  }
+
+  private static updateStressHistory(existing: number[], newLevel: number): number[] {
+    const updated = [...existing, newLevel];
+    // Keep last 10 stress readings
+    return updated.slice(-10);
+  }
+}
+
+/**
+ * Dynamic Framework Selector - Selects optimal therapeutic framework
+ */
+class DynamicFrameworkSelector {
+  static async select(entryText: string, analysis: any): Promise<{
+    primaryFramework: string;
+    secondaryFramework: string;
+    confidence: number;
+    reasoning: string;
+  }> {
+    try {
+      const prompt = `Based on this journal entry and psychological analysis, recommend the most effective therapeutic framework:
+
+Journal Entry: "${entryText}"
+Emotional State: ${analysis.emotionalState}
+Cognitive Patterns: ${analysis.cognitivePatterns.join(', ')}
+Stress Level: ${analysis.stressLevel}/10
+Therapeutic Needs: ${analysis.therapeuticNeeds.join(', ')}
+
+Select from these evidence-based frameworks:
+- Cognitive Behavioral Therapy (CBT)
+- Acceptance and Commitment Therapy (ACT)
+- Dialectical Behavior Therapy (DBT)
+- Mindfulness-Based Stress Reduction (MBSR)
+- Solution-Focused Brief Therapy (SFBT)
+- Narrative Therapy
+- Person-Centered Therapy
+- Positive Psychology
+
+Respond in JSON format:
+{
+  "primaryFramework": "most suitable framework",
+  "secondaryFramework": "complementary framework",
+  "confidence": 0.85,
+  "reasoning": "brief explanation of why this framework fits"
+}`;
+
+      const response = await openaiClient.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        max_tokens: 300
       });
 
-      // Update user therapeutic profile if exists
-      const therapeuticProfile = await db.select()
-        .from(userTherapeuticProfile)
-        .where(eq(userTherapeuticProfile.userId, userId))
-        .limit(1);
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error('No framework selection received');
 
-      if (therapeuticProfile.length > 0) {
-        await db.update(userTherapeuticProfile)
-          .set({
-            preferredQuestioningDepth: results.copingStrategies.adaptive.length > 2 ? 7 : 5,
-            lastProfileUpdateAt: new Date(),
-            totalInteractionCount: (therapeuticProfile[0].totalInteractionCount || 0) + 1,
-            updatedAt: new Date()
-          })
-          .where(eq(userTherapeuticProfile.userId, userId));
+      const selection = JSON.parse(content);
+      
+      return {
+        primaryFramework: selection.primaryFramework || 'Person-Centered Therapy',
+        secondaryFramework: selection.secondaryFramework || 'CBT',
+        confidence: Math.max(0.1, Math.min(1.0, selection.confidence || 0.7)),
+        reasoning: selection.reasoning || 'Default framework selection'
+      };
+    } catch (error) {
+      console.error('Framework selection failed:', error);
+      return {
+        primaryFramework: 'Person-Centered Therapy',
+        secondaryFramework: 'CBT',
+        confidence: 0.5,
+        reasoning: 'Fallback to general supportive approach'
+      };
+    }
+  }
+}
+
+/**
+ * In-Memory Job Queue Implementation
+ */
+class JobQueue {
+  private jobs: Map<string, QueuedJob> = new Map();
+  private processing = false;
+  private readonly maxConcurrency = 3;
+  private activeJobs = 0;
+
+  async add(data: JobData): Promise<string> {
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const job: QueuedJob = {
+      id: jobId,
+      data,
+      status: 'pending',
+      createdAt: new Date()
+    };
+
+    this.jobs.set(jobId, job);
+    
+    // Start processing if not already running
+    if (!this.processing) {
+      this.startProcessing();
+    }
+
+    return jobId;
+  }
+
+  private async startProcessing(): Promise<void> {
+    if (this.processing) return;
+    
+    this.processing = true;
+    
+    while (this.getPendingJobs().length > 0 && this.activeJobs < this.maxConcurrency) {
+      const job = this.getNextJob();
+      if (job) {
+        this.processJob(job);
       }
+    }
+  }
 
-      console.log(`Successfully saved post-processing results for user ${userId}`);
+  private getPendingJobs(): QueuedJob[] {
+    return Array.from(this.jobs.values()).filter(job => job.status === 'pending');
+  }
+
+  private getNextJob(): QueuedJob | null {
+    const pendingJobs = this.getPendingJobs();
+    return pendingJobs.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0] || null;
+  }
+
+  private async processJob(job: QueuedJob): Promise<void> {
+    this.activeJobs++;
+    job.status = 'processing';
+    job.processedAt = new Date();
+
+    try {
+      await PostProcessingJob.execute(job.data);
+      job.status = 'completed';
+      console.log(`✅ PostProcessingJob ${job.id} completed for user ${job.data.userId}`);
+    } catch (error: any) {
+      job.status = 'failed';
+      job.error = error.message;
+      console.error(`❌ PostProcessingJob ${job.id} failed:`, error.message);
+    } finally {
+      this.activeJobs--;
+      
+      // Continue processing if more jobs pending
+      if (this.getPendingJobs().length > 0 && this.activeJobs < this.maxConcurrency) {
+        setTimeout(() => this.startProcessing(), 100);
+      } else if (this.activeJobs === 0) {
+        this.processing = false;
+      }
+    }
+  }
+
+  getStatus(): {
+    totalJobs: number;
+    pending: number;
+    processing: number;
+    completed: number;
+    failed: number;
+  } {
+    const jobs = Array.from(this.jobs.values());
+    return {
+      totalJobs: jobs.length,
+      pending: jobs.filter(j => j.status === 'pending').length,
+      processing: jobs.filter(j => j.status === 'processing').length,
+      completed: jobs.filter(j => j.status === 'completed').length,
+      failed: jobs.filter(j => j.status === 'failed').length
+    };
+  }
+
+  // Cleanup completed jobs older than 1 hour
+  cleanup(): void {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    for (const [jobId, job] of this.jobs.entries()) {
+      if (job.status === 'completed' && job.processedAt && job.processedAt < oneHourAgo) {
+        this.jobs.delete(jobId);
+      }
+    }
+  }
+}
+
+/**
+ * Main PostProcessingJob Class
+ */
+export class PostProcessingJob {
+  private static queue = new JobQueue();
+
+  /**
+   * Enqueue a new post-processing job (non-blocking)
+   */
+  static async enqueue(userId: string, threadId: string, entryText: string): Promise<string> {
+    const jobId = await this.queue.add({
+      userId,
+      threadId,
+      entryText,
+      timestamp: new Date()
+    });
+
+    console.log(`📋 PostProcessingJob enqueued: ${jobId} for user ${userId}`);
+    return jobId;
+  }
+
+  /**
+   * Execute the post-processing analysis pipeline
+   */
+  static async execute(data: JobData): Promise<void> {
+    const { userId, threadId, entryText } = data;
+    const startTime = Date.now();
+
+    console.log(`🔄 Processing analysis for user ${userId}, thread ${threadId}`);
+
+    try {
+      // Step 1: Psychological Analysis
+      console.log('  🧠 Running psychological analysis...');
+      const analysis = await PsychologicalAnalyzer.analyze(entryText);
+
+      // Step 2: Update User Model
+      console.log('  👤 Updating user psychological model...');
+      await UserModelEngine.update(userId, entryText, analysis);
+
+      // Step 3: Select Therapeutic Framework
+      console.log('  🎯 Selecting optimal therapeutic framework...');
+      const frameworkSelection = await DynamicFrameworkSelector.select(entryText, analysis);
+
+      // Step 4: Update Therapeutic Profile
+      console.log('  💾 Updating therapeutic profile...');
+      await this.updateTherapeuticProfile(userId, analysis, frameworkSelection);
+
+      // Step 5: Update Thread Context
+      console.log('  🔗 Updating thread context...');
+      await this.updateThreadContext(threadId, analysis, frameworkSelection);
+
+      const processingTime = Date.now() - startTime;
+      console.log(`✨ Post-processing completed in ${processingTime}ms`);
 
     } catch (error) {
-      console.error(`Error saving post-processing results for user ${userId}:`, error);
+      console.error('Post-processing failed:', error);
       throw error;
     }
   }
 
   /**
-   * Calculate tone shift from text analysis
+   * Update user's therapeutic profile with new insights
    */
-  private calculateToneShift(text: string): number {
-    const positiveWords = ['better', 'good', 'great', 'happy', 'hopeful', 'positive', 'amazing', 'wonderful'];
-    const negativeWords = ['worse', 'bad', 'terrible', 'sad', 'hopeless', 'negative', 'awful', 'horrible'];
-    
-    const words = text.toLowerCase().split(/\s+/);
-    let positiveCount = 0;
-    let negativeCount = 0;
+  private static async updateTherapeuticProfile(
+    userId: string, 
+    analysis: any, 
+    frameworkSelection: any
+  ): Promise<void> {
+    try {
+      const [existingProfile] = await db
+        .select()
+        .from(userTherapeuticProfile)
+        .where(eq(userTherapeuticProfile.userId, userId))
+        .limit(1);
 
-    words.forEach(word => {
-      if (positiveWords.includes(word)) positiveCount++;
-      if (negativeWords.includes(word)) negativeCount++;
-    });
+      const profileData = {
+        userId,
+        preferredFramework: frameworkSelection.primaryFramework,
+        communicationStyle: this.inferCommunicationStyle(analysis),
+        responsiveFrameworks: this.buildFrameworkWeights(frameworkSelection, existingProfile),
+        effectiveStyles: this.updateEffectiveStyles(analysis, existingProfile),
+        lastUpdated: new Date()
+      };
 
-    const totalEmotionalWords = positiveCount + negativeCount;
-    if (totalEmotionalWords === 0) return 0;
-
-    return (positiveCount - negativeCount) / totalEmotionalWords;
-  }
-
-  /**
-   * Extract motivation themes from text
-   */
-  private extractMotivationThemes(text: string): string[] {
-    const themes = [];
-    const lowerText = text.toLowerCase();
-
-    const themeKeywords = {
-      'personal_growth': ['grow', 'improve', 'better', 'develop', 'learn', 'progress'],
-      'relationships': ['relationship', 'family', 'friend', 'love', 'partner', 'connection'],
-      'career': ['work', 'job', 'career', 'professional', 'business', 'success'],
-      'health': ['health', 'fitness', 'exercise', 'wellness', 'body', 'energy'],
-      'finances': ['money', 'financial', 'income', 'wealth', 'prosperity', 'abundance'],
-      'spirituality': ['spiritual', 'purpose', 'meaning', 'soul', 'meditation', 'faith'],
-      'creativity': ['creative', 'art', 'express', 'imagination', 'inspiration', 'passion']
-    };
-
-    for (const [theme, keywords] of Object.entries(themeKeywords)) {
-      if (keywords.some(keyword => lowerText.includes(keyword))) {
-        themes.push(theme);
+      if (existingProfile) {
+        await db
+          .update(userTherapeuticProfile)
+          .set(profileData)
+          .where(eq(userTherapeuticProfile.userId, userId));
+      } else {
+        await db
+          .insert(userTherapeuticProfile)
+          .values(profileData);
       }
+    } catch (error) {
+      console.error('Therapeutic profile update failed:', error);
     }
-
-    return themes.length > 0 ? themes : ['general_wellbeing'];
   }
 
   /**
-   * Get time of day string
+   * Update thread with current analysis context
    */
-  private getTimeOfDay(): string {
-    const hour = new Date().getHours();
-    if (hour < 6) return 'night';
-    if (hour < 12) return 'morning';
-    if (hour < 18) return 'afternoon';
-    return 'evening';
+  private static async updateThreadContext(
+    threadId: string, 
+    analysis: any, 
+    frameworkSelection: any
+  ): Promise<void> {
+    try {
+      await db
+        .update(journalingThreads)
+        .set({
+          currentEmotionalState: analysis.emotionalState,
+          preferredTone: this.mapEmotionalStateToTone(analysis.emotionalState),
+          preferredPerspective: frameworkSelection.primaryFramework,
+          lastUpdated: new Date()
+        })
+        .where(eq(journalingThreads.id, threadId));
+    } catch (error) {
+      console.error('Thread context update failed:', error);
+    }
   }
 
   /**
-   * Infer mood from text content
+   * Helper methods for data processing
    */
-  private inferMoodFromText(text: string): number {
-    const positiveWords = ['good', 'great', 'happy', 'excited', 'grateful', 'positive'];
-    const negativeWords = ['bad', 'sad', 'angry', 'frustrated', 'worried', 'anxious'];
-    
-    const words = text.toLowerCase().split(/\s+/);
-    let score = 5; // neutral baseline
-
-    words.forEach(word => {
-      if (positiveWords.includes(word)) score += 1;
-      if (negativeWords.includes(word)) score -= 1;
-    });
-
-    return Math.max(1, Math.min(10, score));
+  private static inferCommunicationStyle(analysis: any): string {
+    if (analysis.stressLevel > 7) return 'gentle';
+    if (analysis.cognitivePatterns.includes('analytical')) return 'direct';
+    if (analysis.emotionalState === 'anxious') return 'reassuring';
+    return 'supportive';
   }
 
-  /**
-   * Get queue status
-   */
-  getStatus(): { queueLength: number; processing: boolean } {
-    return {
-      queueLength: this.queue.length,
-      processing: this.processing
+  private static buildFrameworkWeights(selection: any, existing: any): Record<string, number> {
+    const weights = existing?.responsiveFrameworks || {};
+    weights[selection.primaryFramework] = (weights[selection.primaryFramework] || 0) + selection.confidence;
+    weights[selection.secondaryFramework] = (weights[selection.secondaryFramework] || 0) + (selection.confidence * 0.5);
+    return weights;
+  }
+
+  private static updateEffectiveStyles(analysis: any, existing: any): Record<string, number> {
+    const styles = existing?.effectiveStyles || {};
+    const inferredStyle = analysis.stressLevel > 6 ? 'supportive' : 'challenging';
+    styles[inferredStyle] = (styles[inferredStyle] || 0) + 1;
+    return styles;
+  }
+
+  private static mapEmotionalStateToTone(emotionalState: string): string {
+    const toneMap: Record<string, string> = {
+      'anxious': 'calming',
+      'depressed': 'uplifting',
+      'angry': 'validating',
+      'excited': 'encouraging',
+      'content': 'supportive',
+      'confused': 'clarifying'
     };
+    return toneMap[emotionalState] || 'supportive';
+  }
+
+  /**
+   * Get job queue status
+   */
+  static getQueueStatus() {
+    return this.queue.getStatus();
+  }
+
+  /**
+   * Cleanup old completed jobs
+   */
+  static cleanup(): void {
+    this.queue.cleanup();
   }
 }
 
-// Export singleton instance
-export const postProcessingQueue = new PostProcessingJobQueue();
+// Export for external use
+export const postProcessingQueue = PostProcessingJob;
 
-/**
- * Convenience function to enqueue a post-processing job
- */
-export async function enqueuePostProcessingJob(
-  userId: string,
-  threadId: number,
-  entryText: string,
-  exchangeId?: number
-): Promise<void> {
-  await postProcessingQueue.enqueue({
-    userId,
-    threadId,
-    entryText,
-    exchangeId,
-    timestamp: new Date()
-  });
-}
+// Cleanup interval (run every 30 minutes)
+setInterval(() => {
+  PostProcessingJob.cleanup();
+}, 30 * 60 * 1000);
