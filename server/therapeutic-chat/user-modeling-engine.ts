@@ -228,12 +228,17 @@ export class UserModelingEngine {
    * Get user's communication patterns
    */
   private async getUserCommunicationPatterns(userId: string): Promise<UserCommunicationPatterns | null> {
-    const [patterns] = await db
-      .select()
-      .from(userCommunicationPatterns)
-      .where(eq(userCommunicationPatterns.userId, userId));
-    
-    return patterns || null;
+    try {
+      const [patterns] = await db
+        .select()
+        .from(userCommunicationPatterns)
+        .where(eq(userCommunicationPatterns.userId, userId));
+      
+      return patterns || null;
+    } catch (error) {
+      console.error('Error getting communication patterns:', error);
+      return null;
+    }
   }
 
   /**
@@ -251,14 +256,42 @@ export class UserModelingEngine {
   /**
    * Get personalization recommendations for user
    */
-  async getPersonalizationRecommendations(userId: string): Promise<PersonalizationRecommendations> {
-    const [profile, patterns, insights] = await Promise.all([
-      this.getUserTherapeuticProfile(userId),
-      this.getUserCommunicationPatterns(userId),
-      this.getValidatedInsights(userId)
-    ]);
+  async getPersonalizationRecommendations(
+    userId: string,
+    currentInput?: string,
+    context?: any
+  ): Promise<PersonalizationRecommendations> {
+    try {
+      const [profile, patterns, insights] = await Promise.all([
+        this.getUserTherapeuticProfile(userId).catch(() => null),
+        this.getUserCommunicationPatterns(userId).catch(() => null),
+        this.getValidatedInsights(userId).catch(() => [])
+      ]);
 
-    return this.synthesizeRecommendations(profile, patterns, insights);
+      return this.synthesizeRecommendations(profile, patterns, insights);
+    } catch (error) {
+      console.error('Error getting personalization recommendations:', error);
+      return this.getDefaultRecommendations();
+    }
+  }
+
+  /**
+   * Get default recommendations when data is unavailable
+   */
+  private getDefaultRecommendations(): PersonalizationRecommendations {
+    return {
+      therapeuticStyle: 'empathetic',
+      communicationAdjustments: {
+        tone: 'supportive',
+        complexity: 5,
+        metaphorTypes: ['journey', 'growth'],
+        responseLength: 'moderate'
+      },
+      therapeuticFrameworks: ['cbt', 'humanistic'],
+      avoidanceFactors: ['harsh_confrontation'],
+      customInstructions: ['Focus on validation and gentle exploration'],
+      confidence: 0.5
+    };
   }
 
   /**
