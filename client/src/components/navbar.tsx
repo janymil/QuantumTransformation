@@ -133,6 +133,12 @@ export default function Navbar() {
                     <span>Therapeutic Chat</span>
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/soundscape">
+                    <Zap className="mr-2 h-4 w-4" />
+                    <span>Soundscape Generator</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleVisionBoardClick} disabled={isOpeningVisionBoard}>
                   <Palette className="mr-2 h-4 w-4" />
                   <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
@@ -253,6 +259,12 @@ export default function Navbar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleVisionBoardClick} disabled={isOpeningVisionBoard}>
+                <DropdownMenuItem asChild>
+                  <Link href="/soundscape">
+                    <Zap className="mr-2 h-4 w-4" />
+                    <span>Soundscape Generator</span>
+                  </Link>
+                </DropdownMenuItem>
                   <Palette className="mr-2 h-4 w-4" />
                   <span>{isOpeningVisionBoard ? 'Opening...' : 'Vision Board'}</span>
                   <ExternalLink className="ml-auto h-3 w-3" />
