@@ -2111,13 +2111,7 @@ Provide personalized, actionable guidance that:
         .leftJoin(threadExchanges, eq(journalingThreads.id, threadExchanges.threadId))
         .where(and(
           eq(journalingThreads.userId, userId),
-          or(
-            eq(journalingThreads.threadType, 'therapy_session'),
-            and(
-              eq(journalingThreads.threadType, 'free_writing'),
-              ilike(journalingThreads.title, '%therapeutic%')
-            )
-          )
+          eq(journalingThreads.threadType, 'therapy_session')
         ))
         .groupBy(journalingThreads.id)
         .orderBy(desc(journalingThreads.updatedAt))
@@ -2277,7 +2271,10 @@ Provide personalized, actionable guidance that:
 
       console.log(`Found ${exchanges.length} exchanges for session ${sessionId}`);
       exchanges.forEach((ex, idx) => {
-        console.log(`Exchange ${idx}: userInput="${ex.userInput?.substring(0, 50)}...", aiAnalysis="${ex.aiAnalysis?.substring(0, 50)}...", aiQuestion="${ex.aiQuestion?.substring(0, 50)}..."`);
+        const userInputPreview = ex.userInput?.substring(0, 50) || '';
+        const aiAnalysisPreview = typeof ex.aiAnalysis === 'string' ? ex.aiAnalysis.substring(0, 50) : JSON.stringify(ex.aiAnalysis)?.substring(0, 50) || '';
+        const aiQuestionPreview = ex.aiQuestion?.substring(0, 50) || '';
+        console.log(`Exchange ${idx}: userInput="${userInputPreview}...", aiAnalysis="${aiAnalysisPreview}...", aiQuestion="${aiQuestionPreview}..."`);
       });
 
       // Convert exchanges to message format expected by frontend
