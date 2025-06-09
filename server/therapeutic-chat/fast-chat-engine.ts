@@ -39,29 +39,56 @@ export class FastChatEngine {
     const startTime = Date.now();
 
     try {
-      // Ultra-fast path: Skip all database lookups and use minimal processing
-      const thread = await this.getOrCreateThread(request.userId, request.threadId);
+      // Step 1: Get essential data only (lightweight operations)
+      const [thread, lastSessionInsights] = await Promise.all([
+        this.getOrCreateThread(request.userId, request.threadId),
+        this.getLastSessionInsights(request.userId)
+      ]);
 
-      // Minimal system prompt - no complex processing
-      const systemPrompt = `You are a compassionate therapeutic AI assistant. Provide empathetic, insightful responses that validate the user's feelings and offer gentle guidance. Keep responses warm, professional, and conversational (2-3 paragraphs). Always end with a thoughtful question to deepen exploration.`;
+      // Step 2: Get recent memory (limited to 2-3 most relevant entries)
+      const lightweightMemory = await this.getLightweightMemory(thread.id);
 
-      // Direct AI call with minimal prompt
+      // Step 3: Build fast system prompt with cached insights
+      const systemPrompt = await this.buildFastSystemPrompt(
+        request.userInput,
+        lightweightMemory,
+        lastSessionInsights,
+        request.customizations
+      );
+
+      // Step 4: Generate fast AI response
       const aiResponse = await this.generateFastAIResponse(
         systemPrompt,
         request.userInput,
         request.customizations?.perspective || 'psychologist'
       );
 
-      // Minimal database insert - only essential fields
+      // Step 5: Save exchange with correct database field names
+      const exchangeOrder = lightweightMemory.length + 1;
       const [savedExchange] = await db.insert(threadExchanges).values({
-        threadId: thread.id,
-        exchangeOrder: 1,
-        userInput: request.userInput,
-        userWordCount: request.userInput.split(' ').length,
-        aiAnalysis: { professionalAnalysis: aiResponse.analysis },
-        aiQuestion: aiResponse.question,
-        modelUsed: 'gpt-3.5-turbo',
-        processingTime: Date.now() - startTime
+        thread_id: thread.id,
+        exchange_order: exchangeOrder,
+        user_input: request.userInput,
+        user_word_count: request.userInput.split(' ').length,
+        was_voice_input: request.wasVoiceInput || false,
+        voice_transcription_quality: request.voiceTranscriptionQuality,
+        ai_analysis: {
+          professionalAnalysis: aiResponse.analysis,
+          emotionalInsights: aiResponse.emotionalState,
+          cognitivePatterns: [],
+          therapeuticRecommendations: aiResponse.suggestions || []
+        },
+        ai_question: aiResponse.question,
+        ai_pattern_insights: aiResponse.patternInsights || {},
+        ai_emotional_assessment: aiResponse.emotionalAssessment || {},
+        response_mode: request.customizations?.mode || 'conversational',
+        response_tone: request.customizations?.tone || 'supportive',
+        response_perspective: request.customizations?.perspective || 'psychologist',
+        custom_response_instructions: request.customizations?.customInstructions,
+        model_used: aiResponse.modelUsed || 'gpt-3.5-turbo',
+        processing_time: Date.now() - startTime,
+        token_count: aiResponse.tokenCount || 0,
+        cost: aiResponse.cost || '0.008'
       }).returning();
 
       // Step 6: Enqueue background processing (non-blocking)

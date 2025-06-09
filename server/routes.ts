@@ -2220,23 +2220,17 @@ Provide personalized, actionable guidance that:
 
       const startTime = Date.now();
 
-      // Use FastChatEngine for immediate response with proper therapeutic format
-      const { fastChatEngine } = await import('./therapeutic-chat/fast-chat-engine');
+      // Use new FastChatEngine for optimized sub-1 second responses
+      const { fastChatEngine } = await import('./therapeutic-chat/FastChatEngine');
 
-      const response = await fastChatEngine.processFastResponse({
+      const response = await fastChatEngine.processFastResponse(
         userId,
-        userInput: userInput.trim(),
         threadId,
-        actionType: actionType || 'deep_analysis',
-        customizations: {
-          mode: conversationStyle || 'empathetic',
-          tone: 'supportive',
-          perspective: 'psychologist'
-        }
-      });
+        userInput.trim()
+      );
 
       const responseTime = Date.now() - startTime;
-      console.log(`Fast therapeutic response: ${responseTime}ms for user ${userId}`);
+      console.log(`FastChatEngine response: ${responseTime}ms for user ${userId}`);
 
       res.json(response);
     } catch (error) {
