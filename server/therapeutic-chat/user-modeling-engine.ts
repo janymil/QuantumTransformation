@@ -599,10 +599,10 @@ export class UserModelingEngine {
       .select()
       .from(personalizationInsights)
       .where(and(
-        eq(personalizationInsights.userId, userId),
-        eq(personalizationInsights.isValidated, true)
+        eq(personalizationInsights.user_id, userId),
+        eq(personalizationInsights.is_active, true)
       ))
-      .orderBy(desc(personalizationInsights.confidence));
+      .orderBy(desc(personalizationInsights.confidence_score));
   }
 
   private synthesizeRecommendations(
