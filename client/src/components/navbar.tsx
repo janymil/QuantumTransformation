@@ -133,11 +133,9 @@ export default function Navbar() {
                     <span>Therapeutic Chat</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/soundscape-player">
-                    <Zap className="mr-2 h-4 w-4" />
-                    <span>Soundscape Generator</span>
-                  </Link>
+                <DropdownMenuItem onClick={() => window.location.href = '/soundscape-player'}>
+                  <Zap className="mr-2 h-4 w-4" />
+                  <span>Soundscape Generator</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleVisionBoardClick} disabled={isOpeningVisionBoard}>
                   <Palette className="mr-2 h-4 w-4" />
@@ -258,11 +256,9 @@ export default function Navbar() {
                     <span>Therapeutic Chat</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/soundscape-player">
-                    <Zap className="mr-2 h-4 w-4" />
-                    <span>Soundscape Generator</span>
-                  </Link>
+                <DropdownMenuItem onClick={() => window.location.href = '/soundscape-player'}>
+                  <Zap className="mr-2 h-4 w-4" />
+                  <span>Soundscape Generator</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleVisionBoardClick} disabled={isOpeningVisionBoard}>
                   <Palette className="mr-2 h-4 w-4" />
