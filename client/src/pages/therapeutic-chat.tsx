@@ -41,24 +41,28 @@ export default function TherapeuticChat() {
     queryKey: ['/api/therapeutic-chat/sessions'],
     queryFn: async () => {
       const response = await fetch('/api/therapeutic-chat/sessions', {
+        credentials: 'include',
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
         },
-        cache: 'no-store'
       });
       
       if (!response.ok) {
+        if (response.status === 401) {
+          // Authentication issue, throw error to trigger proper handling
+          throw new Error('Authentication required');
+        }
         throw new Error(`Failed to fetch sessions: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('Fresh sessions data received:', data);
-      return data;
+      console.log('Sessions data received:', data);
+      return data || [];
     },
     refetchOnWindowFocus: true,
-    staleTime: 0, // Always fetch fresh data
-    gcTime: 0, // Don't cache at all
+    staleTime: 0,
+    gcTime: 0,
   });
 
   // Debug threads data
@@ -81,13 +85,8 @@ export default function TherapeuticChat() {
     mutationFn: async () => {
       // Force invalidate cache and refetch
       await queryClient.invalidateQueries({ queryKey: ['/api/therapeutic-chat/sessions'] });
-      const response = await fetch('/api/therapeutic-chat/sessions', {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      return response.json();
+      await queryClient.refetchQueries({ queryKey: ['/api/therapeutic-chat/sessions'] });
+      return queryClient.getQueryData(['/api/therapeutic-chat/sessions']);
     },
     onSuccess: (data) => {
       console.log('Refreshed sessions:', data);

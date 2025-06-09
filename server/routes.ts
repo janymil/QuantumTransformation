@@ -641,10 +641,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerGamificationRoutes(app);
   registerDeepJournalingRoutes(app);
   
-  // Register therapeutic chat routes with proper prefix
-  app.use('/api/therapeutic-chat', therapeuticChatRoutes);
-
-  // DIRECT therapeutic chat sessions endpoint to bypass router auth issues
+  // DIRECT therapeutic chat endpoints to bypass router auth issues
+  // NOTE: Removed app.use('/api/therapeutic-chat', therapeuticChatRoutes) due to auth conflicts
+  
+  // Get sessions
   app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -663,6 +663,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Direct sessions error:', error);
       res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+  });
+
+  // Chat endpoint
+  app.post('/api/therapeutic-chat/chat', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { message, sessionId } = req.body;
+      
+      console.log('=== DIRECT CHAT ENDPOINT ===');
+      console.log('userId:', userId);
+      console.log('sessionId:', sessionId);
+      console.log('message:', message?.substring(0, 100));
+      
+      // Import FastChatEngine
+      const { FastChatEngine } = await import('./therapeutic-chat/fast-chat-engine');
+      const fastChatEngine = new FastChatEngine();
+      
+      // Generate response
+      const response = await fastChatEngine.generateResponse(userId, message, sessionId);
+      
+      res.json(response);
+    } catch (error) {
+      console.error('Direct chat error:', error);
+      res.status(500).json({ error: 'Failed to process chat message' });
     }
   });
 
