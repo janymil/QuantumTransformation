@@ -28,7 +28,7 @@ interface AudioContextState {
   analyser: AnalyserNode | null;
 }
 
-export default function AdvancedSoundscapePlayer() {
+function AdvancedSoundscapePlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionType, setSessionType] = useState<string>("meditation");
   const [volume, setVolume] = useState([0.3]);
