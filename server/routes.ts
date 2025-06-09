@@ -2426,6 +2426,46 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Delete therapeutic chat session
+  app.delete('/api/therapeutic-chat/sessions/:sessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { sessionId } = req.params;
+
+      // First verify the session belongs to the user
+      const session = await db
+        .select()
+        .from(journalingThreads)
+        .where(and(
+          eq(journalingThreads.id, parseInt(sessionId)),
+          eq(journalingThreads.userId, userId)
+        ))
+        .limit(1);
+
+      if (session.length === 0) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Delete all exchanges first (cascade should handle this, but being explicit)
+      await db
+        .delete(threadExchanges)
+        .where(eq(threadExchanges.threadId, parseInt(sessionId)));
+
+      // Delete the session
+      await db
+        .delete(journalingThreads)
+        .where(and(
+          eq(journalingThreads.id, parseInt(sessionId)),
+          eq(journalingThreads.userId, userId)
+        ));
+
+      res.json({ success: true, message: "Session deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting therapeutic chat session:", error);
+      res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
   // Soundscape Generator API Routes
   app.post('/api/soundscape/generate', isAuthenticated, async (req: any, res) => {
     try {
