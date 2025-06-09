@@ -2413,5 +2413,8 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Register therapeutic chat routes for dedicated database
+  app.use('/api/therapeutic-chat', isAuthenticated, therapeuticChatRoutes);
+
   return server;
 }

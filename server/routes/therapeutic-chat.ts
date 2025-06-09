@@ -96,7 +96,7 @@ router.post('/sessions', async (req, res) => {
 // Save a conversation to therapeutic chat system
 router.post('/save-conversation', async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.claims?.sub;
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -147,7 +147,7 @@ router.post('/save-conversation', async (req, res) => {
 // Delete a therapeutic chat session
 router.delete('/sessions/:sessionId', async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.claims?.sub;
     const sessionId = parseInt(req.params.sessionId);
     
     if (!userId) {

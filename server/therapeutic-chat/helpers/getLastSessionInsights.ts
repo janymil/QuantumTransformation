@@ -4,7 +4,7 @@
  */
 
 import { db } from "../../db";
-import { psychologicalProfile, journalingThreads, threadExchanges } from "@shared/schema";
+import { psychologicalProfile, journalingThreads, threadExchanges, therapeuticChatSessions, therapeuticChatMessages } from "@shared/schema";
 import { eq, desc, and, or, sql } from "drizzle-orm";
 
 export interface UserSessionInsights {
@@ -27,27 +27,27 @@ export async function getLastSessionInsights(userId: string): Promise<UserSessio
       .orderBy(desc(psychologicalProfile.updatedAt))
       .limit(1);
 
-    // Step 2: Get user's journaling threads to find their threadIds
-    const userThreads = await db
+    // Step 2: Get user's therapeutic chat sessions
+    const therapeuticSessions = await db
       .select()
-      .from(journalingThreads)
-      .where(eq(journalingThreads.userId, userId))
-      .orderBy(desc(journalingThreads.updatedAt))
+      .from(therapeuticChatSessions)
+      .where(eq(therapeuticChatSessions.userId, userId))
+      .orderBy(desc(therapeuticChatSessions.lastActivity))
       .limit(10);
 
-    // Step 3: Get recent thread exchanges from user's threads
-    let recentExchanges: any[] = [];
-    if (userThreads.length > 0) {
-      const threadIds = userThreads.map(thread => thread.id);
-      if (threadIds.length > 0) {
-        recentExchanges = await db
+    // Step 3: Get recent therapeutic chat messages from user's sessions
+    let recentMessages: any[] = [];
+    if (therapeuticSessions.length > 0) {
+      const sessionIds = therapeuticSessions.map(session => session.id);
+      if (sessionIds.length > 0) {
+        recentMessages = await db
           .select()
-          .from(threadExchanges)
-          .where(threadIds.length === 1 
-            ? eq(threadExchanges.threadId, threadIds[0])
-            : or(...threadIds.map(id => eq(threadExchanges.threadId, id)))
+          .from(therapeuticChatMessages)
+          .where(sessionIds.length === 1 
+            ? eq(therapeuticChatMessages.sessionId, sessionIds[0])
+            : or(...sessionIds.map(id => eq(therapeuticChatMessages.sessionId, id)))
           )
-          .orderBy(desc(threadExchanges.createdAt))
+          .orderBy(desc(therapeuticChatMessages.createdAt))
           .limit(15);
       }
     }
@@ -139,48 +139,41 @@ export async function getLastSessionInsights(userId: string): Promise<UserSessio
       }
     }
 
-    // Extract additional themes from recent conversation exchanges
-    if (recentExchanges.length > 0) {
-      const exchangeThemes: string[] = [];
+    // Extract additional themes from recent therapeutic chat messages
+    if (recentMessages.length > 0) {
+      const messageThemes: string[] = [];
       
-      recentExchanges.forEach(exchange => {
-        // Extract themes from AI analysis if available
-        if (exchange.aiAnalysisDeep) {
-          try {
-            const analysis = typeof exchange.aiAnalysisDeep === 'string'
-              ? JSON.parse(exchange.aiAnalysisDeep)
-              : exchange.aiAnalysisDeep;
-            
-            if (analysis.themes && Array.isArray(analysis.themes)) {
-              exchangeThemes.push(...analysis.themes);
-            }
-            if (analysis.emotionalThemes && Array.isArray(analysis.emotionalThemes)) {
-              exchangeThemes.push(...analysis.emotionalThemes);
-            }
-          } catch (error) {
-            // Continue if JSON parsing fails
-          }
-        }
+      recentMessages.forEach(message => {
+        // Extract themes from message content
+        if (message.content) {
+          const content = message.content.toLowerCase();
+          
+          // Extract key themes using simple keyword analysis
+          const commonThemes = [
+            'anxiety', 'stress', 'depression', 'anger', 'fear', 'sadness', 'joy', 'hope',
+            'relationship', 'work', 'family', 'health', 'future', 'past', 'change',
+            'confidence', 'motivation', 'purpose', 'growth', 'healing'
+          ];
 
-        // Extract themes from emotional context
-        if (exchange.emotionalContext) {
-          const emotions = exchange.emotionalContext.toLowerCase().split(',');
-          exchangeThemes.push(...emotions.map((e: string) => e.trim()).filter((e: string) => e.length > 2));
+          const foundThemes = commonThemes.filter(theme => 
+            content.includes(theme)
+          );
+          messageThemes.push(...foundThemes);
         }
       });
 
-      // Merge exchange themes with existing themes
-      const allThemes = [...themes, ...exchangeThemes];
+      // Merge message themes with existing themes
+      const allThemes = [...themes, ...messageThemes];
       const uniqueThemes = [...new Set(allThemes.filter(theme => theme && theme.length > 0))];
       themes = uniqueThemes.slice(0, 5); // Keep top 5 themes
     }
 
-    // Extract themes from recent thread titles and summaries
-    if (userThreads.length > 0) {
-      userThreads.forEach(thread => {
-        if (thread.title) {
-          // Extract meaningful keywords from thread titles
-          const titleWords = thread.title.toLowerCase()
+    // Extract themes from recent therapeutic sessions
+    if (therapeuticSessions.length > 0) {
+      therapeuticSessions.forEach(session => {
+        if (session.title) {
+          // Extract meaningful keywords from session titles
+          const titleWords = session.title.toLowerCase()
             .replace(/[^\w\s]/g, '')
             .split(' ')
             .filter(word => 
@@ -190,13 +183,12 @@ export async function getLastSessionInsights(userId: string): Promise<UserSessio
           themes.push(...titleWords.slice(0, 2));
         }
 
-        // Extract themes from current topic and emotional state
-        if (thread.currentTopic) {
-          const topicWords = thread.currentTopic.toLowerCase()
-            .replace(/[^\w\s]/g, '')
-            .split(' ')
-            .filter(word => word.length > 3);
-          themes.push(...topicWords.slice(0, 2));
+        // Extract themes from session type and focus area
+        if (session.sessionType) {
+          themes.push(session.sessionType);
+        }
+        if (session.focusArea) {
+          themes.push(session.focusArea);
         }
 
         if (thread.currentEmotionalState) {
