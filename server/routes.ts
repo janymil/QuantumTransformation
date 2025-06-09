@@ -2111,7 +2111,13 @@ Provide personalized, actionable guidance that:
         .leftJoin(threadExchanges, eq(journalingThreads.id, threadExchanges.threadId))
         .where(and(
           eq(journalingThreads.userId, userId),
-          eq(journalingThreads.threadType, 'therapy_session')
+          or(
+            eq(journalingThreads.threadType, 'therapy_session'),
+            and(
+              eq(journalingThreads.threadType, 'free_writing'),
+              ilike(journalingThreads.title, '%therapeutic%')
+            )
+          )
         ))
         .groupBy(journalingThreads.id)
         .orderBy(desc(journalingThreads.updatedAt))
