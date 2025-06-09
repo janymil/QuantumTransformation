@@ -83,13 +83,8 @@ export async function processFastResponse(
       context: entry.emotionalContext || 'past_journal_entry'
     }));
 
-    // Step 4: Convert session insights to UserInsights format
-    const userInsights: UserInsights = {
-      framework: sessionInsights.framework || 'CBT',
-      tone: sessionInsights.tone || 'neutral',
-      state: sessionInsights.state || 'uncertain',
-      themes: sessionInsights.themes || []
-    };
+    // Step 4: Use session insights directly (interfaces match)
+    const userInsights: UserInsights = sessionInsights;
 
     // Step 5: Build optimized prompt using buildFastPrompt
     const promptMessages = optimizePromptForTokens(
