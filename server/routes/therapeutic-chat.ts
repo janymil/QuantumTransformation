@@ -17,19 +17,12 @@ router.get('/sessions', isAuthenticated, async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    console.log('Querying sessions for userId:', userId, 'type:', typeof userId);
-    
-    // Test with string conversion to ensure type match
-    const userIdString = String(userId);
-    console.log('Converted userId:', userIdString);
-    
-    const sessions = await db
-      .select()
-      .from(therapeuticChatSessions)
-      .where(eq(therapeuticChatSessions.userId, userIdString))
-      .orderBy(desc(therapeuticChatSessions.lastActivity));
-      
-    console.log('Found sessions:', sessions.length);
+    // Use direct SQL query to bypass Drizzle field mapping issues
+    const { rows: sessions } = await db.execute(sql`
+      SELECT * FROM therapeutic_chat_sessions 
+      WHERE user_id = ${userId} 
+      ORDER BY last_activity DESC
+    `);
     
     // Add cache-busting headers to ensure fresh responses
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
