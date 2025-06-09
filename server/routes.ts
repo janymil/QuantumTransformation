@@ -2190,22 +2190,24 @@ Provide personalized, actionable guidance that:
         return res.status(400).json({ message: "User input is required" });
       }
 
-      // Premium therapeutic chat through consolidated Layer 5 routing (quality-first approach)
-      const { therapeuticChatEngine } = await import('./therapeutic-chat/therapeutic-chat-engine');
+      // Premium therapeutic chat through FastChatEngine
+      const { fastChatEngine } = await import('./therapeutic-chat/fast-chat-engine');
 
-      const response = await therapeuticChatEngine.processJournalingRequest({
+      const response = await fastChatEngine.processFastResponse(
         userId,
-        userInput: userInput.trim(),
         threadId,
-        actionType: actionType || 'deep_analysis',
-        customizations: {
-          mode: conversationStyle || 'empathetic',
-          tone: 'supportive',
-          perspective: 'psychologist'
-        }
-      });
+        userInput.trim()
+      );
 
-      res.json(response);
+      // Transform response to match expected format
+      res.json({
+        success: true,
+        professionalAnalysis: response.analysis,
+        question: response.question,
+        actionType: actionType || 'deep_analysis',
+        threadId,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.error("Error processing therapeutic chat:", error);
       res.status(500).json({ message: "Failed to process message" });
