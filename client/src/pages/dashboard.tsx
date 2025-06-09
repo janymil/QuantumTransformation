@@ -1,13 +1,27 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
 import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
-import { Play, BookOpen, Brain, Target, Zap } from "lucide-react";
+import SoundscapePlayer from "@/components/soundscape-player";
+import { Play, BookOpen, Brain, Target, Zap, Calendar } from "lucide-react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+
+const challengeContent = [
+  { day: 1, title: "Quantum Awareness", description: "Begin your consciousness journey" }
+];
+
+const isUnauthorizedError = (error: Error) => {
+  return error.message.includes("Unauthorized") || error.message.includes("401");
+};
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
 
   const { data: progressData, isLoading, error } = useQuery({
     queryKey: ["/api/progress"],
@@ -151,9 +165,12 @@ export default function Dashboard() {
           <MultiChallengeDashboard />
 
           {/* Additional Learning Tools */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Spaced Repetition Learning */}
-            <SpacedRepetitionWidget />
+            <SpacedRepetitionWidget challengeType="mindfulness" />
+            
+            {/* Personalized Soundscape Player */}
+            <SoundscapePlayer />
             
             {/* Quick Actions */}
             <Card>

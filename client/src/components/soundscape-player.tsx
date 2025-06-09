@@ -80,7 +80,7 @@ export default function SoundscapePlayer() {
   const generateSoundscape = async () => {
     setIsGenerating(true);
     try {
-      const response = await apiRequest('/api/soundscape/generate', {
+      const response = await fetch('/api/soundscape/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -88,8 +88,14 @@ export default function SoundscapePlayer() {
           currentEmotionalState: 'neutral' // Could be detected from user input
         })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
 
-      setCurrentParameters(response);
+      setCurrentParameters(data);
       toast({
         title: "Soundscape Generated",
         description: `Created personalized ${selectedPurpose} soundscape`,
@@ -140,7 +146,7 @@ export default function SoundscapePlayer() {
       }
     };
 
-    const config = configs[purpose] || configs.meditation;
+    const config = configs[purpose as keyof typeof configs] || configs.meditation;
     
     return {
       id: `soundscape_${Date.now()}`,
