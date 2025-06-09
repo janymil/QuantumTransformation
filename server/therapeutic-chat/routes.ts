@@ -126,6 +126,18 @@ export function registerDeepJournalingRoutes(app: Express) {
 
       const response = await Promise.race([responsePromise, timeoutPromise]);
 
+      // Enqueue post-processing job asynchronously (don't await)
+      const { enqueuePostProcessingJob } = await import('../jobs/post-processing-job');
+      if (validatedData.threadId && validatedData.userInput) {
+        enqueuePostProcessingJob(
+          userId,
+          validatedData.threadId,
+          validatedData.userInput
+        ).catch(error => {
+          console.error('Failed to enqueue post-processing job:', error);
+        });
+      }
+
       // Validate response completeness
       if (response && typeof response === 'object') {
         const content = response.analysis?.professionalAnalysis || response.question || response.response;

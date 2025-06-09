@@ -2388,3 +2388,24 @@ Provide personalized, actionable guidance that:
   // Close registerRoutes function
   return server;
 }
+/**
+ * Get post-processing job queue status
+ */
+app.get('/api/therapeutic-chat/job-status', isAuthenticated, async (req: any, res) => {
+  try {
+    const { postProcessingQueue } = await import('./jobs/post-processing-job');
+    const status = postProcessingQueue.getStatus();
+    
+    res.json({
+      queueLength: status.queueLength,
+      processing: status.processing,
+      healthy: true
+    });
+  } catch (error) {
+    console.error('Error getting job status:', error);
+    res.status(500).json({ 
+      message: 'Failed to get job status',
+      healthy: false 
+    });
+  }
+});
