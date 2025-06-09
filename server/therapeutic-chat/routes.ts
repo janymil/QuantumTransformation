@@ -74,6 +74,7 @@ export function registerTherapeuticChatRoutes(app: Express) {
       const userSessions = allSessions.filter(s => String(s.userId) === String(userId));
       console.log('Manual filter found:', userSessions.length, 'sessions');
       
+      let sessions = [];
       if (userSessions.length > 0) {
         console.log('Manual filter session details:', userSessions.map(s => ({ id: s.id, title: s.title, userId: s.userId, userIdType: typeof s.userId })));
         
