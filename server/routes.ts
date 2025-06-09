@@ -2232,7 +2232,16 @@ Provide personalized, actionable guidance that:
       const responseTime = Date.now() - startTime;
       console.log(`FastChatEngine response: ${responseTime}ms for user ${userId}`);
 
+      // Send response immediately to user
       res.json(response);
+
+      // Enqueue background post-processing job (non-blocking)
+      const { postProcessingJob } = await import('./jobs/post-processing-job');
+      await postProcessingJob.enqueue({
+        userId,
+        threadId: threadId || 'default',
+        entryText: userInput.trim()
+      });
     } catch (error) {
       console.error("Error processing therapeutic chat:", error);
       res.status(500).json({ message: "Failed to process message" });
