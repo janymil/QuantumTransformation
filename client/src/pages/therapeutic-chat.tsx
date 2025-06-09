@@ -40,25 +40,43 @@ export default function TherapeuticChat() {
   const { data: threads = [], isLoading: threadsLoading, error: threadsError } = useQuery<any[]>({
     queryKey: ['/api/therapeutic-chat/sessions'],
     queryFn: async () => {
+      console.log('=== FRONTEND FETCHING SESSIONS ===');
       const response = await fetch('/api/therapeutic-chat/sessions', {
+        method: 'GET',
         credentials: 'include',
         headers: {
-          'Cache-Control': 'no-cache',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
+          'Expires': '0',
         },
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error:', response.status, errorText);
         if (response.status === 401) {
-          // Authentication issue, throw error to trigger proper handling
           throw new Error('Authentication required');
         }
-        throw new Error(`Failed to fetch sessions: ${response.status}`);
+        throw new Error(`Failed to fetch sessions: ${response.status} - ${errorText}`);
       }
       
       const data = await response.json();
-      console.log('Sessions data received:', data);
-      return data || [];
+      console.log('Raw sessions data received:', data);
+      console.log('Sessions data type:', typeof data, 'Is array:', Array.isArray(data));
+      console.log('Sessions length:', data?.length);
+      
+      // Ensure we always return an array
+      const sessions = Array.isArray(data) ? data : [];
+      console.log('Final sessions returned:', sessions);
+      return sessions;
+    },
+    retry: (failureCount, error) => {
+      console.log('Query retry attempt:', failureCount, error.message);
+      return failureCount < 2;
     },
     refetchOnWindowFocus: true,
     staleTime: 0,
@@ -899,23 +917,51 @@ export default function TherapeuticChat() {
                 size="sm"
                 onClick={async () => {
                   try {
-                    const response = await fetch('/api/therapeutic-chat/debug/all-sessions');
-                    const debugData = await response.json();
-                    console.log('=== MANUAL DEBUG DATA ===');
-                    console.log('Debug response:', debugData);
-                    console.log('Current user ID:', debugData.currentUserId);
-                    console.log('All sessions:', debugData.allSessions);
-                    console.log('Matching sessions:', debugData.matchingSessions);
+                    console.log('=== MANUAL API TEST ===');
+                    
+                    // Test direct API call
+                    const response = await fetch('/api/therapeutic-chat/sessions', {
+                      method: 'GET',
+                      credentials: 'include',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      }
+                    });
+                    
+                    console.log('Direct API response status:', response.status);
+                    const responseText = await response.text();
+                    console.log('Direct API response text:', responseText);
+                    
+                    let parsedData;
+                    try {
+                      parsedData = JSON.parse(responseText);
+                      console.log('Parsed data:', parsedData);
+                    } catch (parseError) {
+                      console.error('JSON parse error:', parseError);
+                    }
+                    
+                    // Test debug endpoint
+                    const debugResponse = await fetch('/api/therapeutic-chat/debug/all-sessions', {
+                      credentials: 'include'
+                    });
+                    const debugData = await debugResponse.json();
+                    console.log('Debug data:', debugData);
+                    
                     toast({
-                      title: "Debug Info",
-                      description: `Found ${debugData.allSessions?.length || 0} total sessions, ${debugData.matchingSessions?.length || 0} matching your user ID`,
+                      title: "API Test Results",
+                      description: `Status: ${response.status}. Check console for details.`,
                     });
                   } catch (error) {
-                    console.error('Debug failed:', error);
+                    console.error('API test failed:', error);
+                    toast({
+                      title: "API Test Failed",
+                      description: error.message,
+                      variant: "destructive",
+                    });
                   }
                 }}
               >
-                Debug DB
+                Test API
               </Button>
               <Link href="/therapeutic-analytics">
                 <Button variant="outline" size="sm">

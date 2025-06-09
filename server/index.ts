@@ -66,12 +66,28 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  console.log('=== REGISTERING ROUTES ===');
+  
   // Register therapeutic chat routes FIRST to prevent conflicts
   const { registerTherapeuticChatRoutes } = await import('./therapeutic-chat/routes');
+  console.log('Registering therapeutic chat routes...');
   registerTherapeuticChatRoutes(app);
+  console.log('Therapeutic chat routes registered');
 
   // Register all other routes AFTER therapeutic chat routes
+  console.log('Registering main routes...');
   const server = await registerRoutes(app);
+  console.log('Main routes registered');
+
+  // Add route debugging middleware
+  app.use((req, res, next) => {
+    if (req.path.includes('/api/therapeutic-chat')) {
+      console.log(`=== THERAPEUTIC CHAT ROUTE: ${req.method} ${req.path} ===`);
+      console.log('Headers:', req.headers);
+      console.log('User:', req.user ? 'authenticated' : 'not authenticated');
+    }
+    next();
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
