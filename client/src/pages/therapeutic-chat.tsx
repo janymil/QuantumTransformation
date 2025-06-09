@@ -34,6 +34,7 @@ export default function TherapeuticChat() {
   const [isThinking, setIsThinking] = useState(false);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [threadToDelete, setThreadToDelete] = useState<{ id: number; title: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -63,8 +64,9 @@ export default function TherapeuticChat() {
       queryClient.invalidateQueries({ queryKey: ['/api/therapeutic-chat/sessions'] });
       toast({
         title: "Session Deleted",
-        description: "The therapeutic chat session has been removed.",
+        description: "The therapeutic chat session has been permanently deleted.",
       });
+      setThreadToDelete(null);
     },
     onError: (error: any) => {
       toast({
@@ -72,8 +74,23 @@ export default function TherapeuticChat() {
         description: error.message || "Failed to delete session",
         variant: "destructive",
       });
+      setThreadToDelete(null);
     },
   });
+
+  const handleDeleteThread = (threadId: number, threadTitle: string) => {
+    setThreadToDelete({ id: threadId, title: threadTitle });
+  };
+
+  const confirmDeleteThread = () => {
+    if (threadToDelete) {
+      deleteThreadMutation.mutate(threadToDelete.id);
+    }
+  };
+
+  const cancelDeleteThread = () => {
+    setThreadToDelete(null);
+  };
 
   // Send message mutation - therapeutic chat only (no database save until finish)
   const sendMessageMutation = useMutation({
@@ -735,7 +752,7 @@ export default function TherapeuticChat() {
                         className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteThreadMutation.mutate(thread.id);
+                          handleDeleteThread(thread.id, thread.title || `Session ${thread.id}`);
                         }}
                         disabled={deleteThreadMutation.isPending}
                       >
@@ -950,6 +967,53 @@ export default function TherapeuticChat() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Thread Confirmation Dialog */}
+      <AlertDialog open={threadToDelete !== null} onOpenChange={() => setThreadToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              Delete Conversation
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Are you sure you want to delete "{threadToDelete?.title}"?
+              </p>
+              <p className="font-semibold text-destructive">
+                This action is irreversible and will permanently delete all conversation data, including:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                <li>All messages and AI responses</li>
+                <li>Therapeutic analysis and insights</li>
+                <li>Session history and context</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDeleteThread}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteThread}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteThreadMutation.isPending}
+            >
+              {deleteThreadMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Permanently
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
