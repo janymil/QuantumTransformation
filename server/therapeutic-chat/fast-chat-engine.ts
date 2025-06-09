@@ -18,6 +18,8 @@ import {
   psychologicalProfile,
   userTherapeuticProfile
 } from '@shared/schema';
+import { buildFastPrompt, type MemorySnippet, type UserInsights, validatePromptInputs, optimizePromptForTokens } from './prompt-builders/buildFastPrompt';
+import { getLastSessionInsights } from './helpers/getLastSessionInsights';
 
 /**
  * Fast response structure for speed-optimized therapeutic interactions
@@ -62,31 +64,45 @@ export async function processFastResponse(
   const startTime = Date.now();
   
   try {
-    // Step 1: Parallel data retrieval for speed optimization
+    // Step 1: Validate input
+    const validation = validatePromptInputs(entryText);
+    if (!validation.isValid) {
+      throw new Error(`Invalid input: ${validation.errors.join(', ')}`);
+    }
+
+    // Step 2: Parallel data retrieval for speed optimization
     const [similarEntries, sessionInsights] = await Promise.all([
       findSimilarPastEntries(userId, entryText, 3),
       getLastSessionInsights(userId)
     ]);
 
-    // Step 2: Build lightweight, context-aware system prompt
-    const systemPrompt = buildFastSystemPrompt(sessionInsights, similarEntries);
+    // Step 3: Convert similar entries to memory snippets
+    const memorySnippets: MemorySnippet[] = similarEntries.map(entry => ({
+      content: entry.userInput,
+      relevanceScore: entry.similarity,
+      context: entry.emotionalContext || 'past_journal_entry'
+    }));
 
-    // Step 3: Create user prompt with entry text
-    const userPrompt = `Current user input: "${entryText}"
+    // Step 4: Convert session insights to UserInsights format
+    const userInsights: UserInsights = {
+      framework: sessionInsights.framework || 'CBT',
+      tone: sessionInsights.tone || 'neutral',
+      state: sessionInsights.state || 'uncertain',
+      themes: sessionInsights.themes || []
+    };
 
-Based on their psychological profile and past patterns, provide:
-1. A brief psychological reflection (2-3 sentences)
-2. One thoughtful follow-up question to help them explore deeper
+    // Step 5: Build optimized prompt using buildFastPrompt
+    const promptMessages = optimizePromptForTokens(
+      entryText,
+      memorySnippets,
+      userInsights,
+      1200 // Max tokens for fast response
+    );
 
-Focus on their established patterns and preferred communication style.`;
-
-    // Step 4: Call GPT-4o with optimized parameters
+    // Step 6: Call GPT-4o with optimized parameters
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
+      messages: promptMessages,
       response_format: { type: "json_object" },
       temperature: 0.7,
       max_tokens: 300, // Limit for speed
