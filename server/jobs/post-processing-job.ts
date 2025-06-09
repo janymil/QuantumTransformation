@@ -109,22 +109,25 @@ class UserModelEngine {
       const updatedData = {
         userId,
         emotionalPatterns: this.mergePatterns(
-          (existingProfile?.emotionalPatterns as string[]) || [],
+          Object.keys((existingProfile?.emotionalPatterns as Record<string, number>) || {}),
           [analysis.emotionalState]
         ),
         personalityTraits: this.mergePatterns(
-          (existingProfile?.personalityTraits as string[]) || [],
+          Object.keys((existingProfile?.personalityTraits as Record<string, number>) || {}),
           analysis.cognitivePatterns
         ),
-        recentStressLevel: analysis.stressLevel,
-        adaptiveStrategies: this.mergePatterns(
-          (existingProfile?.adaptiveStrategies as string[]) || [],
+        currentDominantEmotion: analysis.emotionalState,
+        emotionalVolatility: UserModelEngine.calculateEmotionalVolatility(analysis.stressLevel),
+        recurringConcerns: this.mergePatterns(
+          (existingProfile?.recurringConcerns as string[]) || [],
           analysis.motivationThemes
         ),
-        therapeuticApproaches: this.mergePatterns(
-          (existingProfile?.therapeuticApproaches as string[]) || [],
+        identifiedGrowthAreas: this.mergePatterns(
+          (existingProfile?.identifiedGrowthAreas as string[]) || [],
           analysis.therapeuticNeeds
         ),
+        lastFullAnalysisAt: new Date(),
+        totalDataPoints: (existingProfile?.totalDataPoints || 0) + 1,
         updatedAt: new Date()
       };
 
@@ -163,6 +166,14 @@ class UserModelEngine {
     const updated = [...existing, newLevel];
     // Keep last 10 stress readings
     return updated.slice(-10);
+  }
+
+  /**
+   * Calculate emotional volatility based on stress level
+   */
+  private static calculateEmotionalVolatility(stressLevel: number): number {
+    // Convert stress level (1-10) to volatility (0-1)
+    return Math.min(stressLevel / 10, 1.0);
   }
 }
 
@@ -449,11 +460,11 @@ export class PostProcessingJob {
         .update(journalingThreads)
         .set({
           currentEmotionalState: analysis.emotionalState,
-          preferredTone: this.mapEmotionalStateToTone(analysis.emotionalState),
+          preferredTone: PostProcessingJob.mapEmotionalStateToTone(analysis.emotionalState),
           preferredPerspective: frameworkSelection.primaryFramework,
-          lastUpdated: new Date()
+          lastActiveAt: new Date()
         })
-        .where(eq(journalingThreads.id, threadId));
+        .where(eq(journalingThreads.id, parseInt(threadId)));
     } catch (error) {
       console.error('Thread context update failed:', error);
     }
