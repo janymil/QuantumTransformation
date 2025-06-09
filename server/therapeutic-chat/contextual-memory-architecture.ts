@@ -776,6 +776,114 @@ export class ContextualMemoryArchitecture {
       lastAnalyzed: new Date()
     };
   }
+
+  /**
+   * Update therapeutic memory with new session data
+   */
+  async updateTherapeuticMemory(
+    userId: string,
+    threadId: number,
+    sessionData: {
+      userInput: string;
+      aiResponse: string;
+      emotionalState: any;
+      cognitivePatterns: any[];
+      insights: any;
+    }
+  ): Promise<TherapeuticMemory> {
+    try {
+      // Get current memory
+      const currentMemory = await this.getTherapeuticMemory(userId);
+      
+      // Update key insights
+      const newInsights = this.extractKeyInsights(sessionData);
+      currentMemory.keyInsights.push(...newInsights);
+      
+      // Keep only recent insights (last 10)
+      if (currentMemory.keyInsights.length > 10) {
+        currentMemory.keyInsights = currentMemory.keyInsights.slice(-10);
+      }
+      
+      // Update therapeutic alliance based on session engagement
+      const engagementScore = this.calculateSessionEngagement(sessionData);
+      currentMemory.therapeuticAlliance = Math.min(1.0, 
+        (currentMemory.therapeuticAlliance * 0.8) + (engagementScore * 0.2)
+      );
+      
+      // Check for breakthrough moments
+      const breakthrough = this.detectBreakthroughMoment(threadId, sessionData);
+      if (breakthrough) {
+        currentMemory.breakthroughs.push(breakthrough);
+        
+        // Keep only recent breakthroughs (last 5)
+        if (currentMemory.breakthroughs.length > 5) {
+          currentMemory.breakthroughs = currentMemory.breakthroughs.slice(-5);
+        }
+      }
+      
+      currentMemory.lastAnalyzed = new Date();
+      
+      return currentMemory;
+    } catch (error) {
+      console.error('Error updating therapeutic memory:', error);
+      return this.getDefaultTherapeuticMemory(userId);
+    }
+  }
+
+  private extractKeyInsights(sessionData: any): string[] {
+    const insights: string[] = [];
+    
+    if (sessionData.insights && sessionData.insights.keyInsights) {
+      insights.push(...sessionData.insights.keyInsights.slice(0, 2));
+    }
+    
+    if (sessionData.emotionalState && sessionData.emotionalState.intensity > 7) {
+      insights.push(`High emotional intensity detected: ${sessionData.emotionalState.primary}`);
+    }
+    
+    if (sessionData.cognitivePatterns && sessionData.cognitivePatterns.length > 0) {
+      insights.push(`Cognitive patterns identified: ${sessionData.cognitivePatterns.length} patterns`);
+    }
+    
+    return insights;
+  }
+
+  private calculateSessionEngagement(sessionData: any): number {
+    let engagement = 0.5; // baseline
+    
+    // User input length indicates engagement
+    const inputLength = sessionData.userInput?.length || 0;
+    if (inputLength > 200) engagement += 0.2;
+    if (inputLength > 500) engagement += 0.1;
+    
+    // Emotional openness indicates engagement
+    if (sessionData.emotionalState && sessionData.emotionalState.intensity > 5) {
+      engagement += 0.2;
+    }
+    
+    return Math.min(1.0, engagement);
+  }
+
+  private detectBreakthroughMoment(threadId: number, sessionData: any): BreakthroughMoment | null {
+    // Simple breakthrough detection based on emotional state and insights
+    if (sessionData.insights && sessionData.insights.keyInsights && 
+        sessionData.insights.keyInsights.length > 2) {
+      return {
+        id: this.generateId(),
+        threadId,
+        exchangeId: 0, // Will be updated when exchange is saved
+        type: 'insight',
+        description: sessionData.insights.keyInsights[0] || 'Significant insight achieved',
+        significance: Math.min(10, sessionData.insights.keyInsights.length * 2),
+        relatedGoals: [],
+        context: sessionData.userInput.substring(0, 100),
+        followUpRequired: true,
+        createdAt: new Date()
+      };
+    }
+    
+    return null;
+  }
 }
 
 export const contextualMemoryArchitecture = new ContextualMemoryArchitecture();
