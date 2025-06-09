@@ -3,7 +3,6 @@
  */
 
 import { Router } from 'express';
-import { optimizedResponseEngine } from '../therapeutic-chat/optimized-response-engine';
 
 const router = Router();
 
@@ -18,21 +17,28 @@ router.post('/go-deeper', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const response = await optimizedResponseEngine.generateResponse({
+    // Use FastChatEngine for immediate response
+    const { fastChatEngine } = await import('../therapeutic-chat/FastChatEngine');
+    
+    const response = await fastChatEngine.processFastResponse(
       userId,
-      userInput,
       threadId,
-      actionType: 'go_deeper'
-    });
+      userInput
+    );
 
+    // Send response immediately to user
     res.json({
       success: true,
-      content: response.content,
-      threadId: response.threadId,
-      exchangeId: response.exchangeId,
-      emotionalTone: response.emotionalTone,
-      tokenCount: response.tokenCount,
-      cost: response.cost
+      analysis: response.analysis,
+      question: response.question
+    });
+
+    // Enqueue background post-processing job (non-blocking)
+    const { postProcessingJob } = await import('../jobs/post-processing-job');
+    await postProcessingJob.enqueue({
+      userId,
+      threadId: threadId || 'default',
+      entryText: userInput
     });
 
   } catch (error) {
@@ -55,21 +61,28 @@ router.post('/new-direction', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const response = await optimizedResponseEngine.generateResponse({
+    // Use FastChatEngine for immediate response
+    const { fastChatEngine } = await import('../therapeutic-chat/FastChatEngine');
+    
+    const response = await fastChatEngine.processFastResponse(
       userId,
-      userInput,
       threadId,
-      actionType: 'new_direction'
-    });
+      userInput
+    );
 
+    // Send response immediately to user
     res.json({
       success: true,
-      content: response.content,
-      threadId: response.threadId,
-      exchangeId: response.exchangeId,
-      emotionalTone: response.emotionalTone,
-      tokenCount: response.tokenCount,
-      cost: response.cost
+      analysis: response.analysis,
+      question: response.question
+    });
+
+    // Enqueue background post-processing job (non-blocking)
+    const { postProcessingJob } = await import('../jobs/post-processing-job');
+    await postProcessingJob.enqueue({
+      userId,
+      threadId: threadId || 'default',
+      entryText: userInput
     });
 
   } catch (error) {
@@ -92,21 +105,28 @@ router.post('/send-message', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const response = await optimizedResponseEngine.generateResponse({
+    // Use FastChatEngine for immediate response
+    const { fastChatEngine } = await import('../therapeutic-chat/FastChatEngine');
+    
+    const response = await fastChatEngine.processFastResponse(
       userId,
-      userInput,
       threadId,
-      actionType: 'regular'
-    });
+      userInput
+    );
 
+    // Send response immediately to user
     res.json({
       success: true,
-      content: response.content,
-      threadId: response.threadId,
-      exchangeId: response.exchangeId,
-      emotionalTone: response.emotionalTone,
-      tokenCount: response.tokenCount,
-      cost: response.cost
+      analysis: response.analysis,
+      question: response.question
+    });
+
+    // Enqueue background post-processing job (non-blocking)
+    const { postProcessingJob } = await import('../jobs/post-processing-job');
+    await postProcessingJob.enqueue({
+      userId,
+      threadId: threadId || 'default',
+      entryText: userInput
     });
 
   } catch (error) {
