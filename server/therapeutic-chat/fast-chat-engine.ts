@@ -75,6 +75,9 @@ export async function processFastResponse(
       findSimilarPastEntries(userId, entryText, 3),
       getUserSessionInsights(userId)
     ]);
+    
+    console.log("Retrieved session insights:", sessionInsights);
+    console.log("Retrieved similar entries:", similarEntries.length);
 
     // Step 3: Convert similar entries to memory snippets
     const memorySnippets: MemorySnippet[] = similarEntries.map(entry => ({
@@ -93,6 +96,10 @@ export async function processFastResponse(
       userInsights,
       1200 // Max tokens for fast response
     );
+    
+    console.log("Final prompt messages being sent to OpenAI:");
+    console.log("System message:", promptMessages[0]?.content?.substring(0, 200) + "...");
+    console.log("User message:", promptMessages[1]?.content?.substring(0, 200) + "...");
 
     // Step 6: Call GPT-4o with optimized parameters
     const response = await openai.chat.completions.create({
