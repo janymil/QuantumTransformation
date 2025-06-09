@@ -2220,8 +2220,8 @@ Provide personalized, actionable guidance that:
 
       const startTime = Date.now();
 
-      // Use FastChatEngine for immediate response with proper therapeutic format
-      const { fastChatEngine } = await import('./therapeutic-chat/fast-chat-engine');
+      // Use minimal working FastChatEngine for immediate response
+      const { fastChatEngine } = await import('./therapeutic-chat/fast-chat-engine-minimal');
 
       const response = await fastChatEngine.processFastResponse({
         userId,
