@@ -321,3 +321,8 @@ function extractRecentTopics(recentThreads: any[]): string[] {
     .filter(topic => topic && typeof topic === 'string')
     .slice(0, 3);
 }
+
+// Export the main function
+export const fastChatEngine = {
+  processFastResponse
+};

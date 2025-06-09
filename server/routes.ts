@@ -637,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerProgressRoutes(app);
   registerJournalRoutes(app);
   registerGamificationRoutes(app);
-  registerDeepJournalingRoutes(app);
+  // Deep journaling routes temporarily disabled
 
   // Enhanced AI Routes with Smart Caching System
   app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {
@@ -2373,7 +2373,4 @@ Provide personalized, actionable guidance that:
   });
 
   return server;
-} 
-    });
-  }
-});
+}
