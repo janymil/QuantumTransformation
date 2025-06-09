@@ -162,7 +162,7 @@ export class IntelligentRouter {
     }
 
     // Route to external API
-    const externalChoice = this.selectExternalProvider(complexity, context);
+    const externalChoice = this.selectExternalProvider(complexity, context, request.options?.bypassCostOptimization);
     return {
       useLocal: false,
       provider: externalChoice.provider,
@@ -430,7 +430,7 @@ export class IntelligentRouter {
 
     try {
       let response: any;
-      let cost: number;
+      let cost: number = 0;
 
       if (routing.provider === 'openai') {
         const completion = await openai.chat.completions.create({
@@ -504,6 +504,8 @@ export class IntelligentRouter {
         
         response = cleanResponse;
         cost = this.calculateAnthropicCost(completion, routing.model);
+      } else {
+        throw new Error(`Unsupported provider: ${routing.provider}`);
       }
 
       return {
