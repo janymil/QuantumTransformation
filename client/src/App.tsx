@@ -97,7 +97,7 @@ function Router() {
       <Switch>
         {/* Main shared routes */}
         <Route path="/" component={Dashboard} />
-        <Route path="/soundscape" component={() => <div className="p-8"><h1 className="text-2xl">Soundscape Generator Test</h1></div>} />
+        <Route path="/soundscape" component={SoundscapeSimple} />
         <Route path="/challenges" component={Challenges} />
         <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/ai-conversation-history" component={AIConversationHistory} />

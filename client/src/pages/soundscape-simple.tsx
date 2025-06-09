@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Zap, Waves, Brain, Heart } from "lucide-react";
+import AdvancedSoundscapePlayer from "@/components/advanced-soundscape-player";
 
 export default function SoundscapeSimple() {
   return (
@@ -62,25 +63,7 @@ export default function SoundscapeSimple() {
 
         {/* Main Soundscape Player */}
         <div className="max-w-4xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Advanced Soundscape Player</CardTitle>
-              <CardDescription>
-                AI-powered binaural beats and ambient soundscapes ready for use.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-64 bg-muted/30 rounded-lg">
-                <div className="text-center">
-                  <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <p className="text-lg font-medium">Advanced Web Audio Player</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Real-time binaural beat generation with AI-driven parameter selection
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AdvancedSoundscapePlayer />
         </div>
 
         {/* Usage Guidelines */}
