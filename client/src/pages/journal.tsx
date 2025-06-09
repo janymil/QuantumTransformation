@@ -128,9 +128,7 @@ export default function Journal() {
     return { date: formattedDate, time: formattedTime, full: `${formattedDate} at ${formattedTime}` };
   };
 
-  // Function to fetch session preview on hover
-  const fetchSessionPreview = async (sessionId: number) => {
-    try {
+  // Popup functionality removed as requested
       // Add cache-busting parameter to force fresh data
       const timestamp = Date.now();
       const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}/messages?t=${timestamp}`);
