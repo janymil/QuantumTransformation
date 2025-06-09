@@ -1,9 +1,14 @@
-import { db } from './db';
+import { db } from '../db';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { aiUsageTracking, aiResponseCache } from '@shared/schema';
 
-// Usage limits configuration
-export const USAGE_LIMITS = {
+/**
+ * AI Cost Control for Basic Tier (AI Coaching)
+ * Manages usage limits, caching, and request validation for basic tier only
+ */
+
+// Basic tier usage limits configuration
+export const BASIC_TIER_USAGE_LIMITS = {
   free: {
     daily: 10,
     monthly: 300,
@@ -19,14 +24,6 @@ export const USAGE_LIMITS = {
     monthlyRequests: 750,
     maxInputLength: 1500,
     cooldownSeconds: 15,
-  },
-  premium: {
-    daily: 50,
-    monthly: 1500,
-    dailyRequests: 50,
-    monthlyRequests: 1500,
-    maxInputLength: 3000,
-    cooldownSeconds: 10,
   },
   unlimited: {
     daily: -1,
@@ -85,7 +82,7 @@ function isRelevantToChallenge(input: string): boolean {
  * Validate user input for AI request
  */
 function validateInput(input: string, userTier: string): { valid: boolean; reason?: string } {
-  const limits = USAGE_LIMITS[userTier as keyof typeof USAGE_LIMITS] || USAGE_LIMITS.free;
+  const limits = BASIC_TIER_USAGE_LIMITS[userTier as keyof typeof BASIC_TIER_USAGE_LIMITS] || BASIC_TIER_USAGE_LIMITS.free;
   
   if (input.length > limits.maxInputLength) {
     return { 
@@ -136,7 +133,7 @@ export async function checkUsageLimit(userId: string, userTier: string = 'free')
       );
 
     const dailyCount = todayUsage?.count || 0;
-    const limits = USAGE_LIMITS[userTier as keyof typeof USAGE_LIMITS] || USAGE_LIMITS.free;
+    const limits = BASIC_TIER_USAGE_LIMITS[userTier as keyof typeof BASIC_TIER_USAGE_LIMITS] || BASIC_TIER_USAGE_LIMITS.free;
     const dailyLimit = limits.daily || limits.dailyRequests || 10;
 
     if (dailyLimit !== -1 && dailyCount >= dailyLimit) {
@@ -361,8 +358,8 @@ export async function getUserAIStats(userId: string): Promise<{
       dailyUsage: dailyUsage?.count || 0,
       monthlyUsage: monthlyUsage?.count || 0,
       totalUsage: totalUsage?.count || 0,
-      dailyLimit: USAGE_LIMITS.free.daily || USAGE_LIMITS.free.dailyRequests || 10,
-      monthlyLimit: USAGE_LIMITS.free.monthly || USAGE_LIMITS.free.monthlyRequests || 300
+      dailyLimit: BASIC_TIER_USAGE_LIMITS.free.daily || BASIC_TIER_USAGE_LIMITS.free.dailyRequests || 10,
+      monthlyLimit: BASIC_TIER_USAGE_LIMITS.free.monthly || BASIC_TIER_USAGE_LIMITS.free.monthlyRequests || 300
     };
   } catch (error) {
     console.error('Error getting user AI stats:', error);

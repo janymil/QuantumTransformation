@@ -17,7 +17,7 @@ import {
   trackUsage,
   createInputHash,
   getUserAIStats 
-} from "./ai-cost-control";
+} from "./ai-coaching/ai-cost-control";
 import { costOptimizationEngine } from "./ai-cost-optimization";
 import { generateAIExplanation, analyzeJournalEntries, generatePersonalizedCoaching } from "./openai";
 import { soundscapeGenerator } from "./soundscape-generator";
@@ -1694,7 +1694,7 @@ Provide personalized, actionable guidance that:
   app.get('/api/cache-demo', async (req: any, res) => {
     try {
       const { determineCacheStrategy, getTemplateResponse } = await import("./enhanced-caching");
-      const { createInputHash } = await import("./ai-cost-control");
+      const { createInputHash } = await import("./ai-coaching/ai-cost-control");
 
       const testQuestions = [
         "How long should I practice today's meditation?",

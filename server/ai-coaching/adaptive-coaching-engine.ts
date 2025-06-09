@@ -14,7 +14,7 @@ import {
   trackUsage,
   createInputHash,
   optimizeContext 
-} from '../ai-cost-control';
+} from './ai-cost-control';
 
 
 const openai = new OpenAI({
