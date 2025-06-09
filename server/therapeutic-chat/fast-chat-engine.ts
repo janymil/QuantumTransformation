@@ -198,7 +198,7 @@ export class FastChatEngine {
   }
 
   /**
-   * Build optimized system prompt with cached data
+   * Build optimized system prompt with cached data using proper therapeutic frameworks
    */
   private async buildFastSystemPrompt(
     userInput: string,
@@ -206,31 +206,31 @@ export class FastChatEngine {
     sessionInsights: any,
     customizations?: any
   ): Promise<string> {
-    const basePrompt = `You are a therapeutic journaling AI trained in psychology, trauma recovery, and human motivation. When the user writes a journal entry, respond in this format:
+    // Import therapeutic framework functions
+    const { recommendTherapeuticFrameworks, buildTherapeuticSystemPrompt } = await import('./therapeutic-frameworks');
+    
+    // Get appropriate therapeutic frameworks based on user input
+    const frameworks = recommendTherapeuticFrameworks(
+      userInput,
+      sessionInsights?.emotionalBaseline || 'exploring',
+      sessionInsights?.areas_of_focus || []
+    );
 
-1. Reflect back to the user what they seem to feel or believe, based on their writing. Use deep psychological insight in plain, compassionate language. Be specific. Limit to 2–3 sentences.
-2. Ask one follow-up question that helps the user reflect further, move forward, or connect deeper with themselves.
+    // Build context from recent memory and session insights
+    const context = {
+      recentExchanges: recentMemory.slice(0, 2).map(exchange => ({
+        userInput: exchange.userInput,
+        aiAnalysis: exchange.aiAnalysis
+      })),
+      sessionInsights,
+      emotionalBaseline: sessionInsights?.emotionalBaseline || 'exploring',
+      communicationStyle: sessionInsights?.communicationStyle || 'compassionate',
+      strengths: sessionInsights?.strengths || ['resilience', 'self-awareness'],
+      customizations
+    };
 
-Use insights from CBT, ACT, inner child work, spiritual psychology, or trauma therapy — but always speak like a kind and grounded human. Do not reply with vague responses like "I understand" or "Tell me more." Focus on meaning and clarity.
-
-CACHED SESSION CONTEXT:
-- Preferred Framework: ${sessionInsights?.therapeuticFramework || 'CBT'}
-- Emotional Baseline: ${sessionInsights?.emotionalBaseline || 'exploring'}
-- Communication Style: ${sessionInsights?.communicationStyle || 'compassionate'}
-- Key Strengths: ${sessionInsights?.strengths?.join(', ') || 'resilience, self-awareness'}
-- Focus Areas: ${sessionInsights?.areas_of_focus?.join(', ') || 'personal growth'}
-
-RECENT CONVERSATION:
-${recentMemory.length > 0 ? 
-  recentMemory.reverse().map(exchange => 
-    `User: ${exchange.userInput}\nAI: ${exchange.aiQuestion}`
-  ).join('\n\n') : 
-  'This is the beginning of the conversation.'
-}
-
-Remember: Always provide specific, meaningful analysis (2-3 sentences) plus one focused follow-up question. Never use generic responses.`;
-
-    return basePrompt;
+    // Use the sophisticated therapeutic system prompt
+    return buildTherapeuticSystemPrompt(frameworks, userInput, context);
   }
 
   /**
