@@ -1,0 +1,171 @@
+import type { Express } from "express";
+import { fastChatEngine } from "./fast-chat-engine";
+import { monthlyCostSimulation } from "./monthly-cost-simulation";
+import { advancedCostOptimization } from "./advanced-cost-optimization";
+import { voiceTranscriptionService } from "./voice-service";
+import { db } from '../db';
+import { therapeuticChatSessions, therapeuticChatMessages } from '../../shared/schema';
+import { eq, desc, and } from 'drizzle-orm';
+
+// Authentication middleware
+const isAuthenticated = (req: any, res: any, next: any) => {
+  if (!req.user || !req.user.claims || !req.user.claims.sub) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+  next();
+};
+
+// Get all therapeutic chat sessions for a user
+  app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===');
+      console.log('Fetching sessions for userId:', userId, 'type:', typeof userId);
+
+      const sessions = await db
+        .select()
+        .from(therapeuticChatSessions)
+        .where(eq(therapeuticChatSessions.userId, userId))
+        .orderBy(desc(therapeuticChatSessions.lastActivity));
+
+      console.log('Found sessions for user:', sessions.length, sessions);
+      console.log('=== END DEBUG ===');
+
+      // Add cache-busting headers to ensure fresh responses
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
+      res.json(sessions);
+    } catch (error) {
+      console.error('Error fetching therapeutic chat sessions:', error);
+      res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+  });
+
+// Save a conversation to therapeutic chat system
+  app.post('/api/therapeutic-chat/save-conversation', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const { title, messages, sessionType, conversationStyle, focusArea } = req.body;
+
+      // Create new therapeutic chat session
+      const [newSession] = await db
+        .insert(therapeuticChatSessions)
+        .values({
+          userId,
+          title: title || 'Therapeutic Session',
+          sessionType: sessionType || 'general',
+          conversationStyle: conversationStyle || 'socratic',
+          focusArea: focusArea || 'general',
+          responseLength: 'balanced',
+          messageCount: messages?.length || 0,
+          lastActivity: new Date(),
+        })
+        .returning();
+
+      // Save all messages
+      if (messages && messages.length > 0) {
+        const messageData = messages.map((msg: any, index: number) => ({
+          sessionId: newSession.id,
+          messageType: msg.type || (index % 2 === 0 ? 'user' : 'ai'),
+          content: msg.content || msg.text || '',
+          aiAnalysis: msg.analysis ? { analysis: msg.analysis } : null,
+          aiQuestion: msg.question || null,
+          actionType: msg.actionType || 'regular',
+          processingTime: msg.processingTime || null,
+          tokens: msg.tokens || null,
+          cost: msg.cost || null,
+          createdAt: new Date(msg.timestamp || new Date()),
+        }));
+
+        await db
+          .insert(therapeuticChatMessages)
+          .values(messageData);
+      }
+
+      res.json({ success: true, sessionId: newSession.id });
+    } catch (error) {
+      console.error('Error saving therapeutic conversation:', error);
+      res.status(500).json({ error: 'Failed to save conversation' });
+    }
+  });
+
+// Update an existing therapeutic chat session (for auto-save)
+  app.put('/api/therapeutic-chat/sessions/:sessionId/update', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = parseInt(req.params.sessionId);
+
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const { title, messages, sessionType, conversationStyle, focusArea } = req.body;
+
+      // Verify session belongs to user
+      const existingSession = await db
+        .select()
+        .from(therapeuticChatSessions)
+        .where(and(
+          eq(therapeuticChatSessions.id, sessionId),
+          eq(therapeuticChatSessions.userId, userId)
+        ))
+        .limit(1);
+
+      if (existingSession.length === 0) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      // Update session metadata
+      await db
+        .update(therapeuticChatSessions)
+        .set({
+          title: title || existingSession[0].title,
+          sessionType: sessionType || existingSession[0].sessionType,
+          conversationStyle: conversationStyle || existingSession[0].conversationStyle,
+          focusArea: focusArea || existingSession[0].focusArea,
+          messageCount: messages ? messages.length : existingSession[0].messageCount,
+          lastActivity: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(therapeuticChatSessions.id, sessionId));
+
+      // Delete existing messages and replace with new ones
+      if (messages && messages.length > 0) {
+        await db
+          .delete(therapeuticChatMessages)
+          .where(eq(therapeuticChatMessages.sessionId, sessionId));
+
+        const messageData = messages.map((msg: any, index: number) => ({
+          sessionId: sessionId,
+          messageType: msg.type || (index % 2 === 0 ? 'user' : 'ai'),
+          content: msg.content || msg.text || '',
+          aiAnalysis: msg.analysis ? { analysis: msg.analysis } : null,
+          aiQuestion: msg.question || null,
+          actionType: msg.actionType || 'regular',
+          processingTime: msg.processingTime || null,
+          tokens: msg.tokens || null,
+          cost: msg.cost || null,
+          createdAt: new Date(msg.timestamp || new Date()),
+        }));
+
+        await db
+          .insert(therapeuticChatMessages)
+          .values(messageData);
+      }
+
+      res.json({ success: true, sessionId: sessionId });
+    } catch (error) {
+      console.error('Error updating therapeutic conversation:', error);
+      res.status(500).json({ error: 'Failed to update conversation' });
+    }
+  });
