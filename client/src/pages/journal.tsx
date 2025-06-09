@@ -133,8 +133,17 @@ export default function Journal() {
     try {
       const response = await fetch(`/api/therapeutic-chat/sessions/${sessionId}/messages`);
       if (response.ok) {
-        const messages = await response.json();
-        const messageCount = Array.isArray(messages) ? messages.length : 0;
+        const data = await response.json();
+        
+        // Handle new API response format with session metadata
+        let messages = [];
+        if (Array.isArray(data)) {
+          messages = data;
+        } else if (data?.messages) {
+          messages = data.messages;
+        }
+        
+        const messageCount = messages.length;
         
         if (Array.isArray(messages) && messages.length > 0) {
           // Get first few exchanges to show conversation context
