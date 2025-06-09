@@ -602,7 +602,7 @@ export class ContextualMemoryArchitecture {
     try {
       let whereClause = eq(therapeuticInteractionAnalysis.userId, userId);
       if (since) {
-        whereClause = and(whereClause, gte(therapeuticInteractionAnalysis.recordedAt, since));
+        whereClause = and(whereClause, gte(therapeuticInteractionAnalysis.createdAt, since));
       }
 
       const results = await db.select()
@@ -611,13 +611,19 @@ export class ContextualMemoryArchitecture {
 
       const breakthroughs: BreakthroughMoment[] = [];
       for (const result of results) {
-        if (result.breakthroughMoments) {
-          try {
-            const moments = JSON.parse(result.breakthroughMoments);
-            breakthroughs.push(...moments);
-          } catch (error) {
-            console.error('Error parsing breakthrough moments:', error);
-          }
+        if (result.breakthroughMomentDetected) {
+          // Create breakthrough moment from detected session
+          const moment: BreakthroughMoment = {
+            id: `breakthrough_${result.id}`,
+            type: 'insight',
+            description: `Breakthrough detected in session`,
+            context: `Session analysis revealed significant progress`,
+            emotionalImpact: result.emotionalResonanceScore || 0.7,
+            significance: result.insightGenerationScore || 0.8,
+            createdAt: result.createdAt || new Date(),
+            tags: []
+          };
+          breakthroughs.push(moment);
         }
       }
 
