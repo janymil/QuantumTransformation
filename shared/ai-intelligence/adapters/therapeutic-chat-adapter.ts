@@ -122,8 +122,6 @@ export class TherapeuticChatAdapter {
       });
 
       // Direct therapeutic processing without intelligence layer
-
-      // Process through DeepJournalingEngine (therapeutic-chat-engine) for full therapeutic intelligence
       const { deepJournalingEngine } = await import('../../../server/therapeutic-chat');
       
       const engineRequest = {
@@ -141,32 +139,17 @@ export class TherapeuticChatAdapter {
         wasVoiceInput: false
       };
 
-      // Process through full therapeutic intelligence pipeline
+      // Direct therapeutic engine processing
       const therapeuticResponse = await deepJournalingEngine.processJournalingRequest(engineRequest);
       
-      let content = therapeuticResponse.question || 'I understand what you\'re sharing with me.';
-      let modelUsed = 'therapeutic-engine-processed';
-      let provider: 'openai' | 'anthropic' = 'anthropic'; // Default since therapeutic engine uses multiple models
-
-      // Apply adaptive language generation if enabled
-      let processedContent = content;
+      const finalContent = therapeuticResponse.question || 'I understand what you\'re sharing with me.';
+      let modelUsed = 'therapeutic-engine';
+      let provider: 'openai' | 'anthropic' = 'anthropic';
       let adaptiveLanguageApplied = false;
-      
-      if (request.options?.enableAdaptiveLanguage) {
-        processedContent = await this.applyAdaptiveLanguage(
-          content,
-          request.personalization?.preferredResponseStyle,
-          request.sessionContext.currentTherapeuticStyle
-        );
-        adaptiveLanguageApplied = true;
-      }
-
-      // Use the sophisticated AI response directly without post-processing that could degrade quality
-      const finalContent = processedContent;
 
       // Track usage for analytics only (no cost optimization applied)
-      const complexity = enhancedUserInput.length > 200 ? 'high' : enhancedUserInput.length > 100 ? 'medium' : 'low';
-      const emotionalIntensity = enhancedUserInput.match(/\b(sad|angry|anxious|depressed|hurt|pain|struggle|difficult)\b/i) ? 'high' : 'medium';
+      const complexity = request.userInput.length > 200 ? 'high' : request.userInput.length > 100 ? 'medium' : 'low';
+      const emotionalIntensity = request.userInput.match(/\b(sad|angry|anxious|depressed|hurt|pain|struggle|difficult)\b/i) ? 'high' : 'medium';
       
       // Skip tracking to avoid errors - focus on delivering sophisticated responses
       // await this.trackTherapeuticUsage(request.userId, ...);

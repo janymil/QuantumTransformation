@@ -15,7 +15,7 @@ import {
   createInputHash,
   optimizeContext 
 } from './ai-cost-control';
-import { aiCoachingAdapter } from '@shared/ai-intelligence/adapters/ai-coaching-adapter';
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -127,21 +127,17 @@ Respond in JSON:
 `;
 
     try {
-      // Use AI Intelligence Layer for optimal routing and cost optimization
-      const coachingRequest = {
-        userId: context.profile?.userId || 'unknown',
-        userInput: optimizedContext,
-        systemPrompt: "You are an advanced AI coaching psychologist specializing in adaptive personalized coaching.",
-        userTier: 'basic' as const,
-        challengeType: 'general',
-        options: { temperature: 0.7, maxTokens: 800 }
-      };
-
-      const aiResult = await aiCoachingAdapter.processCoachingRequest(coachingRequest);
-      const analysisResult = JSON.parse(aiResult.content);
+      // Direct AI processing without intelligence layer
+      const { aiCoachingEngine } = await import('./ai-coaching-engine');
       
-      console.log(`AI Intelligence Layer - Model: ${aiResult.metadata.modelUsed}, Provider: ${aiResult.metadata.provider}, Cost: $${aiResult.metadata.cost.toFixed(4)}, Cache: ${aiResult.metadata.fromCache}`);
+      const response = await aiCoachingEngine.generatePersonalizedResponse(
+        context.profile?.userId || 'unknown',
+        optimizedContext,
+        'daily_coaching_analysis',
+        'adaptive_coaching'
+      );
       
+      const analysisResult = JSON.parse(response.response);
       return analysisResult;
     } catch (error) {
       console.error("Error in AI analysis:", error);
@@ -204,21 +200,17 @@ Respond in JSON format:
 `;
 
     try {
-      // Use intelligent routing for daily content generation
-      const aiResult = await modelRouter.executeWithOptimalModel(
+      // Direct AI processing without intelligence layer
+      const { aiCoachingEngine } = await import('./ai-coaching-engine');
+      
+      const response = await aiCoachingEngine.generatePersonalizedResponse(
+        context.profile?.userId || 'unknown',
         prompt,
-        "You are an advanced AI coach creating detailed daily coaching content with therapeutic exercises.",
-        JSON.stringify(context),
         'therapeutic_content_generation',
-        'advanced_ai_couch',
-        'premium',
-        { temperature: 0.8, maxTokens: 1500 }
+        'adaptive_coaching'
       );
-
-      const dailyContent = JSON.parse(aiResult.response);
       
-      console.log(`Daily Content - Model: ${aiResult.modelUsed}, Complexity: ${aiResult.routingDecision.complexity}, Cost: $${aiResult.actualCost.toFixed(4)}`);
-      
+      const dailyContent = JSON.parse(response.response);
       return dailyContent;
     } catch (error) {
       console.error("Error generating daily content:", error);
