@@ -97,6 +97,7 @@ function Router() {
       <Switch>
         {/* Main shared routes */}
         <Route path="/" component={Dashboard} />
+        <Route path="/soundscape" component={SoundscapeSimple} />
         <Route path="/challenges" component={Challenges} />
         <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/ai-conversation-history" component={AIConversationHistory} />
@@ -104,7 +105,6 @@ function Router() {
         <Route path="/therapeutic-chat" component={TherapeuticChat} />
         <Route path="/therapeutic-analytics" component={TherapeuticAnalytics} />
         <Route path="/therapeutic-styles-demo" component={TherapeuticStylesDemo} />
-        <Route path="/soundscape" component={SoundscapeSimple} />
         <Route path="/admin-analytics" component={AdminAnalytics} />
         <Route path="/admin-unlock-days" component={AdminUnlockDays} />
         <Route path="/journal" component={() => <Journal />} />
