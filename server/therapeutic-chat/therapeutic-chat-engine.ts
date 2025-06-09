@@ -12,16 +12,12 @@ import { eq, and, desc, count } from "drizzle-orm";
 import { DeepJournalingRequest, DeepJournalingResponse } from "./types";
 import { buildTherapeuticSystemPrompt, getNewDirectionSystemPrompt, getCustomizationSystemPrompt } from "./therapeutic-frameworks";
 import { psychologicalAnalyzer } from "./psychological-analyzer";
-import { intelligentModelRouter } from "./intelligent-model-router";
-import { advancedCostOptimization } from "./advanced-cost-optimization";
 import { userModelingEngine } from "./user-modeling-engine";
 import type { PersonalizationRecommendations } from "./user-modeling-engine";
 import { dynamicFrameworkSelector } from "./dynamic-framework-selector";
 import type { FrameworkRecommendation } from "./dynamic-framework-selector";
 import { contextualMemoryArchitecture } from "./contextual-memory-architecture";
 import type { TherapeuticMemory, BreakthroughMoment } from "./contextual-memory-architecture";
-import { adaptiveLanguageGenerator } from "./adaptive-language-generator";
-import type { AdaptedLanguageResponse } from "./adaptive-language-generator";
 // Layer 3 removed - using Layer 5 intelligent model routing directly
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
