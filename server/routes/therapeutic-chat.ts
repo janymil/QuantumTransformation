@@ -17,24 +17,19 @@ router.get('/sessions', isAuthenticated, async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    console.log('Sessions endpoint - userId:', userId, 'type:', typeof userId);
+    console.log('Querying sessions for userId:', userId, 'type:', typeof userId);
     
-    // Use raw SQL to bypass Drizzle field mapping issue
-    const result = await db.execute(sql`
-      SELECT id, user_id as "userId", title, session_type as "sessionType", 
-             conversation_style as "conversationStyle", focus_area as "focusArea",
-             response_length as "responseLength", is_active as "isActive",
-             message_count as "messageCount", last_activity as "lastActivity",
-             created_at as "createdAt", updated_at as "updatedAt"
-      FROM therapeutic_chat_sessions 
-      WHERE user_id = ${userId} 
-      ORDER BY last_activity DESC
-    `);
+    // Test with string conversion to ensure type match
+    const userIdString = String(userId);
+    console.log('Converted userId:', userIdString);
     
-    console.log('SQL result rows:', result.rows?.length || 0);
-    console.log('SQL result sample:', result.rows?.[0]);
-    
-    const sessions = result.rows || [];
+    const sessions = await db
+      .select()
+      .from(therapeuticChatSessions)
+      .where(eq(therapeuticChatSessions.userId, userIdString))
+      .orderBy(desc(therapeuticChatSessions.lastActivity));
+      
+    console.log('Found sessions:', sessions.length);
     
     // Add cache-busting headers to ensure fresh responses
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
