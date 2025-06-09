@@ -213,7 +213,7 @@ export default function TherapeuticChat() {
     setMessages(prev => [...prev, thinkingMessage]);
 
     try {
-      const response = await fetch('/api/deep-journaling/process', {
+      const response = await fetch('/api/therapeutic-chat/action', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,7 +272,7 @@ export default function TherapeuticChat() {
     setMessages(prev => [...prev, thinkingMessage]);
 
     try {
-      const response = await fetch('/api/deep-journaling/process', {
+      const response = await fetch('/api/therapeutic-chat/action', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

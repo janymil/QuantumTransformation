@@ -58,6 +58,55 @@ const threadCustomizationSchema = z.object({
 export function registerDeepJournalingRoutes(app: Express) {
   
   /**
+   * Direct action button endpoint - bypasses broken adapters for immediate fixes
+   */
+  app.post('/api/therapeutic-chat/action', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { userInput, actionType } = req.body;
+
+      // Direct AI call bypassing broken therapeutic chat adapter
+      const anthropic = new (await import('@anthropic-ai/sdk')).default({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      });
+
+      let systemPrompt = '';
+      if (actionType === 'go_deeper') {
+        systemPrompt = `You are an expert therapeutic coach specializing in depth psychology, CBT, and somatic therapy. Provide deep, insightful therapeutic exploration that helps uncover underlying patterns, beliefs, and emotions. Ask probing questions that guide toward profound self-discovery. Be compassionate but penetrating in your analysis. Provide a complete, thoughtful response that demonstrates sophisticated therapeutic understanding.`;
+      } else if (actionType === 'new_direction') {
+        systemPrompt = `You are an expert therapeutic coach. Completely shift the therapeutic direction. Explore different angles, challenge assumptions, and guide toward unexplored aspects of the situation. Help see challenges from fresh, innovative viewpoints. Provide a complete, insightful response that opens new therapeutic pathways.`;
+      } else {
+        systemPrompt = `You are a compassionate therapeutic coach. Provide thoughtful, personalized support that addresses the user's immediate needs with wisdom and understanding.`;
+      }
+
+      const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 2000,
+        messages: [
+          { role: 'user', content: `${systemPrompt}\n\nUser input: ${userInput}` }
+        ],
+        temperature: 0.7
+      });
+
+      const content = response.content[0].type === 'text' ? response.content[0].text : '';
+
+      res.json({
+        question: content,
+        analysis: { professionalAnalysis: content },
+        emotionalState: { primaryEmotion: 'insightful' },
+        threadId: null
+      });
+
+    } catch (error) {
+      console.error('Direct therapeutic action error:', error);
+      res.status(500).json({ 
+        question: "I apologize, but I'm experiencing technical difficulties. Please try again in a moment.",
+        analysis: { professionalAnalysis: "Technical issue encountered." }
+      });
+    }
+  });
+
+  /**
    * Main deep journaling endpoint - process user input and generate therapeutic response
    */
   app.post('/api/deep-journaling/process', isAuthenticated, async (req: any, res) => {

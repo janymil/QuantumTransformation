@@ -80,8 +80,8 @@ export class TherapeuticChatAdapter {
    */
   async processTherapeuticRequest(request: TherapeuticRequest): Promise<TherapeuticResponse> {
     try {
-      // Import DeepJournalingEngine
-      const { DeepJournalingEngine } = require('../../server/therapeutic-chat/therapeutic-chat-engine');
+      // Use intelligent router for therapeutic processing instead of circular import
+      const intelligentRouter = new IntelligentModelRouter();
 
       // Apply advanced therapeutic intelligence from adapter
       const therapeuticEnhancedPrompt = await this.applyTherapeuticIntelligence(
