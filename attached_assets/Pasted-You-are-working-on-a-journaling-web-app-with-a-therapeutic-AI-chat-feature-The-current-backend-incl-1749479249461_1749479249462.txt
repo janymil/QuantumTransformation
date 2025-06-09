@@ -1,0 +1,36 @@
+You are working on a journaling web app with a therapeutic AI chat feature. The current backend includes complex layers like psychological analysis, user modeling, dynamic therapeutic framework selection, and intelligent model routing (GPT-4o or Claude).
+
+However, the app suffers from slow response times because all these heavy features run synchronously during each journal entry.
+
+🧠 Objective:
+Refactor the backend to keep all advanced functionality *without removing or simplifying it*, but restructure it so that user-facing responses are fast (under ~1s).
+
+🎯 Goals:
+- Retain all components: DeepJournalingEngine, PsychologicalAnalyzer, UserModelEngine, DynamicFrameworkSelector, ContextualMemoryArchitecture, etc.
+- Only include in the **real-time response flow**:
+  - PromptBuilderFast
+  - Lightweight memory fetch (2–3 most relevant entries using embeddings)
+- Move all heavy logic to a **post-response async job**, including:
+  - PsychologicalAnalyzer
+  - UserModelEngine
+  - DynamicFrameworkSelector
+  - Progress velocity tracking
+- Cache those results in the database per user/session
+- On the next user message, preload saved values into the system prompt (e.g., last selected framework, emotional state baseline, etc.)
+- Use worker threads or a job queue system to handle the background tasks
+
+1. Create a new controller function (FastChatEngine) that handles fast journaling requests using the strategy above.
+2. Refactor `processJournalingRequest()` into:
+   - `processFastResponse()` → returns short analysis + 1 question
+   - `enqueuePostProcessingJob()` → triggers async update of psychological state, memory, etc.
+3. Add async job consumer script to:
+   - Run psychological analysis
+   - Update user model and preferences
+   - Select or confirm therapeutic framework
+   - Store results in database
+4. In the next fast request, inject previous analysis results into the prompt using a helper like `getLastSessionInsights(userId)`
+5. Ensure graceful fallback in case async job fails or isn’t ready yet (fallback to default framework: CBT)
+
+🎨 Keep code modular and documented. All logic for prompt injection should remain in the therapeutic-chat-engine.ts layer, but heavy analysis should be decoupled into the async job handler.
+
+Once these are ready, print out the new backend architecture flow and code structure to validate.
