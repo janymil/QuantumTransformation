@@ -35,14 +35,14 @@ export default function AdvancedSoundscapePlayer() {
   const [duration, setDuration] = useState([20]);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [currentConfig, setCurrentConfig] = useState<SoundscapeConfig | null>(null);
-  
+
   const audioContextRef = useRef<AudioContextState>({
     context: null,
     gainNode: null,
     oscillators: [],
     analyser: null
   });
-  
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -69,7 +69,7 @@ export default function AdvancedSoundscapePlayer() {
     const context = new (window.AudioContext || (window as any).webkitAudioContext)();
     const gainNode = context.createGain();
     const analyser = context.createAnalyser();
-    
+
     gainNode.connect(analyser);
     analyser.connect(context.destination);
     gainNode.gain.value = volume[0];
@@ -98,7 +98,7 @@ export default function AdvancedSoundscapePlayer() {
     leftOscillator.frequency.value = leftFreq;
     leftOscillator.type = 'sine';
     leftGain.gain.value = 0.5;
-    
+
     // Configure right channel  
     rightOscillator.frequency.value = rightFreq;
     rightOscillator.type = 'sine';
@@ -130,11 +130,11 @@ export default function AdvancedSoundscapePlayer() {
 
     const noiseSource = context.createBufferSource();
     const noiseGain = context.createGain();
-    
+
     noiseSource.buffer = noiseBuffer;
     noiseSource.loop = true;
     noiseGain.gain.value = noiseVolume;
-    
+
     noiseSource.connect(noiseGain);
     noiseGain.connect(gainNode);
 
@@ -145,14 +145,14 @@ export default function AdvancedSoundscapePlayer() {
   const startSoundscape = async () => {
     try {
       initializeAudioContext();
-      
+
       // Resume audio context if suspended (required by browsers)
       if (audioContextRef.current.context?.state === 'suspended') {
         await audioContextRef.current.context.resume();
       }
 
       let config = currentConfig;
-      
+
       // Generate AI configuration if not available
       if (!config) {
         await refetch();
@@ -178,14 +178,14 @@ export default function AdvancedSoundscapePlayer() {
       const leftFreq = config.baseFrequency;
       const rightFreq = config.baseFrequency + config.binauralFrequency;
       const oscillators = generateBinauralBeats(leftFreq, rightFreq);
-      
+
       // Add ambient white noise
       const whiteNoise = generateWhiteNoise(0.05);
-      
+
       // Start all audio sources
       const allSources: (OscillatorNode | AudioBufferSourceNode)[] = [...oscillators];
       if (whiteNoise) allSources.push(whiteNoise);
-      
+
       allSources.forEach(source => source.start());
       audioContextRef.current.oscillators = allSources;
 
@@ -225,15 +225,15 @@ export default function AdvancedSoundscapePlayer() {
         // Source already stopped
       }
     });
-    
+
     audioContextRef.current.oscillators = [];
-    
+
     // Clear timers
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    
+
     if (sessionTimerRef.current) {
       clearTimeout(sessionTimerRef.current);
       sessionTimerRef.current = null;
@@ -270,95 +270,88 @@ export default function AdvancedSoundscapePlayer() {
   const Icon = currentSessionType?.icon || Brain;
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-lg ${currentSessionType?.color} flex items-center justify-center`}>
-              <Icon className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">AI Binaural Soundscape</CardTitle>
-              <CardDescription>
-                {currentConfig?.description || "Personalized binaural beats and ambient soundscapes"}
-              </CardDescription>
-            </div>
-          </div>
-          {currentConfig && (
-            <Badge variant="secondary" className="text-xs">
-              {currentConfig.binauralFrequency}Hz {currentConfig.beatType}
-            </Badge>
-          )}
-        </div>
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold">AI Soundscape Generator</CardTitle>
+        <CardDescription>
+          Personalized binaural beats and ambient soundscapes powered by AI
+        </CardDescription>
       </CardHeader>
-
       <CardContent className="space-y-6">
         {/* Session Type Selection */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <label className="text-sm font-medium">Session Type</label>
-          <Select value={sessionType} onValueChange={setSessionType}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {sessionTypes.map((type) => {
-                const TypeIcon = type.icon;
-                return (
-                  <SelectItem key={type.value} value={type.value}>
-                    <div className="flex items-center space-x-2">
-                      <TypeIcon className="w-4 h-4" />
-                      <span>{type.label}</span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Volume Control */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium flex items-center">
-              <Volume2 className="w-4 h-4 mr-2" />
-              Volume
-            </label>
-            <span className="text-sm text-muted-foreground">{Math.round(volume[0] * 100)}%</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {sessionTypes.map((type) => {
+              const IconComponent = type.icon;
+              return (
+                <Button
+                  key={type.value}
+                  variant={sessionType === type.value ? "default" : "outline"}
+                  onClick={() => setSessionType(type.value)}
+                  className="h-auto p-3 flex flex-col items-center space-y-2"
+                >
+                  <div className={`w-8 h-8 rounded-full ${type.color} flex items-center justify-center`}>
+                    <IconComponent className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-xs">{type.label}</span>
+                </Button>
+              );
+            })}
           </div>
-          <Slider
-            value={volume}
-            onValueChange={setVolume}
-            max={1}
-            min={0}
-            step={0.1}
-            className="w-full"
-          />
         </div>
 
-        {/* Duration Control */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Duration</label>
-            <span className="text-sm text-muted-foreground">{duration[0]} minutes</span>
+        {/* Duration & Volume Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Session Duration: {duration[0]} minutes</label>
+            <Slider
+              value={duration}
+              onValueChange={setDuration}
+              max={60}
+              min={5}
+              step={5}
+              className="w-full"
+            />
           </div>
-          <Slider
-            value={duration}
-            onValueChange={setDuration}
-            max={60}
-            min={5}
-            step={5}
-            className="w-full"
-            disabled={isPlaying}
-          />
+
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Volume: {Math.round(volume[0] * 100)}%</label>
+            <Slider
+              value={volume}
+              onValueChange={setVolume}
+              max={1}
+              min={0}
+              step={0.1}
+              className="w-full"
+            />
+          </div>
         </div>
 
-        {/* Time Display */}
-        {timeRemaining > 0 && (
-          <div className="text-center">
-            <div className="text-3xl font-mono font-bold text-primary">
-              {formatTime(timeRemaining)}
+        {/* Generate Soundscape Button */}
+        <div className="flex justify-center">
+          <Button
+            onClick={() => refetch()}
+            disabled={isLoading}
+            size="lg"
+            className="px-8"
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+            ) : (
+              <Waves className="w-4 h-4 mr-2" />
+            )}
+            Generate AI Soundscape
+          </Button>
+        </div>
+
+        {/* Session Timer */}
+        {isPlaying && timeRemaining > 0 && (
+          <div className="text-center space-y-2">
+            <div className="text-2xl font-mono">
+              {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
             </div>
-            <div className="text-sm text-muted-foreground">remaining</div>
+            <div className="text-sm text-muted-foreground">Time Remaining</div>
           </div>
         )}
 
@@ -391,20 +384,9 @@ export default function AdvancedSoundscapePlayer() {
             </div>
           </div>
         )}
-
-        {/* Usage Instructions */}
-        <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-4 border border-amber-200/50 dark:border-amber-800/50">
-          <div className="text-sm space-y-2">
-            <div className="font-medium text-amber-900 dark:text-amber-100">For Best Results:</div>
-            <ul className="text-amber-800 dark:text-amber-200 space-y-1 text-xs">
-              <li>• Use headphones for optimal binaural beat experience</li>
-              <li>• Find a quiet, comfortable environment</li>
-              <li>• Close your eyes and focus on your breathing</li>
-              <li>• Allow 10-15 minutes for brain entrainment to take effect</li>
-            </ul>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
 }
+
+export default AdvancedSoundscapePlayer;

@@ -98,7 +98,6 @@ function Router() {
         {/* Main shared routes */}
         <Route path="/" component={Dashboard} />
         <Route path="/soundscape-player" component={SoundscapePlayer} />
-        <Route path="/soundscape-page" component={SoundscapePlayer} />
         <Route path="/challenges" component={Challenges} />
         <Route path="/ai-coaching" component={AICoaching} />
         <Route path="/ai-conversation-history" component={AIConversationHistory} />

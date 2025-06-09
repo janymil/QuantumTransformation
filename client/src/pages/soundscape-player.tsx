@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Zap, Waves, Brain, Heart } from "lucide-react";
 import AdvancedSoundscapePlayer from "@/components/advanced-soundscape-player";
