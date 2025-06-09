@@ -1211,81 +1211,7 @@ export default function Journal() {
                   </div>
                 </div>
               ) : therapeuticSessions && therapeuticSessions.length > 0 ? (
-                <div className="relative">
-                  {/* Conversation Preview Popup */}
-                  {hoveredSession && sessionPreview && (
-                    <div 
-                      className="fixed top-1/4 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-6 max-w-md w-80 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
-                      onMouseEnter={() => setPopupHovered(true)}
-                      onMouseLeave={() => {
-                        setPopupHovered(false);
-                        setTimeout(() => {
-                          if (!popupHovered) {
-                            setHoveredSession(null);
-                            setSessionPreview(null);
-                          }
-                        }, 100);
-                      }}
-                    >
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                            Conversation Preview
-                          </h4>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {sessionPreview.messageCount} total messages
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                              Conversation Flow:
-                            </p>
-                            <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line bg-gray-50 dark:bg-gray-800 p-3 rounded-md max-h-32 overflow-y-auto">
-                              {sessionPreview.conversationPreview}
-                            </div>
-                          </div>
-                          
-                          {sessionPreview.psychologicalAnalysis && (
-                            <div>
-                              <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
-                                Psychological Analysis:
-                              </p>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
-                                {sessionPreview.psychologicalAnalysis}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {sessionPreview.therapeuticThemes && sessionPreview.therapeuticThemes.length > 0 && (
-                            <div>
-                              <p className="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">
-                                Therapeutic Themes:
-                              </p>
-                              <div className="flex flex-wrap gap-1">
-                                {sessionPreview.therapeuticThemes.map((theme, index) => (
-                                  <span 
-                                    key={index}
-                                    className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded-full"
-                                  >
-                                    {theme}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
-                            <span>{sessionPreview.userMessageCount} user messages</span>
-                            <span>{sessionPreview.aiResponseCount} responses</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {therapeuticSessions
                     .filter(session => {
                       // Search filter
@@ -1329,18 +1255,6 @@ export default function Journal() {
                         <Card 
                           key={session.id} 
                           className="hover:shadow-lg transition-all duration-300 relative group cursor-pointer"
-                          onMouseEnter={() => {
-                            setHoveredSession(session.id);
-                            fetchSessionPreview(session.id);
-                          }}
-                          onMouseLeave={() => {
-                            setTimeout(() => {
-                              if (!popupHovered) {
-                                setHoveredSession(null);
-                                setSessionPreview(null);
-                              }
-                            }, 150);
-                          }}
                         >
                           <CardHeader className="pb-3 relative">
                             <div className="flex items-start justify-between">
