@@ -1194,7 +1194,7 @@ export default function Journal() {
                   {/* Conversation Preview Popup */}
                   {hoveredSession && sessionPreview && (
                     <div 
-                      className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-6 max-w-lg w-96 z-50"
+                      className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-6 max-w-lg w-96 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
                       onMouseEnter={() => setPopupHovered(true)}
                       onMouseLeave={() => {
                         setPopupHovered(false);
@@ -1203,7 +1203,7 @@ export default function Journal() {
                             setHoveredSession(null);
                             setSessionPreview(null);
                           }
-                        }, 100);
+                        }, 150);
                       }}
                     >
                       <div className="space-y-4">
@@ -1321,9 +1321,9 @@ export default function Journal() {
                             }, 150);
                           }}
                         >
-                          <CardHeader className="pb-3">
+                          <CardHeader className="pb-3 relative">
                             <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-3 flex-1">
+                              <div className="flex items-center gap-3 flex-1 pr-10">
                                 <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                                   <MessageSquare className="w-4 h-4 text-primary" />
                                 </div>
@@ -1342,23 +1342,23 @@ export default function Journal() {
                                   </div>
                                 </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteSession(session.id);
-                                }}
-                                disabled={deletingSessionId === session.id}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                              >
-                                {deletingSessionId === session.id ? (
-                                  <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
-                                ) : (
-                                  <Trash2 className="w-3 h-3" />
-                                )}
-                              </Button>
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSession(session.id);
+                              }}
+                              disabled={deletingSessionId === session.id}
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
+                            >
+                              {deletingSessionId === session.id ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
+                            </Button>
                           </CardHeader>
                           <CardContent className="pt-0">
                             <div className="space-y-3">

@@ -2145,15 +2145,38 @@ Provide personalized, actionable guidance that:
         .orderBy(desc(journalingThreads.updatedAt))
         .limit(20);
 
-      // Format dates properly for frontend
-      const formattedSessions = sessions.map(session => ({
-        ...session,
-        createdAt: session.createdAt ? new Date(session.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: session.updatedAt ? new Date(session.updatedAt).toISOString() : new Date().toISOString(),
-        lastActivity: session.lastActivity ? new Date(session.lastActivity).toISOString() : new Date().toISOString()
+      // Get additional data for each session
+      const enrichedSessions = await Promise.all(sessions.map(async (session) => {
+        // Get all exchanges for this session to calculate proper counts
+        const exchanges = await db
+          .select()
+          .from(threadExchanges)
+          .where(eq(threadExchanges.threadId, session.id))
+          .orderBy(threadExchanges.exchangeOrder);
+
+        // Calculate message counts: each exchange has 1 user message + 1 AI response
+        const messageCount = exchanges.length * 2; // User message + AI response per exchange
+        const userMessageCount = exchanges.length;
+        const aiResponseCount = exchanges.filter(ex => ex.aiAnalysis || ex.aiQuestion).length;
+
+        // Get last message for preview
+        const lastExchange = exchanges[exchanges.length - 1];
+        const lastMessage = lastExchange?.userInput || '';
+
+        return {
+          ...session,
+          createdAt: session.createdAt ? new Date(session.createdAt).toISOString() : new Date().toISOString(),
+          updatedAt: session.updatedAt ? new Date(session.updatedAt).toISOString() : new Date().toISOString(),
+          lastActivity: session.lastActivity ? new Date(session.lastActivity).toISOString() : new Date().toISOString(),
+          messageCount,
+          userMessageCount,
+          aiResponseCount,
+          lastMessage: lastMessage.length > 100 ? lastMessage.substring(0, 100) + '...' : lastMessage,
+          entriesCount: exchanges.length
+        };
       }));
 
-      res.json(formattedSessions);
+      res.json(enrichedSessions);
     } catch (error) {
       console.error("Error fetching therapeutic chat sessions:", error);
       res.status(500).json({ message: "Failed to fetch sessions" });
