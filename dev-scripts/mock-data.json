@@ -1,59 +1,45 @@
-
 {
-  "testUsers": [
-    {
-      "userId": "test-user-12345",
-      "name": "Test User",
-      "profile": {
-        "preferredFramework": "cognitive_behavioral",
-        "communicationTone": "supportive",
-        "challengeLevel": 7
-      }
-    }
-  ],
   "journalEntries": [
     {
-      "id": 1,
-      "text": "I feel overwhelmed with work pressure and can't seem to find balance. My thoughts keep racing about deadlines and I'm having trouble sleeping.",
-      "expectedEmotions": ["anxiety", "overwhelm", "stress"],
-      "expectedThemes": ["work_stress", "sleep_issues", "time_management"],
-      "difficulty": "moderate"
+      "entry": "I've been feeling overwhelmed with work lately. The constant deadlines and pressure are making me anxious, and I'm struggling to find a healthy work-life balance. Some days I feel like I'm drowning in tasks.",
+      "expectedThemes": ["work_stress", "anxiety", "balance", "overwhelm"],
+      "complexity": "medium",
+      "emotionalState": "anxious",
+      "category": "work_stress"
     },
     {
-      "id": 2,
-      "text": "Today I realized I've been avoiding difficult conversations with my partner. I think I'm afraid of conflict but I know this isn't healthy.",
-      "expectedEmotions": ["fear", "awareness", "concern"],
-      "expectedThemes": ["relationships", "communication", "conflict_avoidance"],
-      "difficulty": "high"
+      "entry": "Today I had a breakthrough in therapy. I realized that my perfectionism stems from childhood experiences where I felt I had to be perfect to receive love and validation. This pattern has been affecting my relationships and self-worth for years.",
+      "expectedThemes": ["breakthrough", "perfectionism", "childhood", "self_worth"],
+      "complexity": "high",
+      "emotionalState": "reflective",
+      "category": "personal_growth"
     },
     {
-      "id": 3,
-      "text": "I've been making progress with my meditation practice. I can actually sit still for 20 minutes now and feel more centered throughout the day.",
-      "expectedEmotions": ["pride", "calm", "satisfaction"],
-      "expectedThemes": ["mindfulness", "personal_growth", "wellness"],
-      "difficulty": "low"
+      "entry": "I'm grateful for my supportive friends who listened to me vent about my relationship issues. Sometimes just being heard makes all the difference. I feel lighter after our conversation.",
+      "expectedThemes": ["gratitude", "support", "relationships", "connection"],
+      "complexity": "low",
+      "emotionalState": "grateful",
+      "category": "gratitude"
     },
     {
-      "id": 4,
-      "text": "Money stress is keeping me up at night. I know I need to face my financial situation but I keep procrastinating on budgeting.",
-      "expectedEmotions": ["anxiety", "avoidance", "worry"],
-      "expectedThemes": ["finances", "procrastination", "responsibility"],
-      "difficulty": "high"
+      "entry": "The panic attack I had during the meeting yesterday really shook me. My heart was racing, I couldn't breathe properly, and I felt like everyone was staring at me. I need to find better coping strategies for managing my social anxiety.",
+      "expectedThemes": ["panic_attack", "social_anxiety", "coping", "vulnerability"],
+      "complexity": "high",
+      "emotionalState": "vulnerable",
+      "category": "anxiety"
     },
     {
-      "id": 5,
-      "text": "I had a breakthrough in therapy today. I finally understood why I struggle with self-worth. It connects back to childhood experiences I hadn't processed.",
-      "expectedEmotions": ["insight", "relief", "sadness"],
-      "expectedThemes": ["self_worth", "childhood_trauma", "therapy_breakthrough"],
-      "difficulty": "very_high"
+      "entry": "I've been practicing mindfulness meditation for two weeks now, and I'm starting to notice small changes in how I respond to stress. Instead of immediately reacting, I'm able to pause and breathe first.",
+      "expectedThemes": ["mindfulness", "meditation", "progress", "self_awareness"],
+      "complexity": "medium",
+      "emotionalState": "hopeful",
+      "category": "mindfulness"
     }
   ],
-  "expectedResponses": {
-    "analysis_keywords": [
-      "emotional", "pattern", "insight", "awareness", "support", "validate", "understand"
-    ],
-    "question_types": [
-      "exploratory", "clarifying", "deepening", "perspective_shifting", "action_oriented"
-    ]
+  "testConfig": {
+    "userId": "43272767",
+    "sessionTimeout": 30000,
+    "maxRetries": 3,
+    "expectedResponseTime": 2000
   }
 }
