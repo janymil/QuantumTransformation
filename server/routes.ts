@@ -48,9 +48,9 @@ import { multidisciplinaryAIEngine } from "./multidisciplinary-ai-engine";
 import { responseQualityTiering } from "./response-quality-tiering";
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
-  
+
   // Cross-domain authentication endpoints (must be before auth middleware)
-  
+
   // API endpoint to provide user data to Vision Board app
   app.get('/api/cross-domain/user/:userId', async (req, res) => {
     try {
@@ -79,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = authHeader.split(' ')[1];
       let decoded;
-      
+
       try {
         // Try multiple JWT secrets to handle cross-domain authentication
         const secretsToTry = [
@@ -91,10 +91,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'quantum-challenges-vision-board-secret-2025',
           'quantum-challenges-2025-secure-key-d46aef1e6a339b'
         ].filter(Boolean) as string[];
-        
+
         let validationSuccess = false;
         let lastError: any;
-        
+
         for (const secret of secretsToTry) {
           try {
             decoded = jwt.verify(token, secret) as any;
@@ -106,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
         }
-        
+
         if (!validationSuccess) {
           console.error('JWT verification failed with all secrets. Last error:', lastError?.message);
           return res.status(401).json({ 
@@ -119,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('JWT verification failed:', jwtError?.message || 'Unknown error');
         return res.status(401).json({ error: 'Invalid or expired token', details: jwtError?.message || 'Unknown error' });
       }
-      
+
       // Log token details for debugging
       console.log('Token decoded successfully:', {
         aud: decoded.aud,
@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: decoded.userId || decoded.id || decoded.sub,
         exp: decoded.exp
       });
-      
+
       // Flexible audience/issuer validation
       const hasValidAudience = !decoded.aud || 
         decoded.aud === 'vision-board-app' || 
@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasValidIssuer = !decoded.iss || 
         decoded.iss === 'quantum-challenges-app' || 
         decoded.iss === 'vision-board-app';
-      
+
       if (!hasValidAudience && !hasValidIssuer) {
         console.error('Token validation failed:', { aud: decoded.aud, iss: decoded.iss });
         return res.status(401).json({ 
@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Flexible user ID extraction
       const tokenUserId = decoded.userId || decoded.id || decoded.sub;
       const requestUserId = req.params.userId;
-      
+
       if (tokenUserId && tokenUserId !== requestUserId) {
         console.error('Token userId mismatch:', { tokenUserId, requestUserId });
         return res.status(403).json({ error: 'Token userId mismatch' });
@@ -161,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const affirmations = await storage.getUserSavedPhrases(requestUserId);
       const userAchievements = await storage.getUserAchievements(requestUserId);
       const userSettings = await storage.getUserSettings(requestUserId);
-      
+
       // Handle userProgress as either array or single object
       const progressArray = Array.isArray(userProgress) ? userProgress : (userProgress ? [userProgress] : []);
       const activeProgress = progressArray.filter((p: any) => p.status === 'active' || p.currentDay > 0);
@@ -240,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.claims?.sub;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -295,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ]
         }
       ];
-      
+
       res.json(templates);
     } catch (error) {
       console.error('Error fetching vision board templates:', error);
@@ -313,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { id: 'lifestyle', name: 'Lifestyle & Travel', icon: '✈️', description: 'Experiences and adventures' },
         { id: 'personal', name: 'Personal Growth', icon: '🧘', description: 'Self-improvement and mindfulness' }
       ];
-      
+
       res.json(categories);
     } catch (error) {
       console.error('Error fetching vision board categories:', error);
@@ -341,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           elements: ['Fitness Goals', 'Nutrition Plan', 'Mental Health', 'Energy & Vitality']
         }
       ];
-      
+
       res.json(examples);
     } catch (error) {
       console.error('Error fetching vision board examples:', error);
@@ -353,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.params.userId;
       const visionBoards = await storage.getVisionBoards(userId);
-      
+
       const analytics = {
         totalBoards: visionBoards.length,
         completedGoals: 0,
@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             visionBoards.reduce((sum, board) => sum + (board.canvasData?.elements?.length || 0), 0) / visionBoards.length : 0
         }
       };
-      
+
       res.json(analytics);
     } catch (error) {
       console.error('Error fetching vision board analytics:', error);
@@ -380,19 +380,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/vision-board/generate-mobile-wallpaper', async (req, res) => {
     try {
       const { visionBoard, deviceType = 'iphone', style = 'modern' } = req.body;
-      
+
       if (!visionBoard) {
         return res.status(400).json({ message: 'Vision board data is required' });
       }
-      
+
       const dimensions = {
         iphone: { width: 1170, height: 2532 },
         android: { width: 1080, height: 2340 },
         ipad: { width: 1620, height: 2160 }
       };
-      
+
       const deviceDimensions = dimensions[deviceType] || dimensions.iphone;
-      
+
       const wallpaperData = {
         wallpaperUrl: `/api/vision-board/wallpaper/${Date.now()}.png`,
         deviceType,
@@ -401,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         elements: visionBoard.elements || [],
         backgroundColor: visionBoard.backgroundColor || '#ffffff'
       };
-      
+
       res.json(wallpaperData);
     } catch (error) {
       console.error('Error generating mobile wallpaper:', error);
@@ -440,7 +440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'quantum-challenges-vision-board-secret-2025');
-      
+
       res.json({ 
         token, 
         redirectUrl: 'https://512db387-5e5e-48d6-b6f6-0dc504422590-00-1mwcu5ml07laq.kirk.replit.dev',
@@ -476,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Check if user already has progress data
       const existingProgress = await storage.getUserProgress(userId);
-      
+
       if (!existingProgress) {
         // Initialize user progress
         await storage.createUserProgress({
@@ -487,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           streakCount: 0,
           lastActivityDate: new Date().toISOString().split('T')[0]
         });
-        
+
         // Initialize user settings
         await storage.upsertUserSettings(userId, {
           preferredPracticeTime: 'morning',
@@ -495,10 +495,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reminderEnabled: true,
           theme: 'light'
         });
-        
+
         // Initialize gamification for the default challenge
         await initializeUserGamification(userId, "general_quantum");
-        
+
         console.log(`Initialized data for new user: ${userId}`);
       }
     } catch (error) {
@@ -519,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (achievement.condition()) {
         const existing = await storage.getUserAchievements(userId);
         const hasAchievement = existing.some(a => a.achievementId === achievement.id);
-        
+
         if (!hasAchievement) {
           await storage.createUserAchievement({
             userId,
@@ -537,7 +537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Dynamic import of multer
       const multer = await import('multer');
       const upload = multer.default({ storage: multer.default.memoryStorage() });
-      
+
       upload.single('file')(req, res, async (err: any) => {
         if (err) {
           return res.status(400).json({ success: false, error: err.message });
@@ -549,7 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const storageZone = process.env.BUNNYCDN_STORAGE_ZONE || 'vision-board-storage';
         const accessKey = process.env.BUNNYCDN_ACCESS_KEY;
-        
+
         if (!accessKey) {
           return res.status(500).json({ success: false, error: 'BunnyCDN credentials not configured' });
         }
@@ -563,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Upload to BunnyCDN
           const uploadUrl = `https://ny.storage.bunnycdn.com/${storageZone}/${filename}`;
-          
+
           const uploadResponse = await fetch(uploadUrl, {
             method: 'PUT',
             headers: {
@@ -579,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           const cdnUrl = `https://${storageZone}.b-cdn.net/${filename}`;
-          
+
           res.json({ 
             success: true, 
             url: cdnUrl,
@@ -603,20 +603,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/bunnycdn/delete', isAuthenticated, async (req, res) => {
     try {
       const { filename } = req.body;
-      
+
       if (!filename) {
         return res.status(400).json({ success: false, error: 'Filename required' });
       }
 
       const storageZone = process.env.BUNNYCDN_STORAGE_ZONE || 'vision-board-storage';
       const accessKey = process.env.BUNNYCDN_ACCESS_KEY;
-      
+
       if (!accessKey) {
         return res.status(500).json({ success: false, error: 'BunnyCDN credentials not configured' });
       }
 
       const deleteUrl = `https://ny.storage.bunnycdn.com/${storageZone}/${filename}`;
-      
+
       const deleteResponse = await fetch(deleteUrl, {
         method: 'DELETE',
         headers: {
@@ -671,7 +671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Determine smart caching strategy
       const cacheStrategy = determineCacheStrategy(userQuestion || topic, challengeType, day, userTier);
-      
+
       // Try enhanced cache lookup
       const cachedResponse = await getEnhancedCachedResponse(inputHash, cacheStrategy);
       if (cachedResponse) {
@@ -769,7 +769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { verifyCacheSystem } = await import("./cache-verification");
       const verification = await verifyCacheSystem();
-      
+
       res.json({
         status: verification.systemStatus,
         testResults: verification.testResults,
@@ -787,7 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { getCacheStatistics } = await import("./cache-verification");
       const stats = await getCacheStatistics();
-      
+
       if (stats) {
         res.json(stats);
       } else {
@@ -954,7 +954,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (dateRange && dateRange !== 'all') {
         const now = new Date();
         let startDate;
-        
+
         switch (dateRange) {
           case 'today':
             startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -966,7 +966,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             startDate = new Date(now.getFullYear(), now.getMonth(), 1);
             break;
         }
-        
+
         if (startDate) {
           conditions.push(gte(aiResponseHistory.createdAt, startDate));
         }
@@ -1137,10 +1137,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Use unified analytics system for consistent data across platform
       const { unifiedAnalytics } = await import('./unified-analytics');
-      
+
       // Get comprehensive analytics data from single source of truth
       const analytics = await unifiedAnalytics.getAdminAnalytics();
-      
+
       res.json(analytics);
     } catch (error) {
       console.error("Error fetching admin analytics:", error);
@@ -1164,7 +1164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const updates = req.body;
-      
+
       const updatedUser = await storage.updateUser(userId, updates);
       res.json(updatedUser);
     } catch (error) {
@@ -1179,7 +1179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       const { reason } = req.body;
       const adminId = req.user?.id || 'admin';
-      
+
       await storage.blockUser(userId, reason, adminId);
       res.json({ success: true });
     } catch (error) {
@@ -1192,7 +1192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/users/:userId/unblock', async (req, res) => {
     try {
       const { userId } = req.params;
-      
+
       await storage.unblockUser(userId);
       res.json({ success: true });
     } catch (error) {
@@ -1205,7 +1205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/admin/users/:userId', async (req, res) => {
     try {
       const { userId } = req.params;
-      
+
       await storage.deleteUser(userId);
       res.json({ success: true });
     } catch (error) {
@@ -1283,7 +1283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get user interaction statistics and metrics
       const userStats = await storage.getUserStatistics();
-      
+
       res.json(userStats);
     } catch (error) {
       console.error("Admin user statistics error:", error);
@@ -1617,7 +1617,7 @@ Provide personalized, actionable guidance that:
 
       // Route through AI Intelligence Layer for basic tier
       const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
-      
+
       const response = await intelligentRouter.processCoachingRequest({
         userId,
         userInput: query,
@@ -1674,7 +1674,7 @@ Provide personalized, actionable guidance that:
       console.log("Starting market research analysis...");
       const researchData = await conductMarketResearch();
       const analysis = await analyzePricingStrategy(researchData);
-      
+
       res.json({
         timestamp: new Date().toISOString(),
         analysis,
@@ -1696,25 +1696,25 @@ Provide personalized, actionable guidance that:
     try {
       const { determineCacheStrategy, getTemplateResponse } = await import("./enhanced-caching");
       const { createInputHash } = await import("./ai-cost-control");
-      
+
       const testQuestions = [
         "How long should I practice today's meditation?",
         "What if I'm having trouble with this exercise?",
         "How does this connect to quantum physics?"
       ];
-      
+
       const results = [];
-      
+
       for (const question of testQuestions) {
         const startTime = Date.now();
-        
+
         // Test caching strategy
         const strategy = determineCacheStrategy(question, 'general_quantum', 1, 'basic');
-        
+
         let responseSource = 'unknown';
         let cost = 0.02;
         let hasResponse = false;
-        
+
         // Check if template response exists
         if (strategy.useTemplateResponse) {
           const templateResponse = getTemplateResponse(strategy.reason);
@@ -1724,9 +1724,9 @@ Provide personalized, actionable guidance that:
             hasResponse = true;
           }
         }
-        
+
         const responseTime = Date.now() - startTime;
-        
+
         results.push({
           question,
           strategy: strategy.reason,
@@ -1739,14 +1739,14 @@ Provide personalized, actionable guidance that:
           hasResponse
         });
       }
-      
+
       const summary = {
         totalQuestions: results.length,
         templateHits: results.filter(r => r.responseSource === 'template').length,
         avgResponseTime: Math.round(results.reduce((sum, r) => sum + r.responseTime, 0) / results.length),
         costSavings: results.filter(r => r.cost === 0).length * 0.02
       };
-      
+
       res.json({
         message: "Cache system demonstration",
         results,
@@ -1754,7 +1754,7 @@ Provide personalized, actionable guidance that:
         explanation: "This shows how the enhanced caching system routes different question types to appropriate response sources",
         timestamp: new Date().toISOString()
       });
-      
+
     } catch (error) {
       console.error("Cache demo error:", error);
       res.status(500).json({ error: "Failed to demonstrate cache system" });
@@ -1780,7 +1780,7 @@ Provide personalized, actionable guidance that:
         ...req.body,
         userId,
       });
-      
+
       const phrase = await storage.createSavedPhrase(phraseData);
       res.json(phrase);
     } catch (error) {
@@ -1841,14 +1841,14 @@ Provide personalized, actionable guidance that:
     try {
       const userId = req.user.claims.sub;
       const { text, category, day, challengeType } = req.body;
-      
+
       const savedPhrase = await storage.createSavedPhrase({
         userId,
         phrase: text,
         category: category || 'affirmation',
         source: challengeType ? `${challengeType} Day ${day}` : null
       });
-      
+
       res.json(savedPhrase);
     } catch (error) {
       console.error("Error saving phrase:", error);
@@ -1873,9 +1873,9 @@ Provide personalized, actionable guidance that:
     try {
       const userId = req.user.claims.sub;
       const { userGoals, currentChallenges, mood, challengeType, currentDay } = req.body;
-      
+
       console.log("Generating advanced AI coaching with sophisticated engine:", { userId, challengeType, currentDay });
-      
+
       // Track AI usage
       await trackUsage(
         userId,
@@ -1884,16 +1884,16 @@ Provide personalized, actionable guidance that:
         0,
         0
       );
-      
+
       // Use AI coaching engine with intelligent GPT-4o/GPT-4o-mini routing for basic tier
       const userInput = `Goals: ${userGoals}. Challenges: ${Array.isArray(currentChallenges) ? currentChallenges.join(', ') : currentChallenges}. Energy level: ${mood}/10.`;
       const context = `Day ${currentDay} of ${challengeType} challenge. User seeking personalized coaching and guidance.`;
-      
+
       // Import the correct basic tier AI coaching engine with GPT-4o/4o-mini routing
       const { AdaptiveCoachingEngine } = await import('./adaptive-coaching-engine');
       const adaptiveEngine = new AdaptiveCoachingEngine();
       const basicCoaching = await adaptiveEngine.createPersonalizedDailyPlan(userId);
-      
+
       // Parse the AI response and structure it for the frontend
       const structuredResponse = {
         personalizedMessage: basicCoaching.dailyAssessment?.description || "Your personalized guidance is ready.",
@@ -1911,9 +1911,9 @@ Provide personalized, actionable guidance that:
         patterns_detected: basicCoaching.progressIndicators || [],
         timestamp: new Date().toISOString()
       };
-      
+
       console.log("Generated advanced coaching response with modalities:", structuredResponse.modalities_used);
-      
+
       // Save to response history
       await db.insert(aiResponseHistory).values({
         userId,
@@ -1924,7 +1924,7 @@ Provide personalized, actionable guidance that:
         day: currentDay,
         tags: ['advanced_coaching', 'multidisciplinary', 'ai_couch', challengeType || 'general']
       });
-      
+
       res.json(structuredResponse);
     } catch (error) {
       console.error("Error generating advanced AI coaching:", error);
@@ -1975,7 +1975,7 @@ Provide personalized, actionable guidance that:
 
       // Build conditions array
       const conditions = [eq(aiResponseHistory.userId, userId)];
-      
+
       if (sessionType) {
         conditions.push(eq(aiResponseHistory.sessionType, sessionType));
       }
@@ -2096,7 +2096,7 @@ Provide personalized, actionable guidance that:
 
       // Route through AI Intelligence Layer for deep journaling analysis
       const { intelligentRouter } = await import('../shared/ai-intelligence/core/intelligent-router');
-      
+
       const response = await intelligentRouter.processCoachingRequest({
         userId,
         userInput,
@@ -2126,7 +2126,7 @@ Provide personalized, actionable guidance that:
   app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      
+
       const sessions = await db
         .select({
           id: journalingThreads.id,
@@ -2221,7 +2221,7 @@ Provide personalized, actionable guidance that:
 
       // Premium therapeutic chat through existing therapeutic-chat-adapter (with cost bypass)
       const { therapeuticChatAdapter } = await import('../shared/ai-intelligence/adapters/therapeutic-chat-adapter');
-      
+
       const response = await therapeuticChatAdapter.processTherapeuticRequest({
         userId,
         userInput: userInput.trim(),
@@ -2279,11 +2279,11 @@ Provide personalized, actionable guidance that:
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
-    
+
     try {
       const userId = req.user.claims.sub;
       const { sessionId } = req.params;
-      
+
       console.log(`Fetching messages for session ${sessionId}, user ${userId}`);
 
       // Get the session info
@@ -2362,7 +2362,7 @@ Provide personalized, actionable guidance that:
   app.post('/api/soundscape/generate', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { purpose, currentEmotionalState, preferences } = req.body;
+      const { purpose = 'relaxation', currentEmotionalState = 'neutral', preferences = {} } = req.body;
 
       const parameters = await soundscapeGenerator.generatePersonalizedSoundscape(
         userId,
