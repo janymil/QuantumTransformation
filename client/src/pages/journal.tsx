@@ -145,15 +145,26 @@ export default function Journal() {
         
         const messageCount = messages.length;
         
-        if (Array.isArray(messages) && messages.length > 0) {
+        console.log('Messages array length:', messages.length);
+        console.log('Raw messages data:', messages);
+
+        if (messages.length > 0) {
           // Get first few exchanges to show conversation context
           const userMessages = messages.filter(msg => msg.type === 'user' || msg.role === 'user');
           const aiMessages = messages.filter(msg => msg.type === 'ai' || msg.role === 'assistant');
           
-          // Create preview with key conversation highlights
+          console.log('Filtered messages - User:', userMessages.length, 'AI:', aiMessages.length);
+          
+          // Create preview with key conversation highlights  
           const firstUserMessage = userMessages[0]?.content || '';
           const lastUserMessage = userMessages[userMessages.length - 1]?.content || '';
           const lastAiMessage = aiMessages[aiMessages.length - 1]?.content || '';
+          
+          console.log('Message preview content:', { 
+            first: firstUserMessage.substring(0, 50), 
+            last: lastUserMessage.substring(0, 50),
+            ai: lastAiMessage.substring(0, 50)
+          });
           
           // Create conversation summary without labels
           let conversationPreview = '';
@@ -1194,7 +1205,7 @@ export default function Journal() {
                   {/* Conversation Preview Popup */}
                   {hoveredSession && sessionPreview && (
                     <div 
-                      className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-6 max-w-lg w-96 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                      className="fixed top-1/4 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-6 max-w-md w-80 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
                       onMouseEnter={() => setPopupHovered(true)}
                       onMouseLeave={() => {
                         setPopupHovered(false);
@@ -1203,7 +1214,7 @@ export default function Journal() {
                             setHoveredSession(null);
                             setSessionPreview(null);
                           }
-                        }, 150);
+                        }, 100);
                       }}
                     >
                       <div className="space-y-4">
