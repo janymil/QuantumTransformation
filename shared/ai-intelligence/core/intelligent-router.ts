@@ -429,7 +429,30 @@ export class IntelligentRouter {
           max_tokens: options.maxTokens || 1500
         });
 
-        response = completion.choices[0].message.content || "";
+        const rawResponse = completion.choices[0].message.content || "";
+        
+        // Clean up response - remove JSON formatting if present
+        let cleanResponse = rawResponse;
+        if (rawResponse.includes('"therapeuticResponse":')) {
+          try {
+            const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              cleanResponse = parsed.therapeuticResponse || parsed.response || parsed.content || rawResponse;
+            }
+          } catch {
+            // If JSON parsing fails, extract content after the colon
+            const colonIndex = rawResponse.indexOf('"therapeuticResponse":');
+            if (colonIndex !== -1) {
+              cleanResponse = rawResponse.substring(colonIndex + '"therapeuticResponse":'.length)
+                .replace(/^[\s"]+/, '')
+                .replace(/["}]+$/, '')
+                .trim();
+            }
+          }
+        }
+        
+        response = cleanResponse;
         cost = this.calculateOpenAICost(completion, routing.model);
 
       } else if (routing.provider === 'anthropic') {
@@ -442,7 +465,30 @@ export class IntelligentRouter {
           temperature: options.temperature || 0.7
         });
 
-        response = completion.content[0].type === 'text' ? completion.content[0].text : "";
+        const rawResponse = completion.content[0].type === 'text' ? completion.content[0].text : "";
+        
+        // Clean up response - remove JSON formatting if present
+        let cleanResponse = rawResponse;
+        if (rawResponse.includes('"therapeuticResponse":')) {
+          try {
+            const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              cleanResponse = parsed.therapeuticResponse || parsed.response || parsed.content || rawResponse;
+            }
+          } catch {
+            // If JSON parsing fails, extract content after the colon
+            const colonIndex = rawResponse.indexOf('"therapeuticResponse":');
+            if (colonIndex !== -1) {
+              cleanResponse = rawResponse.substring(colonIndex + '"therapeuticResponse":'.length)
+                .replace(/^[\s"]+/, '')
+                .replace(/["}]+$/, '')
+                .trim();
+            }
+          }
+        }
+        
+        response = cleanResponse;
         cost = this.calculateAnthropicCost(completion, routing.model);
       }
 
