@@ -1,0 +1,59 @@
+
+{
+  "testUsers": [
+    {
+      "userId": "test-user-12345",
+      "name": "Test User",
+      "profile": {
+        "preferredFramework": "cognitive_behavioral",
+        "communicationTone": "supportive",
+        "challengeLevel": 7
+      }
+    }
+  ],
+  "journalEntries": [
+    {
+      "id": 1,
+      "text": "I feel overwhelmed with work pressure and can't seem to find balance. My thoughts keep racing about deadlines and I'm having trouble sleeping.",
+      "expectedEmotions": ["anxiety", "overwhelm", "stress"],
+      "expectedThemes": ["work_stress", "sleep_issues", "time_management"],
+      "difficulty": "moderate"
+    },
+    {
+      "id": 2,
+      "text": "Today I realized I've been avoiding difficult conversations with my partner. I think I'm afraid of conflict but I know this isn't healthy.",
+      "expectedEmotions": ["fear", "awareness", "concern"],
+      "expectedThemes": ["relationships", "communication", "conflict_avoidance"],
+      "difficulty": "high"
+    },
+    {
+      "id": 3,
+      "text": "I've been making progress with my meditation practice. I can actually sit still for 20 minutes now and feel more centered throughout the day.",
+      "expectedEmotions": ["pride", "calm", "satisfaction"],
+      "expectedThemes": ["mindfulness", "personal_growth", "wellness"],
+      "difficulty": "low"
+    },
+    {
+      "id": 4,
+      "text": "Money stress is keeping me up at night. I know I need to face my financial situation but I keep procrastinating on budgeting.",
+      "expectedEmotions": ["anxiety", "avoidance", "worry"],
+      "expectedThemes": ["finances", "procrastination", "responsibility"],
+      "difficulty": "high"
+    },
+    {
+      "id": 5,
+      "text": "I had a breakthrough in therapy today. I finally understood why I struggle with self-worth. It connects back to childhood experiences I hadn't processed.",
+      "expectedEmotions": ["insight", "relief", "sadness"],
+      "expectedThemes": ["self_worth", "childhood_trauma", "therapy_breakthrough"],
+      "difficulty": "very_high"
+    }
+  ],
+  "expectedResponses": {
+    "analysis_keywords": [
+      "emotional", "pattern", "insight", "awareness", "support", "validate", "understand"
+    ],
+    "question_types": [
+      "exploratory", "clarifying", "deepening", "perspective_shifting", "action_oriented"
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+
+{
+  "name": "dev-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Development testing scripts for the therapeutic journaling system",
+  "scripts": {
+    "test-fast-journaling": "node test-fast-journaling.js",
+    "test-full-system": "node test-fast-journaling.js"
+  },
+  "bin": {
+    "test-journaling": "./test-fast-journaling.js"
+  }
+}
