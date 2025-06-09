@@ -153,68 +153,30 @@ export class TherapeuticChatAdapter {
         request.options?.enableContextualMemory
       );
 
-      // Build request for TherapeuticChatEngine (DeepJournalingEngine)
+      // Process through DeepJournalingEngine (therapeutic-chat-engine) for full therapeutic intelligence
+      const { deepJournalingEngine } = await import('../../../server/therapeutic-chat');
+      
       const engineRequest = {
         userId: request.userId,
         userInput: enhancedUserInput,
-        threadId: request.sessionContext.threadId,
-        actionType: request.sessionContext.sessionType,
+        threadId: request.sessionContext.threadId ? parseInt(request.sessionContext.threadId) : undefined,
+        actionType: (['go_deeper', 'new_direction', 'customize_response'].includes(request.sessionContext.sessionType || '')) 
+          ? (request.sessionContext.sessionType as 'go_deeper' | 'new_direction' | 'customize_response') 
+          : undefined,
         customizations: {
-          tone: request.personalization?.preferredResponseStyle || 'empathetic',
-          approach: request.sessionContext.currentTherapeuticStyle || 'balanced',
-          responseLength: 'balanced',
-          focusArea: request.sessionContext.therapeuticGoals?.[0] || 'general'
+          mode: 'therapeutic' as const,
+          tone: (request.personalization?.preferredResponseStyle as 'supportive' | 'challenging' | 'neutral' | 'empathetic') || 'empathetic',
+          perspective: 'psychologist' as const
         },
         wasVoiceInput: false
       };
 
-      // Enhanced therapeutic prompting with sophisticated system prompt
-      const sophisticatedPrompt = `${request.systemPrompt}
-
-THERAPEUTIC CONTEXT:
-- User's emotional state: ${request.sessionContext.emotionalState || 'exploring'}
-- Therapeutic goals: ${request.sessionContext.therapeuticGoals?.join(', ') || 'general support'}
-- Preferred style: ${request.personalization?.preferredResponseStyle || 'empathetic'}
-- Session focus: ${request.sessionContext.currentTherapeuticStyle || 'balanced'}
-
-ENHANCED USER INPUT: ${enhancedUserInput}
-
-Provide a sophisticated therapeutic response that demonstrates deep understanding, uses appropriate therapeutic techniques, and guides toward meaningful insight. Include gentle probing questions that help the user explore underlying patterns and emotions.`;
-
-      // Intelligent hybrid model selection based on therapeutic context
-      const modelSelection = this.selectOptimalTherapeuticModel(request, enhancedUserInput);
+      // Process through full therapeutic intelligence pipeline
+      const therapeuticResponse = await deepJournalingEngine.processJournalingRequest(engineRequest);
       
-      let content: string;
-      let modelUsed: string;
-      let provider: 'openai' | 'anthropic';
-
-      if (modelSelection.provider === 'anthropic') {
-        const response = await anthropic.messages.create({
-          model: modelSelection.model,
-          max_tokens: request.options?.maxTokens || 2000,
-          temperature: request.options?.temperature || 0.7,
-          messages: [
-            { role: 'user', content: sophisticatedPrompt }
-          ]
-        });
-        content = response.content[0].type === 'text' ? response.content[0].text : 'I understand what you\'re sharing with me.';
-        modelUsed = modelSelection.model;
-        provider = 'anthropic';
-      } else {
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const response = await openai.chat.completions.create({
-          model: modelSelection.model,
-          messages: [
-            { role: 'system', content: request.systemPrompt },
-            { role: 'user', content: enhancedUserInput }
-          ],
-          temperature: request.options?.temperature || 0.7,
-          max_tokens: request.options?.maxTokens || 2000
-        });
-        content = response.choices[0].message.content || 'I understand what you\'re sharing with me.';
-        modelUsed = modelSelection.model;
-        provider = 'openai';
-      }
+      let content = therapeuticResponse.question || 'I understand what you\'re sharing with me.';
+      let modelUsed = 'therapeutic-engine-processed';
+      let provider: 'openai' | 'anthropic' = 'anthropic'; // Default since therapeutic engine uses multiple models
 
       // Apply adaptive language generation if enabled
       let processedContent = content;
