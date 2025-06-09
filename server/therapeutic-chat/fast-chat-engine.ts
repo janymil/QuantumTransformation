@@ -13,8 +13,8 @@ import { db } from '../db';
 import { eq, desc, and, isNotNull } from 'drizzle-orm';
 import { PostProcessingJob } from '../jobs/post-processing-job';
 import { 
-  threadExchanges, 
-  journalingThreads, 
+  therapeuticChatMessages, 
+  therapeuticChatSessions, 
   psychologicalProfile,
   userTherapeuticProfile
 } from '@shared/schema';
@@ -161,21 +161,21 @@ async function findSimilarPastEntries(
     // Get recent exchanges from user's threads
     const recentExchanges = await db
       .select({
-        userInput: threadExchanges.userInput,
-        aiAnalysis: threadExchanges.aiAnalysis,
-        aiEmotionalAssessment: threadExchanges.aiEmotionalAssessment,
-        createdAt: threadExchanges.createdAt,
-        threadId: threadExchanges.threadId
+        userInput: therapeuticChatMessages.content,
+        aiAnalysis: therapeuticChatMessages.aiAnalysis,
+        aiEmotionalAssessment: therapeuticChatMessages.aiAnalysis,
+        createdAt: therapeuticChatMessages.createdAt,
+        threadId: therapeuticChatMessages.sessionId
       })
-      .from(threadExchanges)
-      .innerJoin(journalingThreads, eq(threadExchanges.threadId, journalingThreads.id))
+      .from(therapeuticChatMessages)
+      .innerJoin(therapeuticChatSessions, eq(therapeuticChatMessages.sessionId, therapeuticChatSessions.id))
       .where(
         and(
-          eq(journalingThreads.userId, userId),
-          isNotNull(threadExchanges.userInput)
+          eq(therapeuticChatSessions.userId, userId),
+          isNotNull(therapeuticChatMessages.content)
         )
       )
-      .orderBy(desc(threadExchanges.createdAt))
+      .orderBy(desc(therapeuticChatMessages.createdAt))
       .limit(20); // Get more entries for better similarity matching
 
     // Simple keyword-based similarity scoring for speed
@@ -224,19 +224,19 @@ export async function getLastSessionInsights(userId: string): Promise<SessionIns
     // Get recent conversation context
     const recentThreads = await db
       .select({
-        currentEmotionalState: journalingThreads.currentEmotionalState,
-        currentTopic: journalingThreads.currentTopic,
-        preferredTone: journalingThreads.preferredTone,
-        preferredPerspective: journalingThreads.preferredPerspective
+        currentEmotionalState: therapeuticChatSessions.focusArea,
+        currentTopic: therapeuticChatSessions.title,
+        preferredTone: therapeuticChatSessions.conversationStyle,
+        preferredPerspective: therapeuticChatSessions.sessionType
       })
-      .from(journalingThreads)
+      .from(therapeuticChatSessions)
       .where(
         and(
-          eq(journalingThreads.userId, userId),
-          eq(journalingThreads.isActive, true)
+          eq(therapeuticChatSessions.userId, userId),
+          eq(therapeuticChatSessions.isActive, true)
         )
       )
-      .orderBy(desc(journalingThreads.lastActiveAt))
+      .orderBy(desc(therapeuticChatSessions.lastActivity))
       .limit(3);
 
     // Compile insights for fast access
