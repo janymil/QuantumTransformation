@@ -2192,7 +2192,7 @@ Provide personalized, actionable guidance that:
         userId,
         userInput: userInput.trim(),
         systemPrompt: `You are an expert therapeutic AI assistant with advanced training in multiple psychological frameworks including CBT, DBT, ACT, psychodynamic therapy, and humanistic approaches. Provide sophisticated therapeutic responses with deep psychological insight.`,
-        userTier: 'premium',
+
         sessionContext: {
           threadId: threadId ? threadId.toString() : undefined,
           sessionType: actionType || 'therapeutic_chat',

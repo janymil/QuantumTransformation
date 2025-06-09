@@ -15,7 +15,6 @@ export interface TherapeuticRequest {
   userId: string;
   userInput: string;
   systemPrompt: string;
-  userTier?: 'premium' | 'ultra';
   sessionContext: {
     threadId?: string;
     conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -134,8 +133,7 @@ export class TherapeuticChatAdapter {
         {
           userId: request.userId,
           sessionType: 'therapeutic_chat',
-          therapeuticFramework: request.sessionContext.currentTherapeuticStyle,
-          userTier: 'premium'
+          therapeuticFramework: request.sessionContext.currentTherapeuticStyle
         }
       );
 
