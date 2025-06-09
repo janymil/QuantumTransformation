@@ -242,13 +242,16 @@ export class FastChatEngine {
     perspective: string = 'psychologist'
   ): Promise<any> {
     try {
-      // Use Claude for therapeutic responses (fast and high quality)
-      const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1500,
+      // Use GPT-3.5-turbo for fast therapeutic responses (sub-1 second)
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        max_tokens: 800,
         temperature: 0.7,
-        system: systemPrompt,
         messages: [
+          { 
+            role: 'system', 
+            content: systemPrompt
+          },
           { 
             role: 'user', 
             content: userInput
@@ -256,7 +259,7 @@ export class FastChatEngine {
         ]
       });
 
-      const rawContent = response.content[0].type === 'text' ? response.content[0].text : '';
+      const rawContent = response.choices[0]?.message?.content || '';
       
       if (!rawContent || rawContent.trim().length < 20) {
         throw new Error('Empty or insufficient response from AI model');
@@ -277,9 +280,9 @@ export class FastChatEngine {
         suggestions: this.extractSuggestions(fullResponse),
         emotionalAssessment: { primary: emotionalState, intensity: 6 },
         patternInsights: { identified_patterns: ['self_reflection', 'value_exploration'] },
-        tokenCount: response.usage?.input_tokens || 0,
-        cost: '0.008',
-        modelUsed: 'claude-3-5-sonnet-20241022'
+        tokenCount: response.usage?.total_tokens || 0,
+        cost: '0.002',
+        modelUsed: 'gpt-3.5-turbo'
       };
 
     } catch (error) {
