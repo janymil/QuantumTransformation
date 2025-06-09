@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import { fastChatEngine } from '../therapeutic-chat/fast-chat-engine';
-import { enqueuePostProcessingJob } from '../jobs/post-processing-job';
+import { PostProcessingJob } from '../jobs/post-processing-job';
 import { isAuthenticated } from '../replitAuth';
 
 const router = Router();
@@ -44,7 +44,7 @@ router.post('/go-deeper', isAuthenticated, async (req: any, res) => {
 
     // Step 3: Enqueue background processing (don't await)
     if (threadId) {
-      enqueuePostProcessingJob(userId, threadId, userInput).catch(error => {
+      PostProcessingJob.enqueue(userId, threadId.toString(), userInput).catch((error: any) => {
         console.error('Failed to enqueue post-processing job for go-deeper:', error);
       });
     }
@@ -92,7 +92,7 @@ router.post('/new-direction', isAuthenticated, async (req: any, res) => {
 
     // Step 3: Enqueue background processing (don't await)
     if (threadId) {
-      enqueuePostProcessingJob(userId, threadId, userInput).catch(error => {
+      PostProcessingJob.enqueue(userId, threadId.toString(), userInput).catch((error: any) => {
         console.error('Failed to enqueue post-processing job for new-direction:', error);
       });
     }
@@ -140,7 +140,7 @@ router.post('/send-message', isAuthenticated, async (req: any, res) => {
 
     // Step 3: Enqueue background processing (don't await)
     if (threadId) {
-      enqueuePostProcessingJob(userId, threadId, userInput).catch(error => {
+      PostProcessingJob.enqueue(userId, threadId.toString(), userInput).catch((error: any) => {
         console.error('Failed to enqueue post-processing job for send-message:', error);
       });
     }

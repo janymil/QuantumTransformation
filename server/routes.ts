@@ -40,6 +40,7 @@ import { modelRouter, multidisciplinaryAIEngine } from "./ai-coaching";
 import { initializeUserGamification } from "./gamification";
 import { registerDeepJournalingRoutes } from "./therapeutic-chat";
 import { responseQualityTiering } from "./response-quality-tiering";
+import therapeuticActionRoutes from "./routes/therapeutic-action";
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
 
@@ -2356,7 +2357,9 @@ Provide personalized, actionable guidance that:
     }
   });
 
-  // Close registerRoutes function
+  // Register therapeutic action routes with FastChatEngine
+  app.use('/api/therapeutic-chat/actions', therapeuticActionRoutes);
+
   // Post-processing job status endpoint
   app.get('/api/therapeutic-chat/job-status', isAuthenticated, async (req: any, res) => {
     try {
