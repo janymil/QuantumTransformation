@@ -1,4 +1,3 @@
-
 /**
  * Fast Chat Engine for Therapeutic Responses
  * Optimized for speed using semantic search and lightweight prompting
@@ -8,18 +7,11 @@ import { openai } from '../openai';
 import { db } from '../db';
 import { threadExchanges, journalingThreads, psychologicalProfile } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { getLastSessionInsights, type LastSessionInsights } from "./helpers";
 
 interface FastChatResponse {
   analysis: string;
   question: string;
-}
-
-interface LastSessionInsights {
-  preferredFramework?: string;
-  communicationTone?: string;
-  emotionalState?: string;
-  challengeLevel?: number;
-  responseStyle?: string;
 }
 
 interface SemanticMatch {
@@ -43,7 +35,7 @@ export class FastChatEngine {
       // Step 1: Get semantic matches from past entries (parallel execution)
       const [semanticMatches, sessionInsights] = await Promise.all([
         this.getSemanticMatches(userId, entryText),
-        this.getLastSessionInsights(userId)
+        getLastSessionInsights(userId)
       ]);
 
       // Step 2: Build lightweight system prompt
@@ -75,7 +67,7 @@ export class FastChatEngine {
 
     } catch (error) {
       console.error('Fast chat engine error:', error);
-      
+
       // Fallback response for reliability
       return {
         analysis: "I can sense you're processing some important thoughts. Your willingness to explore these feelings shows real self-awareness.",
@@ -108,7 +100,7 @@ export class FastChatEngine {
 
       // Simple keyword-based semantic matching (placeholder for embedding search)
       const matches = this.findSemanticMatches(currentText, recentEntries);
-      
+
       return matches.slice(0, 3); // Return top 3 matches
 
     } catch (error) {
@@ -152,7 +144,7 @@ export class FastChatEngine {
   private extractKeywords(text: string): string[] {
     // Remove common stop words and extract meaningful terms
     const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'i', 'me', 'my', 'myself', 'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those']);
-    
+
     return text
       .split(/\W+/)
       .filter(word => word.length > 3 && !stopWords.has(word))
@@ -170,64 +162,6 @@ export class FastChatEngine {
     const intersection = new Set([...set1].filter(x => set2.has(x)));
 
     return intersection.size / Math.max(set1.size, set2.size);
-  }
-
-  /**
-   * Get cached psychological profile and session insights for the user
-   */
-  async getLastSessionInsights(userId: string): Promise<LastSessionInsights> {
-    try {
-      // Get psychological profile
-      const [profile] = await db
-        .select()
-        .from(psychologicalProfile)
-        .where(eq(psychologicalProfile.userId, userId))
-        .limit(1);
-
-      if (!profile) {
-        return this.getDefaultInsights();
-      }
-
-      // Extract relevant insights for fast response generation
-      return {
-        preferredFramework: this.extractPreferredFramework(profile),
-        communicationTone: profile.communicationTone || 'supportive',
-        emotionalState: profile.currentEmotionalState || 'processing',
-        challengeLevel: profile.challengeLevelTolerance || 5,
-        responseStyle: profile.preferredInsightDelivery || 'gradual'
-      };
-
-    } catch (error) {
-      console.error('Error retrieving session insights:', error);
-      return this.getDefaultInsights();
-    }
-  }
-
-  /**
-   * Extract preferred therapeutic framework from profile data
-   */
-  private extractPreferredFramework(profile: any): string {
-    if (profile.responsiveToFrameworks && typeof profile.responsiveToFrameworks === 'object') {
-      const frameworks = profile.responsiveToFrameworks as Record<string, number>;
-      const topFramework = Object.entries(frameworks)
-        .sort(([,a], [,b]) => b - a)[0];
-      
-      return topFramework ? topFramework[0] : 'supportive';
-    }
-    return 'supportive';
-  }
-
-  /**
-   * Default insights for new users or when profile data is unavailable
-   */
-  private getDefaultInsights(): LastSessionInsights {
-    return {
-      preferredFramework: 'supportive',
-      communicationTone: 'empathetic',
-      emotionalState: 'exploring',
-      challengeLevel: 5,
-      responseStyle: 'gradual'
-    };
   }
 
   /**
