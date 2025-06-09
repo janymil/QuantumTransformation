@@ -13,11 +13,20 @@ router.get('/sessions', async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===');
     console.log('Fetching sessions for userId:', userId, 'type:', typeof userId);
     
     // First check if any sessions exist
     const allSessions = await db.select().from(therapeuticChatSessions);
     console.log('All sessions in database:', allSessions);
+    
+    // Try different query approaches to debug the issue
+    const sessionsByStringMatch = await db
+      .select()
+      .from(therapeuticChatSessions)
+      .where(eq(therapeuticChatSessions.userId, String(userId)));
+    
+    console.log('Sessions by string match:', sessionsByStringMatch);
     
     const sessions = await db
       .select()
@@ -25,7 +34,8 @@ router.get('/sessions', async (req, res) => {
       .where(eq(therapeuticChatSessions.userId, userId))
       .orderBy(desc(therapeuticChatSessions.lastActivity));
 
-    console.log('Found sessions for user:', sessions.length, sessions);
+    console.log('Found sessions for user (original query):', sessions.length, sessions);
+    console.log('=== END DEBUG ===');
     
     // Add cache-busting headers to ensure fresh responses
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
