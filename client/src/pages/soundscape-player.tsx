@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Zap, Waves, Brain, Heart } from "lucide-react";
 import AdvancedSoundscapePlayer from "@/components/advanced-soundscape-player";
 
-export default function SoundscapePlayer() {
+function SoundscapePlayer() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -101,3 +101,5 @@ export default function SoundscapePlayer() {
     </div>
   );
 }
+
+export default SoundscapePlayer;
