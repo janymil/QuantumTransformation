@@ -24,8 +24,8 @@ export async function getLastSessionInsights(userId: string): Promise<SessionIns
     // Query the most recent psychological profile for the user using Replit database
     const [latestProfile] = await db.select()
       .from(psychologicalProfile)
-      .where(eq(psychologicalProfile.userId, userId))
-      .orderBy(desc(psychologicalProfile.updatedAt))
+      .where(eq(psychologicalProfile.user_id, userId))
+      .orderBy(desc(psychologicalProfile.updated_at))
       .limit(1);
 
     if (!latestProfile) {
