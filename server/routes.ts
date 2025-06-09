@@ -2359,6 +2359,38 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Delete therapeutic chat session
+  app.delete('/api/therapeutic-chat/sessions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = parseInt(req.params.id);
+
+      // First delete all thread exchanges
+      await db
+        .delete(threadExchanges)
+        .where(eq(threadExchanges.threadId, sessionId));
+
+      // Then delete the thread itself
+      const [deletedThread] = await db
+        .delete(journalingThreads)
+        .where(and(
+          eq(journalingThreads.id, sessionId),
+          eq(journalingThreads.userId, userId),
+          eq(journalingThreads.threadType, 'therapy_session')
+        ))
+        .returning();
+
+      if (!deletedThread) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      res.json({ success: true, message: "Session deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting therapeutic chat session:", error);
+      res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
   // Register therapeutic action routes with FastChatEngine
   app.use('/api/therapeutic-chat/actions', therapeuticActionRoutes);
 
