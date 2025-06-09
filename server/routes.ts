@@ -815,8 +815,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Track usage (skip for now due to type mismatch)
-      // await```python
- trackUsage(parseInt(userId), 'vector_coaching', query, personalizedResponse, challengeType);
+```python
+      // await trackUsage(parseInt(userId), 'vector_coaching', query, personalizedResponse, challengeType);
 
       // Store in response history (skip for now due to schema mismatch)
       // await db.insert(aiResponseHistory).values({
@@ -1842,6 +1842,8 @@ Provide personalized, actionable guidance that:
     }
   });
 
+  // Therapeutic Chat Routes now handled by separate therapeutic-chat/routes.ts
+
   // AI personalized coaching endpoint - Advanced AI Couch Engine
   app.post('/api/ai/coaching', isAuthenticated, async (req: any, res) => {
     try {
@@ -2060,8 +2062,6 @@ Provide personalized, actionable guidance that:
     }
   });
 
-
-
   // Deep Journaling with Response Quality Tiering
   app.post('/api/deep-journaling/analyze', isAuthenticated, async (req: any, res) => {
     try {
@@ -2093,8 +2093,6 @@ Provide personalized, actionable guidance that:
       });
     }
   });
-
-
 
   // Soundscape Generator API Routes
   app.post('/api/soundscape/generate', isAuthenticated, async (req: any, res) => {
