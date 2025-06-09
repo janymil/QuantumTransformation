@@ -183,13 +183,13 @@ export class FastChatEngine {
       }
 
       return {
-        therapeuticFramework: recentProfile.preferredTherapeuticFramework || 'cbt',
-        emotionalBaseline: recentProfile.currentEmotionalState || 'neutral',
+        therapeuticFramework: recentProfile.communicationStyle || 'cbt',
+        emotionalBaseline: recentProfile.currentDominantEmotion || 'neutral',
         communicationStyle: recentProfile.communicationStyle || 'balanced',
-        recentPatterns: recentProfile.cognitivePatterns || [],
+        recentPatterns: recentProfile.personalityTraits || {},
         strengths: recentProfile.identifiedStrengths || [],
-        areas_of_focus: recentProfile.areasOfFocus || [],
-        last_updated: recentProfile.lastUpdated
+        areas_of_focus: recentProfile.identifiedGrowthAreas || [],
+        last_updated: recentProfile.updatedAt
       };
     } catch (error) {
       console.error('Error getting session insights:', error);
@@ -419,8 +419,7 @@ export class FastChatEngine {
 
       // Run comprehensive psychological analysis
       const emotionalState = psychologicalAnalyzer.analyzeEmotionalState(
-        data.userInput, 
-        threadHistory.map(h => ({ primary: h.currentEmotionalState || 'neutral' })) as any[]
+        data.userInput
       );
       
       const cognitivePatterns = psychologicalAnalyzer.analyzeCognitivePatterns(data.userInput);
@@ -465,8 +464,7 @@ export class FastChatEngine {
       // Analyze cross-session patterns
       const crossSessionPatterns = await contextualMemoryArchitecture.analyzeCrossSessionPatterns(
         data.userId,
-        data.userInput,
-        threadHistory
+        6 // timeframeMonths
       );
 
       // Update therapeutic memory
