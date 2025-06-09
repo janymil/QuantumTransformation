@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory, journalingThreads, threadExchanges } from "@shared/schema";
+import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory, journalingThreads, threadExchanges, users } from "@shared/schema";
 import { aiInteractionHistory } from "@shared/ai-interaction-schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -2260,12 +2260,14 @@ Provide personalized, actionable guidance that:
       // Create new thread if none exists
       if (!threadId) {
         const [newThread] = await db
-          .insert(conversationThreads)
+          .insert(journalingThreads)
           .values({
             userId,
             title: title || 'Therapeutic Chat Session',
-            lastMessage: messages[messages.length - 1]?.content?.slice(0, 100) || '',
-            emotionalJourney: [focusArea || 'general']
+            threadType: 'therapy_session',
+            currentTopic: focusArea || 'general',
+            emotionalJourney: [focusArea || 'general'],
+            totalExchanges: messages.length
           })
           .returning();
         
@@ -2273,29 +2275,38 @@ Provide personalized, actionable guidance that:
       }
 
       // Save all messages to thread exchanges
+      let userInputCount = 0;
       for (let i = 0; i < messages.length; i++) {
         const message = messages[i];
         
-        await db
-          .insert(threadExchanges)
-          .values({
-            threadId: finalThreadId,
-            exchangeOrder: i + 1,
-            userMessage: message.type === 'user' ? message.content : '',
-            aiResponse: message.type === 'ai' ? message.content : '',
-            emotionalTone: message.emotionalTone || 'neutral',
-            timestamp: new Date(message.timestamp || Date.now())
-          });
+        // Only save actual user-AI exchanges, skip welcome messages
+        if (message.type === 'user' || (message.type === 'ai' && message.id !== 'welcome')) {
+          userInputCount++;
+          
+          await db
+            .insert(threadExchanges)
+            .values({
+              threadId: finalThreadId,
+              exchangeOrder: userInputCount,
+              userInput: message.type === 'user' ? message.content : '',
+              userWordCount: message.type === 'user' ? message.content.split(' ').length : 0,
+              aiAnalysis: message.type === 'ai' ? { content: message.content, emotionalTone: message.emotionalTone } : {},
+              aiQuestion: message.type === 'ai' ? message.content : 'Follow-up question',
+              modelUsed: 'claude-3-sonnet',
+              processingTime: 1000
+            });
+        }
       }
 
-      // Update thread's last message
+      // Update thread's total exchanges
       await db
-        .update(conversationThreads)
+        .update(journalingThreads)
         .set({
-          lastMessage: messages[messages.length - 1]?.content?.slice(0, 100) || '',
-          emotionalJourney: [focusArea || 'general']
+          totalExchanges: userInputCount,
+          emotionalJourney: [focusArea || 'general'],
+          lastActiveAt: new Date()
         })
-        .where(eq(conversationThreads.id, finalThreadId));
+        .where(eq(journalingThreads.id, finalThreadId));
 
       res.json({ 
         success: true, 
