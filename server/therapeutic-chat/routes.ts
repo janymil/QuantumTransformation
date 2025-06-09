@@ -58,15 +58,32 @@ export function registerTherapeuticChatRoutes(app: Express) {
       
       if (allSessions.length > 0) {
         console.log('Sample session userIds:', allSessions.slice(0, 3).map(s => ({ id: s.id, userId: s.userId, type: typeof s.userId })));
+        
+        // Check for any sessions that might match this user
+        const potentialMatches = allSessions.filter(s => 
+          String(s.userId) === userId || 
+          s.userId === userId ||
+          s.userId === parseInt(userId, 10)
+        );
+        console.log('Potential matches found:', potentialMatches.length);
       }
       
-      // Use string matching for consistency
-      console.log('Querying with string userId:', userId);
-      const sessions = await db
+      // Try multiple query approaches to find sessions
+      let sessions = await db
         .select()
         .from(therapeuticChatSessions)
         .where(eq(therapeuticChatSessions.userId, userId))
         .orderBy(desc(therapeuticChatSessions.lastActivity));
+
+      // If no sessions found with string match, try numeric match
+      if (sessions.length === 0 && !isNaN(parseInt(userId, 10))) {
+        console.log('Trying numeric userId match...');
+        sessions = await db
+          .select()
+          .from(therapeuticChatSessions)
+          .where(eq(therapeuticChatSessions.userId, parseInt(userId, 10).toString()))
+          .orderBy(desc(therapeuticChatSessions.lastActivity));
+      }
 
       console.log('Found sessions for user:', sessions.length);
       if (sessions.length > 0) {
@@ -89,15 +106,17 @@ export function registerTherapeuticChatRoutes(app: Express) {
   // Get messages for a specific session
   app.get('/api/therapeutic-chat/sessions/:sessionId/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = String(req.user.claims.sub); // Ensure string type
       const sessionId = parseInt(req.params.sessionId);
 
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
 
-      // Verify session belongs to user
-      const session = await db
+      console.log('Getting messages for session:', sessionId, 'userId:', userId, 'type:', typeof userId);
+
+      // Verify session belongs to user - try multiple formats
+      let session = await db
         .select()
         .from(therapeuticChatSessions)
         .where(and(
@@ -106,7 +125,20 @@ export function registerTherapeuticChatRoutes(app: Express) {
         ))
         .limit(1);
 
+      // If not found with string match, try other formats
+      if (session.length === 0 && !isNaN(parseInt(userId, 10))) {
+        session = await db
+          .select()
+          .from(therapeuticChatSessions)
+          .where(and(
+            eq(therapeuticChatSessions.id, sessionId),
+            eq(therapeuticChatSessions.userId, parseInt(userId, 10).toString())
+          ))
+          .limit(1);
+      }
+
       if (session.length === 0) {
+        console.log('Session not found for messages. SessionId:', sessionId, 'UserId:', userId);
         return res.status(404).json({ error: 'Session not found' });
       }
 
@@ -146,13 +178,13 @@ export function registerTherapeuticChatRoutes(app: Express) {
 
       const { title, messages, sessionType, conversationStyle, focusArea } = req.body;
 
-      console.log('Saving conversation for userId:', userId, 'title:', title);
+      console.log('Saving conversation for userId:', userId, 'title:', title, 'userId type:', typeof userId);
 
-      // Create new therapeutic chat session
+      // Create new therapeutic chat session with consistent userId format
       const [newSession] = await db
         .insert(therapeuticChatSessions)
         .values({
-          userId,
+          userId: userId, // Keep as string for consistency
           title: title || 'Therapeutic Session',
           sessionType: sessionType || 'general',
           conversationStyle: conversationStyle || 'socratic',
@@ -163,7 +195,7 @@ export function registerTherapeuticChatRoutes(app: Express) {
         })
         .returning();
 
-      console.log('Created session:', newSession.id, 'for user:', userId);
+      console.log('Created session:', newSession.id, 'for user:', userId, 'stored userId:', newSession.userId, 'type:', typeof newSession.userId);
 
       // Save all messages
       if (messages && messages.length > 0) {
@@ -197,7 +229,7 @@ export function registerTherapeuticChatRoutes(app: Express) {
   // Update an existing therapeutic chat session (for auto-save)
   app.put('/api/therapeutic-chat/sessions/:sessionId/update', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = String(req.user.claims.sub); // Ensure string type
       const sessionId = parseInt(req.params.sessionId);
 
       if (!userId) {
@@ -206,8 +238,10 @@ export function registerTherapeuticChatRoutes(app: Express) {
 
       const { title, messages, sessionType, conversationStyle, focusArea } = req.body;
 
-      // Verify session belongs to user
-      const existingSession = await db
+      console.log('Updating session:', sessionId, 'for userId:', userId, 'type:', typeof userId);
+
+      // Verify session belongs to user - try both string and potential numeric matches
+      let existingSession = await db
         .select()
         .from(therapeuticChatSessions)
         .where(and(
@@ -216,7 +250,20 @@ export function registerTherapeuticChatRoutes(app: Express) {
         ))
         .limit(1);
 
+      // If not found with string match, try other formats
+      if (existingSession.length === 0 && !isNaN(parseInt(userId, 10))) {
+        existingSession = await db
+          .select()
+          .from(therapeuticChatSessions)
+          .where(and(
+            eq(therapeuticChatSessions.id, sessionId),
+            eq(therapeuticChatSessions.userId, parseInt(userId, 10).toString())
+          ))
+          .limit(1);
+      }
+
       if (existingSession.length === 0) {
+        console.log('Session not found for update. SessionId:', sessionId, 'UserId:', userId);
         return res.status(404).json({ error: 'Session not found' });
       }
 
@@ -268,15 +315,17 @@ export function registerTherapeuticChatRoutes(app: Express) {
   // Delete therapeutic chat session
   app.delete('/api/therapeutic-chat/sessions/:sessionId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = String(req.user.claims.sub); // Ensure string type
       const sessionId = parseInt(req.params.sessionId);
 
       if (!userId) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
 
-      // Verify session belongs to user
-      const session = await db
+      console.log('Deleting session:', sessionId, 'for userId:', userId, 'type:', typeof userId);
+
+      // Verify session belongs to user - try multiple formats
+      let session = await db
         .select()
         .from(therapeuticChatSessions)
         .where(and(
@@ -285,7 +334,20 @@ export function registerTherapeuticChatRoutes(app: Express) {
         ))
         .limit(1);
 
+      // If not found with string match, try other formats
+      if (session.length === 0 && !isNaN(parseInt(userId, 10))) {
+        session = await db
+          .select()
+          .from(therapeuticChatSessions)
+          .where(and(
+            eq(therapeuticChatSessions.id, sessionId),
+            eq(therapeuticChatSessions.userId, parseInt(userId, 10).toString())
+          ))
+          .limit(1);
+      }
+
       if (session.length === 0) {
+        console.log('Session not found for deletion. SessionId:', sessionId, 'UserId:', userId);
         return res.status(404).json({ error: 'Session not found' });
       }
 
