@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import SpacedRepetitionWidget from "@/components/spaced-repetition-widget";
 import MultiChallengeDashboard from "@/components/multi-challenge-dashboard";
-import SimpleSoundscapePlayer from "@/components/simple-soundscape-player";
+
 import { Play, BookOpen, Brain, Target, Zap, Calendar } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -165,12 +165,9 @@ export default function Dashboard() {
           <MultiChallengeDashboard />
 
           {/* Additional Learning Tools */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Spaced Repetition Learning */}
             <SpacedRepetitionWidget challengeType="mindfulness" />
-            
-            {/* Personalized Soundscape Player */}
-            <SimpleSoundscapePlayer />
             
             {/* Quick Actions */}
             <Card>
