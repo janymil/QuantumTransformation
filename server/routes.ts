@@ -41,6 +41,7 @@ import { initializeUserGamification } from "./gamification";
 import { registerDeepJournalingRoutes } from "./therapeutic-chat";
 import { responseQualityTiering } from "./response-quality-tiering";
 import therapeuticActionRoutes from "./routes/therapeutic-action";
+import therapeuticChatRoutes from "./routes/therapeutic-chat";
 export async function registerRoutes(app: Express): Promise<Server> {
   const server = createServer(app);
 
