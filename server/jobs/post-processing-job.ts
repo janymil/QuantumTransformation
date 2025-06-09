@@ -109,36 +109,33 @@ class UserModelEngine {
       const updatedData = {
         userId,
         emotionalPatterns: this.mergePatterns(
-          existingProfile?.emotionalPatterns || [],
+          (existingProfile?.emotionalPatterns as string[]) || [],
           [analysis.emotionalState]
         ),
-        cognitiveStyle: this.mergePatterns(
-          existingProfile?.cognitiveStyle || [],
+        personalityTraits: this.mergePatterns(
+          (existingProfile?.personalityTraits as string[]) || [],
           analysis.cognitivePatterns
         ),
-        stressLevels: this.updateStressHistory(
-          existingProfile?.stressLevels || [],
-          analysis.stressLevel
-        ),
-        motivationFactors: this.mergePatterns(
-          existingProfile?.motivationFactors || [],
+        recentStressLevel: analysis.stressLevel,
+        adaptiveStrategies: this.mergePatterns(
+          (existingProfile?.adaptiveStrategies as string[]) || [],
           analysis.motivationThemes
         ),
-        therapeuticPreferences: this.mergePatterns(
-          existingProfile?.therapeuticPreferences || [],
+        therapeuticApproaches: this.mergePatterns(
+          (existingProfile?.therapeuticApproaches as string[]) || [],
           analysis.therapeuticNeeds
         ),
-        lastUpdated: new Date()
+        updatedAt: new Date()
       };
 
       if (existingProfile) {
         await db
-          .update(psychologicalProfiles)
+          .update(psychologicalProfile)
           .set(updatedData)
-          .where(eq(psychologicalProfiles.userId, userId));
+          .where(eq(psychologicalProfile.userId, userId));
       } else {
         await db
-          .insert(psychologicalProfiles)
+          .insert(psychologicalProfile)
           .values(updatedData);
       }
 
@@ -206,7 +203,7 @@ Respond in JSON format:
   "reasoning": "brief explanation of why this framework fits"
 }`;
 
-      const response = await openaiClient.chat.completions.create({
+      const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
