@@ -1,4 +1,3 @@
-
 import type { Express } from "express";
 import { fastChatEngine } from "./fast-chat-engine";
 import { monthlyCostSimulation } from "./monthly-cost-simulation";
@@ -12,12 +11,12 @@ import { eq, desc, and } from 'drizzle-orm';
 const isAuthenticated = (req: any, res: any, next: any) => {
   // Check multiple possible authentication patterns
   const userId = req.user?.claims?.sub || req.user?.id || req.headers['x-replit-user-id'];
-  
+
   if (!userId) {
     console.log('Authentication failed - no user or not authenticated');
     return res.status(401).json({ error: 'User not authenticated' });
   }
-  
+
   // Ensure user object has the expected structure
   if (!req.user) {
     req.user = {};
@@ -28,14 +27,14 @@ const isAuthenticated = (req: any, res: any, next: any) => {
   if (!req.user.claims.sub) {
     req.user.claims.sub = String(userId); // Ensure it's a string
   }
-  
+
   console.log('User authenticated successfully:', {
     hasUser: !!req.user,
     userKeys: Object.keys(req.user),
     userId: req.user.claims.sub,
     userIdType: typeof req.user.claims.sub
   });
-  
+
   next();
 };
 
@@ -50,34 +49,36 @@ export function registerTherapeuticChatRoutes(app: Express) {
 
       console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===');
       console.log('Fetching sessions for userId:', userId, 'type:', typeof userId);
-      
+
       // Check all sessions in database first to understand what's stored
       console.log('Querying all sessions...');
       const allSessions = await db.select().from(therapeuticChatSessions);
       console.log('Total sessions in database:', allSessions.length);
-      
+
       if (allSessions.length > 0) {
         console.log('All session userIds in DB:', allSessions.map(s => ({ id: s.id, userId: s.userId, type: typeof s.userId })));
-        
+
         // Check for any sessions that might match this user with various formats
         const directStringMatch = allSessions.filter(s => s.userId === userId);
         const castStringMatch = allSessions.filter(s => String(s.userId) === userId);
         const numericMatch = allSessions.filter(s => s.userId === parseInt(userId, 10));
-        
+
         console.log('Direct string matches:', directStringMatch.length);
         console.log('Cast string matches:', castStringMatch.length); 
         console.log('Numeric matches:', numericMatch.length);
       }
-      
+
       // Find sessions using the manual filter approach that works
       console.log('Finding sessions using manual filter approach...');
       const userSessions = allSessions.filter(s => String(s.userId) === String(userId));
       console.log('Manual filter found:', userSessions.length, 'sessions');
-      
-      let sessions = [];
+
+      // Initialize sessions variable properly
+      let sessions = userSessions;
+
       if (userSessions.length > 0) {
         console.log('Manual filter session details:', userSessions.map(s => ({ id: s.id, title: s.title, userId: s.userId, userIdType: typeof s.userId })));
-        
+
         // Sort by last activity
         sessions = userSessions.sort((a, b) => {
           const aDate = new Date(a.lastActivity || a.createdAt).getTime();
@@ -85,7 +86,7 @@ export function registerTherapeuticChatRoutes(app: Express) {
           return bDate - aDate;
         });
       } else {
-        console.log('No sessions found even with manual filter');
+        console.log('No sessions found with manual filter');
         sessions = [];
       }
 
@@ -218,7 +219,7 @@ export function registerTherapeuticChatRoutes(app: Express) {
         await db
           .insert(therapeuticChatMessages)
           .values(messageData);
-        
+
         console.log('Saved', messageData.length, 'messages for session:', newSession.id);
       }
 
@@ -376,10 +377,10 @@ export function registerTherapeuticChatRoutes(app: Express) {
     try {
       const userId = String(req.user.claims.sub);
       console.log('Debug: Current user ID:', userId, 'type:', typeof userId);
-      
+
       const allSessions = await db.select().from(therapeuticChatSessions);
       console.log('Debug: All sessions in database:', allSessions);
-      
+
       res.json({
         currentUserId: userId,
         currentUserIdType: typeof userId,
