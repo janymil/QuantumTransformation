@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { deepJournalingEngine } from "./therapeutic-chat-engine";
+import { fastChatEngine } from "./fast-chat-engine";
 import { monthlyCostSimulation } from "./monthly-cost-simulation";
 import { advancedCostOptimization } from "./advanced-cost-optimization";
 import { voiceTranscriptionService } from "./voice-service";
@@ -119,12 +119,13 @@ export function registerDeepJournalingRoutes(app: Express) {
         setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
       });
 
-      const responsePromise = deepJournalingEngine.processJournalingRequest({
+      const response = await fastChatEngine.processFastResponse(
         userId,
-        ...validatedData
-      });
+        validatedData.threadId || null,
+        validatedData.userInput
+      );
 
-      const response = await Promise.race([responsePromise, timeoutPromise]);
+      // Response already received from fastChatEngine
 
       // Enqueue post-processing job asynchronously (don't await)
       const { enqueuePostProcessingJob } = await import('../jobs/post-processing-job');
@@ -235,7 +236,8 @@ export function registerDeepJournalingRoutes(app: Express) {
   app.get('/api/deep-journaling/threads', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const threads = await deepJournalingEngine.getUserThreads(userId);
+      // TODO: Implement getUserThreads in fastChatEngine or use direct DB queries
+      const threads = [];
       
       // Add enhanced analytics to each thread
       const threadsWithAnalytics = await Promise.all(
