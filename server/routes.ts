@@ -641,6 +641,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerJournalRoutes(app);
   registerGamificationRoutes(app);
   registerDeepJournalingRoutes(app);
+  registerTherapeuticChatRoutes(app);
+  
+  // Register therapeutic chat routes with proper prefix
+  app.use('/api/therapeutic-chat', therapeuticChatRoutes);
 
   // Enhanced AI Routes with Smart Caching System
   app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {
