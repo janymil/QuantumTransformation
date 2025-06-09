@@ -41,24 +41,33 @@ export default function TherapeuticChat() {
     queryKey: ['/api/therapeutic-chat/sessions'],
   });
 
-  // Debug mutation for sessions
-  const debugSessionsMutation = useMutation({
+  // Force refresh sessions mutation
+  const refreshSessionsMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/therapeutic-chat/sessions-debug');
+      // Force invalidate cache and refetch
+      await queryClient.invalidateQueries({ queryKey: ['/api/therapeutic-chat/sessions'] });
+      const response = await fetch('/api/therapeutic-chat/sessions', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       return response.json();
     },
     onSuccess: (data) => {
-      console.log('Debug sessions response:', data);
+      console.log('Refreshed sessions:', data);
       toast({
-        title: "Debug Complete",
-        description: "Check browser console for debug output",
+        title: "Sessions Refreshed",
+        description: `Found ${data.length} saved conversations`,
       });
+      // Force refetch the query
+      queryClient.invalidateQueries({ queryKey: ['/api/therapeutic-chat/sessions'] });
     },
     onError: (error) => {
-      console.error('Debug sessions error:', error);
+      console.error('Refresh sessions error:', error);
       toast({
-        title: "Debug Error",
-        description: "Check browser console for error details",
+        title: "Refresh Error",
+        description: "Unable to refresh sessions",
         variant: "destructive",
       });
     }
@@ -845,11 +854,11 @@ export default function TherapeuticChat() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => debugSessionsMutation.mutate()}
-                disabled={debugSessionsMutation.isPending}
+                onClick={() => refreshSessionsMutation.mutate()}
+                disabled={refreshSessionsMutation.isPending}
               >
                 <Info className="h-4 w-4 mr-2" />
-                Debug Sessions
+                Refresh Sessions
               </Button>
               <Link href="/therapeutic-analytics">
                 <Button variant="outline" size="sm">
