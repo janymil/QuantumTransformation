@@ -885,6 +885,50 @@ export type InsertVisionBoardItem = typeof visionBoardItems.$inferInsert;
 export type VisionBoardItem = typeof visionBoardItems.$inferSelect;
 
 // ===================================
+// THERAPEUTIC CHAT SYSTEM - INDEPENDENT MODULE  
+// ===================================
+
+// Therapeutic Chat Sessions - Dedicated table for therapeutic conversations
+export const therapeuticChatSessions = pgTable("therapeutic_chat_sessions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  sessionType: varchar("session_type").default("general"), // general, anxiety, depression, relationships
+  conversationStyle: varchar("conversation_style").default("socratic"), // socratic, directive, reflective, collaborative
+  focusArea: varchar("focus_area").default("general"), // general, emotions, relationships, work, personal_growth
+  responseLength: varchar("response_length").default("balanced"), // concise, balanced, detailed
+  isActive: boolean("is_active").default(true),
+  messageCount: integer("message_count").default(0),
+  lastActivity: timestamp("last_activity"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("therapeutic_chat_sessions_user_idx").on(table.userId),
+  index("therapeutic_chat_sessions_active_idx").on(table.isActive),
+  index("therapeutic_chat_sessions_last_activity_idx").on(table.lastActivity),
+]);
+
+// Therapeutic Chat Messages - Individual messages in conversations
+export const therapeuticChatMessages = pgTable("therapeutic_chat_messages", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => therapeuticChatSessions.id, { onDelete: "cascade" }),
+  messageType: varchar("message_type").notNull(), // user, ai
+  content: text("content").notNull(),
+  emotionalTone: varchar("emotional_tone"), // welcoming, supportive, challenging, reflective
+  aiAnalysis: jsonb("ai_analysis"), // AI's professional analysis (if applicable)
+  aiQuestion: text("ai_question"), // Follow-up question from AI (if applicable)
+  actionType: varchar("action_type"), // go_deeper, new_direction, regular, customize_response
+  processingTime: integer("processing_time"), // Response time in milliseconds
+  tokens: integer("tokens"), // Token count for AI responses
+  cost: decimal("cost", { precision: 10, scale: 6 }), // Cost of API call
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("therapeutic_chat_messages_session_idx").on(table.sessionId),
+  index("therapeutic_chat_messages_type_idx").on(table.messageType),
+  index("therapeutic_chat_messages_created_at_idx").on(table.createdAt),
+]);
+
+// ===================================
 // AI COUCH SYSTEM - INDEPENDENT MODULE
 // ===================================
 
@@ -1364,3 +1408,13 @@ export type InsertResearchQuery = typeof researchQueries.$inferInsert;
 export type ResearchQuery = typeof researchQueries.$inferSelect;
 export type InsertKnowledgeIntegration = typeof knowledgeIntegration.$inferInsert;
 export type KnowledgeIntegration = typeof knowledgeIntegration.$inferSelect;
+
+// Therapeutic Chat System Types
+export type InsertTherapeuticChatSession = typeof therapeuticChatSessions.$inferInsert;
+export type TherapeuticChatSession = typeof therapeuticChatSessions.$inferSelect;
+export type InsertTherapeuticChatMessage = typeof therapeuticChatMessages.$inferInsert;
+export type TherapeuticChatMessage = typeof therapeuticChatMessages.$inferSelect;
+
+// Therapeutic Chat Insert Schemas
+export const insertTherapeuticChatSessionSchema = createInsertSchema(therapeuticChatSessions).omit({ id: true });
+export const insertTherapeuticChatMessageSchema = createInsertSchema(therapeuticChatMessages).omit({ id: true });
