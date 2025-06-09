@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { deepJournalingEngine } from "./therapeutic-chat-engine";
-import { fastChatEngine } from "./fast-chat-engine";
+import { processFastResponse } from "./FastChatEngine";
 import { voiceTranscriptionService } from "./voice-service";
 import { psychologicalAnalyzer } from "./psychological-analyzer";
 import { therapeuticFrameworks } from "./therapeutic-frameworks";
@@ -116,10 +116,11 @@ export function registerDeepJournalingRoutes(app: Express) {
       const startTime = Date.now();
 
       // Use FastChatEngine for immediate response (under 1s target)
-      const fastResponse = await fastChatEngine.processFastResponse({
+      const fastResponse = await processFastResponse(
         userId,
-        ...validatedData
-      });
+        validatedData.threadId?.toString() || 'new',
+        validatedData.userInput
+      );
 
       const responseTime = Date.now() - startTime;
 
