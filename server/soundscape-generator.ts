@@ -3,7 +3,7 @@
  * AI-driven audio wellness system that creates custom ambient soundscapes
  */
 
-import { aiCoachingEngine } from './ai-coaching/ai-coaching-engine';
+import { aiCoachingEngine } from './ai-coaching';
 
 export interface SoundscapeParameters {
   id: string;

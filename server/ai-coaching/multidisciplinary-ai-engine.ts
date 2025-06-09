@@ -1,7 +1,7 @@
-import { db } from "./db";
+import { db } from "../db";
 import { aiCouchProfiles, aiCouchSessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { trackUsage } from './ai-cost-control';
+import { trackUsage } from '../ai-cost-control';
 
 export interface MultidisciplinaryAnalysis {
   primaryNeeds: string[];

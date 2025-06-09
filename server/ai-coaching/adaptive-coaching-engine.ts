@@ -4,7 +4,7 @@
  */
 
 import OpenAI from 'openai';
-import { db } from './db';
+import { db } from '../db';
 import { aiCouchProfiles, aiCouchSessions } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
 import { 
@@ -14,7 +14,7 @@ import {
   trackUsage,
   createInputHash,
   optimizeContext 
-} from './ai-cost-control';
+} from '../ai-cost-control';
 
 
 const openai = new OpenAI({
