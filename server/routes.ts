@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory, journalingThreads, threadExchanges } from "@shared/schema";
+import { insertUserProgressSchema, insertSavedPhraseSchema, insertUserAchievementSchema, insertUserSettingsSchema, insertAiResponseHistorySchema, aiResponseHistory, journalingThreads, threadExchanges, therapeuticChatSessions } from "@shared/schema";
 import { aiInteractionHistory } from "@shared/ai-interaction-schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -643,6 +643,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register therapeutic chat routes with proper prefix
   app.use('/api/therapeutic-chat', therapeuticChatRoutes);
+
+  // DIRECT therapeutic chat sessions endpoint to bypass router auth issues
+  app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      console.log('=== DIRECT SESSIONS ENDPOINT ===');
+      console.log('userId:', userId);
+      
+      // Direct SQL query to get sessions
+      const { rows: sessions } = await db.execute(sql`
+        SELECT * FROM therapeutic_chat_sessions 
+        WHERE user_id = ${userId} 
+        ORDER BY last_activity DESC
+      `);
+      
+      console.log('Found sessions:', sessions.length);
+      res.json(sessions);
+    } catch (error) {
+      console.error('Direct sessions error:', error);
+      res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+  });
 
   // Enhanced AI Routes with Smart Caching System
   app.post("/api/ai/explain", isAuthenticated, async (req: any, res) => {
