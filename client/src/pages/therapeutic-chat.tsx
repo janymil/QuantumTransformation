@@ -577,23 +577,21 @@ export default function TherapeuticChat() {
           messagesData.forEach((item: any) => {
             console.log('Processing item:', item);
 
-            // Handle different data structures
-            if (item.type === 'user') {
-              // Already formatted message from server/routes.ts - include even if content is empty
+            // Handle database format with message_type field
+            if (item.message_type === 'user' || item.type === 'user') {
               formattedMessages.push({
                 id: item.id,
                 type: 'user',
                 content: item.content || '[Message content not saved]',
-                timestamp: new Date(item.timestamp || Date.now())
+                timestamp: new Date(item.created_at || item.timestamp || Date.now())
               });
-            } else if (item.type === 'ai' && item.content) {
-              // Already formatted AI message from server/routes.ts
+            } else if ((item.message_type === 'ai' || item.type === 'ai') && item.content) {
               formattedMessages.push({
                 id: item.id,
                 type: 'ai',
                 content: item.content,
-                timestamp: new Date(item.timestamp || Date.now()),
-                emotionalTone: item.emotionalTone || 'supportive'
+                timestamp: new Date(item.created_at || item.timestamp || Date.now()),
+                emotionalTone: item.emotional_tone || item.emotionalTone || 'supportive'
               });
             } else if (item.userInput) {
               // Raw exchange format - convert to messages
