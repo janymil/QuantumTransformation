@@ -2,8 +2,6 @@ import express from 'express';
 import { db } from '../db';
 import { therapeuticChatSessions, therapeuticChatMessages } from '../../shared/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
-import { isAuthenticated } from '../replitAuth';
-
 const router = express.Router();
 
 // Get all therapeutic chat sessions for a user

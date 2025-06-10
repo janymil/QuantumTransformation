@@ -1724,6 +1724,33 @@ Provide personalized, actionable guidance that:
     res.json({ message: "Server is working", timestamp: new Date().toISOString() });
   });
 
+  // Debug authentication endpoint (no auth required)
+  app.get('/api/debug/auth-status', async (req: any, res) => {
+    try {
+      const authInfo = {
+        timestamp: new Date().toISOString(),
+        isAuthenticated: req.isAuthenticated?.(),
+        hasUser: !!req.user,
+        hasSession: !!req.session,
+        sessionId: req.sessionID,
+        replitHeaders: {
+          userId: req.headers['x-replit-user-id'],
+          userName: req.headers['x-replit-user-name'],
+          userImage: req.headers['x-replit-user-profile-image'],
+          userRoles: req.headers['x-replit-user-roles']
+        },
+        cookies: req.headers.cookie ? 'present' : 'missing',
+        userAgent: req.headers['user-agent']
+      };
+
+      console.log('Auth debug info:', authInfo);
+      res.json(authInfo);
+    } catch (error) {
+      console.error('Auth debug error:', error);
+      res.status(500).json({ error: 'Debug failed', details: error.message });
+    }
+  });
+
   // Cache demonstration endpoint - no auth required for testing
   app.get('/api/cache-demo', async (req: any, res) => {
     try {
