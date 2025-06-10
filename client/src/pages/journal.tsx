@@ -1296,93 +1296,198 @@ export default function Journal() {
                                            'No messages yet';
                       
                       return (
-                        <Card 
-                          key={session.id} 
-                          className="hover:shadow-lg transition-all duration-300 relative group cursor-pointer"
+                        <div 
+                          key={session.id}
+                          className="flip-card-container h-64 perspective-1000"
+                          onMouseEnter={() => {
+                            setHoveredSession(session.id);
+                            if (hoverTimeoutRef.current) {
+                              clearTimeout(hoverTimeoutRef.current);
+                            }
+                            hoverTimeoutRef.current = setTimeout(() => {
+                              fetchSessionPreview(session.id);
+                            }, 300);
+                          }}
+                          onMouseLeave={() => {
+                            if (hoverTimeoutRef.current) {
+                              clearTimeout(hoverTimeoutRef.current);
+                            }
+                            if (!popupHovered) {
+                              setTimeout(() => {
+                                setHoveredSession(null);
+                                setSessionPreview(null);
+                              }, 200);
+                            }
+                          }}
                         >
-                          <CardHeader className="pb-3 relative">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-3 flex-1 pr-10">
-                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <MessageSquare className="w-4 h-4 text-primary" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <CardTitle className="text-base font-semibold line-clamp-1">
-                                    {session.title || session.session_title || `Session ${session.id}`}
-                                  </CardTitle>
-                                  <div className="text-xs text-muted-foreground space-y-0.5">
-                                    {dateTimeFormat ? (
-                                      <>
-                                        <p>{dateTimeFormat.date}</p>
-                                        <p className="font-mono text-[10px]">{dateTimeFormat.time}</p>
-                                      </>
-                                    ) : (
-                                      <p>No date available</p>
-                                    )}
+                          <div className={`flip-card-inner relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${
+                            hoveredSession === session.id && sessionPreview ? 'rotate-y-180' : ''
+                          }`}>
+                            {/* Front of card */}
+                            <Card className="flip-card-face flip-card-front absolute inset-0 backface-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group">
+                              <CardHeader className="pb-3 relative">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-center gap-3 flex-1 pr-10">
+                                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                      <MessageSquare className="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <CardTitle className="text-base font-semibold line-clamp-1">
+                                        {session.title || session.session_title || `Session ${session.id}`}
+                                      </CardTitle>
+                                      <div className="text-xs text-muted-foreground space-y-0.5">
+                                        {dateTimeFormat ? (
+                                          <>
+                                            <p>{dateTimeFormat.date}</p>
+                                            <p className="font-mono text-[10px]">{dateTimeFormat.time}</p>
+                                          </>
+                                        ) : (
+                                          <p>No date available</p>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteSession(session.id);
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm(
+                                      'Are you sure you want to delete this conversation?\n\n' +
+                                      'This action is irreversible and will permanently remove:\n' +
+                                      '• All messages in this session\n' +
+                                      '• Therapeutic insights and analysis\n' +
+                                      '• Progress tracking data\n\n' +
+                                      'This cannot be undone.'
+                                    )) {
+                                      handleDeleteSession(session.id);
+                                    }
+                                  }}
+                                  disabled={deletingSessionId === session.id}
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
+                                >
+                                  {deletingSessionId === session.id ? (
+                                    <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
+                                  ) : (
+                                    <Trash2 className="w-3 h-3" />
+                                  )}
+                                </Button>
+                              </CardHeader>
+                              <CardContent className="pt-0">
+                                <div className="space-y-3">
+                                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                    {displayMessage}
+                                  </p>
+                                  
+                                  <div className="grid grid-cols-2 gap-3 text-center">
+                                    <div>
+                                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Messages</p>
+                                      <p className="text-sm font-medium">
+                                        {actualMessageCount}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide" title="AI-generated therapeutic responses and insights in the conversation">
+                                        Responses
+                                      </p>
+                                      <p className="text-sm font-medium">
+                                        {actualAiResponseCount}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
+                                    size="sm"
+                                    className="w-full h-8 text-xs"
+                                    disabled={loadingSessionId === session.id}
+                                  >
+                                    {loadingSessionId === session.id ? (
+                                      <>
+                                        <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
+                                        Loading...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <MessageSquare className="w-3 h-3 mr-1" />
+                                        {session.status === 'finished' ? 'Review' : 'Continue'}
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            {/* Back of card */}
+                            <Card 
+                              className="flip-card-face flip-card-back absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2 border-primary/20"
+                              onMouseEnter={() => setPopupHovered(true)}
+                              onMouseLeave={() => {
+                                setPopupHovered(false);
+                                setTimeout(() => {
+                                  if (!hoveredSession) {
+                                    setSessionPreview(null);
+                                  }
+                                }, 200);
                               }}
-                              disabled={deletingSessionId === session.id}
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
                             >
-                              {deletingSessionId === session.id ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
-                              ) : (
-                                <Trash2 className="w-3 h-3" />
-                              )}
-                            </Button>
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            <div className="space-y-3">
-                              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                                {displayMessage}
-                              </p>
-                              
-                              <div className="grid grid-cols-2 gap-3 text-center">
-                                <div>
-                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Messages</p>
-                                  <p className="text-sm font-medium">
-                                    {actualMessageCount}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide" title="AI-generated therapeutic responses and insights in the conversation">
-                                    Responses
-                                  </p>
-                                  <p className="text-sm font-medium">
-                                    {actualAiResponseCount}
-                                  </p>
-                                </div>
-                              </div>
-                              <Button
-                                onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
-                                size="sm"
-                                className="w-full h-8 text-xs"
-                                disabled={loadingSessionId === session.id}
-                              >
-                                {loadingSessionId === session.id ? (
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-semibold text-primary flex items-center gap-2">
+                                  <Brain className="w-4 h-4" />
+                                  Conversation Analysis
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="pt-0 space-y-3">
+                                {sessionPreview ? (
                                   <>
-                                    <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
-                                    Loading...
+                                    <div>
+                                      <h4 className="text-xs font-medium text-muted-foreground mb-1">Psychological Analysis</h4>
+                                      <p className="text-xs text-foreground leading-relaxed">
+                                        {sessionPreview.psychologicalAnalysis}
+                                      </p>
+                                    </div>
+                                    
+                                    <div>
+                                      <h4 className="text-xs font-medium text-muted-foreground mb-1">Therapeutic Themes</h4>
+                                      <div className="flex flex-wrap gap-1">
+                                        {sessionPreview.therapeuticThemes?.slice(0, 3).map((theme, idx) => (
+                                          <span key={idx} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px]">
+                                            {theme}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <h4 className="text-xs font-medium text-muted-foreground mb-1">Last Exchange</h4>
+                                      <div className="text-[10px] text-foreground leading-relaxed max-h-20 overflow-y-auto">
+                                        {sessionPreview.conversationPreview.split('\n').slice(-2).join('\n')}
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 text-center pt-2 border-t border-border">
+                                      <div>
+                                        <p className="text-[9px] text-muted-foreground uppercase">User</p>
+                                        <p className="text-xs font-medium">{sessionPreview.userMessageCount}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-[9px] text-muted-foreground uppercase">AI</p>
+                                        <p className="text-xs font-medium">{sessionPreview.aiResponseCount}</p>
+                                      </div>
+                                    </div>
                                   </>
                                 ) : (
-                                  <>
-                                    <MessageSquare className="w-3 h-3 mr-1" />
-                                    {session.status === 'finished' ? 'Review' : 'Continue'}
-                                  </>
+                                  <div className="flex items-center justify-center h-32">
+                                    <div className="text-center">
+                                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
+                                      <p className="text-xs text-muted-foreground">Loading analysis...</p>
+                                    </div>
+                                  </div>
                                 )}
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
