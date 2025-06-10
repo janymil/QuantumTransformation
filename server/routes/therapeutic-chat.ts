@@ -37,6 +37,47 @@ router.get('/sessions', isAuthenticated, async (req: any, res) => {
 
     console.log('Found sessions:', sessions.length);
 
+    // Enhance sessions with message counts and details
+    const enhancedSessions = await Promise.all(sessions.map(async (session: any) => {
+      try {
+        // Get message count for this session
+        const messages = await db
+          .select()
+          .from(therapeuticChatMessages)
+          .where(eq(therapeuticChatMessages.sessionId, session.id));
+        const messageCount = messages ? messages.length : 0;
+
+        // Get last message preview
+        const lastMessage = messages && messages.length > 0
+          ? messages[messages.length - 1]?.content?.substring(0, 100) + '...'
+          : 'No messages yet';
+
+        return {
+          ...session,
+          messageCount,
+          message_count: messageCount,
+          lastMessage,
+          last_message: lastMessage,
+          createdAt: session.created_at || session.createdAt,
+          updatedAt: session.updated_at || session.updatedAt,
+          title: session.title || `Session ${session.id}`
+        };
+      } catch (error) {
+        console.error(`Error enhancing session ${session.id}:`, error);
+        return {
+          ...session,
+          messageCount: 0,
+          message_count: 0,
+          lastMessage: 'No messages yet',
+          last_message: 'No messages yet',
+          createdAt: session.created_at || session.createdAt,
+          updatedAt: session.updatedAt,
+          title: session.title || `Session ${session.id}`
+        };
+      }
+    }));
+
+
     // Add cache-busting headers to ensure fresh responses
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
@@ -44,7 +85,7 @@ router.get('/sessions', isAuthenticated, async (req: any, res) => {
 
     // Add timestamp to response headers for debugging but return sessions array
     res.setHeader('X-Debug-Timestamp', timestamp.toString());
-    res.json(sessions);
+    res.json(enhancedSessions);
   } catch (error) {
     console.error('Error fetching therapeutic chat sessions:', error);
     res.status(500).json({ error: 'Failed to fetch sessions' });

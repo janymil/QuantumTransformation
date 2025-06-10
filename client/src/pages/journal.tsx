@@ -1283,9 +1283,17 @@ export default function Journal() {
                     })
                     .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
                     .map((session, index) => {
-                      const dateTimeFormat = session.createdAt ? formatDateTime(session.createdAt) : null;
-                      const actualMessageCount = sessionPreview?.sessionId === session.id ? (sessionPreview?.messageCount || 0) : (session.messageCount || 0);
-                      const actualAiResponseCount = sessionPreview?.sessionId === session.id ? (sessionPreview?.aiResponseCount || 0) : Math.floor((session.messageCount || 0) / 2);
+                      const dateTimeFormat = session.createdAt ? formatDateTime(session.createdAt) : 
+                                           session.updated_at ? formatDateTime(session.updated_at) : null;
+                      
+                      // Use actual session data for message counts
+                      const actualMessageCount = session.message_count || session.messageCount || 0;
+                      const actualAiResponseCount = Math.floor(actualMessageCount / 2);
+                      
+                      // Format last message or topics
+                      const displayMessage = session.last_message || session.lastMessage || 
+                                           session.topics_discussed || session.topicsDiscussed || 
+                                           'No messages yet';
                       
                       return (
                         <Card 
@@ -1300,16 +1308,17 @@ export default function Journal() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <CardTitle className="text-base font-semibold line-clamp-1">
-                                    {session.title || `Session ${session.id}`}
+                                    {session.title || session.session_title || `Session ${session.id}`}
                                   </CardTitle>
                                   <div className="text-xs text-muted-foreground space-y-0.5">
-                                    {dateTimeFormat && (
+                                    {dateTimeFormat ? (
                                       <>
                                         <p>{dateTimeFormat.date}</p>
                                         <p className="font-mono text-[10px]">{dateTimeFormat.time}</p>
                                       </>
+                                    ) : (
+                                      <p>No date available</p>
                                     )}
-                                    {!dateTimeFormat && <p>No date available</p>}
                                   </div>
                                 </div>
                               </div>
@@ -1334,7 +1343,7 @@ export default function Journal() {
                           <CardContent className="pt-0">
                             <div className="space-y-3">
                               <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                                {session.lastMessage || 'No messages yet'}
+                                {displayMessage}
                               </p>
                               
                               <div className="grid grid-cols-2 gap-3 text-center">
@@ -1354,7 +1363,7 @@ export default function Journal() {
                                 </div>
                               </div>
                               <Button
-                                onClick={() => loadTherapeuticConversation(session.id, session.title || `Session ${session.id}`)}
+                                onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
                                 size="sm"
                                 className="w-full h-8 text-xs"
                                 disabled={loadingSessionId === session.id}

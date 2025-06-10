@@ -51,7 +51,7 @@ export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  
+
   // Progress operations
   getUserProgress(userId: string): Promise<UserProgress | undefined>;
   getUserProgressForChallenge(userId: string, challengeType: string): Promise<UserProgress | undefined>;
@@ -59,12 +59,12 @@ export interface IStorage {
   createUserProgress(progress: InsertUserProgress): Promise<UserProgress>;
   updateUserProgress(userId: string, updates: Partial<InsertUserProgress>): Promise<UserProgress>;
   updateChallengeProgress(userId: string, challengeType: string, updates: Partial<InsertUserProgress>): Promise<UserProgress>;
-  
+
   // Challenge completion operations
   createChallengeCompletion(completion: InsertChallengeCompletion): Promise<ChallengeCompletion>;
   getUserCompletions(userId: string): Promise<ChallengeCompletion[]>;
   getDayCompletion(userId: string, day: number, challengeType?: string): Promise<ChallengeCompletion | undefined>;
-  
+
   // Journal operations
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
   updateJournalEntry(userId: string, day: number, updates: Partial<InsertJournalEntry>, challengeType?: string): Promise<JournalEntry>;
@@ -74,51 +74,51 @@ export interface IStorage {
   getJournalEntriesForActiveChallenges(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]>;
   getArchivedJournalEntries(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]>;
   deleteJournalEntry(userId: string, entryId: number): Promise<void>;
-  
+
   // Saved phrases operations
   createSavedPhrase(phrase: InsertSavedPhrase): Promise<SavedPhrase>;
   getUserSavedPhrases(userId: string): Promise<SavedPhrase[]>;
   deleteSavedPhrase(userId: string, phraseId: number): Promise<void>;
-  
+
   // Achievements operations
   createUserAchievement(achievement: InsertUserAchievement): Promise<UserAchievement>;
   getUserAchievements(userId: string): Promise<UserAchievement[]>;
-  
+
   // AI chat operations
   createAiChatSession(session: InsertAiChatSession): Promise<AiChatSession>;
   getUserAiChatSessions(userId: string, day?: number): Promise<AiChatSession[]>;
-  
+
   // Settings operations
   getUserSettings(userId: string): Promise<UserSettings | undefined>;
   upsertUserSettings(userId: string, settings: Partial<InsertUserSettings>): Promise<UserSettings>;
-  
+
   // Multi-challenge operations
   getUserChallenges(userId: string): Promise<UserProgress[]>;
-  
+
   // Quit challenge operations
   quitChallenge(userId: string, challengeType: string): Promise<void>;
-  
+
   // AI Couch profile operations
   getAICouchProfile(userId: string): Promise<any>;
   updateAICouchProfile(userId: string, updates: any): Promise<any>;
-  
+
   // Assessment reflection operations
   createAssessmentReflection(reflection: InsertAssessmentReflection): Promise<AssessmentReflection>;
   getUserAssessmentReflections(userId: string): Promise<AssessmentReflection[]>;
   getAssessmentReflectionsByType(userId: string, reflectionType: string): Promise<AssessmentReflection[]>;
-  
+
   // Vision board operations
   createVisionBoard(visionBoard: InsertVisionBoard): Promise<VisionBoard>;
   getVisionBoards(userId: string): Promise<VisionBoard[]>;
   getVisionBoard(id: number, userId: string): Promise<VisionBoard | undefined>;
   updateVisionBoard(id: number, userId: string, updates: Partial<InsertVisionBoard>): Promise<VisionBoard | undefined>;
   deleteVisionBoard(id: number, userId: string): Promise<boolean>;
-  
+
   // Voice cloning operations
   createVoiceClone(voiceClone: InsertVoiceClone): Promise<VoiceClone>;
   getUserVoiceClones(userId: string): Promise<VoiceClone[]>;
   deleteVoiceClone(userId: string, voiceId: string): Promise<boolean>;
-  
+
   // Affirmation audio operations
   createAffirmationAudio(audio: InsertAffirmationAudio): Promise<AffirmationAudio>;
   getUserAffirmationAudio(userId: string): Promise<AffirmationAudio[]>;
@@ -223,11 +223,11 @@ export class DatabaseStorage implements IStorage {
       eq(challengeCompletions.userId, userId),
       eq(challengeCompletions.day, day)
     ];
-    
+
     if (challengeType) {
       conditions.push(eq(challengeCompletions.challengeType, challengeType));
     }
-    
+
     const [completion] = await db
       .select()
       .from(challengeCompletions)
@@ -249,11 +249,11 @@ export class DatabaseStorage implements IStorage {
       eq(journalEntries.userId, userId),
       eq(journalEntries.day, day)
     ];
-    
+
     if (challengeType) {
       conditions.push(eq(journalEntries.challengeType, challengeType));
     }
-    
+
     const [updatedEntry] = await db
       .update(journalEntries)
       .set({ ...updates, updatedAt: new Date() })
@@ -268,21 +268,21 @@ export class DatabaseStorage implements IStorage {
       console.error(`Invalid parameters for getJournalEntry: userId=${userId}, day=${day}, challengeType=${challengeType}`);
       return undefined;
     }
-    
+
     const conditions = [
       eq(journalEntries.userId, userId),
       eq(journalEntries.day, day)
     ];
-    
+
     if (challengeType && challengeType !== 'undefined') {
       conditions.push(eq(journalEntries.challengeType, challengeType));
     }
-    
+
     const [entry] = await db
       .select()
       .from(journalEntries)
       .where(and(...conditions));
-    
+
     return entry;
   }
 
@@ -311,7 +311,7 @@ export class DatabaseStorage implements IStorage {
       .selectDistinct({ challengeType: userProgress.challengeType })
       .from(userProgress)
       .where(eq(userProgress.userId, userId));
-    
+
     const result = [];
     for (const challenge of activeChallenges) {
       const entries = await this.getJournalEntriesByChallenge(userId, challenge.challengeType);
@@ -328,18 +328,18 @@ export class DatabaseStorage implements IStorage {
   async getArchivedJournalEntries(userId: string): Promise<{ challengeType: string; entries: JournalEntry[] }[]> {
     // Get all journal entries
     const allEntries = await this.getUserJournalEntries(userId);
-    
+
     // Get active challenge types
     const activeChallenges = await db
       .select()
       .from(userProgress)
       .where(eq(userProgress.userId, userId));
-    
+
     const activeChallengeTypes = new Set(activeChallenges.map(p => p.challengeType));
-    
+
     // Group archived entries by challenge type
     const archivedByType = new Map<string, JournalEntry[]>();
-    
+
     for (const entry of allEntries) {
       if (!activeChallengeTypes.has(entry.challengeType)) {
         if (!archivedByType.has(entry.challengeType)) {
@@ -348,7 +348,7 @@ export class DatabaseStorage implements IStorage {
         archivedByType.get(entry.challengeType)!.push(entry);
       }
     }
-    
+
     return Array.from(archivedByType.entries()).map(([challengeType, entries]) => ({
       challengeType,
       entries
@@ -421,7 +421,7 @@ export class DatabaseStorage implements IStorage {
     if (day !== undefined) {
       conditions.push(eq(aiChatSessions.day, day));
     }
-    
+
     return await db
       .select()
       .from(aiChatSessions)
@@ -508,13 +508,13 @@ export class DatabaseStorage implements IStorage {
     try {
       // Import schema on demand to avoid circular dependencies
       const { aiCouchProfiles } = await import("@shared/schema");
-      
+
       const [profile] = await db
         .select()
         .from(aiCouchProfiles)
         .where(eq(aiCouchProfiles.userId, userId))
         .limit(1);
-      
+
       return profile;
     } catch (error) {
       console.error("Error getting AI Couch profile:", error);
@@ -526,7 +526,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Import schema on demand to avoid circular dependencies
       const { aiCouchProfiles } = await import("@shared/schema");
-      
+
       const [profile] = await db
         .update(aiCouchProfiles)
         .set({
@@ -535,7 +535,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(aiCouchProfiles.userId, userId))
         .returning();
-      
+
       return profile;
     } catch (error) {
       console.error("Error updating AI Couch profile:", error);
@@ -876,7 +876,8 @@ export class DatabaseStorage implements IStorage {
     return updatedBoard;
   }
 
-  async deleteVisionBoard(id: number, userId: string): Promise<boolean> {
+  async deleteVisionBoard(id: number, userId: string):```text
+ Promise<boolean> {
     const result = await db
       .delete(visionBoards)
       .where(and(eq(visionBoards.id, id), eq(visionBoards.userId, userId)));
@@ -930,11 +931,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(aiUsageTracking)
       .where(eq(aiUsageTracking.userId, userId));
-    
+
     if (since) {
       query = query.where(and(eq(aiUsageTracking.userId, userId), sql`${aiUsageTracking.createdAt} >= ${since}`));
     }
-    
+
     return await query.orderBy(desc(aiUsageTracking.createdAt));
   }
 
@@ -960,6 +961,28 @@ export class DatabaseStorage implements IStorage {
       .delete(generatedImages)
       .where(and(eq(generatedImages.id, id), eq(generatedImages.userId, userId)));
     return result.rowCount > 0;
+  }
+
+  async getTherapeuticChatSessions(userId: string) {
+    // Import schema on demand to avoid circular dependencies
+    const { therapeuticChatSessions } = await import("@shared/schema");
+    return await db.select().from(therapeuticChatSessions)
+      .where(eq(therapeuticChatSessions.userId, userId))
+      .orderBy(desc(therapeuticChatSessions.updatedAt));
+  }
+
+  async getTherapeuticChatMessages(sessionId: number) {
+    try {
+       // Import schema on demand to avoid circular dependencies
+      const { therapeuticChatMessages } = await import("@shared/schema");
+      const { asc } = await import("drizzle-orm");
+      return await db.select().from(therapeuticChatMessages)
+        .where(eq(therapeuticChatMessages.sessionId, sessionId))
+        .orderBy(asc(therapeuticChatMessages.timestamp));
+    } catch (error) {
+      console.error('Error fetching therapeutic chat messages:', error);
+      return [];
+    }
   }
 }
 
