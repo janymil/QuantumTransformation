@@ -1308,8 +1308,9 @@ export default function Journal() {
                         >
                           <div className="flip-card-inner">
                             {/* Front Side */}
-                            <Card className="flip-card-front hover:shadow-lg transition-all duration-300 group cursor-pointer">
-                              <CardHeader className="pb-3 relative">
+                            <div className="flip-card-front">
+                              <Card className="hover:shadow-lg transition-all duration-300 group cursor-pointer h-full">
+                                <CardHeader className="pb-3 relative">
                                 <div className="flex items-start justify-between">
                                   <div className="flex items-center gap-3 flex-1 pr-10">
                                     <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1418,10 +1419,12 @@ export default function Journal() {
                                   </Button>
                                 </div>
                               </CardContent>
-                            </Card>
+                              </Card>
+                            </div>
 
                             {/* Back Side */}
-                            <Card className="flip-card-back">
+                            <div className="flip-card-back">
+                              <Card className="h-full">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center gap-2">
                                   <Brain className="w-4 h-4 text-purple-500" />
@@ -1472,7 +1475,8 @@ export default function Journal() {
                                   </Button>
                                 </div>
                               </CardContent>
-                            </Card>
+                              </Card>
+                            </div>
                           </div>
                         </div>
                       );
