@@ -1302,10 +1302,13 @@ export default function Journal() {
                                            'No messages yet';
                       
                       return (
-                        <div key={session.id} className="flip-card h-64">
-                          <div className="flip-card-inner">
+                        <div 
+                          key={session.id} 
+                          className="flip-card h-64 perspective-1000"
+                        >
+                          <div className="flip-card-inner relative w-full h-full transition-transform duration-700 transform-style-preserve-3d group-hover:rotate-y-180">
                             {/* Front Side */}
-                            <Card className="flip-card-front hover:shadow-lg transition-all duration-300 relative group cursor-pointer h-full">
+                            <Card className="flip-card-front absolute inset-0 w-full h-full backface-hidden hover:shadow-lg transition-all duration-300 relative group cursor-pointer">
                               <CardHeader className="pb-3 relative">
                                 <div className="flex items-start justify-between">
                                   <div className="flex items-center gap-3 flex-1 pr-10">
@@ -1391,7 +1394,7 @@ export default function Journal() {
                             </Card>
 
                             {/* Back Side */}
-                            <Card className="flip-card-back h-full">
+                            <Card className="flip-card-back absolute inset-0 w-full h-full backface-hidden rotate-y-180">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center gap-2">
                                   <Brain className="w-4 h-4 text-purple-500" />
