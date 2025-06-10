@@ -669,6 +669,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Therapeutic chat messages endpoint
+  app.get('/api/therapeutic-chat/sessions/:sessionId/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { sessionId } = req.params;
+      
+      console.log('=== THERAPEUTIC MESSAGES (MAIN ROUTES) ===');
+      console.log('Fetching messages for sessionId:', sessionId, 'userId:', userId);
+      
+      // Add cache-busting headers
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Verify session belongs to user
+      const { rows: sessionCheck } = await db.execute(sql`
+        SELECT id FROM therapeutic_chat_sessions 
+        WHERE id = ${sessionId} AND user_id = ${userId}
+      `);
+      
+      if (sessionCheck.length === 0) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      // Get messages for the session
+      const { rows: messages } = await db.execute(sql`
+        SELECT * FROM therapeutic_chat_messages 
+        WHERE session_id = ${sessionId} 
+        ORDER BY created_at ASC
+      `);
+      
+      console.log('Found therapeutic messages:', messages.length);
+      res.json(messages);
+    } catch (error) {
+      console.error('Therapeutic messages error:', error);
+      res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+  });
+
   // Chat endpoint
   app.post('/api/therapeutic-chat/chat', isAuthenticated, async (req: any, res) => {
     try {
