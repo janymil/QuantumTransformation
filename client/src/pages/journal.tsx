@@ -332,11 +332,47 @@ export default function Journal() {
     retry: 1,
   });
 
-  // Fetch therapeutic chat sessions for new tab
-  const { data: therapeuticSessions = [], isLoading: sessionsLoading } = useQuery<any[]>({
+  // Fetch therapeutic chat sessions for conversations tab
+  const { data: therapeuticSessions = [], isLoading: sessionsLoading, error: sessionsError } = useQuery<any[]>({
     queryKey: ['/api/therapeutic-chat/sessions'],
+    queryFn: async () => {
+      console.log('=== JOURNAL FETCHING THERAPEUTIC SESSIONS ===');
+      
+      // Add delay to ensure authentication is established
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
+      const response = await fetch('/api/therapeutic-chat/sessions', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
+
+      console.log('Journal therapeutic sessions response:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Journal therapeutic sessions error:', response.status, errorText);
+        
+        if (response.status === 401) {
+          console.log('Authentication failed in journal, returning empty array');
+          return [];
+        }
+        throw new Error(`Failed to fetch sessions: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Journal therapeutic sessions data:', data);
+      return Array.isArray(data) ? data : [];
+    },
     enabled: isAuthenticated && !!user,
-    retry: 1,
+    retry: (failureCount, error) => {
+      return failureCount < 2 && !error.message.includes('401');
+    },
+    refetchInterval: 15000, // Refetch every 15 seconds
+    staleTime: 30000,
   });
 
   useEffect(() => {

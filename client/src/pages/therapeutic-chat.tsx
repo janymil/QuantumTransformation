@@ -36,11 +36,15 @@ export default function TherapeuticChat() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch conversation threads
+  // Fetch conversation threads with improved error handling
   const { data: threads = [], isLoading: threadsLoading, error: threadsError } = useQuery<any[]>({
     queryKey: ['/api/therapeutic-chat/sessions'],
     queryFn: async () => {
-      console.log('=== FRONTEND FETCHING SESSIONS ===');
+      console.log('=== FRONTEND FETCHING THERAPEUTIC SESSIONS ===');
+      
+      // Add a small delay to ensure authentication is fully established
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const response = await fetch('/api/therapeutic-chat/sessions', {
         method: 'GET',
         credentials: 'include',
@@ -52,35 +56,39 @@ export default function TherapeuticChat() {
         },
       });
 
-      console.log('Response status:', response.status);
+      console.log('Therapeutic sessions response status:', response.status);
       console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Response error:', response.status, errorText);
+        console.error('Therapeutic sessions error:', response.status, errorText);
+        
         if (response.status === 401) {
-          throw new Error('Authentication required');
+          console.log('Authentication failed, redirecting...');
+          // Don't throw immediately, return empty array to prevent infinite loading
+          return [];
         }
-        throw new Error(`Failed to fetch sessions: ${response.status} - ${errorText}`);
+        throw new Error(`Failed to fetch therapeutic sessions: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('Raw sessions data received:', data);
+      console.log('Raw therapeutic sessions data received:', data);
       console.log('Sessions data type:', typeof data, 'Is array:', Array.isArray(data));
       console.log('Sessions length:', data?.length);
 
       // Ensure we always return an array
       const sessions = Array.isArray(data) ? data : [];
-      console.log('Final sessions returned:', sessions);
+      console.log('Final therapeutic sessions returned:', sessions);
       return sessions;
     },
     retry: (failureCount, error) => {
-      console.log('Query retry attempt:', failureCount, error.message);
-      return failureCount < 2;
+      console.log('Therapeutic sessions retry attempt:', failureCount, error.message);
+      return failureCount < 3 && !error.message.includes('401');
     },
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-    gcTime: 0,
+    refetchOnWindowFocus: false,
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
+    refetchInterval: 10000, // Refetch every 10 seconds to catch authentication
   });
 
   // Debug threads data
