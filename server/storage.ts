@@ -876,8 +876,7 @@ export class DatabaseStorage implements IStorage {
     return updatedBoard;
   }
 
-  async deleteVisionBoard(id: number, userId: string):```text
- Promise<boolean> {
+  async deleteVisionBoard(id: number, userId: string): Promise<boolean> {
     const result = await db
       .delete(visionBoards)
       .where(and(eq(visionBoards.id, id), eq(visionBoards.userId, userId)));
