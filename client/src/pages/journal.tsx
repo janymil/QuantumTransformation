@@ -1302,183 +1302,144 @@ export default function Journal() {
                                            'No messages yet';
                       
                       return (
-                        <div 
+                        <Card 
                           key={session.id} 
-                          className="flip-card h-64"
+                          className="hover:shadow-lg transition-all duration-300 group cursor-pointer h-auto"
                         >
-                          <div className="flip-card-inner">
-                            {/* Front Side */}
-                            <div className="flip-card-front">
-                              <Card className="hover:shadow-lg transition-all duration-300 group cursor-pointer h-full">
-                                <CardHeader className="pb-3 relative">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex items-center gap-3 flex-1 pr-10">
-                                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                      <MessageSquare className="w-4 h-4 text-primary" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <CardTitle className="text-base font-semibold line-clamp-1">
-                                        {session.title || session.session_title || `Session ${session.id}`}
-                                      </CardTitle>
-                                      <div className="text-xs text-muted-foreground space-y-0.5">
-                                        {dateTimeFormat ? (
-                                          <>
-                                            <p>{dateTimeFormat.date}</p>
-                                            <p className="font-mono text-[10px]">{dateTimeFormat.time}</p>
-                                          </>
-                                        ) : (
-                                          <p>No date available</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
+                          <CardHeader className="pb-3 relative">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3 flex-1 pr-10">
+                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <MessageSquare className="w-4 h-4 text-primary" />
                                 </div>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                      }}
-                                      disabled={deletingSessionId === session.id}
-                                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
-                                    >
-                                      {deletingSessionId === session.id ? (
-                                        <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
-                                      ) : (
-                                        <Trash2 className="w-3 h-3" />
-                                      )}
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle className="flex items-center gap-2">
-                                        <Trash2 className="w-5 h-5 text-destructive" />
-                                        Delete Therapeutic Conversation
-                                      </AlertDialogTitle>
-                                      <AlertDialogDescription className="text-left space-y-2">
-                                        <p>Are you sure you want to delete this therapeutic conversation?</p>
-                                        <p className="text-destructive font-medium">⚠️ This action is irreversible</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          All messages, insights, and progress from this session will be permanently removed from your account.
-                                        </p>
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Keep Conversation</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => handleDeleteSession(session.id)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      >
-                                        Delete Forever
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </CardHeader>
-                              <CardContent className="pt-0">
-                                <div className="space-y-3">
-                                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                                    {displayMessage.slice(0, 100)}...
-                                  </p>
-                                  
-                                  <div className="grid grid-cols-2 gap-3 text-center">
-                                    <div>
-                                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Messages</p>
-                                      <p className="text-sm font-medium">
-                                        {actualMessageCount}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide" title="AI-generated therapeutic responses and insights in the conversation">
-                                        Responses
-                                      </p>
-                                      <p className="text-sm font-medium">
-                                        {actualAiResponseCount}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
-                                    size="sm"
-                                    className="w-full h-8 text-xs"
-                                    disabled={loadingSessionId === session.id}
-                                  >
-                                    {loadingSessionId === session.id ? (
+                                <div className="min-w-0 flex-1">
+                                  <CardTitle className="text-base font-semibold line-clamp-1">
+                                    {session.title || session.session_title || `Session ${session.id}`}
+                                  </CardTitle>
+                                  <div className="text-xs text-muted-foreground space-y-0.5">
+                                    {dateTimeFormat ? (
                                       <>
-                                        <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
-                                        Loading...
+                                        <p>{dateTimeFormat.date}</p>
+                                        <p className="font-mono text-[10px]">{dateTimeFormat.time}</p>
                                       </>
                                     ) : (
-                                      <>
-                                        <MessageSquare className="w-3 h-3 mr-1" />
-                                        {session.status === 'finished' ? 'Review' : 'Continue'}
-                                      </>
+                                      <p>No date available</p>
                                     )}
-                                  </Button>
+                                  </div>
                                 </div>
-                              </CardContent>
-                              </Card>
+                              </div>
+                            </div>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                  disabled={deletingSessionId === session.id}
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
+                                >
+                                  {deletingSessionId === session.id ? (
+                                    <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
+                                  ) : (
+                                    <Trash2 className="w-3 h-3" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="flex items-center gap-2">
+                                    <Trash2 className="w-5 h-5 text-destructive" />
+                                    Delete Therapeutic Conversation
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-left space-y-2">
+                                    <p>Are you sure you want to delete this therapeutic conversation?</p>
+                                    <p className="text-destructive font-medium">⚠️ This action is irreversible</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      All messages, insights, and progress from this session will be permanently removed from your account.
+                                    </p>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Keep Conversation</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteSession(session.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete Forever
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </CardHeader>
+
+                          <CardContent className="pt-0 space-y-4">
+                            {/* Session Overview */}
+                            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Brain className="w-4 h-4 text-purple-500" />
+                                <p className="text-xs font-semibold text-muted-foreground">Session Analysis</p>
+                              </div>
+                              
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Overall Theme</p>
+                                <p className="text-xs leading-relaxed">
+                                  {session.topics_discussed || session.topicsDiscussed || 'Personal growth and therapeutic exploration'}
+                                </p>
+                              </div>
+                              
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Last Message Preview</p>
+                                <p className="text-xs leading-relaxed line-clamp-2 italic text-muted-foreground">
+                                  "{(session.last_message || session.lastMessage || displayMessage || 'Continuing therapeutic conversation...').slice(0, 120)}..."
+                                </p>
+                              </div>
                             </div>
 
-                            {/* Back Side */}
-                            <div className="flip-card-back">
-                              <Card className="h-full">
-                              <CardHeader className="pb-3">
-                                <div className="flex items-center gap-2">
-                                  <Brain className="w-4 h-4 text-purple-500" />
-                                  <CardTitle className="text-sm font-semibold">Session Analysis</CardTitle>
-                                </div>
-                              </CardHeader>
-                              <CardContent className="pt-0 space-y-3">
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">Overall Theme</p>
-                                  <p className="text-xs leading-relaxed">
-                                    {session.topics_discussed || session.topicsDiscussed || 'Personal growth and therapeutic exploration'}
-                                  </p>
-                                </div>
-                                
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">Last Message</p>
-                                  <p className="text-xs leading-relaxed line-clamp-3 italic">
-                                    "{(session.last_message || session.lastMessage || 'Continuing therapeutic conversation...').slice(0, 120)}..."
-                                  </p>
-                                </div>
-                                
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">Session Stats</p>
-                                  <div className="flex justify-between text-xs">
-                                    <span>Duration: {Math.ceil(actualMessageCount * 2)} min</span>
-                                    <span>Exchanges: {Math.floor(actualMessageCount / 2)}</span>
-                                  </div>
-                                </div>
-                                
-                                <div className="pt-2">
-                                  <Button
-                                    onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
-                                    size="sm"
-                                    className="w-full h-7 text-xs"
-                                    disabled={loadingSessionId === session.id}
-                                  >
-                                    {loadingSessionId === session.id ? (
-                                      <>
-                                        <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
-                                        Loading...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <MessageSquare className="w-3 h-3 mr-1" />
-                                        Open Session
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              </CardContent>
-                              </Card>
+                            {/* Statistics Grid */}
+                            <div className="grid grid-cols-3 gap-3 text-center">
+                              <div>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Messages</p>
+                                <p className="text-sm font-medium">
+                                  {actualMessageCount}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Responses</p>
+                                <p className="text-sm font-medium">
+                                  {actualAiResponseCount}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Duration</p>
+                                <p className="text-sm font-medium">
+                                  {Math.ceil(actualMessageCount * 2)}m
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+
+                            {/* Action Button */}
+                            <Button
+                              onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
+                              size="sm"
+                              className="w-full h-8 text-xs"
+                              disabled={loadingSessionId === session.id}
+                            >
+                              {loadingSessionId === session.id ? (
+                                <>
+                                  <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
+                                  Loading...
+                                </>
+                              ) : (
+                                <>
+                                  <MessageSquare className="w-3 h-3 mr-1" />
+                                  {session.status === 'finished' ? 'Review Session' : 'Continue Session'}
+                                </>
+                              )}
+                            </Button>
+                          </CardContent>
+                        </Card>
                       );
                     })}
                   </div>
