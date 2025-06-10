@@ -13,11 +13,8 @@ router.get('/sessions', async (req: any, res) => {
   const forceRefresh = req.query.refresh || timestamp;
   try {
     // Try multiple ways to get user ID from Repl Auth
-    const userId = req.user?.claims?.sub || 
-                   req.user?.id || 
-                   req.headers['x-replit-user-id'] ||
-                   req.get('X-Replit-User-Id');
-    
+    const userId = String(req.user.claims.sub);
+
     console.log('=== THERAPEUTIC CHAT SESSIONS DEBUG ===');
     console.log('req.user:', JSON.stringify(req.user, null, 2));
     console.log('userId extracted:', userId);
@@ -26,7 +23,7 @@ router.get('/sessions', async (req: any, res) => {
       'X-Replit-User-Id': req.get('X-Replit-User-Id')
     });
     console.log('req.isAuthenticated():', req.isAuthenticated?.());
-    
+
     if (!userId) {
       console.log('No userId found in request');
       return res.status(401).json({ error: 'User not authenticated' });
@@ -38,14 +35,14 @@ router.get('/sessions', async (req: any, res) => {
       WHERE user_id = ${userId} 
       ORDER BY last_activity DESC
     `);
-    
+
     console.log('Found sessions:', sessions.length);
-    
+
     // Add cache-busting headers to ensure fresh responses
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    
+
     // Add timestamp to response headers for debugging but return sessions array
     res.setHeader('X-Debug-Timestamp', timestamp.toString());
     res.json(sessions);
@@ -58,12 +55,9 @@ router.get('/sessions', async (req: any, res) => {
 // Get messages for a specific therapeutic chat session
 router.get('/sessions/:sessionId/messages', async (req, res) => {
   try {
-    const userId = req.user?.claims?.sub || 
-                   req.user?.id || 
-                   req.headers['x-replit-user-id'] ||
-                   req.get('X-Replit-User-Id');
+    const userId = String(req.user.claims.sub);
     const sessionId = parseInt(req.params.sessionId);
-    
+
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -98,10 +92,7 @@ router.get('/sessions/:sessionId/messages', async (req, res) => {
 // Create a new therapeutic chat session
 router.post('/sessions', async (req, res) => {
   try {
-    const userId = req.user?.claims?.sub || 
-                   req.user?.id || 
-                   req.headers['x-replit-user-id'] ||
-                   req.get('X-Replit-User-Id');
+    const userId = String(req.user.claims.sub);
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -131,10 +122,7 @@ router.post('/sessions', async (req, res) => {
 // Save a conversation to therapeutic chat system
 router.post('/save-conversation', async (req, res) => {
   try {
-    const userId = req.user?.claims?.sub || 
-                   req.user?.id || 
-                   req.headers['x-replit-user-id'] ||
-                   req.get('X-Replit-User-Id');
+    const userId = String(req.user.claims.sub);
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -185,12 +173,9 @@ router.post('/save-conversation', async (req, res) => {
 // Update an existing therapeutic chat session (for auto-save)
 router.put('/sessions/:sessionId/update', async (req, res) => {
   try {
-    const userId = req.user?.claims?.sub || 
-                   req.user?.id || 
-                   req.headers['x-replit-user-id'] ||
-                   req.get('X-Replit-User-Id');
+    const userId = String(req.user.claims.sub);
     const sessionId = parseInt(req.params.sessionId);
-    
+
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -258,12 +243,9 @@ router.put('/sessions/:sessionId/update', async (req, res) => {
 // Delete a therapeutic chat session
 router.delete('/sessions/:sessionId', async (req, res) => {
   try {
-    const userId = req.user?.claims?.sub || 
-                   req.user?.id || 
-                   req.headers['x-replit-user-id'] ||
-                   req.get('X-Replit-User-Id');
+    const userId = String(req.user.claims.sub);
     const sessionId = parseInt(req.params.sessionId);
-    
+
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -297,11 +279,8 @@ router.delete('/sessions/:sessionId', async (req, res) => {
 // Debug endpoint to check authentication and sessions
 router.get('/debug/auth-check', async (req: any, res) => {
   try {
-    const userId = req.user?.claims?.sub || 
-                   req.user?.id || 
-                   req.headers['x-replit-user-id'] ||
-                   req.get('X-Replit-User-Id');
-    
+    const userId = String(req.user.claims.sub);
+
     const debugInfo = {
       timestamp: new Date().toISOString(),
       hasUser: !!req.user,
@@ -316,7 +295,7 @@ router.get('/debug/auth-check', async (req: any, res) => {
       isAuthenticated: req.isAuthenticated?.(),
       fullUser: req.user
     };
-    
+
     console.log('=== AUTH DEBUG INFO ===', debugInfo);
     res.json(debugInfo);
   } catch (error) {
@@ -333,7 +312,7 @@ router.get('/debug/all-sessions', async (req: any, res) => {
       ORDER BY created_at DESC
       LIMIT 10
     `);
-    
+
     res.json({ 
       totalSessions: allSessions.length,
       sessions: allSessions,
