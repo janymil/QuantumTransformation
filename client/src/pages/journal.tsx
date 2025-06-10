@@ -1291,6 +1291,26 @@ export default function Journal() {
                         <Card 
                           key={session.id} 
                           className="hover:shadow-lg transition-all duration-300 relative group cursor-pointer"
+                          onMouseEnter={() => {
+                            if (hoverTimeoutRef.current) {
+                              clearTimeout(hoverTimeoutRef.current);
+                            }
+                            hoverTimeoutRef.current = setTimeout(() => {
+                              setHoveredSession(session.id);
+                              fetchSessionPreview(session.id);
+                            }, 300);
+                          }}
+                          onMouseLeave={() => {
+                            if (hoverTimeoutRef.current) {
+                              clearTimeout(hoverTimeoutRef.current);
+                            }
+                            hoverTimeoutRef.current = setTimeout(() => {
+                              if (!popupHovered) {
+                                setHoveredSession(null);
+                                setSessionPreview(null);
+                              }
+                            }, 100);
+                          }}
                         >
                           <CardHeader className="pb-3 relative">
                             <div className="flex items-start justify-between">
