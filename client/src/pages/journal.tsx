@@ -1,2 +1,0 @@
-I will apply the changes to the code to integrate a modern delete confirmation dialog, replacing the native browser confirm dialog. This includes adding a new component import, state variables for the dialog, handlers to open and close the dialog, and updating the delete button to use the new dialog.
-</tool_code>
