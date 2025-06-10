@@ -129,9 +129,15 @@ export async function setupAuth(app: Express) {
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   try {
+    console.log('=== AUTHENTICATION CHECK ===');
+    console.log('req.isAuthenticated():', req.isAuthenticated?.());
+    console.log('req.user exists:', !!req.user);
+    console.log('req.session:', req.session);
+    
     // Check if user is authenticated via Passport
     if (!req.isAuthenticated?.() || !req.user) {
       console.log('Authentication failed - no user or not authenticated');
+      console.log('Full request headers:', req.headers);
       return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -139,7 +145,8 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     console.log('User authenticated successfully:', {
       hasUser: !!user,
       userKeys: Object.keys(user || {}),
-      userId: user?.claims?.sub || user?.id
+      userId: user?.claims?.sub || user?.id,
+      fullUser: user
     });
 
     // If user has expires_at, check if token is still valid

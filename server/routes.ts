@@ -647,9 +647,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get sessions
   app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      // Add cache-busting headers
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
+      const userId = String(req.user.claims.sub);
       console.log('=== DIRECT SESSIONS ENDPOINT ===');
       console.log('userId:', userId);
+      console.log('user object:', req.user);
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
       
       // Direct SQL query to get sessions
       const { rows: sessions } = await db.execute(sql`
@@ -663,6 +673,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Direct sessions error:', error);
       res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+  });ons' });ons' });
     }
   });
 
