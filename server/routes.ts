@@ -674,8 +674,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Direct sessions error:', error);
       res.status(500).json({ error: 'Failed to fetch sessions' });
     }
-  });ons' });ons' });
-    }
   });
 
   // Chat endpoint
