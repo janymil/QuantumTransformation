@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { 
   BookOpen, 
   Calendar, 
@@ -94,6 +95,7 @@ export default function Journal() {
   const [conversationSearchQuery, setConversationSearchQuery] = useState("");
   const [conversationDateFilter, setConversationDateFilter] = useState("all");
   const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
+  const [deleteDialogSessionId, setDeleteDialogSessionId] = useState<number | null>(null);
   const [loadingSessionId, setLoadingSessionId] = useState<number | null>(null);
   const [hoveredSession, setHoveredSession] = useState<number | null>(null);
   const [sessionPreview, setSessionPreview] = useState<{
@@ -278,14 +280,12 @@ export default function Journal() {
   });
 
   const handleDeleteSession = async (sessionId: number) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this therapeutic conversation?\n\nThis action is irreversible and will permanently remove all messages and insights from this session."
-    );
-    
-    if (confirmed) {
-      setDeletingSessionId(sessionId);
-      deleteSessionMutation.mutate(sessionId);
-    }
+    setDeletingSessionId(sessionId);
+    deleteSessionMutation.mutate(sessionId);
+  };
+
+  const confirmDeleteSession = (sessionId: number) => {
+    setDeleteDialogSessionId(sessionId);
   };
 
   const toggleEntryExpansion = (entryId: string | number) => {
@@ -1332,22 +1332,49 @@ export default function Journal() {
                                     </div>
                                   </div>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteSession(session.id);
-                                  }}
-                                  disabled={deletingSessionId === session.id}
-                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
-                                >
-                                  {deletingSessionId === session.id ? (
-                                    <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
-                                  ) : (
-                                    <Trash2 className="w-3 h-3" />
-                                  )}
-                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                      }}
+                                      disabled={deletingSessionId === session.id}
+                                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
+                                    >
+                                      {deletingSessionId === session.id ? (
+                                        <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
+                                      ) : (
+                                        <Trash2 className="w-3 h-3" />
+                                      )}
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle className="flex items-center gap-2">
+                                        <Trash2 className="w-5 h-5 text-destructive" />
+                                        Delete Therapeutic Conversation
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription className="text-left space-y-2">
+                                        <p>Are you sure you want to delete this therapeutic conversation?</p>
+                                        <p className="text-destructive font-medium">⚠️ This action is irreversible</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          All messages, insights, and progress from this session will be permanently removed from your account.
+                                        </p>
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Keep Conversation</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteSession(session.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete Forever
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </CardHeader>
                               <CardContent className="pt-0">
                                 <div className="space-y-3">

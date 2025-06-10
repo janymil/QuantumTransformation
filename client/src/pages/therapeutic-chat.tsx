@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Plus, MessageCircle, Clock, Trash2, Heart, Lightbulb, Settings, Brain, Info, BarChart3 } from "lucide-react";
@@ -854,23 +855,45 @@ export default function TherapeuticChat() {
                           </div>
                         </div>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="h-6 w-6 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const confirmed = window.confirm(
-                            "Are you sure you want to delete this therapeutic conversation?\n\nThis action is irreversible and will permanently remove all messages and insights from this session."
-                          );
-                          if (confirmed) {
-                            deleteThreadMutation.mutate(thread.id);
-                          }
-                        }}
-                        disabled={deleteThreadMutation.isPending}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            disabled={deleteThreadMutation.isPending}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2">
+                              <Trash2 className="w-5 h-5 text-destructive" />
+                              Delete Therapeutic Conversation
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-left space-y-2">
+                              <p>Are you sure you want to delete this therapeutic conversation?</p>
+                              <p className="text-destructive font-medium">⚠️ This action is irreversible</p>
+                              <p className="text-sm text-muted-foreground">
+                                All messages, insights, and progress from this session will be permanently removed from your account.
+                              </p>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Keep Conversation</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteThreadMutation.mutate(thread.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Forever
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </CardContent>
                 </Card>
