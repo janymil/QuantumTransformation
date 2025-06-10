@@ -860,7 +860,12 @@ export default function TherapeuticChat() {
                         className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteThreadMutation.mutate(thread.id);
+                          const confirmed = window.confirm(
+                            "Are you sure you want to delete this therapeutic conversation?\n\nThis action is irreversible and will permanently remove all messages and insights from this session."
+                          );
+                          if (confirmed) {
+                            deleteThreadMutation.mutate(thread.id);
+                          }
                         }}
                         disabled={deleteThreadMutation.isPending}
                       >
