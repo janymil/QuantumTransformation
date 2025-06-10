@@ -2,10 +2,11 @@ import express from 'express';
 import { db } from '../db';
 import { therapeuticChatSessions, therapeuticChatMessages } from '../../shared/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
+import { isAuthenticated } from '../replitAuth';
 const router = express.Router();
 
 // Get all therapeutic chat sessions for a user
-router.get('/sessions', async (req: any, res) => {
+router.get('/sessions', isAuthenticated, async (req: any, res) => {
   // Force fresh query by adding timestamp and query param check
   const timestamp = Date.now();
   const forceRefresh = req.query.refresh || timestamp;
@@ -51,7 +52,7 @@ router.get('/sessions', async (req: any, res) => {
 });
 
 // Get messages for a specific therapeutic chat session
-router.get('/sessions/:sessionId/messages', async (req, res) => {
+router.get('/sessions/:sessionId/messages', isAuthenticated, async (req: any, res) => {
   try {
     const userId = String(req.user.claims.sub);
     const sessionId = parseInt(req.params.sessionId);
@@ -88,7 +89,7 @@ router.get('/sessions/:sessionId/messages', async (req, res) => {
 });
 
 // Create a new therapeutic chat session
-router.post('/sessions', async (req, res) => {
+router.post('/sessions', isAuthenticated, async (req: any, res) => {
   try {
     const userId = String(req.user.claims.sub);
     if (!userId) {
@@ -118,7 +119,7 @@ router.post('/sessions', async (req, res) => {
 });
 
 // Save a conversation to therapeutic chat system
-router.post('/save-conversation', async (req, res) => {
+router.post('/save-conversation', isAuthenticated, async (req: any, res) => {
   try {
     const userId = String(req.user.claims.sub);
     if (!userId) {
@@ -169,7 +170,7 @@ router.post('/save-conversation', async (req, res) => {
 });
 
 // Update an existing therapeutic chat session (for auto-save)
-router.put('/sessions/:sessionId/update', async (req, res) => {
+router.put('/sessions/:sessionId/update', isAuthenticated, async (req: any, res) => {
   try {
     const userId = String(req.user.claims.sub);
     const sessionId = parseInt(req.params.sessionId);
@@ -239,7 +240,7 @@ router.put('/sessions/:sessionId/update', async (req, res) => {
 });
 
 // Delete a therapeutic chat session
-router.delete('/sessions/:sessionId', async (req, res) => {
+router.delete('/sessions/:sessionId', isAuthenticated, async (req: any, res) => {
   try {
     const userId = String(req.user.claims.sub);
     const sessionId = parseInt(req.params.sessionId);
@@ -275,7 +276,7 @@ router.delete('/sessions/:sessionId', async (req, res) => {
 });
 
 // Debug endpoint to check authentication and sessions
-router.get('/debug/auth-check', async (req: any, res) => {
+router.get('/debug/auth-check', isAuthenticated, async (req: any, res) => {
   try {
     const userId = String(req.user.claims.sub);
 
@@ -303,7 +304,7 @@ router.get('/debug/auth-check', async (req: any, res) => {
 });
 
 // Debug endpoint to check all sessions
-router.get('/debug/all-sessions', async (req: any, res) => {
+router.get('/debug/all-sessions', isAuthenticated, async (req: any, res) => {
   try {
     const { rows: allSessions } = await db.execute(sql`
       SELECT id, user_id, title, created_at, last_activity FROM therapeutic_chat_sessions 
