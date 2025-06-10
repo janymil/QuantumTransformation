@@ -68,16 +68,13 @@ app.use((req, res, next) => {
 (async () => {
   console.log('=== REGISTERING ROUTES ===');
   
-  // Register therapeutic chat routes FIRST to prevent conflicts
-  const { registerTherapeuticChatRoutes } = await import('./therapeutic-chat/routes');
-  console.log('Registering therapeutic chat routes...');
-  registerTherapeuticChatRoutes(app);
-  console.log('Therapeutic chat routes registered');
-
-  // Register all other routes AFTER therapeutic chat routes
+  // Register main routes FIRST to set up authentication
   console.log('Registering main routes...');
   const server = await registerRoutes(app);
   console.log('Main routes registered');
+
+  // Therapeutic chat routes are now handled in main routes to prevent auth conflicts
+  console.log('Therapeutic chat routes handled in main routes');
 
   // Add route debugging middleware
   app.use((req, res, next) => {

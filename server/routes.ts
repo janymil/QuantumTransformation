@@ -641,8 +641,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerGamificationRoutes(app);
   registerDeepJournalingRoutes(app);
   
-  // Register therapeutic chat routes properly
-  app.use('/api/therapeutic-chat', therapeuticChatRoutes);
+  // Therapeutic chat sessions endpoint - moved to main routes for authentication consistency
+  app.get('/api/therapeutic-chat/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      console.log('=== THERAPEUTIC SESSIONS (MAIN ROUTES) ===');
+      console.log('Fetching therapeutic sessions for userId:', userId);
+      
+      // Add cache-busting headers
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Direct SQL query to get sessions
+      const { rows: sessions } = await db.execute(sql`
+        SELECT * FROM therapeutic_chat_sessions 
+        WHERE user_id = ${userId} 
+        ORDER BY last_activity DESC
+      `);
+      
+      console.log('Found therapeutic sessions:', sessions.length);
+      res.json(sessions);
+    } catch (error) {
+      console.error('Therapeutic sessions error:', error);
+      res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+  });
 
   // Chat endpoint
   app.post('/api/therapeutic-chat/chat', isAuthenticated, async (req: any, res) => {
