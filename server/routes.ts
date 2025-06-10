@@ -654,21 +654,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       
-      // Direct SQL query to get sessions with message counts
+      // Direct SQL query to get sessions
       const { rows: sessions } = await db.execute(sql`
-        SELECT 
-          s.*,
-          COUNT(m.id) as message_count,
-          MAX(m.created_at) as last_message_time
-        FROM therapeutic_chat_sessions s
-        LEFT JOIN therapeutic_chat_messages m ON s.id = m.session_id
-        WHERE s.user_id = ${userId}
-        GROUP BY s.id, s.user_id, s.title, s.topics_discussed, s.last_message, s.created_at, s.updated_at, s.last_activity
-        ORDER BY s.last_activity DESC
+        SELECT * FROM therapeutic_chat_sessions 
+        WHERE user_id = ${userId} 
+        ORDER BY last_activity DESC
       `);
       
       console.log('Found therapeutic sessions:', sessions.length);
-      console.log('Sessions with message counts:', sessions.map(s => ({ id: s.id, messageCount: s.message_count })));
       res.json(sessions);
     } catch (error) {
       console.error('Therapeutic sessions error:', error);
