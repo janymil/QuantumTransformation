@@ -1353,98 +1353,98 @@ export default function Journal() {
                                   </p>
                                   
                                   <div className="grid grid-cols-2 gap-3 text-center">
-                                <div>
-                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Messages</p>
-                                  <p className="text-sm font-medium">
-                                    {actualMessageCount}
-                                  </p>
+                                    <div>
+                                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Messages</p>
+                                      <p className="text-sm font-medium">
+                                        {actualMessageCount}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide" title="AI-generated therapeutic responses and insights in the conversation">
+                                        Responses
+                                      </p>
+                                      <p className="text-sm font-medium">
+                                        {actualAiResponseCount}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
+                                    size="sm"
+                                    className="w-full h-8 text-xs"
+                                    disabled={loadingSessionId === session.id}
+                                  >
+                                    {loadingSessionId === session.id ? (
+                                      <>
+                                        <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
+                                        Loading...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <MessageSquare className="w-3 h-3 mr-1" />
+                                        {session.status === 'finished' ? 'Review' : 'Continue'}
+                                      </>
+                                    )}
+                                  </Button>
                                 </div>
-                                <div>
-                                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide" title="AI-generated therapeutic responses and insights in the conversation">
-                                    Responses
-                                  </p>
-                                  <p className="text-sm font-medium">
-                                    {actualAiResponseCount}
-                                  </p>
-                                </div>
-                              </div>
-                              <Button
-                                onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
-                                size="sm"
-                                className="w-full h-8 text-xs"
-                                disabled={loadingSessionId === session.id}
-                              >
-                                {loadingSessionId === session.id ? (
-                                  <>
-                                    <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
-                                    Loading...
-                                  </>
-                                ) : (
-                                  <>
-                                    <MessageSquare className="w-3 h-3 mr-1" />
-                                    {session.status === 'finished' ? 'Review' : 'Continue'}
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
+                              </CardContent>
+                            </Card>
 
-                        {/* Back Side */}
-                        <Card className="flip-card-back h-full">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center gap-2">
-                              <Brain className="w-4 h-4 text-purple-500" />
-                              <CardTitle className="text-sm font-semibold">Session Analysis</CardTitle>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="pt-0 space-y-3">
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Overall Theme</p>
-                              <p className="text-xs leading-relaxed">
-                                {session.topics_discussed || session.topicsDiscussed || 'Personal growth and therapeutic exploration'}
-                              </p>
-                            </div>
-                            
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Last Message</p>
-                              <p className="text-xs leading-relaxed line-clamp-3 italic">
-                                "{(session.last_message || session.lastMessage || 'Continuing therapeutic conversation...').slice(0, 120)}..."
-                              </p>
-                            </div>
-                            
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Session Stats</p>
-                              <div className="flex justify-between text-xs">
-                                <span>Duration: {Math.ceil(actualMessageCount * 2)} min</span>
-                                <span>Exchanges: {Math.floor(actualMessageCount / 2)}</span>
-                              </div>
-                            </div>
-                            
-                            <div className="pt-2">
-                              <Button
-                                onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
-                                size="sm"
-                                className="w-full h-7 text-xs"
-                                disabled={loadingSessionId === session.id}
-                              >
-                                {loadingSessionId === session.id ? (
-                                  <>
-                                    <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
-                                    Loading...
-                                  </>
-                                ) : (
-                                  <>
-                                    <MessageSquare className="w-3 h-3 mr-1" />
-                                    Open Session
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </div>
+                            {/* Back Side */}
+                            <Card className="flip-card-back h-full">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center gap-2">
+                                  <Brain className="w-4 h-4 text-purple-500" />
+                                  <CardTitle className="text-sm font-semibold">Session Analysis</CardTitle>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="pt-0 space-y-3">
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Overall Theme</p>
+                                  <p className="text-xs leading-relaxed">
+                                    {session.topics_discussed || session.topicsDiscussed || 'Personal growth and therapeutic exploration'}
+                                  </p>
+                                </div>
+                                
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Last Message</p>
+                                  <p className="text-xs leading-relaxed line-clamp-3 italic">
+                                    "{(session.last_message || session.lastMessage || 'Continuing therapeutic conversation...').slice(0, 120)}..."
+                                  </p>
+                                </div>
+                                
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Session Stats</p>
+                                  <div className="flex justify-between text-xs">
+                                    <span>Duration: {Math.ceil(actualMessageCount * 2)} min</span>
+                                    <span>Exchanges: {Math.floor(actualMessageCount / 2)}</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="pt-2">
+                                  <Button
+                                    onClick={() => loadTherapeuticConversation(session.id, session.title || session.session_title || `Session ${session.id}`)}
+                                    size="sm"
+                                    className="w-full h-7 text-xs"
+                                    disabled={loadingSessionId === session.id}
+                                  >
+                                    {loadingSessionId === session.id ? (
+                                      <>
+                                        <div className="w-3 h-3 mr-1 border border-current border-t-transparent rounded-full animate-spin" />
+                                        Loading...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <MessageSquare className="w-3 h-3 mr-1" />
+                                        Open Session
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
