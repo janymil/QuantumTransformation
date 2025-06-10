@@ -51,10 +51,10 @@ export default function TherapeuticChat() {
           'Expires': '0',
         },
       });
-      
+
       console.log('Response status:', response.status);
       console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Response error:', response.status, errorText);
@@ -63,12 +63,12 @@ export default function TherapeuticChat() {
         }
         throw new Error(`Failed to fetch sessions: ${response.status} - ${errorText}`);
       }
-      
+
       const data = await response.json();
       console.log('Raw sessions data received:', data);
       console.log('Sessions data type:', typeof data, 'Is array:', Array.isArray(data));
       console.log('Sessions length:', data?.length);
-      
+
       // Ensure we always return an array
       const sessions = Array.isArray(data) ? data : [];
       console.log('Final sessions returned:', sessions);
@@ -201,12 +201,12 @@ export default function TherapeuticChat() {
 
       setMessages(prev => {
         const updatedMessages = [...prev, userMessage, aiMessage];
-        
+
         // Auto-save conversation after meaningful exchanges (3+ messages)
         if (updatedMessages.length >= 3) {
           autoSaveConversation(updatedMessages);
         }
-        
+
         return updatedMessages;
       });
     },
@@ -345,7 +345,7 @@ export default function TherapeuticChat() {
     const deeperPrompt = `Based on my previous response: "${safeMessage}", please provide a much deeper, more insightful therapeutic exploration. Ask probing questions that help me uncover underlying patterns, beliefs, or emotions. Use techniques from depth psychology, CBT, or somatic therapy to guide me toward profound self-discovery.`;
 
     setIsProcessingAction(true);
-    
+
     // Add thinking indicator message
     const thinkingMessage: Message = {
       id: Date.now().toString(),
@@ -380,7 +380,7 @@ export default function TherapeuticChat() {
         setMessages(prev => prev.map(msg => 
           msg.isThinking ? newAiMessage : msg
         ));
-        
+
         if (data.threadId) {
           setActiveSession(data.threadId);
         }
@@ -404,7 +404,7 @@ export default function TherapeuticChat() {
     const newDirectionPrompt = `Please completely shift the therapeutic direction. Instead of continuing with "${safeMessage}", explore a different angle of my concerns. Ask questions that reveal new perspectives, challenge my assumptions, or guide me toward unexplored aspects of my situation. Help me see my challenges from a fresh, innovative viewpoint.`;
 
     setIsProcessingAction(true);
-    
+
     // Add thinking indicator message
     const thinkingMessage: Message = {
       id: Date.now().toString(),
@@ -439,7 +439,7 @@ export default function TherapeuticChat() {
         setMessages(prev => prev.map(msg => 
           msg.isThinking ? newAiMessage : msg
         ));
-        
+
         if (data.threadId) {
           setActiveSession(data.threadId);
         }
@@ -500,7 +500,7 @@ export default function TherapeuticChat() {
     try {
       // Use auto-save to ensure conversation is saved/updated
       await autoSaveConversation(messages);
-      
+
       toast({
         title: "Conversation Finished",
         description: "Your therapeutic session has been saved and finalized.",
@@ -727,11 +727,11 @@ export default function TherapeuticChat() {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         if (data.transcription && data.transcription.trim()) {
           // Set the transcribed text in the input field
           setCurrentMessage(data.transcription);
-          
+
           toast({
             title: "Voice Processed",
             description: "Your message has been transcribed. Review and send when ready.",
@@ -918,7 +918,7 @@ export default function TherapeuticChat() {
                 onClick={async () => {
                   try {
                     console.log('=== MANUAL API TEST ===');
-                    
+
                     // Test direct API call
                     const response = await fetch('/api/therapeutic-chat/sessions', {
                       method: 'GET',
@@ -927,11 +927,11 @@ export default function TherapeuticChat() {
                         'Content-Type': 'application/json',
                       }
                     });
-                    
+
                     console.log('Direct API response status:', response.status);
                     const responseText = await response.text();
                     console.log('Direct API response text:', responseText);
-                    
+
                     let parsedData;
                     try {
                       parsedData = JSON.parse(responseText);
@@ -939,14 +939,14 @@ export default function TherapeuticChat() {
                     } catch (parseError) {
                       console.error('JSON parse error:', parseError);
                     }
-                    
+
                     // Test debug endpoint
                     const debugResponse = await fetch('/api/therapeutic-chat/debug/all-sessions', {
                       credentials: 'include'
                     });
                     const debugData = await debugResponse.json();
                     console.log('Debug data:', debugData);
-                    
+
                     toast({
                       title: "API Test Results",
                       description: `Status: ${response.status}. Check console for details.`,
